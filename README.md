@@ -245,3 +245,9 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - szeroki hero „Mały Wojownik” w jego profilu,
 - pozostali zawodnicy zostają na standardowych kartach do czasu nowych zdjęć,
 - usunięto numery koszulek z kart/profilu, w miejscu numeru widoczny jest herb DELTA.
+
+## V8.7.5 — Ryszard image fit fix
+- pionowa karta Ryszarda jest wyświetlana w całości bez kadrowania,
+- szeroki hero profilu Ryszarda jest wyświetlany w całości,
+- `object-fit: cover` zostało nadpisane przez `contain`,
+- zachowano premium tło, ramki i label profilu.

@@ -1833,3 +1833,88 @@ button.v85-summary-card{color:inherit;cursor:pointer}
 .v874-profile-stats-layout .premium-info{padding:20px 22px 24px!important;justify-content:flex-start!important}.v874-profile-stats-layout .premium-info h2{font-size:40px!important;margin:7px 0 4px!important}
 @media(min-width:901px){.v87-player-card:has(.v874-featured-card-image){min-height:500px!important}.v87-player-card:has(.v874-featured-card-image) .v87-player-content{margin-top:0!important}}
 @media(max-width:700px){.v874-featured-card-image{height:360px}.v874-profile-hero{aspect-ratio:1.65/1;max-height:none}.v874-profile-hero-label{left:9px;bottom:9px;padding:6px 8px}.v874-profile-hero-label img{width:30px;height:30px}.v874-profile-hero-label b{font-size:10px}.v874-profile-stats-layout .premium-info h2{font-size:30px!important}}
+
+/* V8.7.5 — Ryszard featured graphics: full image, no cropping */
+.v874-featured-card-image{
+  height:auto!important;
+  min-height:0!important;
+  padding:8px!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  background:
+    radial-gradient(circle at 50% 30%,rgba(224,28,43,.12),transparent 58%),
+    #070b10!important;
+}
+.v874-featured-card-image>img{
+  width:100%!important;
+  height:auto!important;
+  max-height:620px!important;
+  object-fit:contain!important;
+  object-position:center top!important;
+  display:block!important;
+  transform:none!important;
+}
+.v87-player-card:hover .v874-featured-card-image>img{
+  transform:none!important;
+  filter:saturate(1.03) contrast(1.02)!important;
+}
+.v874-featured-card-image:after{
+  box-shadow:
+    inset 0 0 0 1px rgba(246,201,82,.16),
+    inset 0 -28px 45px rgba(0,0,0,.14)!important;
+}
+
+.v874-profile-hero{
+  aspect-ratio:auto!important;
+  max-height:none!important;
+  min-height:0!important;
+  padding:8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(224,28,43,.10),transparent 62%),
+    #070b10!important;
+}
+.v874-profile-hero>img{
+  width:100%!important;
+  height:auto!important;
+  max-height:720px!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  display:block!important;
+}
+.v874-profile-hero-shade{
+  background:linear-gradient(180deg,transparent 78%,rgba(4,6,9,.28) 100%)!important;
+}
+
+@media(min-width:901px){
+  .v87-player-card:has(.v874-featured-card-image){
+    min-height:0!important;
+  }
+  .v874-featured-card-image>img{
+    max-height:560px!important;
+  }
+  .v874-profile-hero>img{
+    max-height:640px!important;
+  }
+}
+
+@media(max-width:700px){
+  .v874-featured-card-image{
+    height:auto!important;
+    padding:6px!important;
+  }
+  .v874-featured-card-image>img{
+    max-height:520px!important;
+  }
+  .v874-profile-hero{
+    aspect-ratio:auto!important;
+    max-height:none!important;
+    padding:5px!important;
+  }
+  .v874-profile-hero>img{
+    max-height:360px!important;
+  }
+}
