@@ -93,7 +93,7 @@ export default function TeamHub(props:{
     const list=[
       ["Debiut",s.m>=1,`${s.m}/1`],
       ["5 meczów",s.m>=5,`${s.m}/5`],
-      ["Pierwsza piątka",s.starts>=1,`${s.starts}/1`],
+      ["Wyjściowa 6",s.starts>=1,`${s.starts}/1`],
       ["Stały starter",s.starts>=5,`${s.starts}/5`],
       ["Kapitan",s.captain>=1,`${s.captain}/1`],
       ["Lider zespołu",s.captain>=5,`${s.captain}/5`],
@@ -189,7 +189,7 @@ export default function TeamHub(props:{
           </div>
           <div className="quick-match-grid">
             <div><b>Obecność</b><span>Zaznacz kto był obecny / nieobecny</span></div>
-            <div><b>Pierwsza piątka</b><span>Wybierz maksymalnie 5 zawodników</span></div>
+            <div><b>Wyjściowa 6</b><span>Wybierz maksymalnie 5 zawodników</span></div>
             <div><b>Kapitan</b><span>Wskaż kapitana meczu</span></div>
             <div><b>Gole i asysty</b><span>Dodaj strzelca i asystującego</span></div>
             <div><b>MVP</b><span>Wybierz zawodnika meczu</span></div>
@@ -239,7 +239,7 @@ export default function TeamHub(props:{
                 <p>{p.position||"Zawodnik"} {p.shirt_number?`#${p.shirt_number}`:""}</p>
                 <div className="mini-stats">
                   <div><b>{s.m}</b><span>M</span></div>
-                  <div><b>{s.starts}</b><span>5</span></div>
+                  <div><b>{s.starts}</b><span>6</span></div>
                   <div><b>{s.captain}</b><span>C</span></div>
                   <div><b>{s.g}</b><span>G</span></div>
                   <div><b>{s.a}</b><span>A</span></div>
@@ -285,7 +285,7 @@ export default function TeamHub(props:{
                   const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
                   return <p key={e.id}>{scorer}{assist?` • asysta ${assist}`:""}</p>
                 })}</div>
-                <div><h4>Kadra</h4><p>Kapitan: {captainName||"—"}</p><p>Pierwsza piątka: {starters.join(", ")||"—"}</p></div>
+                <div><h4>Kadra</h4><p>Kapitan: {captainName||"—"}</p><p>Wyjściowa 6: {starters.join(", ")||"—"}</p></div>
                 <div><h4>MVP</h4><p>{players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name||"—"}</p></div>
               </div>
             </article>
@@ -325,7 +325,7 @@ export default function TeamHub(props:{
               const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
               return <div className="profile-stats">
                 <div><b>{s.m}</b><span>Mecze</span></div>
-                <div><b>{s.starts}</b><span>Pierwsza 5</span></div>
+                <div><b>{s.starts}</b><span>Wyjściowa 6</span></div>
                 <div><b>{s.captain}</b><span>Kapitan</span></div>
                 <div><b>{s.g}</b><span>Gole</span></div>
                 <div><b>{s.a}</b><span>Asysty</span></div>

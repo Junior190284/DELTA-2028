@@ -82,7 +82,7 @@ export default function AdminPanel(props:{
     if(!selectedMatch)return;
     const current=lineup.find(l=>l.match_id===selectedMatch.id&&l.player_id===playerId);
     const starters=lineup.filter(l=>l.match_id===selectedMatch.id&&l.is_starter);
-    if(!current?.is_starter && starters.length>=5)return alert("Pierwsza piątka może mieć maksymalnie 5 zawodników.");
+    if(!current?.is_starter && starters.length>=6)return alert("Wyjściowa 6 może mieć maksymalnie 6 zawodników.");
     const isStarter=!current?.is_starter;
     const row={match_id:selectedMatch.id,player_id:playerId,is_starter:isStarter,is_captain:current?.is_captain||false};
     const {error}=await supabase.from("match_lineup").upsert(row,{onConflict:"match_id,player_id"});
@@ -238,7 +238,7 @@ export default function AdminPanel(props:{
               <label>Wynik gościa<input id="mas" type="number" defaultValue={selectedMatch.away_score??""}/></label>
             </div>
 
-            <h3>Obecność • pierwsza piątka • kapitan</h3>
+            <h3>Obecność • wyjściowa 6 • kapitan</h3>
             <div className="admin-roster">
               {activePlayers.map(p=>{
                 const att=attendance.find(a=>a.match_id===selectedMatch.id&&a.player_id===p.id)?.status||"";
@@ -248,7 +248,7 @@ export default function AdminPanel(props:{
                   <div className="row-actions">
                     <button className={att==="present"?"on":""} onClick={()=>setAttendanceStatus(p.id,"present")}>Obecny</button>
                     <button className={att==="no"?"on danger":""} onClick={()=>setAttendanceStatus(p.id,"no")}>Nie</button>
-                    <button className={li?.is_starter?"on gold":""} onClick={()=>toggleStarter(p.id)}>Pierwsza 5</button>
+                    <button className={li?.is_starter?"on gold":""} onClick={()=>toggleStarter(p.id)}>Wyjściowa 6</button>
                     <button className={li?.is_captain?"on gold":""} onClick={()=>setCaptain(p.id)}><Crown size={14}/> Kapitan</button>
                   </div>
                 </div>

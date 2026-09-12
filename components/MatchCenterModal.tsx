@@ -57,7 +57,7 @@ export default function MatchCenterModal(props:{
   async function toggleStarter(playerId:string){
     const current=matchLineup.find(l=>l.player_id===playerId);
     const starters=matchLineup.filter(l=>l.is_starter);
-    if(!current?.is_starter && starters.length>=5)return alert("Pierwsza piątka może mieć maksymalnie 5 zawodników.");
+    if(!current?.is_starter && starters.length>=6)return alert("Wyjściowa 6 może mieć maksymalnie 6 zawodników.");
     const row={match_id:match.id,player_id:playerId,is_starter:!current?.is_starter,is_captain:current?.is_captain||false};
     const {error}=await supabase.from("match_lineup").upsert(row,{onConflict:"match_id,player_id"});
     if(error)return alert(error.message);
@@ -131,7 +131,7 @@ export default function MatchCenterModal(props:{
         <button className="mc-save" onClick={saveMatchBasics}><Save size={16}/> {saving?"Zapisywanie…":"Zapisz mecz"}</button>
       </div>
 
-      <div className="mc-title"><Users size={18}/> Obecność • pierwsza piątka • kapitan</div>
+      <div className="mc-title"><Users size={18}/> Obecność • wyjściowa 6 • kapitan</div>
       <div className="mc-roster">
         {players.map(p=>{
           const att=matchAttendance.find(a=>a.player_id===p.id)?.status||"";
@@ -141,7 +141,7 @@ export default function MatchCenterModal(props:{
             <div className="mc-actions">
               <button className={att==="present"?"on":""} onClick={()=>setAttendance(p.id,"present")}><Check size={14}/> Obecny</button>
               <button className={att==="no"?"on danger":""} onClick={()=>setAttendance(p.id,"no")}><X size={14}/> Nie</button>
-              <button className={li?.is_starter?"on gold":""} onClick={()=>toggleStarter(p.id)}>Pierwsza 5</button>
+              <button className={li?.is_starter?"on gold":""} onClick={()=>toggleStarter(p.id)}>Wyjściowa 6</button>
               <button className={li?.is_captain?"on gold":""} onClick={()=>setCaptain(p.id)}><Crown size={14}/> Kapitan</button>
             </div>
           </div>
