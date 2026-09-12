@@ -148,3 +148,13 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - animowany przycisk Centrum Meczu,
 - dopracowane karty Wyjściowej 6 i kafle statystyk,
 - dolne menu ukryte na desktopie; pozostaje na telefonie.
+
+
+## V8.2 — Hero cleanup + RSVP rodziców
+- usunięto tekst HTML nakładany na główny baner; zostaje kompozycja z grafiki,
+- hero ma czystsze kadrowanie i pełniejszą widoczność herbu,
+- obok najbliższego meczu dodano panel potwierdzenia obecności,
+- rodzic może wybrać: Będzie / Nie będzie / Nie wiem dla przypisanego zawodnika,
+- admin/coach widzi zbiorczą listę odpowiedzi całej drużyny,
+- dodano licznik i pasek postępu odpowiedzi,
+- odpowiedzi zapisują się w istniejącej tabeli `match_attendance` w Supabase.

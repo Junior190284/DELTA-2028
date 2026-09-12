@@ -344,3 +344,119 @@ body{background:#05070a}
   .v8-hero h1{font-size:39px!important}
   .v8-account-btn{width:29px;height:29px}
 }
+
+
+/* V8.2 — clean hero + parent RSVP */
+.v82-hero-clean{
+  min-height:300px!important;
+  background-image:url('/assets/hero-banner.png')!important;
+  background-repeat:no-repeat!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  position:relative;
+}
+/* Dark edge treatment keeps the full crest readable without adding duplicate text. */
+.v82-hero-clean:after{
+  background:
+    linear-gradient(90deg,rgba(5,7,10,.04),transparent 16%,transparent 84%,rgba(5,7,10,.08)),
+    linear-gradient(180deg,rgba(5,7,10,.02),transparent 65%,rgba(5,7,10,.20))!important;
+}
+.v82-hero-vignette{position:absolute;inset:0;pointer-events:none;z-index:2}
+.v82-hero-vignette:after{
+  content:"";position:absolute;inset:0;
+  box-shadow:inset 0 0 0 1px rgba(246,201,82,.08),inset 0 -38px 60px rgba(0,0,0,.16)
+}
+
+.v82-match-rsvp-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(340px,.85fr);
+  gap:12px;
+  margin-top:12px;
+  align-items:stretch;
+}
+.v82-match-rsvp-grid .v8-match-card{margin-top:0;height:100%}
+.v82-rsvp-card{
+  position:relative;
+  padding:15px 15px 14px;
+  min-width:0;
+  background:
+    linear-gradient(180deg,rgba(10,13,19,.94),rgba(5,8,12,.98)),
+    radial-gradient(circle at 100% 0,rgba(255,27,40,.14),transparent 38%);
+}
+.v82-rsvp-intro{
+  color:#a8b1bb;font-size:11px;line-height:1.5;margin:6px 0 11px
+}
+.v82-rsvp-list{
+  display:grid;gap:6px;
+  max-height:252px;overflow:auto;padding-right:3px;
+  scrollbar-width:thin
+}
+.v82-rsvp-row{
+  display:grid;grid-template-columns:42px minmax(0,1fr) auto;
+  gap:8px;align-items:center;
+  padding:8px 9px;
+  background:#0a0e14;border:1px solid rgba(255,255,255,.055)
+}
+.v82-rsvp-row b{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v82-shirt{
+  display:inline-grid;place-items:center;
+  min-width:35px;height:27px;padding:0 5px;
+  border:1px solid rgba(246,201,82,.24);
+  color:var(--v8-gold);font-size:10px;font-weight:900
+}
+.v82-status{
+  padding:5px 7px;border:1px solid rgba(255,255,255,.08);
+  font-size:8px;font-weight:900;white-space:nowrap;color:#9ba6b2
+}
+.v82-status.yes{color:#aef1bc;border-color:rgba(64,220,99,.34);background:rgba(27,118,49,.18)}
+.v82-status.no{color:#ffadb2;border-color:rgba(255,49,62,.34);background:rgba(142,19,29,.18)}
+.v82-status.maybe{color:#ffe18b;border-color:rgba(246,201,82,.34);background:rgba(136,103,14,.15)}
+.v82-parent-rsvp{
+  padding:10px;border:1px solid rgba(255,255,255,.06);background:#0a0e14
+}
+.v82-parent-name{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.v82-parent-name b{font-size:11px}
+.v82-rsvp-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.v82-rsvp-actions button{
+  min-height:34px;border:1px solid #28313b;background:#111821;color:#a9b3bd;
+  font-size:8px;font-weight:900;display:flex;gap:4px;align-items:center;justify-content:center;
+  cursor:pointer;transition:.18s ease
+}
+.v82-rsvp-actions button:hover{border-color:rgba(246,201,82,.26);color:#fff}
+.v82-rsvp-actions button.active.yes{background:#143b20;border-color:#2d9e49;color:#c2f4cd;box-shadow:0 0 16px rgba(41,190,72,.08)}
+.v82-rsvp-actions button.active.no{background:#411217;border-color:#d92a36;color:#ffc0c4;box-shadow:0 0 16px rgba(255,31,45,.08)}
+.v82-rsvp-actions button.active.maybe{background:#403313;border-color:#b88916;color:#ffe6a2}
+.v82-rsvp-summary{
+  margin-top:11px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)
+}
+.v82-rsvp-summary>div:first-child{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.v82-rsvp-summary span{font-size:9px;color:#88939e}
+.v82-rsvp-summary b{font-size:13px;color:var(--v8-gold)}
+.v82-rsvp-empty{
+  padding:16px 10px;border:1px dashed rgba(246,201,82,.14);
+  color:#8994a0;font-size:10px;text-align:center
+}
+
+@media(max-width:1100px){
+  .v82-match-rsvp-grid{grid-template-columns:1fr}
+  .v82-rsvp-list{max-height:220px}
+}
+@media(max-width:900px){
+  .v82-hero-clean{
+    min-height:230px!important;
+    background-size:cover!important;
+    background-position:center center!important
+  }
+}
+@media(max-width:560px){
+  .v82-hero-clean{
+    min-height:170px!important;
+    background-size:cover!important;
+    background-position:center center!important
+  }
+  .v82-match-rsvp-grid{gap:9px}
+  .v82-rsvp-actions{grid-template-columns:1fr}
+  .v82-rsvp-actions button{min-height:38px;font-size:9px}
+  .v82-rsvp-row{grid-template-columns:38px 1fr}
+  .v82-status{grid-column:2;justify-self:start}
+}

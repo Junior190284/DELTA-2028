@@ -93,6 +93,10 @@ export default function TeamHub(props:{
   const nextMatch=matches.find(m=>m.status==="scheduled");
   const nextLineup=nextMatch?lineup.filter(l=>l.match_id===nextMatch.id&&l.is_starter).slice(0,6):[];
   const nextPresent=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&(a.status==="present"||a.status==="yes")).length:0;
+  const nextResponses=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&["yes","no","maybe"].includes(a.status)):[];
+  const nextResponseCount=new Set(nextResponses.map(a=>a.player_id)).size;
+  const parentPlayers=players.filter(p=>props.parentPlayerIds.includes(p.id));
+  const attendanceStatus=(playerId:string)=>nextResponses.find(a=>a.player_id===playerId)?.status||"";
   const topScorer=players.slice().sort((a,b)=>(stats[b.id]?.g||0)-(stats[a.id]?.g||0))[0];
   const topAssister=players.slice().sort((a,b)=>(stats[b.id]?.a||0)-(stats[a.id]?.a||0))[0];
   const captainLeader=players.slice().sort((a,b)=>(stats[b.id]?.captain||0)-(stats[a.id]?.captain||0))[0];
@@ -151,23 +155,72 @@ export default function TeamHub(props:{
 
     <main className="hub-main v8-main">
       {tab==="home"&&<>
-        <section className="v8-hero">
-          <div className="v8-hero-copy">
-            <span className="v8-kicker">GÓRNY MOKOTÓW • TEAM HUB</span>
-            <h1>DELTA <em>2018</em> <strong>GM</strong></h1>
-            <p>Małe kroki. Wielkie marzenia. Razem tworzymy historię.</p>
-            <div className="v8-devils-script">Diabełki z Mokotowa</div>
-          </div>
+        <section className="v8-hero v82-hero-clean" aria-label="DELTA 2018 GM — Górny Mokotów">
+          <div className="v82-hero-vignette"/>
         </section>
 
-        {nextMatch&&<section className="v8-match-card devil-card">
-          <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
-          <div className="v8-match-stage">
-            <div className="v8-team"><Logo team={nextMatch.home_team} size={82}/><b>{nextMatch.home_team}</b><small>GOSPODARZ</small></div>
-            <div className="v8-vs"><strong>VS</strong><span>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"—"}</span><small>{nextMatch.venue||"Miejsce do ustalenia"}</small></div>
-            <div className="v8-team"><Logo team={nextMatch.away_team} size={82}/><b>{nextMatch.away_team}</b><small>GOŚĆ</small></div>
-          </div>
-          <button className="v8-red-cta" onClick={()=>setSelectedMatch(nextMatch)}>CENTRUM MECZU <ChevronRight size={18}/></button>
+        {nextMatch&&<section className="v82-match-rsvp-grid">
+          <article className="v8-match-card devil-card">
+            <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
+            <div className="v8-match-stage">
+              <div className="v8-team">
+                <Logo team={nextMatch.home_team} size={76}/>
+                <b>{nextMatch.home_team}</b>
+                <small>GOSPODARZ</small>
+              </div>
+              <div className="v8-vs">
+                <strong>VS</strong>
+                <span>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"—"}</span>
+                <small>{nextMatch.venue||"Miejsce do ustalenia"}</small>
+              </div>
+              <div className="v8-team">
+                <Logo team={nextMatch.away_team} size={76}/>
+                <b>{nextMatch.away_team}</b>
+                <small>GOŚĆ</small>
+              </div>
+            </div>
+            <button className="v8-red-cta" onClick={()=>setSelectedMatch(nextMatch)}>CENTRUM MECZU <ChevronRight size={17}/></button>
+          </article>
+
+          <article className="v82-rsvp-card devil-card">
+            <div className="v8-panel-title"><UserCheck size={18}/> POTWIERDZENIE OBECNOŚCI</div>
+            <p className="v82-rsvp-intro">
+              {staff
+                ? "Odpowiedzi rodziców przed najbliższym meczem."
+                : "Potwierdź, czy Twój zawodnik będzie obecny na meczu."}
+            </p>
+
+            {staff ? <div className="v82-rsvp-list">
+              {players.map(p=>{
+                const status=attendanceStatus(p.id);
+                return <div className="v82-rsvp-row" key={p.id}>
+                  <span className="v82-shirt">#{p.shirt_number||"—"}</span>
+                  <b>{p.display_name}</b>
+                  <span className={`v82-status ${status||"empty"}`}>
+                    {status==="yes"?"Będzie":status==="no"?"Nie będzie":status==="maybe"?"Nie wiem":"Brak odpowiedzi"}
+                  </span>
+                </div>
+              })}
+            </div> : <div className="v82-rsvp-list">
+              {parentPlayers.length===0&&<div className="v82-rsvp-empty">Do konta rodzica nie przypisano jeszcze zawodnika.</div>}
+              {parentPlayers.map(p=>{
+                const status=attendanceStatus(p.id);
+                return <div className="v82-parent-rsvp" key={p.id}>
+                  <div className="v82-parent-name"><span className="v82-shirt">#{p.shirt_number||"—"}</span><b>{p.display_name}</b></div>
+                  <div className="v82-rsvp-actions">
+                    <button className={status==="yes"?"active yes":""} onClick={()=>setParentAttendance(nextMatch.id,p.id,"yes")}><Check size={14}/> Będzie</button>
+                    <button className={status==="no"?"active no":""} onClick={()=>setParentAttendance(nextMatch.id,p.id,"no")}><X size={14}/> Nie będzie</button>
+                    <button className={status==="maybe"?"active maybe":""} onClick={()=>setParentAttendance(nextMatch.id,p.id,"maybe")}>Nie wiem</button>
+                  </div>
+                </div>
+              })}
+            </div>}
+
+            <div className="v82-rsvp-summary">
+              <div><span>Potwierdzono</span><b>{nextResponseCount} / {players.length}</b></div>
+              <div className="v8-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
+            </div>
+          </article>
         </section>}
 
         <section className="v8-stats-row">
