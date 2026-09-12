@@ -259,44 +259,14 @@ export default function TeamHub(props:{
             <button className="v8-red-cta" onClick={()=>setSelectedMatch(nextMatch)}>CENTRUM MECZU <ChevronRight size={17}/></button>
           </article>
 
-          <article className="v82-rsvp-card devil-card">
-            <div className="v8-panel-title"><UserCheck size={18}/> POTWIERDZENIE OBECNOŚCI</div>
-            <p className="v82-rsvp-intro">
-              {staff
-                ? "Odpowiedzi rodziców przed najbliższym meczem."
-                : "Potwierdź, czy Twój zawodnik będzie obecny na meczu."}
-            </p>
-
-            {staff ? <div className="v82-rsvp-list">
-              {players.map(p=>{
-                const status=attendanceStatus(p.id);
-                return <div className="v82-rsvp-row" key={p.id}>
-                  <span className="v82-shirt">#{p.shirt_number||"—"}</span>
-                  <b>{p.display_name}</b>
-                  <span className={`v82-status ${status||"empty"}`}>
-                    {status==="yes"?"Będzie":status==="no"?"Nie będzie":status==="maybe"?"Nie wiem":"Brak odpowiedzi"}
-                  </span>
-                </div>
-              })}
-            </div> : <div className="v82-rsvp-list">
-              {parentPlayers.length===0&&<div className="v82-rsvp-empty">Do konta rodzica nie przypisano jeszcze zawodnika.</div>}
-              {parentPlayers.map(p=>{
-                const status=attendanceStatus(p.id);
-                return <div className="v82-parent-rsvp" key={p.id}>
-                  <div className="v82-parent-name"><span className="v82-shirt">#{p.shirt_number||"—"}</span><b>{p.display_name}</b></div>
-                  <div className="v82-rsvp-actions">
-                    <button className={status==="yes"?"active yes":""} onClick={()=>setParentAttendance(nextMatch.id,p.id,"yes")}><Check size={14}/> Będzie</button>
-                    <button className={status==="no"?"active no":""} onClick={()=>setParentAttendance(nextMatch.id,p.id,"no")}><X size={14}/> Nie będzie</button>
-                    <button className={status==="maybe"?"active maybe":""} onClick={()=>setParentAttendance(nextMatch.id,p.id,"maybe")}>Nie wiem</button>
-                  </div>
-                </div>
-              })}
-            </div>}
-
-            <div className="v82-rsvp-summary">
-              <div><span>Potwierdzono</span><b>{nextResponseCount} / {players.length}</b></div>
-              <div className="v8-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
-            </div>
+          <article className="v85-home-attendance devil-card">
+            <div className="v8-panel-title"><UserCheck size={18}/> OBECNOŚĆ NA MECZU</div>
+            <div className="v85-home-attendance-number"><b>{nextResponseCount}</b><span>/ {players.length}</span></div>
+            <p>{staff?"Rodzice potwierdzili udział zawodników.":"Potwierdź udział swojego zawodnika w Centrum Meczu."}</p>
+            <div className="v8-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
+            <button onClick={()=>setSelectedMatch(nextMatch)}>
+              {staff?"ZOBACZ LISTĘ OBECNOŚCI":"POTWIERDŹ OBECNOŚĆ"} <ChevronRight size={15}/>
+            </button>
           </article>
         </section>}
 
@@ -360,8 +330,22 @@ export default function TeamHub(props:{
 
     {selectedPlayer&&<div className="modal-backdrop" onClick={()=>setSelectedPlayer(null)}><div className="modal-sheet devil-card" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedPlayer(null)}>×</button><div className="premium-profile"><div className="premium-photo"><PlayerPhoto playerId={selectedPlayer.id} className="premium-photo-img"/></div><div className="premium-info"><span className="eyebrow gold">PREMIUM PLAYER PROFILE</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"} {selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:""}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div></div><h3>Osiągnięcia zawodnika</h3><div className="achievement-grid">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={name as string} className={`achievement ${ok?"unlocked":""}`}><Star size={20}/><h3>{name}</h3><p>{ok?"ZDOBYTE":progress}</p></div>)}</div></div></div>}
 
-    {selectedMatch&&staff&&<MatchCenterModal match={selectedMatch} players={players} attendance={attendance} lineup={lineup} events={events} currentUserId={props.profile.id} onClose={()=>setSelectedMatch(null)} onDataChange={(d)=>{if(d.match){setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));setSelectedMatch(d.match);}if(d.attendance)setAttendance(d.attendance);if(d.lineup)setLineup(d.lineup);if(d.events)setEvents(d.events);}}/>}
-
-    {selectedMatch&&!staff&&<div className="modal-backdrop" onClick={()=>setSelectedMatch(null)}><div className="modal-sheet devil-card" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedMatch(null)}>×</button><h2>Centrum meczu</h2><div className="big-match"><div><Logo team={selectedMatch.home_team}/><strong>{selectedMatch.home_team}</strong></div><b>{selectedMatch.status==="played"?`${selectedMatch.home_score}:${selectedMatch.away_score}`:"VS"}</b><div><Logo team={selectedMatch.away_team}/><strong>{selectedMatch.away_team}</strong></div></div><p className="muted">{datePL(selectedMatch.match_date)} {selectedMatch.match_time||""} • {selectedMatch.venue||"—"}</p>{props.parentPlayerIds.map(pid=>{const p=players.find(x=>x.id===pid);if(!p)return null;return <div className="attendance-box" key={pid}><h3>Obecność: {p.display_name}</h3><div className="actions"><button onClick={()=>setParentAttendance(selectedMatch.id,pid,"yes")}><Check size={16}/> Będę</button><button onClick={()=>setParentAttendance(selectedMatch.id,pid,"no")}><X size={16}/> Nie będę</button><button onClick={()=>setParentAttendance(selectedMatch.id,pid,"maybe")}>Jeszcze nie wiem</button></div></div>})}</div></div>}
+    {selectedMatch&&<MatchCenterModal
+      match={selectedMatch}
+      players={players}
+      attendance={attendance}
+      lineup={lineup}
+      events={events}
+      currentUserId={props.profile.id}
+      currentUserRole={props.profile.role}
+      parentPlayerIds={props.parentPlayerIds}
+      onClose={()=>setSelectedMatch(null)}
+      onDataChange={(d)=>{
+        if(d.match){setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));setSelectedMatch(d.match);}
+        if(d.attendance)setAttendance(d.attendance);
+        if(d.lineup)setLineup(d.lineup);
+        if(d.events)setEvents(d.events);
+      }}
+    />})}</div></div>}
   </div>;
 }

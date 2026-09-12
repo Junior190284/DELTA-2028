@@ -180,3 +180,14 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - dodano brakujące funkcje `formatCountdown`, `parseLocalMatchDate` i `getNextTraining`,
 - naprawiono błąd TypeScript z Vercel,
 - funkcjonalność V8.4 pozostaje bez zmian.
+
+
+## V8.5 — Match Center Rework
+- pełna lista obecności przeniesiona ze strony głównej do Centrum Meczu,
+- na stronie głównej zostaje tylko kompaktowy status potwierdzeń,
+- Centrum Meczu ma zakładki: Podsumowanie / Obecność / Skład / Zdarzenia / MVP,
+- rodzic w zakładce Obecność potwierdza udział swojego zawodnika,
+- admin widzi odpowiedzi całej drużyny i może oznaczyć faktyczną obecność,
+- Wyjściowa 6 i kapitan są w osobnej zakładce,
+- gole i asysty są w zakładce Zdarzenia,
+- MVP ma osobny, bardziej efektowny ekran.
