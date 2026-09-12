@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, Link2, Bell, Goal, Crown, Star } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, Link2, Bell, Goal, Crown, Star, Shield, RefreshCw } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
 type Match={id:string;round_no:number|null;match_date:string;match_time:string|null;venue:string|null;home_team:string;away_team:string;home_score:number|null;away_score:number|null;status:string};
@@ -27,7 +27,9 @@ export default function AdminPanel(props:{
   initialParentLinks:ParentLink[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"matches"|"players"|"news"|"parents"|"push">("matches");
+  const [tab,setTab]=useState<"matches"|"players"|"news"|"parents"|"push"|"sync">("matches");
+  const [syncing,setSyncing]=useState(false);
+  const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -194,6 +196,21 @@ export default function AdminPanel(props:{
     alert(`Wysłano: ${data.sent}, błędy: ${data.failed}`);
   }
 
+  async function runDeltaSync(){
+    setSyncing(true);
+    setSyncResult("");
+    try{
+      const res=await fetch("/api/delta-sync",{method:"POST"});
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||"Błąd synchronizacji");
+      setSyncResult(`Znaleziono ${data.found}, nowe ${data.inserted}, odświeżone ${data.updated}.`);
+    }catch(e:any){
+      setSyncResult(`Błąd: ${e?.message||e}`);
+    }finally{
+      setSyncing(false);
+    }
+  }
+
   const matchEvents=selectedMatch?events.filter(e=>e.match_id===selectedMatch.id):[];
 
   return <div className="admin-app">
@@ -212,6 +229,7 @@ export default function AdminPanel(props:{
       <button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>
       <button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice</button>
       <button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>
+      <button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>
     </nav>
 
     <main className="admin-main">
@@ -320,6 +338,18 @@ export default function AdminPanel(props:{
         <div className="admin-card-head"><h2>Powiadomienia push</h2></div>
         <p className="muted">Wysyłka działa po ustawieniu VAPID keys i zapisaniu subskrypcji urządzeń rodziców.</p>
         <button className="push-main" onClick={sendPush}><Bell size={18}/> Wyślij powiadomienie do wszystkich</button>
+      </section>}
+
+      {tab==="sync" && <section className="admin-card">
+        <div className="admin-card-head"><h2>DELTA Sync</h2></div>
+        <p className="muted">Pobiera nowe informacje z oficjalnej strony drużyny i zapisuje je w kafelku „Z klubu”. Automatyczne odpytywanie można uruchomić co minutę przez Supabase Cron.</p>
+        <button className="push-main" disabled={syncing} onClick={runDeltaSync}><RefreshCw size={18}/>{syncing?" Synchronizacja…":" Synchronizuj teraz"}</button>
+        {syncResult&&<div className="staff-note"><Shield size={18}/>{syncResult}</div>}
+        <div className="admin-subcard" style={{marginTop:16}}>
+          <h3>Źródło</h3>
+          <p>https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108</p>
+          <p className="muted">Dane klubowe są trzymane oddzielnie od naszych prywatnych statystyk, obecności i profili zawodników.</p>
+        </div>
       </section>}
     </main>
   </div>;

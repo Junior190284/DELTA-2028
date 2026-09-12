@@ -251,3 +251,30 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - szeroki hero profilu Ryszarda jest wyświetlany w całości,
 - `object-fit: cover` zostało nadpisane przez `contain`,
 - zachowano premium tło, ramki i label profilu.
+
+
+## V8.7.6 — DELTA Sync + „Z klubu”
+### Co zostało dodane
+- nowa zakładka „Z klubu” z oficjalnymi informacjami K.S. Delta Warszawa,
+- automatyczne odświeżanie feedu w aplikacji co 60 sekund,
+- endpoint `/api/delta-sync` pobierający i analizujący stronę drużyny,
+- osobne tabele `club_updates` i `delta_sync_log`,
+- panel administratora → „DELTA Sync” → „Synchronizuj teraz”,
+- szablon Supabase Cron do synchronizacji co minutę,
+- kliknięcie całego kafla Najlepszy strzelec / Lider asyst otwiera profil zawodnika.
+
+### Jednorazowa konfiguracja
+1. W Supabase SQL Editor uruchom `supabase/v3_delta_sync.sql`.
+2. W Vercel → Settings → Environment Variables dodaj:
+   `DELTA_SYNC_SECRET` = dowolny długi losowy sekret.
+3. Zrób nowy deploy.
+4. W panelu administratora otwórz `DELTA Sync` i kliknij `Synchronizuj teraz`.
+5. Sprawdź zakładkę `Z klubu`.
+6. Gdy wszystko działa, otwórz `supabase/delta_sync_cron.sql`, wpisz:
+   - swój `DELTA_SYNC_SECRET`,
+   - aktualny adres Vercel (jeśli różni się od `https://delta-2028.vercel.app`),
+   i uruchom SQL w Supabase.
+7. Od tej chwili Supabase Cron wywołuje synchronizację co minutę.
+
+### Ważne
+Parser jest celowo ograniczony do informacji istotnych dla rocznika 2018 / Górnego Mokotowa oraz klubowych komunikatów organizacyjnych. Prywatne dane Team Hub nie są nadpisywane przez synchronizację.

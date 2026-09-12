@@ -16,6 +16,7 @@ type Attendance={match_id:string;player_id:string;status:string};
 type Lineup={match_id:string;player_id:string;is_starter:boolean;is_captain:boolean};
 type Event={id:string;match_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;minute:number|null;created_at:string};
 type News={id:string;type:string;title:string;body:string|null;published_at:string};
+type ClubUpdate={id:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string;synced_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 const isRyszardPlayer=(p:{display_name:string})=>{const n=(p.display_name||"").toLocaleLowerCase("pl-PL");return n.includes("ryszard")&&n.includes("rybacki");};
@@ -92,16 +93,18 @@ export default function TeamHub(props:{
   initialLineup:Lineup[];
   initialEvents:Event[];
   initialNews:News[];
+  initialClubUpdates:ClubUpdate[];
   parentPlayerIds:string[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"home"|"matches"|"players"|"achievements"|"chronicle"|"news">("home");
+  const [tab,setTab]=useState<"home"|"matches"|"players"|"achievements"|"chronicle"|"news"|"club">("home");
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
   const [lineup,setLineup]=useState(props.initialLineup);
   const [events,setEvents]=useState(props.initialEvents);
   const [news,setNews]=useState(props.initialNews);
+  const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [accountOpen,setAccountOpen]=useState(false);
@@ -115,8 +118,22 @@ export default function TeamHub(props:{
 
   useEffect(()=>{
     setPlayers(props.initialPlayers);setMatches(props.initialMatches);setAttendance(props.initialAttendance);
-    setLineup(props.initialLineup);setEvents(props.initialEvents);setNews(props.initialNews);
-  },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews]);
+    setLineup(props.initialLineup);setEvents(props.initialEvents);setNews(props.initialNews);setClubUpdates(props.initialClubUpdates);
+  },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews,props.initialClubUpdates]);
+
+  useEffect(()=>{
+    let cancelled=false;
+    const refreshClub=async()=>{
+      const {data}=await supabase
+        .from("club_updates")
+        .select("id,source_name,source_url,title,body,priority,published_at,synced_at")
+        .order("published_at",{ascending:false})
+        .limit(30);
+      if(!cancelled&&data)setClubUpdates(data as ClubUpdate[]);
+    };
+    const timer=window.setInterval(refreshClub,60000);
+    return ()=>{cancelled=true;window.clearInterval(timer);};
+  },[supabase]);
 
   const stats=useMemo(()=>{
     const map:Record<string,{m:number;starts:number;captain:number;g:number;a:number;mvp:number}>={};
@@ -367,19 +384,19 @@ export default function TeamHub(props:{
           <article className="v87-leaders devil-card">
             <div className="v8-panel-title"><Medal size={18}/> NAJLEPSI W SEZONIE</div>
             <div className="v87-leaders-grid">
-              <button onClick={()=>topScorer&&setSelectedPlayer(topScorer)} className="v87-leader-card">
+              <button type="button" onClick={()=>topScorer&&setSelectedPlayer(topScorer)} className="v87-leader-card">
                 <div className="v87-leader-icon"><Goal size={20}/></div>
                 <span>BRAMKI</span>
                 <b>{topScorer&&stats[topScorer.id]?.g>0?topScorer.display_name:"—"}</b>
                 <strong>{topScorer?stats[topScorer.id]?.g||0:0}</strong>
               </button>
-              <button onClick={()=>topAssister&&setSelectedPlayer(topAssister)} className="v87-leader-card">
+              <button type="button" onClick={()=>topAssister&&setSelectedPlayer(topAssister)} className="v87-leader-card">
                 <div className="v87-leader-icon"><Star size={20}/></div>
                 <span>ASYSTY</span>
                 <b>{topAssister&&stats[topAssister.id]?.a>0?topAssister.display_name:"—"}</b>
                 <strong>{topAssister?stats[topAssister.id]?.a||0:0}</strong>
               </button>
-              <button onClick={()=>topMvp&&setSelectedPlayer(topMvp)} className="v87-leader-card">
+              <button type="button" onClick={()=>topMvp&&setSelectedPlayer(topMvp)} className="v87-leader-card">
                 <div className="v87-leader-icon"><Trophy size={20}/></div>
                 <span>MVP</span>
                 <b>{topMvp&&stats[topMvp.id]?.mvp>0?topMvp.display_name:"—"}</b>
@@ -449,18 +466,22 @@ export default function TeamHub(props:{
             </button>:<p className="muted">Brak danych.</p>}
           </article>
 
-          <article className="v871-team-leader devil-card">
+          <article className="v871-team-leader devil-card v876-clickable-leader" role="button" tabIndex={0}
+            onClick={()=>topScorer&&stats[topScorer.id]?.g>0&&setSelectedPlayer(topScorer)}
+            onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topScorer&&stats[topScorer.id]?.g>0)setSelectedPlayer(topScorer)}}>
             <div className="v8-panel-title"><Goal size={18}/> NAJLEPSZY STRZELEC</div>
-            {topScorer&&stats[topScorer.id]?.g>0?<button onClick={()=>setSelectedPlayer(topScorer)}>
+            {topScorer&&stats[topScorer.id]?.g>0?<button type="button" onClick={e=>{e.stopPropagation();setSelectedPlayer(topScorer)}}>
               <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP SCORER</span><PlayerPhoto playerId={topScorer.id}/></div>
               <div><span>DELTA 2018 GM</span><b>{topScorer.display_name}</b><small>{stats[topScorer.id]?.g||0} goli</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Pierwszy lider strzelców jeszcze przed nami.</p>}
           </article>
 
-          <article className="v871-team-leader devil-card">
+          <article className="v871-team-leader devil-card v876-clickable-leader" role="button" tabIndex={0}
+            onClick={()=>topAssister&&stats[topAssister.id]?.a>0&&setSelectedPlayer(topAssister)}
+            onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topAssister&&stats[topAssister.id]?.a>0)setSelectedPlayer(topAssister)}}>
             <div className="v8-panel-title"><Star size={18}/> LIDER ASYST</div>
-            {topAssister&&stats[topAssister.id]?.a>0?<button onClick={()=>setSelectedPlayer(topAssister)}>
+            {topAssister&&stats[topAssister.id]?.a>0?<button type="button" onClick={e=>{e.stopPropagation();setSelectedPlayer(topAssister)}}>
               <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP ASSIST</span><PlayerPhoto playerId={topAssister.id}/></div>
               <div><span>DELTA 2018 GM</span><b>{topAssister.display_name}</b><small>{stats[topAssister.id]?.a||0} asyst</small></div>
               <ChevronRight size={16}/>
@@ -519,6 +540,35 @@ export default function TeamHub(props:{
       {tab==="achievements"&&<section className="section v8-section-page"><div className="section-title"><h2>Osiągnięcia</h2></div><div className="achievement-grid">{[["Start sezonu",teamSummary.played>=1,teamSummary.played,1],["3 zwycięstwa",teamSummary.wins>=3,teamSummary.wins,3],["10 bramek",teamSummary.goals>=10,teamSummary.goals,10],["25 bramek",teamSummary.goals>=25,teamSummary.goals,25],["50 bramek",teamSummary.goals>=50,teamSummary.goals,50],["10 asyst",teamSummary.assists>=10,teamSummary.assists,10]].map(([name,ok,current,target])=><div className={`achievement devil-card ${ok?"unlocked":""}`} key={name as string}><Trophy size={24}/><h3>{name}</h3><p>{ok?"ZDOBYTE":`${current}/${target}`}</p></div>)}</div></section>}
 
       {tab==="chronicle"&&<section className="section v8-section-page"><div className="section-title"><h2>Kronika sezonu</h2></div><div className="list">{matches.filter(m=>m.status==="played").slice().reverse().map(m=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;return <article className="chronicle-card devil-card" key={m.id}><div className="chronicle-head"><span>Kolejka {m.round_no||"—"}</span><span>{datePL(m.match_date)}</span></div><div className="chronicle-score"><span>{m.home_team}</span><b>{m.home_score}:{m.away_score}</b><span>{m.away_team}</span></div><div className="chronicle-columns"><div><h4>Bramki i asysty</h4>{matchEvents.filter(e=>e.event_type==="goal").map(e=>{const scorer=players.find(p=>p.id===e.player_id)?.display_name||"?";const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;return <p key={e.id}>{scorer}{assist?` • asysta ${assist}`:""}</p>})}</div><div><h4>Kadra</h4><p>Kapitan: {captainName||"—"}</p><p>Wyjściowa 6: {starters.join(", ")||"—"}</p></div><div><h4>MVP</h4><p>{players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name||"—"}</p></div></div></article>})}</div></section>}
+
+      {tab==="club"&&<section className="section v8-section-page v876-club-page">
+        <div className="v876-club-hero devil-card">
+          <div>
+            <span className="eyebrow gold">OFICJALNE INFORMACJE</span>
+            <h2>Z klubu</h2>
+            <p>Aktualności pobierane automatycznie z oficjalnej strony K.S. Delta Warszawa.</p>
+          </div>
+          <div className="v876-sync-status">
+            <Shield size={22}/>
+            <div><b>DELTA Sync</b><span>{clubUpdates[0]?.synced_at?`Ostatnia synchronizacja ${new Date(clubUpdates[0].synced_at).toLocaleString("pl-PL")}`:"Oczekiwanie na pierwszą synchronizację"}</span></div>
+          </div>
+        </div>
+
+        <div className="v876-club-feed">
+          {clubUpdates.length===0&&<article className="v876-club-empty devil-card">
+            <Shield size={32}/><h3>Brak zsynchronizowanych wiadomości</h3><p>Po uruchomieniu DELTA Sync informacje z klubu pojawią się tutaj automatycznie.</p>
+          </article>}
+          {clubUpdates.map(item=><article className="v876-club-card devil-card" key={item.id}>
+            <div className="v876-club-meta">
+              <span>K.S. DELTA WARSZAWA</span>
+              <time>{new Date(item.published_at).toLocaleDateString("pl-PL")}</time>
+            </div>
+            <h3>{item.title}</h3>
+            {item.body&&<p>{item.body}</p>}
+            <a href={item.source_url} target="_blank" rel="noreferrer">ŹRÓDŁO: DELTA.WARSZAWA.PL <ChevronRight size={13}/></a>
+          </article>)}
+        </div>
+      </section>}
 
       {tab==="news"&&<section className="section v8-section-page"><div className="section-title"><h2>Aktualności</h2>{staff&&<button className="btn gold-btn" onClick={saveNewsItem}>Dodaj aktualność</button>}</div><div className="news-grid">{news.map(n=><article className="news-card devil-card" key={n.id}><span className="tag">{n.type}</span><h3>{n.title}</h3><p>{n.body}</p><small>{new Date(n.published_at).toLocaleString("pl-PL")}</small></article>)}</div></section>}
     </main>

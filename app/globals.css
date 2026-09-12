@@ -1918,3 +1918,77 @@ button.v85-summary-card{color:inherit;cursor:pointer}
     max-height:360px!important;
   }
 }
+
+
+/* V8.7.6 — Z klubu / DELTA Sync */
+.v876-club-page{max-width:1500px}
+.v876-club-hero{
+  min-height:190px;
+  padding:24px 28px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+  background:
+    linear-gradient(90deg,rgba(5,8,12,.96),rgba(12,8,10,.80)),
+    url('/assets/hero-banner-wide.png') center/cover no-repeat;
+}
+.v876-club-hero h2{font-size:44px;margin:7px 0 5px}
+.v876-club-hero p{margin:0;color:#a8b3bd;font-size:11px}
+.v876-sync-status{
+  min-width:310px;padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+  border:1px solid rgba(246,201,82,.18);
+  background:rgba(5,8,12,.78);backdrop-filter:blur(10px)
+}
+.v876-sync-status>svg{color:var(--v8-gold)}
+.v876-sync-status b,.v876-sync-status span{display:block}
+.v876-sync-status b{font-size:10px;color:#fff}
+.v876-sync-status span{font-size:8px;color:#7e8a95;margin-top:3px}
+.v876-club-feed{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;margin-top:12px
+}
+.v876-club-card{padding:15px;min-height:200px}
+.v876-club-meta{
+  display:flex;justify-content:space-between;gap:8px;
+  color:#b99c46;font-size:7px;font-weight:1000;letter-spacing:.09em
+}
+.v876-club-card h3{font-size:15px;line-height:1.2;margin:12px 0 8px}
+.v876-club-card p{
+  color:#9eabb6;font-size:9px;line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden
+}
+.v876-club-card a{
+  margin-top:13px;color:var(--v8-gold);font-size:7px;font-weight:1000;
+  text-decoration:none;display:flex;align-items:center;gap:3px
+}
+.v876-club-empty{
+  grid-column:1/-1;min-height:220px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;color:#7e8a95
+}
+.v876-club-empty svg{color:#9c843a}
+.v876-club-empty h3{color:#fff}
+.v876-clickable-leader{cursor:pointer}
+.v876-clickable-leader:hover{
+  border-color:rgba(237,31,48,.30);
+  box-shadow:0 12px 28px rgba(0,0,0,.26),0 0 18px rgba(237,31,48,.06)
+}
+
+/* We now have seven mobile nav buttons. Keep them usable in the floating dock. */
+@media(max-width:900px){
+  .v8-bottom-nav{
+    display:grid!important;
+    grid-template-columns:repeat(7,1fr)!important;
+  }
+  .v8-bottom-nav button{padding-left:2px!important;padding-right:2px!important}
+  .v8-bottom-nav button span{font-size:6px!important}
+  .v876-club-feed{grid-template-columns:1fr 1fr}
+  .v876-club-hero{align-items:flex-start;flex-direction:column}
+  .v876-sync-status{min-width:0;width:100%}
+}
+@media(max-width:560px){
+  .v876-club-feed{grid-template-columns:1fr}
+  .v876-club-hero{padding:18px 14px;min-height:170px}
+  .v876-club-hero h2{font-size:34px}
+  .v8-bottom-nav button svg{width:17px!important;height:17px!important}
+  .v8-bottom-nav button span{font-size:5.7px!important}
+}
