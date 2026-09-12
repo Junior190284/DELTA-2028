@@ -346,6 +346,6 @@ export default function TeamHub(props:{
         if(d.lineup)setLineup(d.lineup);
         if(d.events)setEvents(d.events);
       }}
-    />})}</div></div>}
+    />}
   </div>;
 }
