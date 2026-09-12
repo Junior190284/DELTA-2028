@@ -278,3 +278,10 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 
 ### Ważne
 Parser jest celowo ograniczony do informacji istotnych dla rocznika 2018 / Górnego Mokotowa oraz klubowych komunikatów organizacyjnych. Prywatne dane Team Hub nie są nadpisywane przez synchronizację.
+
+
+## V8.7.7 — Club feed fix
+- „Z klubu” dodane do głównej nawigacji.
+- Kafelek „Z klubu” dodany na ekranie Start z trzema najnowszymi wpisami.
+- Parser DELTA przebudowany tak, by importować także już opublikowane wiadomości z bieżącej strony drużyny.
+- Pierwsza ręczna synchronizacja po wdrożeniu V8.7.7 powinna uzupełnić istniejące wpisy w `club_updates`.

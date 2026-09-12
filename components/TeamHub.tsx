@@ -247,7 +247,7 @@ export default function TeamHub(props:{
 
   const navItems:[string,string,any][]=[
     ["home","Start",Home],["matches","Mecze",CalendarDays],["players","Drużyna",Users],
-    ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],
+    ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
   return <div className="hub v8-hub">
@@ -403,6 +403,20 @@ export default function TeamHub(props:{
                 <strong>{topMvp?stats[topMvp.id]?.mvp||0:0}</strong>
               </button>
             </div>
+          </article>
+
+          <article className="v877-club-home devil-card">
+            <div className="v8-panel-title"><Shield size={18}/> Z KLUBU <span>DELTA SYNC</span></div>
+            {clubUpdates.length>0?<>
+              <div className="v877-club-home-list">
+                {clubUpdates.slice(0,3).map(item=><button type="button" key={item.id} onClick={()=>setTab("club")}>
+                  <span>{new Date(item.published_at).toLocaleDateString("pl-PL")}</span>
+                  <b>{item.title}</b>
+                  <ChevronRight size={14}/>
+                </button>)}
+              </div>
+              <button className="v877-club-all" type="button" onClick={()=>setTab("club")}>WSZYSTKIE INFORMACJE Z KLUBU <ChevronRight size={14}/></button>
+            </>:<div className="v877-club-home-empty"><Shield size={24}/><div><b>DELTA Sync</b><span>Uruchom synchronizację w panelu Admin.</span></div></div>}
           </article>
 
           <article className="v87-team-goal devil-card">

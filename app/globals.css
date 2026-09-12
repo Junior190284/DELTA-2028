@@ -1992,3 +1992,14 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v8-bottom-nav button svg{width:17px!important;height:17px!important}
   .v8-bottom-nav button span{font-size:5.7px!important}
 }
+
+
+/* V8.7.7 — visible club feed on Start */
+.v877-club-home{padding:14px;min-height:180px}
+.v877-club-home .v8-panel-title{display:flex;align-items:center;gap:7px}
+.v877-club-home .v8-panel-title>span{margin-left:auto;color:#8f7a3a;font-size:6px;letter-spacing:.14em}
+.v877-club-home-list{display:grid;gap:6px;margin-top:10px}
+.v877-club-home-list button{width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;color:#fff;display:grid;grid-template-columns:64px 1fr 18px;gap:8px;align-items:center;text-align:left;padding:7px 2px;cursor:pointer}
+.v877-club-home-list button span{font-size:7px;color:#9c843a;font-weight:900}.v877-club-home-list button b{font-size:9px;line-height:1.2}.v877-club-home-list button svg{color:#b99c46}
+.v877-club-all{margin-top:9px;border:0;background:transparent;color:var(--v8-gold);font-size:7px;font-weight:1000;display:flex;align-items:center;gap:4px;cursor:pointer}
+.v877-club-home-empty{min-height:115px;display:flex;align-items:center;justify-content:center;gap:10px;color:#7f8b96}.v877-club-home-empty svg{color:#9c843a}.v877-club-home-empty b,.v877-club-home-empty span{display:block}.v877-club-home-empty b{color:#fff;font-size:10px}.v877-club-home-empty span{font-size:8px;margin-top:3px}
