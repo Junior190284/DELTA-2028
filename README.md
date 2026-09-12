@@ -174,3 +174,9 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - podczas treningu status zmienia się na „Trening trwa” i pokazuje godzinę zakończenia,
 - licznik odświeża się automatycznie co 30 sekund,
 - później można zastąpić stały harmonogram szczegółowym kalendarzem treningów.
+
+
+## V8.4.1 — build fix
+- dodano brakujące funkcje `formatCountdown`, `parseLocalMatchDate` i `getNextTraining`,
+- naprawiono błąd TypeScript z Vercel,
+- funkcjonalność V8.4 pozostaje bez zmian.

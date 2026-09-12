@@ -27,6 +27,55 @@ const teamLogos:Record<string,string>={
 };
 
 function datePL(x:string){return new Date(`${x}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit",month:"2-digit",year:"numeric"});}
+
+
+function formatCountdown(ms:number){
+  if(ms<=0)return "teraz";
+  const totalMinutes=Math.floor(ms/60000);
+  const days=Math.floor(totalMinutes/1440);
+  const hours=Math.floor((totalMinutes%1440)/60);
+  const minutes=totalMinutes%60;
+  if(days>0)return `${days} d ${hours} godz. ${minutes} min`;
+  if(hours>0)return `${hours} godz. ${minutes} min`;
+  return `${Math.max(1,minutes)} min`;
+}
+
+function parseLocalMatchDate(date:string,time?:string|null){
+  const safeTime=(time&&time.length>=5)?time.slice(0,5):"00:00";
+  return new Date(`${date}T${safeTime}:00`);
+}
+
+function getNextTraining(now:Date){
+  // Wednesday = 3, Friday = 5. Training: 17:00–18:30.
+  for(let add=0;add<=7;add++){
+    const start=new Date(now);
+    start.setDate(now.getDate()+add);
+    start.setHours(17,0,0,0);
+
+    const day=start.getDay();
+    if(day!==3&&day!==5)continue;
+
+    const end=new Date(start);
+    end.setHours(18,30,0,0);
+
+    if(add===0&&now>=start&&now<end){
+      return {start,end,isLive:true};
+    }
+
+    if(start>now){
+      return {start,end,isLive:false};
+    }
+  }
+
+  // Safety fallback; normal loop above should always return.
+  const start=new Date(now);
+  start.setDate(now.getDate()+7);
+  start.setHours(17,0,0,0);
+  const end=new Date(start);
+  end.setHours(18,30,0,0);
+  return {start,end,isLive:false};
+}
+
 function Logo({team,size=58}:{team:string,size?:number}){
   const src=teamLogos[team];
   if(src) return <img src={src} alt="" style={{width:size,height:size,objectFit:"contain"}}/>;
