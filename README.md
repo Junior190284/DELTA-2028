@@ -126,3 +126,15 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - po każdej zmianie wykonywany jest refresh danych z Supabase,
 - wpisanie obu wyników automatycznie zmienia status meczu na `played`,
 - po zmianie wyniku statystyki, kronika i profile aktualizują się po odświeżeniu danych.
+
+## V8 — Visual Overhaul „Diabełki z Mokotowa”
+- desktopowy rail navigation + mobilny bottom nav,
+- nowy hero broadcast z czerwonym glow,
+- premium karta najbliższego meczu,
+- 6 kafli statystyk: mecze / wygrane / remisy / porażki / bramki / asysty,
+- kapitan drużyny, Wyjściowa 6 i skład meczowy na stronie głównej,
+- czerwono-złote „devil cards” z poświatą i animacją,
+- podgląd liderów goli i asyst,
+- nowe sekcje osiągnięć / aktualności / kroniki,
+- odświeżone karty zawodników,
+- pełny responsywny layout telefonu.
