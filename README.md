@@ -296,3 +296,12 @@ Parser jest celowo ograniczony do informacji istotnych dla rocznika 2018 / Górn
 - po poprawnym parsowaniu synchronizacja usuwa stary błędny feed i zapisuje czysty zestaw,
 - zabezpieczenie: jeśli parser nie znajdzie co najmniej 3 prawidłowych wpisów oraz „Powołania 2018 Górny Mokotów”, baza nie jest czyszczona,
 - przy grafiku sezonowym pokazywany jest skrócony fragment istotny dla rocznika 2018.
+
+
+## V8.7.9 — Auto Push „Z klubu”
+- DELTA Sync porównuje `source_key` z wpisami już zapisanymi w bazie.
+- Push jest wysyłany tylko przy naprawdę nowym wpisie.
+- W zakładce „Z klubu” jest przycisk „Włącz powiadomienia na tym urządzeniu”.
+- Kliknięcie push otwiera `/dashboard?view=club` i aplikacja przełącza się od razu na „Z klubu”.
+- Wygasłe subskrypcje Web Push (HTTP 404/410) są automatycznie usuwane.
+- Wymagane Vercel Environment Variables: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.

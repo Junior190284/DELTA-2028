@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/current-profile";
 import crypto from "node:crypto";
+import webpush from "web-push";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -218,6 +219,47 @@ function parseDeltaUpdates(html:string){
   return result;
 }
 
+async function sendClubPush(admin:any,newItems:ClubItem[]){
+  if(!newItems.length) return {sent:0,failed:0,skipped:true};
+
+  const subject=process.env.VAPID_SUBJECT;
+  const publicKey=process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey=process.env.VAPID_PRIVATE_KEY;
+  if(!subject||!publicKey||!privateKey){
+    return {sent:0,failed:0,skipped:true,reason:"VAPID not configured"};
+  }
+
+  webpush.setVapidDetails(subject,publicKey,privateKey);
+  const {data:subs,error}=await admin.from("push_subscriptions").select("id,endpoint,p256dh,auth");
+  if(error) throw error;
+
+  const primary=newItems[0];
+  const payload=JSON.stringify({
+    title:newItems.length===1 ? "Nowa informacja z klubu" : `${newItems.length} nowe informacje z klubu`,
+    body:newItems.length===1 ? primary.title : `${primary.title} (+${newItems.length-1})`,
+    url:"/dashboard?view=club",
+    tag:"delta-club-update"
+  });
+
+  let sent=0,failed=0;
+  for(const sub of subs||[]){
+    try{
+      await webpush.sendNotification({
+        endpoint:sub.endpoint,
+        keys:{p256dh:sub.p256dh,auth:sub.auth}
+      },payload);
+      sent++;
+    }catch(err:any){
+      failed++;
+      const code=Number(err?.statusCode||0);
+      if(code===404||code===410){
+        await admin.from("push_subscriptions").delete().eq("id",sub.id);
+      }
+    }
+  }
+  return {sent,failed,skipped:false};
+}
+
 async function authorize(req:NextRequest){
   const secret=process.env.DELTA_SYNC_SECRET;
   const sent=req.headers.get("x-delta-sync-secret") || req.nextUrl.searchParams.get("secret");
@@ -256,11 +298,13 @@ export async function POST(req:NextRequest){
     // This removes malformed V8.7.6/V8.7.7 rows such as 2017/2019/2020 cards.
     const {data:oldRows,error:oldErr}=await admin
       .from("club_updates")
-      .select("id")
+      .select("id,source_key")
       .eq("source_url",DELTA_URL);
 
     if(oldErr) throw oldErr;
     const cleaned=oldRows?.length||0;
+    const oldKeys=new Set((oldRows||[]).map((x:any)=>x.source_key));
+    const newItems=items.filter(item=>!oldKeys.has(item.source_key));
 
     const {error:deleteErr}=await admin
       .from("club_updates")
@@ -278,20 +322,24 @@ export async function POST(req:NextRequest){
     const {error:insertErr}=await admin.from("club_updates").insert(rows);
     if(insertErr) throw insertErr;
 
+    const push=await sendClubPush(admin,newItems);
+
     await admin.from("delta_sync_log").insert({
       status:"ok",
       items_found:items.length,
-      items_inserted:items.length,
-      details:`clean_feed=true; removed_old=${cleaned}; encoding=fixed`
+      items_inserted:newItems.length,
+      details:`clean_feed=true; removed_old=${cleaned}; encoding=fixed; new=${newItems.length}; push_sent=${push.sent}; push_failed=${push.failed}`
     });
 
     return NextResponse.json({
       ok:true,
       source:DELTA_URL,
       found:items.length,
-      inserted:items.length,
-      updated:0,
+      inserted:newItems.length,
+      updated:Math.max(0,items.length-newItems.length),
       cleaned,
+      new_items:newItems.length,
+      push,
       synced_at:now,
       preview:items.slice(0,5).map(x=>x.title)
     });

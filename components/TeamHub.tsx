@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchCenterModal from "./MatchCenterModal";
+import { subscribeToPush } from "@/lib/push";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star,
   Check, X, Crown, Target, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap
@@ -105,6 +106,7 @@ export default function TeamHub(props:{
   const [events,setEvents]=useState(props.initialEvents);
   const [news,setNews]=useState(props.initialNews);
   const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
+  const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [accountOpen,setAccountOpen]=useState(false);
@@ -134,6 +136,22 @@ export default function TeamHub(props:{
     const timer=window.setInterval(refreshClub,60000);
     return ()=>{cancelled=true;window.clearInterval(timer);};
   },[supabase]);
+
+  useEffect(()=>{
+    const view=new URLSearchParams(window.location.search).get("view");
+    if(view==="club")setTab("club");
+  },[]);
+
+  async function enableClubPush(){
+    setPushState("working");
+    try{
+      await subscribeToPush();
+      setPushState("enabled");
+    }catch(e){
+      console.error("Push subscribe error",e);
+      setPushState("error");
+    }
+  }
 
   const stats=useMemo(()=>{
     const map:Record<string,{m:number;starts:number;captain:number;g:number;a:number;mvp:number}>={};
@@ -561,6 +579,13 @@ export default function TeamHub(props:{
             <span className="eyebrow gold">OFICJALNE INFORMACJE</span>
             <h2>Z klubu</h2>
             <p>Aktualności pobierane automatycznie z oficjalnej strony K.S. Delta Warszawa.</p>
+          </div>
+          <div className="v879-club-actions">
+            <button type="button" className="v879-push-btn" onClick={enableClubPush} disabled={pushState==="working"||pushState==="enabled"}>
+              <Bell size={17}/>
+              {pushState==="working"?"Włączanie…":pushState==="enabled"?"Powiadomienia włączone":"Włącz powiadomienia na tym urządzeniu"}
+            </button>
+            {pushState==="error"&&<span className="v879-push-error">Nie udało się włączyć. Sprawdź zgodę na powiadomienia w przeglądarce.</span>}
           </div>
           <div className="v876-sync-status">
             <Shield size={22}/>

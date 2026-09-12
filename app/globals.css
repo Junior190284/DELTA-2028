@@ -2017,3 +2017,12 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   font-weight:1000;
   letter-spacing:.10em;
 }
+
+
+/* V8.7.9 — automatic club push */
+.v879-club-actions{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.v879-push-btn{display:flex;align-items:center;gap:7px;padding:10px 13px;border:1px solid rgba(246,201,82,.25);background:rgba(7,11,17,.88);color:#f6c952;font-size:8px;font-weight:1000;letter-spacing:.04em;cursor:pointer}
+.v879-push-btn:hover{border-color:rgba(237,31,48,.45);box-shadow:0 0 22px rgba(237,31,48,.08)}
+.v879-push-btn:disabled{opacity:.7;cursor:default}
+.v879-push-error{max-width:280px;text-align:right;color:#ff8892;font-size:7px}
+@media(max-width:900px){.v879-club-actions{width:100%;margin-left:0;align-items:stretch}.v879-push-btn{justify-content:center}.v879-push-error{text-align:left;max-width:none}}
