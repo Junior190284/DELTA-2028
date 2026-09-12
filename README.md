@@ -220,3 +220,12 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - dodano skrót statystyk całej kadry,
 - dodano kafle lidera kapitańskiego, najlepszego strzelca, lidera asyst i formy,
 - zachowano premium karty zawodników poniżej.
+
+
+## V8.7.2 — Typography + Mobile Navigation
+- zwiększono czytelność nazwisk i statystyk na kartach zawodników,
+- zwiększono typografię w kaflach liderów, formy i statystyk,
+- poprawiono drobne teksty pomocnicze,
+- przebudowano mobilne menu dolne na floating premium dock,
+- aktywna zakładka ma czerwony glow, złoty akcent i większą ikonę,
+- zwiększono dolny margines treści, aby pasek mobilny niczego nie zasłaniał.
