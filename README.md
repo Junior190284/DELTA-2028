@@ -191,3 +191,22 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - Wyjściowa 6 i kapitan są w osobnej zakładce,
 - gole i asysty są w zakładce Zdarzenia,
 - MVP ma osobny, bardziej efektowny ekran.
+
+
+## V8.6 — Ostatnie mecze
+- blok „Wyjściowa 6” na dashboardzie zastąpiony pasmem ostatnich pięciu meczów,
+- wynik, rywal, data i oznaczenie W/R/P dla każdego spotkania,
+- dodany pasek bieżącej formy drużyny,
+- w „Składzie meczowym” usunięto Wyjściową 6,
+- w jej miejsce pokazujemy potwierdzenia rodziców,
+- Wyjściowa 6 pozostaje dostępna wyłącznie w Centrum Meczu.
+
+
+## V8.7 — Atmosphere + Leaders + Premium Players
+- mocniejszy, wyraźnie widoczny animowany czerwono-czarny dym na całej aplikacji,
+- dodany blok „Najlepsi w sezonie”: gole / asysty / MVP,
+- dodany cel drużyny: 50 bramek z animowanym paskiem postępu,
+- dodana aktualna seria zwycięstw / meczów bez porażki,
+- całkowicie przebudowane premium karty zawodników,
+- karty pokazują G+A, gole, asysty, mecze, kapitana, MVP i liczbę odblokowanych osiągnięć,
+- mocniejsze czerwono-złote efekty, dym na kartach i hover 3D.
