@@ -460,3 +460,136 @@ body{background:#05070a}
   .v82-rsvp-row{grid-template-columns:38px 1fr}
   .v82-status{grid-column:2;justify-self:start}
 }
+
+
+/* V8.3 — hero/header geometry fix */
+.v8-topbar{
+  left:94px!important;
+  right:0!important;
+  width:auto!important;
+  padding-left:18px!important;
+  overflow:visible!important;
+}
+.v8-mini-brand{
+  margin-left:0!important;
+  min-width:190px;
+  overflow:visible!important;
+}
+.v8-mini-brand img{
+  flex:0 0 auto;
+}
+.v8-mini-brand>div{
+  min-width:0;
+  overflow:visible!important;
+}
+.v8-mini-brand b,
+.v8-mini-brand span{
+  white-space:nowrap;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+
+.v82-hero-clean{
+  min-height:270px!important;
+  background-image:url('/assets/hero-banner-wide.png')!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+}
+/* Keep the full badge visible and avoid any extra cropping from pseudo overlays. */
+.v82-hero-clean:before{
+  opacity:.32!important;
+}
+.v82-hero-clean:after{
+  background:
+    linear-gradient(90deg,rgba(5,7,10,.02),transparent 12%,transparent 88%,rgba(5,7,10,.02)),
+    linear-gradient(180deg,transparent 76%,rgba(5,7,10,.14))!important;
+}
+.v82-hero-vignette:after{
+  box-shadow:inset 0 0 0 1px rgba(246,201,82,.09),inset 0 -24px 42px rgba(0,0,0,.12)!important
+}
+
+@media(max-width:900px){
+  .v8-topbar{
+    left:0!important;
+    width:100%!important;
+    padding-left:12px!important;
+  }
+  .v8-mini-brand{min-width:0}
+  .v82-hero-clean{
+    min-height:215px!important;
+    background-size:cover!important;
+    background-position:center center!important;
+  }
+}
+@media(max-width:560px){
+  .v8-mini-brand span{display:none!important}
+  .v8-mini-brand b{font-size:9px!important}
+  .v82-hero-clean{
+    min-height:155px!important;
+    background-size:cover!important;
+    background-position:center center!important;
+  }
+}
+
+
+/* V8.4 — live match + training countdowns */
+.v84-countdown-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:12px auto 10px;
+  max-width:760px;
+}
+.v84-countdown{
+  position:relative;
+  overflow:hidden;
+  padding:10px 12px 9px;
+  border:1px solid rgba(246,201,82,.16);
+  background:
+    linear-gradient(180deg,rgba(11,15,21,.88),rgba(6,9,13,.92)),
+    radial-gradient(circle at 100% 0,rgba(255,26,39,.10),transparent 45%);
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));
+}
+.v84-countdown:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,#f6c952,#e41d2f);
+  box-shadow:0 0 13px rgba(231,29,45,.38)
+}
+.v84-countdown span,
+.v84-countdown b,
+.v84-countdown small{display:block}
+.v84-countdown span{
+  color:#e5bf52;font-size:8px;font-weight:1000;letter-spacing:.17em;margin-bottom:3px
+}
+.v84-countdown b{
+  color:#fff;font-size:17px;line-height:1.15;letter-spacing:.02em
+}
+.v84-countdown small{
+  margin-top:4px;color:#86919c;font-size:8px
+}
+.v84-training-countdown{
+  border-color:rgba(255,40,52,.19);
+}
+.v84-training-countdown:after{
+  content:"";position:absolute;right:-40px;top:-44px;width:100px;height:100px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,25,39,.17),transparent 68%);
+  animation:v84TrainGlow 3.2s ease-in-out infinite
+}
+.v84-training-countdown.live{
+  border-color:rgba(67,225,103,.28);
+  background:
+    linear-gradient(180deg,rgba(10,29,17,.90),rgba(6,13,9,.94)),
+    radial-gradient(circle at 100% 0,rgba(62,225,99,.12),transparent 45%);
+}
+.v84-training-countdown.live:before{
+  background:linear-gradient(180deg,#7bf297,#2eb956);
+  box-shadow:0 0 14px rgba(62,225,99,.32)
+}
+.v84-training-countdown.live span{color:#96f0a9}
+@keyframes v84TrainGlow{0%,100%{opacity:.45;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}}
+
+@media(max-width:720px){
+  .v84-countdown-row{grid-template-columns:1fr;max-width:none}
+  .v84-countdown b{font-size:15px}
+}

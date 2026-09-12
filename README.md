@@ -158,3 +158,19 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - admin/coach widzi zbiorczą listę odpowiedzi całej drużyny,
 - dodano licznik i pasek postępu odpowiedzi,
 - odpowiedzi zapisują się w istniejącej tabeli `match_attendance` w Supabase.
+
+
+## V8.3 — Hero & header fix
+- nowy szeroki hero z mniejszym, w pełni widocznym herbem,
+- brak przycięcia herbu u góry i dołu,
+- poprawiona geometria górnego paska względem lewego menu,
+- napis „DELTA 2018 GM” w topbarze nie chowa się już pod sidebar.
+
+
+## V8.4 — Live countdowns
+- dynamiczne odliczanie do najbliższego meczu,
+- dynamiczne odliczanie do najbliższego treningu,
+- treningi domyślnie: środa i piątek, 17:00–18:30,
+- podczas treningu status zmienia się na „Trening trwa” i pokazuje godzinę zakończenia,
+- licznik odświeża się automatycznie co 30 sekund,
+- później można zastąpić stały harmonogram szczegółowym kalendarzem treningów.

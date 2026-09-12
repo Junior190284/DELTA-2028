@@ -55,6 +55,12 @@ export default function TeamHub(props:{
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [accountOpen,setAccountOpen]=useState(false);
+  const [now,setNow]=useState(()=>new Date());
+
+  useEffect(()=>{
+    const tick=window.setInterval(()=>setNow(new Date()),30000);
+    return ()=>window.clearInterval(tick);
+  },[]);
   const staff=props.profile.role==="admin"||props.profile.role==="coach";
 
   useEffect(()=>{
@@ -91,6 +97,14 @@ export default function TeamHub(props:{
   },[matches,events]);
 
   const nextMatch=matches.find(m=>m.status==="scheduled");
+  const nextMatchAt=nextMatch?parseLocalMatchDate(nextMatch.match_date,nextMatch.match_time):null;
+  const nextMatchCountdown=nextMatchAt?formatCountdown(nextMatchAt.getTime()-now.getTime()):"—";
+  const nextTraining=getNextTraining(now);
+  const trainingCountdown=nextTraining.isLive
+    ? `Trening trwa • do ${nextTraining.end.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})}`
+    : formatCountdown(nextTraining.start.getTime()-now.getTime());
+  const nextTrainingLabel=nextTraining.start.toLocaleDateString("pl-PL",{weekday:"long",day:"2-digit",month:"2-digit"})+
+    " • "+nextTraining.start.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})+"–18:30";
   const nextLineup=nextMatch?lineup.filter(l=>l.match_id===nextMatch.id&&l.is_starter).slice(0,6):[];
   const nextPresent=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&(a.status==="present"||a.status==="yes")).length:0;
   const nextResponses=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&["yes","no","maybe"].includes(a.status)):[];
@@ -179,6 +193,20 @@ export default function TeamHub(props:{
                 <small>GOŚĆ</small>
               </div>
             </div>
+
+            <div className="v84-countdown-row">
+              <div className="v84-countdown v84-match-countdown">
+                <span>DO MECZU</span>
+                <b>{nextMatchCountdown}</b>
+                <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"godzina do ustalenia"}</small>
+              </div>
+              <div className={`v84-countdown v84-training-countdown ${nextTraining.isLive?"live":""}`}>
+                <span>{nextTraining.isLive?"TRENING TERAZ":"DO TRENINGU"}</span>
+                <b>{trainingCountdown}</b>
+                <small>{nextTrainingLabel}</small>
+              </div>
+            </div>
+
             <button className="v8-red-cta" onClick={()=>setSelectedMatch(nextMatch)}>CENTRUM MECZU <ChevronRight size={17}/></button>
           </article>
 
