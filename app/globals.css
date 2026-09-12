@@ -1101,3 +1101,189 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v87-player-card{min-height:430px}
   .v87-player-photo{height:255px}
 }
+
+
+/* V8.7.1 — desktop layout repair + goal bar containment + richer team page */
+
+/* Critical desktop geometry repair.
+   V8.7's shared z-index selector accidentally changed fixed elements to position:relative. */
+.v8-side-nav{
+  position:fixed!important;
+  left:0!important;top:0!important;bottom:0!important;
+  z-index:80!important;
+}
+.v8-topbar{
+  position:fixed!important;
+  top:0!important;
+  left:94px!important;right:0!important;
+  z-index:70!important;
+}
+.v8-main{
+  position:relative!important;
+  z-index:3!important;
+  margin-left:94px!important;
+  padding-top:62px!important;
+}
+.v8-bottom-nav{z-index:75!important}
+
+/* Do not allow the animated shine from Team Goal to bleed into neighbouring cards. */
+.v87-goal-track{
+  overflow:hidden!important;
+  position:relative;
+}
+.v87-goal-track i{
+  overflow:hidden!important;
+}
+.v87-goal-track em{
+  top:1px!important;
+  right:5px!important;
+  color:#fff!important;
+  text-shadow:0 1px 5px rgba(0,0,0,.75);
+  z-index:3;
+}
+.v87-goal-track i:after{
+  clip-path:inset(0);
+}
+
+/* Team page */
+.v871-team-page{margin-top:0!important}
+.v871-team-hero{
+  position:relative;
+  min-height:290px;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:270px minmax(0,1fr);
+  align-items:center;
+  padding:25px 34px;
+  background:
+    linear-gradient(90deg,rgba(6,9,13,.94) 0%,rgba(8,10,15,.72) 38%,rgba(27,5,10,.58) 100%),
+    url('/assets/hero-banner-wide.png') center/cover no-repeat;
+}
+.v871-team-hero:before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 76% 30%,rgba(232,26,42,.25),transparent 36%),
+    linear-gradient(115deg,transparent 55%,rgba(255,34,49,.08));
+  animation:v871TeamGlow 5.2s ease-in-out infinite;
+}
+.v871-team-hero-overlay{
+  position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(246,201,82,.12),inset 0 -80px 80px rgba(0,0,0,.18)
+}
+@keyframes v871TeamGlow{0%,100%{opacity:.45}50%{opacity:1}}
+.v871-team-crest{
+  position:relative;z-index:2;
+  display:grid;place-items:center
+}
+.v871-team-crest img{
+  width:205px;height:205px;object-fit:contain;
+  filter:drop-shadow(0 18px 28px rgba(0,0,0,.42)) drop-shadow(0 0 22px rgba(221,26,41,.12))
+}
+.v871-team-copy{position:relative;z-index:2}
+.v871-team-copy h2{
+  margin:9px 0 7px;
+  font-size:clamp(42px,5vw,78px);
+  line-height:.9;letter-spacing:-.04em
+}
+.v871-team-copy h2 span{color:var(--v8-gold)}
+.v871-team-copy p{
+  margin:0;color:#d1d7dd;font-size:12px;letter-spacing:.07em
+}
+.v871-team-pills{
+  display:flex;gap:7px;flex-wrap:wrap;margin-top:22px
+}
+.v871-team-pills span{
+  display:flex;align-items:center;gap:6px;
+  min-height:34px;padding:7px 10px;
+  border:1px solid rgba(246,201,82,.15);
+  background:rgba(4,7,10,.65);
+  color:#cdd4db;font-size:8px;font-weight:900
+}
+.v871-team-pills svg{color:var(--v8-gold)}
+
+.v871-team-dashboard{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr .9fr;
+  gap:10px;margin:12px 0 18px
+}
+.v871-team-leader,.v871-team-form{
+  padding:12px;
+  min-height:145px
+}
+.v871-team-leader>button{
+  width:100%;border:0;background:transparent;color:#fff;
+  display:grid;grid-template-columns:64px 1fr auto;
+  align-items:center;gap:10px;text-align:left;cursor:pointer;padding:10px 0 0
+}
+.v871-team-leader-photo{
+  width:64px;height:72px;overflow:hidden;
+  border:1px solid rgba(246,201,82,.17);
+  background:#0b1017
+}
+.v871-team-leader-photo img,.v871-team-leader-photo>div{width:100%;height:100%;object-fit:cover}
+.v871-team-leader button span{display:block;color:#9d8540;font-size:8px;font-weight:1000}
+.v871-team-leader button b{display:block;font-size:12px;margin:3px 0}
+.v871-team-leader button small{display:block;color:#7f8b96;font-size:8px}
+.v871-team-leader button>svg{color:#7c8791}
+.v871-team-form{
+  background:
+    radial-gradient(circle at 100% 0,rgba(235,28,44,.15),transparent 42%),
+    linear-gradient(180deg,#0b1017,#080b10)
+}
+.v871-team-form-dots{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0 9px}
+.v871-team-form-dots i{
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  font-style:normal;font-size:9px;font-weight:1000
+}
+.v871-team-form-dots>span{color:#7e8995;font-size:9px}
+.v871-team-form>small{color:#b79d49;font-size:8px;font-weight:900}
+
+.v871-roster-title{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin:20px 0 12px;padding-bottom:9px;
+  border-bottom:1px solid rgba(246,201,82,.12)
+}
+.v871-roster-title h2{margin:4px 0 0;font-size:28px}
+.v871-roster-title>span{font-size:8px;color:#7d8994}
+
+/* Keep smoke decorative, never structural. */
+.v8-hub:before,.v8-hub:after{
+  pointer-events:none!important;
+}
+.v8-main:before{
+  pointer-events:none!important;
+}
+
+/* Desktop content should begin immediately below the top bar. */
+@media(min-width:901px){
+  .v8-main{
+    min-height:100vh;
+    padding-top:66px!important;
+  }
+}
+@media(max-width:1250px){
+  .v871-team-dashboard{grid-template-columns:1fr 1fr}
+}
+@media(max-width:900px){
+  .v8-topbar{left:0!important}
+  .v8-main{margin-left:0!important;padding-top:56px!important}
+  .v871-team-hero{
+    grid-template-columns:160px 1fr;
+    min-height:230px;padding:20px
+  }
+  .v871-team-crest img{width:145px;height:145px}
+  .v871-team-dashboard{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .v871-team-hero{
+    grid-template-columns:1fr;
+    min-height:335px;
+    text-align:center;
+    padding:18px 14px
+  }
+  .v871-team-crest img{width:135px;height:135px}
+  .v871-team-copy h2{font-size:42px}
+  .v871-team-pills{justify-content:center}
+  .v871-team-dashboard{grid-template-columns:1fr}
+  .v871-roster-title{align-items:flex-start}
+}

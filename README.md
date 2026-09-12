@@ -210,3 +210,13 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - całkowicie przebudowane premium karty zawodników,
 - karty pokazują G+A, gole, asysty, mecze, kapitana, MVP i liczbę odblokowanych osiągnięć,
 - mocniejsze czerwono-złote efekty, dym na kartach i hover 3D.
+
+
+## V8.7.1 — Layout + Team Page Fix
+- naprawiono rozjechaną górną część aplikacji na desktopie,
+- sidebar i topbar ponownie są poprawnie pozycjonowane jako fixed,
+- usunięto możliwość wychodzenia animowanego paska celu poza własny kafel,
+- rozbudowano zakładkę Drużyna o cinematic hero,
+- dodano skrót statystyk całej kadry,
+- dodano kafle lidera kapitańskiego, najlepszego strzelca, lidera asyst i formy,
+- zachowano premium karty zawodników poniżej.

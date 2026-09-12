@@ -421,8 +421,66 @@ export default function TeamHub(props:{
 
       {tab==="matches"&&<section className="section v8-section-page"><div className="section-title"><h2>Mecze</h2></div><div className="list">{matches.map(m=><article className="match-row devil-card" key={m.id}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">{datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>setSelectedMatch(m)}>{staff?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>)}</div></section>}
 
-      {tab==="players"&&<section className="section v8-section-page v87-players-page">
-        <div className="section-title"><div><span className="eyebrow gold">DELTA 2018 GM</span><h2>Drużyna</h2></div><span>{players.length} zawodników</span></div>
+      {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
+        <div className="v871-team-hero devil-card">
+          <div className="v871-team-hero-overlay"/>
+          <div className="v871-team-crest"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/></div>
+          <div className="v871-team-copy">
+            <span className="eyebrow gold">GÓRNY MOKOTÓW • TEAM HUB</span>
+            <h2>DELTA <span>2018</span> GM</h2>
+            <p>Diabełki z Mokotowa • jedna drużyna, wspólna historia.</p>
+            <div className="v871-team-pills">
+              <span><Users size={14}/>{players.length} zawodników</span>
+              <span><Goal size={14}/>{teamSummary.goals} bramek</span>
+              <span><Star size={14}/>{teamSummary.assists} asyst</span>
+              <span><Trophy size={14}/>{teamSummary.wins} zwycięstw</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="v871-team-dashboard">
+          <article className="v871-team-leader devil-card">
+            <div className="v8-panel-title"><Crown size={18}/> LIDER KAPITAŃSKI</div>
+            {captainLeader?<button onClick={()=>setSelectedPlayer(captainLeader)}>
+              <div className="v871-team-leader-photo"><PlayerPhoto playerId={captainLeader.id}/></div>
+              <div><span>#{captainLeader.shirt_number||"—"}</span><b>{captainLeader.display_name}</b><small>{stats[captainLeader.id]?.captain||0} × kapitan</small></div>
+              <ChevronRight size={16}/>
+            </button>:<p className="muted">Brak danych.</p>}
+          </article>
+
+          <article className="v871-team-leader devil-card">
+            <div className="v8-panel-title"><Goal size={18}/> NAJLEPSZY STRZELEC</div>
+            {topScorer&&stats[topScorer.id]?.g>0?<button onClick={()=>setSelectedPlayer(topScorer)}>
+              <div className="v871-team-leader-photo"><PlayerPhoto playerId={topScorer.id}/></div>
+              <div><span>#{topScorer.shirt_number||"—"}</span><b>{topScorer.display_name}</b><small>{stats[topScorer.id]?.g||0} goli</small></div>
+              <ChevronRight size={16}/>
+            </button>:<p className="muted">Pierwszy lider strzelców jeszcze przed nami.</p>}
+          </article>
+
+          <article className="v871-team-leader devil-card">
+            <div className="v8-panel-title"><Star size={18}/> LIDER ASYST</div>
+            {topAssister&&stats[topAssister.id]?.a>0?<button onClick={()=>setSelectedPlayer(topAssister)}>
+              <div className="v871-team-leader-photo"><PlayerPhoto playerId={topAssister.id}/></div>
+              <div><span>#{topAssister.shirt_number||"—"}</span><b>{topAssister.display_name}</b><small>{stats[topAssister.id]?.a||0} asyst</small></div>
+              <ChevronRight size={16}/>
+            </button>:<p className="muted">Pierwsza asysta uruchomi ranking.</p>}
+          </article>
+
+          <article className="v871-team-form devil-card">
+            <div className="v8-panel-title"><TrendingUp size={18}/> FORMA DRUŻYNY</div>
+            <div className="v871-team-form-dots">
+              {recentMatches.map(m=><i key={m.id} className={`form-${recentResult(m).toLowerCase()}`}>{recentResult(m)}</i>)}
+              {recentMatches.length===0&&<span>Brak rozegranych meczów</span>}
+            </div>
+            <small>{currentWinStreak>0?`${currentWinStreak} zwycięstw z rzędu`:currentUnbeatenStreak>0?`${currentUnbeatenStreak} mecz(e) bez porażki`:"Nowa seria czeka"}</small>
+          </article>
+        </div>
+
+        <div className="v871-roster-title">
+          <div><span className="eyebrow gold">KADRA</span><h2>Zawodnicy</h2></div>
+          <span>{players.length} kart zawodników</span>
+        </div>
+
         <div className="v87-player-grid">{players.map(p=>{
           const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
           const achievements=unlockedCount(p);
