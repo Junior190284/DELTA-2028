@@ -10,7 +10,7 @@ Funkcje:
 - dodawanie meczu
 - wynik/status/godzina/miejsce
 - obecność
-- pierwsza piątka (maks. 5)
+- wyjściowa 6 (maks. 5)
 - kapitan
 - gole + asysty
 - MVP

@@ -170,3 +170,12 @@
   .match-actions-row{justify-content:stretch}
   .open-match-btn{width:100%}
 }
+
+.mc-saved{
+  position:sticky;top:8px;z-index:20;
+  width:max-content;max-width:90%;
+  margin:8px 0 12px;padding:8px 12px;
+  background:#173920;border:1px solid rgba(122,237,151,.28);
+  color:#bff3cb;font-size:12px;font-weight:900;
+  letter-spacing:.04em;box-shadow:0 8px 24px rgba(0,0,0,.28)
+}

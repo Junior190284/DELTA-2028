@@ -16,6 +16,12 @@ export default function LoginPage() {
     if (error) {
       setMsg(message ? `Błąd logowania: ${message}` : `Błąd logowania: ${error}`);
     }
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        window.location.replace("/dashboard");
+      }
+    });
   }, []);
 
   async function signIn() {

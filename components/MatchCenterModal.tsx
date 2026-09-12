@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Crown, Goal, Star, Check, X, Save, Users, Trophy } from "lucide-react";
 
@@ -21,8 +22,16 @@ export default function MatchCenterModal(props:{
   onDataChange:(data:{match?:Match;attendance?:Attendance[];lineup?:Lineup[];events?:Event[]})=>void;
 }) {
   const supabase=createClient();
+  const router=useRouter();
   const {match,players}=props;
   const [saving,setSaving]=useState(false);
+  const [saved,setSaved]=useState("");
+
+  function confirmSaved(message="Zapisano") {
+    setSaved(message);
+    window.setTimeout(()=>setSaved(""),1800);
+    router.refresh();
+  }
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -30,11 +39,12 @@ export default function MatchCenterModal(props:{
 
   async function saveMatchBasics(){
     setSaving(true);
-    const status=(document.getElementById("mc-status") as HTMLSelectElement).value;
+    let status=(document.getElementById("mc-status") as HTMLSelectElement).value;
     const hs=(document.getElementById("mc-hs") as HTMLInputElement).value;
     const as=(document.getElementById("mc-as") as HTMLInputElement).value;
     const venue=(document.getElementById("mc-venue") as HTMLInputElement).value;
     const time=(document.getElementById("mc-time") as HTMLInputElement).value;
+    if (status !== "cancelled" && hs !== "" && as !== "") status = "played";
     const next={...match,status,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null};
     const {error}=await supabase.from("matches").update({
       status:next.status,home_score:next.home_score,away_score:next.away_score,venue:next.venue,match_time:next.match_time
@@ -42,6 +52,7 @@ export default function MatchCenterModal(props:{
     setSaving(false);
     if(error) return alert(error.message);
     props.onDataChange({match:next});
+    confirmSaved("Mecz zapisany");
   }
 
   async function setAttendance(playerId:string,status:string){
@@ -52,6 +63,7 @@ export default function MatchCenterModal(props:{
       ...props.attendance.filter(a=>!(a.match_id===match.id&&a.player_id===playerId)),
       {match_id:match.id,player_id:playerId,status}
     ]});
+    confirmSaved("Obecność zapisana");
   }
 
   async function toggleStarter(playerId:string){
@@ -65,6 +77,7 @@ export default function MatchCenterModal(props:{
       ...props.lineup.filter(l=>!(l.match_id===match.id&&l.player_id===playerId)),
       row
     ]});
+    confirmSaved("Wyjściowa 6 zapisana");
     if(row.is_starter) await setAttendance(playerId,"present");
   }
 
@@ -81,6 +94,7 @@ export default function MatchCenterModal(props:{
       .map(l=>l.match_id===match.id?{...l,is_captain:false}:l)
       .filter(l=>!(l.match_id===match.id&&l.player_id===playerId));
     props.onDataChange({lineup:[...next,row]});
+    confirmSaved("Kapitan zapisany");
     await setAttendance(playerId,"present");
   }
 
@@ -93,6 +107,7 @@ export default function MatchCenterModal(props:{
     }).select("*").single();
     if(error)return alert(error.message);
     props.onDataChange({events:[...props.events,data]});
+    confirmSaved("Gol zapisany");
   }
 
   async function setMvp(){
@@ -108,18 +123,21 @@ export default function MatchCenterModal(props:{
       ...props.events.filter(e=>!(e.match_id===match.id&&e.event_type==="mvp")),
       data
     ]});
+    confirmSaved("MVP zapisany");
   }
 
   async function deleteEvent(id:string){
     const {error}=await supabase.from("match_events").delete().eq("id",id);
     if(error)return alert(error.message);
     props.onDataChange({events:props.events.filter(e=>e.id!==id)});
+    confirmSaved("Zdarzenie usunięte");
   }
 
   return <div className="match-center-overlay" onClick={props.onClose}>
     <div className="match-center-sheet" onClick={e=>e.stopPropagation()}>
       <button className="close" onClick={props.onClose}>×</button>
       <div className="mc-kicker">CENTRUM MECZU</div>
+      {saved && <div className="mc-saved">✓ {saved}</div>}
       <h2>{match.home_team} <span>vs</span> {match.away_team}</h2>
 
       <div className="mc-basics">

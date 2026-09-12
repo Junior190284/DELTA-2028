@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchCenterModal from "./MatchCenterModal";
@@ -54,6 +54,22 @@ export default function TeamHub(props:{
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const staff=props.profile.role==="admin"||props.profile.role==="coach";
+
+  useEffect(() => {
+    setPlayers(props.initialPlayers);
+    setMatches(props.initialMatches);
+    setAttendance(props.initialAttendance);
+    setLineup(props.initialLineup);
+    setEvents(props.initialEvents);
+    setNews(props.initialNews);
+  }, [
+    props.initialPlayers,
+    props.initialMatches,
+    props.initialAttendance,
+    props.initialLineup,
+    props.initialEvents,
+    props.initialNews
+  ]);
 
   const stats=useMemo(()=>{
     const map:Record<string,{m:number;starts:number;captain:number;g:number;a:number;mvp:number}>={};
@@ -351,7 +367,10 @@ export default function TeamHub(props:{
       currentUserId={props.profile.id}
       onClose={()=>setSelectedMatch(null)}
       onDataChange={(d)=>{
-        if(d.match) setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));
+        if(d.match) {
+          setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));
+          setSelectedMatch(d.match);
+        }
         if(d.attendance) setAttendance(d.attendance);
         if(d.lineup) setLineup(d.lineup);
         if(d.events) setEvents(d.events);

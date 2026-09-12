@@ -9,7 +9,7 @@ Ten pakiet przenosi projekt z lokalnego HTML do prawdziwej aplikacji online.
 - role: admin / coach / parent
 - RLS dla danych dzieci
 - prywatny bucket `player-photos`
-- zawodnicy, mecze, obecność, pierwsza piątka, kapitan, gole, asysty, MVP
+- zawodnicy, mecze, obecność, wyjściowa 6, kapitan, gole, asysty, MVP
 - aktualności
 - push subscriptions
 - API do wysyłania Web Push przez VAPID
@@ -55,7 +55,7 @@ Pobiera z Supabase:
 - zawodników,
 - mecze,
 - obecności,
-- pierwszą piątkę i kapitana,
+- wyjściową 6 i kapitana,
 - gole, asysty i MVP,
 - aktualności,
 - przypisanie rodzica do dziecka.
@@ -103,10 +103,26 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - grafika premium zawodnika jako fallback, dopóki nie ma prawdziwego zdjęcia,
 - osiągnięcia mają graficzną planszę,
 - admin po kliknięciu meczu dostaje pełne Centrum Meczu:
-  obecność, pierwsza piątka, kapitan, wynik, gole, asysty, MVP.
+  obecność, wyjściowa 6, kapitan, wynik, gole, asysty, MVP.
 
 
 ## V7.2 — widoczne Centrum Meczu
 - duży przycisk Centrum Meczu na ekranie głównym,
-- szybki panel admina z opisem: obecność / pierwsza piątka / kapitan / gole / asysty / MVP / wynik,
+- szybki panel admina z opisem: obecność / wyjściowa 6 / kapitan / gole / asysty / MVP / wynik,
 - jawny przycisk Edytuj mecz na każdej karcie meczu.
+
+
+## V7.3 — Wyjściowa 6
+- starterzy: 6 zawodników,
+- skład wyjściowy = bramkarz + 5 zawodników z pola,
+- limit w Centrum Meczu zwiększony z 5 do 6,
+- nazwy i statystyki zmienione na „Wyjściowa 6”.
+
+
+## V7.4 — Persistence & session UX
+- zalogowany użytkownik otwierający `/` trafia od razu do `/dashboard`,
+- `/login` automatycznie omija logowanie, jeśli sesja nadal istnieje,
+- po zapisie danych meczu pojawia się komunikat „Zapisano”,
+- po każdej zmianie wykonywany jest refresh danych z Supabase,
+- wpisanie obu wyników automatycznie zmienia status meczu na `played`,
+- po zmianie wyniku statystyki, kronika i profile aktualizują się po odświeżeniu danych.
