@@ -1515,3 +1515,300 @@ button.v85-summary-card{color:inherit;cursor:pointer}
     font-size:19px!important;
   }
 }
+
+
+/* V8.7.3 — premium player photo frames / fire / flares */
+
+/* Shared wow-photo system */
+.player-photo-fallback,
+.v87-player-photo,
+.premium-photo,
+.v871-team-leader-photo,
+.v8-captain-photo{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+
+.player-photo-fallback::before,
+.v87-player-photo::before,
+.premium-photo::before,
+.v871-team-leader-photo::before,
+.v8-captain-photo::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 12% 16%, rgba(255,222,130,.16), transparent 16%),
+    radial-gradient(circle at 88% 14%, rgba(255,74,74,.17), transparent 18%),
+    radial-gradient(circle at 50% 118%, rgba(255,36,54,.40), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.02), transparent 28%, transparent 60%, rgba(0,0,0,.22) 100%);
+  mix-blend-mode:screen;
+}
+
+.player-photo-fallback::after,
+.v87-player-photo::after,
+.premium-photo::after,
+.v871-team-leader-photo::after,
+.v8-captain-photo::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0 0;
+  height:46%;
+  z-index:3;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 10% 100%, rgba(255,61,61,.26), transparent 42%),
+    radial-gradient(ellipse at 32% 100%, rgba(255,133,68,.22), transparent 32%),
+    radial-gradient(ellipse at 56% 100%, rgba(255,46,68,.23), transparent 38%),
+    radial-gradient(ellipse at 76% 100%, rgba(255,156,54,.16), transparent 30%),
+    radial-gradient(ellipse at 92% 100%, rgba(255,52,71,.20), transparent 34%),
+    linear-gradient(180deg, transparent 0%, rgba(14,8,10,.08) 25%, rgba(10,6,8,.52) 65%, rgba(7,9,12,.95) 100%);
+}
+
+.player-photo-fallback > *,
+.v87-player-photo > *,
+.premium-photo > *,
+.v871-team-leader-photo > *,
+.v8-captain-photo > *{
+  position:relative;
+  z-index:2;
+}
+
+/* Decorative frame */
+.v87-player-photo,
+.premium-photo,
+.v871-team-leader-photo,
+.v8-captain-photo,
+.player-photo-fallback{
+  border:1px solid rgba(246,201,82,.22)!important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.03),
+    inset 0 0 32px rgba(232,26,43,.08),
+    0 16px 40px rgba(0,0,0,.34),
+    0 0 22px rgba(237,31,48,.10)!important;
+}
+
+/* Corner accents */
+.v87-player-photo .v873-corner,
+.premium-photo .v873-corner,
+.v871-team-leader-photo .v873-corner,
+.v8-captain-photo .v873-corner{
+  position:absolute;
+  width:26px;
+  height:26px;
+  z-index:4;
+  pointer-events:none;
+  border-color:rgba(246,201,82,.65);
+  filter:drop-shadow(0 0 6px rgba(246,201,82,.16));
+}
+.v87-player-photo .v873-corner.tl,
+.premium-photo .v873-corner.tl,
+.v871-team-leader-photo .v873-corner.tl,
+.v8-captain-photo .v873-corner.tl{
+  top:8px; left:8px;
+  border-top:2px solid;
+  border-left:2px solid;
+}
+.v87-player-photo .v873-corner.tr,
+.premium-photo .v873-corner.tr,
+.v871-team-leader-photo .v873-corner.tr,
+.v8-captain-photo .v873-corner.tr{
+  top:8px; right:8px;
+  border-top:2px solid;
+  border-right:2px solid;
+}
+.v87-player-photo .v873-corner.bl,
+.premium-photo .v873-corner.bl,
+.v871-team-leader-photo .v873-corner.bl,
+.v8-captain-photo .v873-corner.bl{
+  bottom:8px; left:8px;
+  border-bottom:2px solid;
+  border-left:2px solid;
+}
+.v87-player-photo .v873-corner.br,
+.premium-photo .v873-corner.br,
+.v871-team-leader-photo .v873-corner.br,
+.v8-captain-photo .v873-corner.br{
+  bottom:8px; right:8px;
+  border-bottom:2px solid;
+  border-right:2px solid;
+}
+
+/* Flame strips using pseudo-like overlays attached through box-shadow layers */
+.v87-player-photo{
+  background:
+    radial-gradient(circle at 50% 58%,rgba(237,31,48,.25),transparent 37%),
+    radial-gradient(circle at 50% 108%,rgba(255,73,73,.24),transparent 28%),
+    linear-gradient(180deg,#111822,#070a0e)!important;
+}
+.v87-player-photo::selection{background:transparent}
+
+.premium-photo{
+  background:
+    radial-gradient(circle at 50% 60%, rgba(237,31,48,.20), transparent 35%),
+    linear-gradient(180deg,#111822,#070a0e)!important;
+}
+
+.v871-team-leader-photo,
+.v8-captain-photo{
+  background:
+    radial-gradient(circle at 50% 70%, rgba(237,31,48,.15), transparent 36%),
+    linear-gradient(180deg,#10161f,#080b10)!important;
+}
+
+/* Animated flare beams */
+.v87-player-photo .v873-flares,
+.premium-photo .v873-flares,
+.v871-team-leader-photo .v873-flares,
+.v8-captain-photo .v873-flares,
+.player-photo-fallback .v873-flares{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(122deg, transparent 0 34%, rgba(255,219,130,.10) 38%, transparent 43%),
+    linear-gradient(58deg, transparent 0 62%, rgba(255,38,52,.12) 67%, transparent 74%);
+  opacity:.85;
+  animation:v873Flares 6s ease-in-out infinite alternate;
+}
+@keyframes v873Flares{
+  from{transform:translateX(-3%) translateY(0) scale(1);opacity:.62}
+  to{transform:translateX(3%) translateY(-1%) scale(1.03);opacity:.92}
+}
+
+/* Fire embers */
+.v87-player-photo .v873-embers,
+.premium-photo .v873-embers,
+.v871-team-leader-photo .v873-embers,
+.v8-captain-photo .v873-embers,
+.player-photo-fallback .v873-embers{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  background-image:
+    radial-gradient(circle, rgba(255,211,116,.95) 0 1.2px, transparent 1.3px),
+    radial-gradient(circle, rgba(255,91,70,.9) 0 1.1px, transparent 1.2px),
+    radial-gradient(circle, rgba(255,161,92,.75) 0 1px, transparent 1.1px);
+  background-size: 120px 120px, 160px 160px, 190px 190px;
+  background-position: 18px 90%, 60px 84%, 90px 94%;
+  opacity:.55;
+  animation:v873Embers 7s linear infinite;
+}
+@keyframes v873Embers{
+  from{transform:translateY(0)}
+  to{transform:translateY(-10px)}
+}
+
+/* Better image treatment once real player photos are uploaded */
+.v87-player-photo-img,
+.premium-photo-img,
+.v871-team-leader-photo img,
+.v8-captain-photo img,
+.v871-team-leader-photo > div,
+.v8-captain-photo > div{
+  filter:
+    saturate(1.05)
+    contrast(1.03)
+    drop-shadow(0 12px 18px rgba(0,0,0,.24));
+}
+
+/* Add a branded plate at the bottom */
+.v87-player-photo .v873-plate,
+.premium-photo .v873-plate,
+.v871-team-leader-photo .v873-plate,
+.v8-captain-photo .v873-plate,
+.player-photo-fallback .v873-plate{
+  position:absolute;
+  left:50%;
+  bottom:10px;
+  transform:translateX(-50%);
+  z-index:4;
+  padding:4px 10px;
+  border:1px solid rgba(246,201,82,.20);
+  background:linear-gradient(180deg, rgba(16,19,25,.82), rgba(8,10,14,.92));
+  color:#f0c550;
+  font-size:8px;
+  font-weight:1000;
+  letter-spacing:.18em;
+  white-space:nowrap;
+  box-shadow:0 8px 18px rgba(0,0,0,.3);
+}
+
+.v87-player-photo .v873-plate::before,
+.premium-photo .v873-plate::before,
+.v871-team-leader-photo .v873-plate::before,
+.v8-captain-photo .v873-plate::before,
+.player-photo-fallback .v873-plate::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  mix-blend-mode:screen;
+}
+
+/* Placeholder gets a stronger visual if photo does not exist yet */
+.player-photo-fallback{
+  background-size:cover!important;
+  background-position:center 18%!important;
+}
+.player-photo-fallback .photo-loading{
+  position:absolute;
+  top:10px;
+  right:12px;
+  font-size:16px!important;
+}
+
+/* Leader/captain mini cards keep the wow effect but stay compact */
+.v871-team-leader-photo .v873-plate,
+.v8-captain-photo .v873-plate{
+  font-size:7px;
+  bottom:6px;
+  padding:3px 8px;
+}
+
+/* Premium modal large photo even more cinematic */
+.premium-photo{
+  min-height:520px!important;
+}
+.premium-photo::after{
+  height:52%!important;
+}
+
+/* Mobile balance */
+@media(max-width:900px){
+  .premium-photo{
+    min-height:390px!important;
+  }
+  .v87-player-photo .v873-plate,
+  .player-photo-fallback .v873-plate{
+    font-size:7px!important;
+    bottom:8px!important;
+    padding:3px 8px!important;
+  }
+}
+
+/* Auto decorations even without JSX additions by using layered shadows in current markup */
+.v87-player-photo,
+.premium-photo,
+.v871-team-leader-photo,
+.v8-captain-photo,
+.player-photo-fallback{
+  outline:1px solid rgba(255,43,61,.06);
+  outline-offset:-4px;
+}
+
+/* Stronger glow on hover for player cards */
+.v87-player-card:hover .v87-player-photo{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.04),
+    inset 0 0 42px rgba(232,26,43,.12),
+    0 18px 42px rgba(0,0,0,.38),
+    0 0 28px rgba(237,31,48,.15)!important;
+  transform:translateY(-2px);
+  transition:box-shadow .25s ease, transform .25s ease;
+}

@@ -318,7 +318,7 @@ export default function TeamHub(props:{
         <section className="v8-dashboard-grid">
           <article className="v8-panel v8-captain devil-card">
             <div className="v8-panel-title"><Crown size={18}/> KAPITAN DRUŻYNY</div>
-            {captainLeader?<div className="v8-captain-body"><div className="v8-captain-photo"><PlayerPhoto playerId={captainLeader.id}/></div><div><span>#{captainLeader.shirt_number||"—"}</span><h3>{captainLeader.display_name}</h3><p>{stats[captainLeader.id]?.captain||0} × kapitan</p><button onClick={()=>setSelectedPlayer(captainLeader)}>PROFIL ZAWODNIKA <ChevronRight size={15}/></button></div></div>:<p className="muted">Brak danych kapitana.</p>}
+            {captainLeader?<div className="v8-captain-body"><div className="v8-captain-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">DELTA DEVILS</span><PlayerPhoto playerId={captainLeader.id}/></div><div><span>#{captainLeader.shirt_number||"—"}</span><h3>{captainLeader.display_name}</h3><p>{stats[captainLeader.id]?.captain||0} × kapitan</p><button onClick={()=>setSelectedPlayer(captainLeader)}>PROFIL ZAWODNIKA <ChevronRight size={15}/></button></div></div>:<p className="muted">Brak danych kapitana.</p>}
           </article>
 
           <article className="v8-panel v86-recent-matches devil-card">
@@ -442,7 +442,7 @@ export default function TeamHub(props:{
           <article className="v871-team-leader devil-card">
             <div className="v8-panel-title"><Crown size={18}/> LIDER KAPITAŃSKI</div>
             {captainLeader?<button onClick={()=>setSelectedPlayer(captainLeader)}>
-              <div className="v871-team-leader-photo"><PlayerPhoto playerId={captainLeader.id}/></div>
+              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">CAPTAIN</span><PlayerPhoto playerId={captainLeader.id}/></div>
               <div><span>#{captainLeader.shirt_number||"—"}</span><b>{captainLeader.display_name}</b><small>{stats[captainLeader.id]?.captain||0} × kapitan</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Brak danych.</p>}
@@ -451,7 +451,7 @@ export default function TeamHub(props:{
           <article className="v871-team-leader devil-card">
             <div className="v8-panel-title"><Goal size={18}/> NAJLEPSZY STRZELEC</div>
             {topScorer&&stats[topScorer.id]?.g>0?<button onClick={()=>setSelectedPlayer(topScorer)}>
-              <div className="v871-team-leader-photo"><PlayerPhoto playerId={topScorer.id}/></div>
+              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP SCORER</span><PlayerPhoto playerId={topScorer.id}/></div>
               <div><span>#{topScorer.shirt_number||"—"}</span><b>{topScorer.display_name}</b><small>{stats[topScorer.id]?.g||0} goli</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Pierwszy lider strzelców jeszcze przed nami.</p>}
@@ -460,7 +460,7 @@ export default function TeamHub(props:{
           <article className="v871-team-leader devil-card">
             <div className="v8-panel-title"><Star size={18}/> LIDER ASYST</div>
             {topAssister&&stats[topAssister.id]?.a>0?<button onClick={()=>setSelectedPlayer(topAssister)}>
-              <div className="v871-team-leader-photo"><PlayerPhoto playerId={topAssister.id}/></div>
+              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP ASSIST</span><PlayerPhoto playerId={topAssister.id}/></div>
               <div><span>#{topAssister.shirt_number||"—"}</span><b>{topAssister.display_name}</b><small>{stats[topAssister.id]?.a||0} asyst</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Pierwsza asysta uruchomi ranking.</p>}
@@ -522,7 +522,7 @@ export default function TeamHub(props:{
 
     <nav className="bottom-nav v8-bottom-nav">{navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={18}/><span>{label}</span></button>)}</nav>
 
-    {selectedPlayer&&<div className="modal-backdrop" onClick={()=>setSelectedPlayer(null)}><div className="modal-sheet devil-card" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedPlayer(null)}>×</button><div className="premium-profile"><div className="premium-photo"><PlayerPhoto playerId={selectedPlayer.id} className="premium-photo-img"/></div><div className="premium-info"><span className="eyebrow gold">PREMIUM PLAYER PROFILE</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"} {selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:""}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div></div><h3>Osiągnięcia zawodnika</h3><div className="achievement-grid">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={name as string} className={`achievement ${ok?"unlocked":""}`}><Star size={20}/><h3>{name}</h3><p>{ok?"ZDOBYTE":progress}</p></div>)}</div></div></div>}
+    {selectedPlayer&&<div className="modal-backdrop" onClick={()=>setSelectedPlayer(null)}><div className="modal-sheet devil-card" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedPlayer(null)}>×</button><div className="premium-profile"><div className="premium-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">PLAYER PROFILE</span><PlayerPhoto playerId={selectedPlayer.id} className="premium-photo-img"/></div><div className="premium-info"><span className="eyebrow gold">PREMIUM PLAYER PROFILE</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"} {selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:""}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div></div><h3>Osiągnięcia zawodnika</h3><div className="achievement-grid">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={name as string} className={`achievement ${ok?"unlocked":""}`}><Star size={20}/><h3>{name}</h3><p>{ok?"ZDOBYTE":progress}</p></div>)}</div></div></div>}
 
     {selectedMatch&&<MatchCenterModal
       match={selectedMatch}

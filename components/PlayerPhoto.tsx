@@ -19,7 +19,7 @@ export default function PlayerPhoto({playerId,className}:{playerId:string,classN
       className={(className || "player-photo") + " player-photo-fallback"}
       style={{backgroundImage:"linear-gradient(180deg,rgba(5,7,10,.03),rgba(5,7,10,.22)),url('/assets/player-card.png')"}}
     >
-      {!loaded && <span className="photo-loading">…</span>}
+      <span className="v873-flares"/><span className="v873-embers"/><span className="v873-plate">MIEJSCE NA ZDJĘCIE</span>{!loaded && <span className="photo-loading">…</span>}
     </div>
   );
 }

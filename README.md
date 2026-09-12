@@ -229,3 +229,12 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - przebudowano mobilne menu dolne na floating premium dock,
 - aktywna zakładka ma czerwony glow, złoty akcent i większą ikonę,
 - zwiększono dolny margines treści, aby pasek mobilny niczego nie zasłaniał.
+
+
+## V8.7.3 — Premium Player Photo Fire
+- pola zdjęć zawodników zostały przerobione na wersję premium,
+- dodano czerwone płomienie i poświatę jak od rac,
+- dodano ozdobne narożniki i branded plate,
+- miniatury kapitana i liderów też dostały ten sam klimat,
+- profil zawodnika w modalu ma teraz bardziej kinową prezentację,
+- rozwiązanie nadal pozwala później normalnie wstawiać prawdziwe zdjęcia zawodników.
