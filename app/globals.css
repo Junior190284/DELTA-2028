@@ -2003,3 +2003,17 @@ button.v85-summary-card{color:inherit;cursor:pointer}
 .v877-club-home-list button span{font-size:7px;color:#9c843a;font-weight:900}.v877-club-home-list button b{font-size:9px;line-height:1.2}.v877-club-home-list button svg{color:#b99c46}
 .v877-club-all{margin-top:9px;border:0;background:transparent;color:var(--v8-gold);font-size:7px;font-weight:1000;display:flex;align-items:center;gap:4px;cursor:pointer}
 .v877-club-home-empty{min-height:115px;display:flex;align-items:center;justify-content:center;gap:10px;color:#7f8b96}.v877-club-home-empty svg{color:#9c843a}.v877-club-home-empty b,.v877-club-home-empty span{display:block}.v877-club-home-empty b{color:#fff;font-size:10px}.v877-club-home-empty span{font-size:8px;margin-top:3px}
+
+
+/* V8.7.8 — clean club feed */
+.v878-direct-badge{
+  display:inline-flex;
+  margin-top:10px;
+  padding:5px 8px;
+  border:1px solid rgba(229,31,47,.45);
+  background:rgba(229,31,47,.10);
+  color:#ff4957;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.10em;
+}

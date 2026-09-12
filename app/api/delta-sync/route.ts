@@ -8,9 +8,18 @@ export const runtime = "nodejs";
 
 const DELTA_URL = "https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108";
 
+type ClubItem = {
+  source_key:string;
+  title:string;
+  body:string;
+  published_at:string;
+  priority:number;
+  source_url:string;
+};
+
 function decodeEntities(input:string){
   return input
-    .replace(/&nbsp;/gi," ")
+    .replace(/&nbsp;|&#160;/gi," ")
     .replace(/&amp;/gi,"&")
     .replace(/&quot;/gi,'"')
     .replace(/&#039;|&apos;/gi,"'")
@@ -19,13 +28,35 @@ function decodeEntities(input:string){
     .replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n)));
 }
 
+function decoderScore(text:string){
+  let score=0;
+  const good=[
+    "Powołania","Górny Mokotów","Zbiórka","piłk","zajęcia",
+    "drużyna","trening","Warszawa","Święto"
+  ];
+  for(const x of good) if(text.includes(x)) score+=20;
+  const bad=["�","Ã","Å","Ä","Â","â€","PowoĹ","GĂłrny","piĹ"];
+  for(const x of bad) score-=50*(text.split(x).length-1);
+  return score;
+}
+
+function decodeHtml(buffer:ArrayBuffer){
+  const candidates:string[]=[];
+  for(const enc of ["windows-1250","utf-8","iso-8859-2"]){
+    try{ candidates.push(new TextDecoder(enc).decode(buffer)); }catch{}
+  }
+  if(!candidates.length) return new TextDecoder().decode(buffer);
+  return candidates.sort((a,b)=>decoderScore(b)-decoderScore(a))[0];
+}
+
 function htmlToTokens(html:string){
-  // The DELTA page uses many nested inline elements. Treat every tag as a
-  // separator so titles and publication dates do not collapse into one line.
-  const cleaned = html
+  const cleaned=html
     .replace(/<script[\s\S]*?<\/script>/gi," ")
     .replace(/<style[\s\S]*?<\/style>/gi," ")
-    .replace(/<[^>]+>/g,"\n");
+    .replace(/<!--[\s\S]*?-->/g," ")
+    .replace(/<(br|\/p|\/div|\/li|\/tr|\/td|\/h\d|\/a)>/gi,"\n")
+    .replace(/<[^>]+>/g," ");
+
   return decodeEntities(cleaned)
     .replace(/\r/g,"")
     .split(/\n+/)
@@ -33,89 +64,158 @@ function htmlToTokens(html:string){
     .filter(Boolean);
 }
 
-function stableId(title:string,date:string,body:string){
-  // body is deliberately not part of the key: when DELTA corrects a notice,
-  // we update the existing record instead of duplicating it.
+function stableId(title:string,date:string){
   return crypto.createHash("sha256").update(`${title}|${date}`).digest("hex");
 }
 
-function relevance(title:string, body:string){
-  const s=(title+" "+body).toLocaleLowerCase("pl-PL");
-  if(s.includes("2018 górny mokotów")) return 100;
-  if(s.includes("powołania 2018")) return 98;
-  if(s.includes("górny mokotów")) return 95;
-  if(s.includes("drużyna: 2018") || s.includes("drużyny: 2018") || s.includes("roczniki): 2017, 2018")) return 92;
-  if(s.includes("2018") && (s.includes("trening") || s.includes("mecz") || s.includes("turniej") || s.includes("grafik") || s.includes("obóz") || s.includes("zgrupowanie"))) return 90;
-  if(s.includes("grafik") || s.includes("trening") || s.includes("dni wolne") || s.includes("aktualizacja") || s.includes("zajęcia")) return 70;
-  // General club messages visible on this team page are useful to parents too.
-  return 50;
+function isDateToken(x:string){
+  return /^\d{2}-\d{2}-\d{4}$/.test(x.trim());
 }
 
-function badHeadline(x:string){
-  const s=x.toLocaleLowerCase("pl-PL");
-  return !x || x.length<3 || x.length>180 ||
-    /^kolejka\b/i.test(x) || /^sezon \d{4}/i.test(x) ||
-    / - .*_\s*:_/.test(x) ||
-    ["seniorzy","trener","asystent","praktykant","trener bramkarzy"].includes(s) ||
-    /^\d{1,2}:\d{2}$/.test(x);
+function extractHeadlineAndDate(tokens:string[], i:number){
+  const inline=tokens[i].match(/^(.*?)\s+(\d{2}-\d{2}-\d{4})$/);
+  if(inline){
+    return {title:inline[1].trim(),date:inline[2],dateIndex:i};
+  }
+  if(isDateToken(tokens[i]) && i>0){
+    return {title:tokens[i-1].trim(),date:tokens[i].trim(),dateIndex:i};
+  }
+  return null;
+}
+
+function isBadHeadline(title:string){
+  const t=title.trim();
+  if(!t || t.length<4 || t.length>180) return true;
+  if(/^\d{4}$/.test(t)) return true;
+  if(/^kolejka\b/i.test(t)) return true;
+  if(/^sezon \d{4}/i.test(t)) return true;
+  if(/^2018$/i.test(t)) return true;
+  if(/^Powołania 2018$/i.test(t)) return true; // reprezentacja, nie Górny Mokotów
+  if(/^(SENIORZY|Trener|Asystent|Praktykant|Trener Bramkarzy)$/i.test(t)) return true;
+  if(/K\.S\. Delta Warszawa .* - |FC Vizja|MUKS Julianów|RKS Ursus|Alfa Przymierze Rodzin/.test(t)) return true;
+  return false;
+}
+
+function relevantScheduleExcerpt(parts:string[]){
+  const keep:string[]=[];
+  for(let i=0;i<parts.length;i++){
+    const s=parts[i];
+    const low=s.toLocaleLowerCase("pl-PL");
+    const relevant=
+      low.includes("2018") ||
+      low.includes("dni wolne") ||
+      low.includes("rozpoczęcie zajęć") ||
+      low.includes("zakończenie zajęć") ||
+      low.includes("przerwa świąteczna") ||
+      low.includes("majówka") ||
+      low.includes("boże ciało");
+
+    if(relevant){
+      if(i>0 && !keep.includes(parts[i-1])) keep.push(parts[i-1]);
+      keep.push(s);
+      if(i+1<parts.length) keep.push(parts[i+1]);
+    }
+  }
+  return [...new Set(keep)].join(" ").replace(/\s+/g," ").trim().slice(0,3000);
+}
+
+function buildBody(title:string, parts:string[]){
+  const cleaned=parts
+    .filter(x=>x && !/^\[?\d+\]?$/.test(x))
+    .filter(x=>!/^>>>$/.test(x))
+    .filter(x=>!/^Copyright/i.test(x))
+    .filter(x=>!/^ZAPISY$/i.test(x));
+
+  if(/^Grafik sezon/i.test(title)){
+    return relevantScheduleExcerpt(cleaned);
+  }
+
+  return cleaned.join(" ").replace(/\s+/g," ").trim().slice(0,3200);
+}
+
+function priority(title:string){
+  const t=title.toLocaleLowerCase("pl-PL");
+  if(t.includes("powołania 2018 górny mokotów")) return 100;
+  if(t.includes("zmiana miejsca treningu")) return 95;
+  if(t.includes("grafik sezon")) return 90;
+  if(t.includes("zgrupowanie")) return 80;
+  if(t.includes("trening") || t.includes("zajęcia")) return 75;
+  return 60;
 }
 
 function parseDeltaUpdates(html:string){
   const tokens=htmlToTokens(html);
-  const candidates:{source_key:string;title:string;body:string;published_at:string;priority:number;source_url:string}[]=[];
-  const dateRx=/\b(\d{2}-\d{2}-\d{4})\b/;
 
-  for(let i=0;i<tokens.length;i++){
-    const dm=tokens[i].match(dateRx);
-    if(!dm) continue;
-    const date=dm[1];
+  // Start exactly at the news feed of this team. This prevents roster,
+  // standings and future schedule rows from being mistaken for articles.
+  const start=tokens.findIndex(x=>x.includes("Powołania 2018 Górny Mokotów"));
+  if(start<0) throw new Error("Nie znaleziono sekcji wiadomości 2018 Górny Mokotów na stronie DELTY.");
 
-    // Publication dates are standalone (or directly appended to a headline).
-    // Dates occurring inside article bodies, match times and ranges must not
-    // create extra fake news cards.
-    const before=tokens[i].slice(0,dm.index||0).trim();
-    const after=tokens[i].slice((dm.index||0)+date.length).trim();
-    if(after) continue;
+  const scoped=tokens.slice(start);
+  const heads:{title:string;date:string;headIndex:number;dateIndex:number}[]=[];
 
-    let title=before.replace(/[-–—|]+$/g,"").trim();
-    if(!title){
-      const candidate=(tokens[i-1]||"").trim();
-      if(!badHeadline(candidate) && !dateRx.test(candidate)) title=candidate;
-    }
-    if(badHeadline(title)) continue;
+  for(let i=0;i<scoped.length;i++){
+    const h=extractHeadlineAndDate(scoped,i);
+    if(!h || isBadHeadline(h.title)) continue;
 
-    // Skip fixture rows and date-only schedule fragments. News headlines on
-    // DELTA are short phrases such as “Powołania…”, “Grafik…”, etc.
-    if(/K\.S\. Delta Warszawa .* - |FC Vizja|MUKS Julianów|RKS Ursus|Alfa Przymierze Rodzin/.test(title)) continue;
+    // Headline is accepted only when it looks like a real news title.
+    // This removes date lines embedded in article bodies.
+    const title=h.title;
+    const looksNews=
+      /[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(title) &&
+      !/^\d{1,2}[:.]\d{2}/.test(title) &&
+      !/^(od|do)\s+\d{2}-\d{2}-\d{4}/i.test(title);
 
-    const bodyParts:string[]=[];
-    for(let j=i+1;j<Math.min(tokens.length,i+70);j++){
-      // Next headline/date begins a new news item.
-      if(dateRx.test(tokens[j]) && bodyParts.length>0) break;
-      if(bodyParts.join(" ").length>4200) break;
-      bodyParts.push(tokens[j]);
-    }
-    const body=bodyParts.join(" ").replace(/\s+/g," ").trim();
-    const priority=relevance(title,body);
-    const [dd,mm,yyyy]=date.split("-");
-    const published_at=`${yyyy}-${mm}-${dd}T12:00:00+02:00`;
+    if(!looksNews) continue;
 
-    candidates.push({
-      source_key:stableId(title,date,body),
-      title,body,published_at,priority,source_url:DELTA_URL
+    // Avoid duplicate detection when date was in the same token.
+    if(heads.some(x=>x.dateIndex===h.dateIndex)) continue;
+
+    heads.push({title,date:h.date,headIndex:i,dateIndex:h.dateIndex});
+  }
+
+  const items:ClubItem[]=[];
+
+  for(let n=0;n<heads.length;n++){
+    const h=heads[n];
+
+    // Skip central 2018 representation call-up; this app is for Górny Mokotów.
+    if(/^Powołania 2018$/i.test(h.title)) continue;
+
+    const next=heads[n+1];
+    const bodyStart=h.dateIndex+1;
+    const bodyEnd=next ? next.headIndex : Math.min(scoped.length,bodyStart+100);
+    const parts=scoped.slice(bodyStart,bodyEnd);
+    const body=buildBody(h.title,parts);
+
+    const [dd,mm,yyyy]=h.date.split("-");
+    items.push({
+      source_key:stableId(h.title,h.date),
+      title:h.title,
+      body,
+      published_at:`${yyyy}-${mm}-${dd}T12:00:00+02:00`,
+      priority:priority(h.title),
+      source_url:DELTA_URL
     });
   }
 
-  const unique=new Map<string,(typeof candidates)[number]>();
-  for(const item of candidates){
-    const prev=unique.get(item.source_key);
-    if(!prev || item.priority>prev.priority) unique.set(item.source_key,item);
+  const unique=new Map<string,ClubItem>();
+  for(const item of items){
+    if(!unique.has(item.source_key)) unique.set(item.source_key,item);
   }
 
-  return [...unique.values()]
-    .filter(x=>x.priority>=50)
+  const result=[...unique.values()]
+    .filter(x=>x.title!=="2018")
+    .filter(x=>!/^20\d{2}$/.test(x.title))
     .sort((a,b)=>b.published_at.localeCompare(a.published_at))
-    .slice(0,60);
+    .slice(0,30);
+
+  // Safety guard: never wipe the existing feed if parsing went wrong.
+  if(result.length<3 || !result.some(x=>x.title.includes("Powołania 2018 Górny Mokotów"))){
+    throw new Error(`Parser DELTY zwrócił podejrzany wynik (${result.length} wpisów). Baza nie została wyczyszczona.`);
+  }
+
+  return result;
 }
 
 async function authorize(req:NextRequest){
@@ -124,7 +224,7 @@ async function authorize(req:NextRequest){
   if(secret && sent && secret===sent) return true;
 
   try{
-    const { profile }=await getCurrentProfile();
+    const {profile}=await getCurrentProfile();
     return profile?.role==="admin";
   }catch{
     return false;
@@ -140,59 +240,60 @@ export async function POST(req:NextRequest){
     const res=await fetch(DELTA_URL,{
       cache:"no-store",
       headers:{
-        "user-agent":"DELTA-2018-GM-TeamHub/1.0 (+https://delta-2028.vercel.app)"
+        "user-agent":"DELTA-2018-GM-TeamHub/1.0 (+https://delta-2028.vercel.app)",
+        "accept":"text/html,application/xhtml+xml"
       }
     });
 
-    if(!res.ok){
-      throw new Error(`DELTA HTTP ${res.status}`);
-    }
+    if(!res.ok) throw new Error(`DELTA HTTP ${res.status}`);
 
-    const html=await res.text();
+    const buffer=await res.arrayBuffer();
+    const html=decodeHtml(buffer);
     const items=parseDeltaUpdates(html);
     const admin=createAdminClient();
 
-    let inserted=0;
-    let updated=0;
+    // V8.7.8: after successful parsing, replace the old source feed completely.
+    // This removes malformed V8.7.6/V8.7.7 rows such as 2017/2019/2020 cards.
+    const {data:oldRows,error:oldErr}=await admin
+      .from("club_updates")
+      .select("id")
+      .eq("source_url",DELTA_URL);
 
-    for(const item of items){
-      const {data:existing}=await admin
-        .from("club_updates")
-        .select("id,source_key")
-        .eq("source_key",item.source_key)
-        .maybeSingle();
+    if(oldErr) throw oldErr;
+    const cleaned=oldRows?.length||0;
 
-      const row={
-        ...item,
-        source_name:"K.S. Delta Warszawa",
-        synced_at:new Date().toISOString()
-      };
+    const {error:deleteErr}=await admin
+      .from("club_updates")
+      .delete()
+      .eq("source_url",DELTA_URL);
+    if(deleteErr) throw deleteErr;
 
-      if(existing){
-        const {error}=await admin.from("club_updates").update(row).eq("id",existing.id);
-        if(error) throw error;
-        updated++;
-      }else{
-        const {error}=await admin.from("club_updates").insert(row);
-        if(error) throw error;
-        inserted++;
-      }
-    }
+    const now=new Date().toISOString();
+    const rows=items.map(item=>({
+      ...item,
+      source_name:"K.S. Delta Warszawa",
+      synced_at:now
+    }));
+
+    const {error:insertErr}=await admin.from("club_updates").insert(rows);
+    if(insertErr) throw insertErr;
 
     await admin.from("delta_sync_log").insert({
       status:"ok",
       items_found:items.length,
-      items_inserted:inserted,
-      details:`updated=${updated}`
+      items_inserted:items.length,
+      details:`clean_feed=true; removed_old=${cleaned}; encoding=fixed`
     });
 
     return NextResponse.json({
       ok:true,
       source:DELTA_URL,
       found:items.length,
-      inserted,
-      updated,
-      synced_at:new Date().toISOString()
+      inserted:items.length,
+      updated:0,
+      cleaned,
+      synced_at:now,
+      preview:items.slice(0,5).map(x=>x.title)
     });
   }catch(error:any){
     try{
@@ -209,6 +310,5 @@ export async function POST(req:NextRequest){
 }
 
 export async function GET(req:NextRequest){
-  // Useful for admin diagnostics in a browser; performs the same sync.
   return POST(req);
 }

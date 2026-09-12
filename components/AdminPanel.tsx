@@ -203,7 +203,7 @@ export default function AdminPanel(props:{
       const res=await fetch("/api/delta-sync",{method:"POST"});
       const data=await res.json();
       if(!res.ok)throw new Error(data.error||"Błąd synchronizacji");
-      setSyncResult(`Znaleziono ${data.found}, nowe ${data.inserted}, odświeżone ${data.updated}.`);
+      setSyncResult(`Pobrano ${data.found} poprawnych wpisów. Usunięto ${data.cleaned ?? 0} starych wpisów i zapisano czysty feed.`);
     }catch(e:any){
       setSyncResult(`Błąd: ${e?.message||e}`);
     }finally{

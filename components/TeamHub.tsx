@@ -577,6 +577,7 @@ export default function TeamHub(props:{
               <span>K.S. DELTA WARSZAWA</span>
               <time>{new Date(item.published_at).toLocaleDateString("pl-PL")}</time>
             </div>
+            {item.title.includes("2018 Górny Mokotów")&&<div className="v878-direct-badge">2018 GÓRNY MOKOTÓW</div>}
             <h3>{item.title}</h3>
             {item.body&&<p>{item.body}</p>}
             <a href={item.source_url} target="_blank" rel="noreferrer">ŹRÓDŁO: DELTA.WARSZAWA.PL <ChevronRight size={13}/></a>

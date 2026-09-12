@@ -285,3 +285,14 @@ Parser jest celowo ograniczony do informacji istotnych dla rocznika 2018 / Górn
 - Kafelek „Z klubu” dodany na ekranie Start z trzema najnowszymi wpisami.
 - Parser DELTA przebudowany tak, by importować także już opublikowane wiadomości z bieżącej strony drużyny.
 - Pierwsza ręczna synchronizacja po wdrożeniu V8.7.7 powinna uzupełnić istniejące wpisy w `club_updates`.
+
+
+## V8.7.8 — Clean Club Feed
+- parser zaczyna analizę dopiero od sekcji wiadomości drużyny 2018 Górny Mokotów,
+- wymuszone rozpoznawanie kodowania Windows-1250 / UTF-8 / ISO-8859-2,
+- polskie znaki są wybierane automatycznie na podstawie jakości dekodowania,
+- odrzucane są fałszywe wpisy typu 2017 / 2019 / 2020 i elementy terminarza,
+- „Powołania 2018” reprezentacji są pomijane; pozostają „Powołania 2018 Górny Mokotów”,
+- po poprawnym parsowaniu synchronizacja usuwa stary błędny feed i zapisuje czysty zestaw,
+- zabezpieczenie: jeśli parser nie znajdzie co najmniej 3 prawidłowych wpisów oraz „Powołania 2018 Górny Mokotów”, baza nie jest czyszczona,
+- przy grafiku sezonowym pokazywany jest skrócony fragment istotny dla rocznika 2018.
