@@ -1812,3 +1812,24 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   transform:translateY(-2px);
   transition:box-shadow .25s ease, transform .25s ease;
 }
+
+
+/* V8.7.4 — featured Ryszard graphics */
+.v874-club-mark{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(246,201,82,.22);background:rgba(5,8,12,.72);box-shadow:0 0 18px rgba(231,30,45,.07)}
+.v874-club-mark img{width:30px;height:30px;object-fit:contain}
+.v874-featured-card-image{position:relative;height:305px;margin-left:5px;overflow:hidden;background:#080b10;border-bottom:1px solid rgba(246,201,82,.16)}
+.v874-featured-card-image img{width:100%;height:100%;object-fit:cover;object-position:center 36%;display:block;transition:transform .45s ease,filter .3s ease}
+.v87-player-card:hover .v874-featured-card-image img{transform:scale(1.035);filter:saturate(1.06) contrast(1.03)}
+.v874-featured-card-image:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(246,201,82,.16),inset 0 -55px 70px rgba(0,0,0,.22)}
+.v874-featured-badge{position:absolute;right:9px;bottom:9px;z-index:3;padding:5px 8px;background:rgba(6,8,11,.82);border:1px solid rgba(246,201,82,.25);color:#f2c955;font-size:7px;font-weight:1000;letter-spacing:.13em}
+.v874-featured-profile-sheet{padding-top:18px!important}
+.v874-profile-hero{position:relative;width:100%;aspect-ratio:16/9;max-height:58vh;overflow:hidden;border:1px solid rgba(246,201,82,.20);background:#080b10;box-shadow:0 22px 55px rgba(0,0,0,.42),0 0 32px rgba(229,27,43,.10)}
+.v874-profile-hero>img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.v874-profile-hero-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 64%,rgba(4,6,9,.66) 100%)}
+.v874-profile-hero-label{position:absolute;left:16px;bottom:14px;z-index:3;display:flex;align-items:center;gap:9px;padding:8px 11px;background:rgba(5,8,12,.76);border:1px solid rgba(246,201,82,.20);backdrop-filter:blur(10px)}
+.v874-profile-hero-label img{width:38px;height:38px;object-fit:contain}
+.v874-profile-hero-label span,.v874-profile-hero-label b{display:block}.v874-profile-hero-label span{font-size:7px;letter-spacing:.15em;color:#d6b650;font-weight:1000}.v874-profile-hero-label b{font-size:13px;margin-top:2px}
+.v874-profile-stats-layout{min-height:0!important;display:block!important;margin-top:12px!important;background:linear-gradient(180deg,#0c1118,#080b10)!important}
+.v874-profile-stats-layout .premium-info{padding:20px 22px 24px!important;justify-content:flex-start!important}.v874-profile-stats-layout .premium-info h2{font-size:40px!important;margin:7px 0 4px!important}
+@media(min-width:901px){.v87-player-card:has(.v874-featured-card-image){min-height:500px!important}.v87-player-card:has(.v874-featured-card-image) .v87-player-content{margin-top:0!important}}
+@media(max-width:700px){.v874-featured-card-image{height:360px}.v874-profile-hero{aspect-ratio:1.65/1;max-height:none}.v874-profile-hero-label{left:9px;bottom:9px;padding:6px 8px}.v874-profile-hero-label img{width:30px;height:30px}.v874-profile-hero-label b{font-size:10px}.v874-profile-stats-layout .premium-info h2{font-size:30px!important}}

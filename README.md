@@ -238,3 +238,10 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - miniatury kapitana i liderów też dostały ten sam klimat,
 - profil zawodnika w modalu ma teraz bardziej kinową prezentację,
 - rozwiązanie nadal pozwala później normalnie wstawiać prawdziwe zdjęcia zawodników.
+
+
+## V8.7.4 — Ryszard Featured Player
+- pionowa karta Ryszarda w zakładce Drużyna,
+- szeroki hero „Mały Wojownik” w jego profilu,
+- pozostali zawodnicy zostają na standardowych kartach do czasu nowych zdjęć,
+- usunięto numery koszulek z kart/profilu, w miejscu numeru widoczny jest herb DELTA.
