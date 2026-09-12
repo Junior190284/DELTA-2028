@@ -6,7 +6,7 @@ import PlayerPhoto from "./PlayerPhoto";
 import MatchCenterModal from "./MatchCenterModal";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star,
-  Check, X, Crown, Target, ChevronRight, Flame, Award, UserCheck, Goal, Home
+  Check, X, Crown, Target, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -54,6 +54,7 @@ export default function TeamHub(props:{
   const [news,setNews]=useState(props.initialNews);
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
+  const [accountOpen,setAccountOpen]=useState(false);
   const staff=props.profile.role==="admin"||props.profile.role==="coach";
 
   useEffect(()=>{
@@ -135,8 +136,16 @@ export default function TeamHub(props:{
 
     <header className="hub-top v8-topbar">
       <div className="v8-mini-brand"><img src="/teamlogos/gm.png" alt=""/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></div>
-      <div className="v8-user"><span>{props.profile.display_name}</span><small>{props.profile.role}</small></div>
-      {staff&&<a href="/admin" className="admin-link">ADMIN</a>}
+      <div className="v8-top-spacer"/>
+      {staff&&<a href="/admin" className="admin-link v8-admin-chip">ADMIN</a>}
+      <div className="v8-account-wrap">
+        <button className="v8-account-btn" onClick={()=>setAccountOpen(v=>!v)} aria-label="Konto użytkownika"><UserRound size={17}/></button>
+        {accountOpen&&<div className="v8-account-popover">
+          <small>KONTO</small>
+          <b>{props.profile.display_name||"Użytkownik"}</b>
+          <span>{props.profile.role}</span>
+        </div>}
+      </div>
       <button className="icon-btn v8-bell" onClick={enablePush}><Bell size={18}/></button>
     </header>
 

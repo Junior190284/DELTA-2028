@@ -138,3 +138,13 @@ Dodano pełny panel `/admin`. Szczegóły w `ADMIN_PANEL.md`.
 - nowe sekcje osiągnięć / aktualności / kroniki,
 - odświeżone karty zawodników,
 - pełny responsywny layout telefonu.
+
+
+## V8.1 — Premium polish
+- konto użytkownika przeniesione z centralnej części górnego paska do dyskretnej ikony,
+- email i rola widoczne dopiero po kliknięciu ikony konta,
+- zmniejszony hero, żeby mecz i statystyki były widoczne szybciej,
+- subtelne czerwone animacje światła i glow,
+- animowany przycisk Centrum Meczu,
+- dopracowane karty Wyjściowej 6 i kafle statystyk,
+- dolne menu ukryte na desktopie; pozostaje na telefonie.
