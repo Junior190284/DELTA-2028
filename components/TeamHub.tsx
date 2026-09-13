@@ -247,7 +247,7 @@ export default function TeamHub(props:{
   const smartCandidates:{kind:string;title:string;subtitle:string;at:Date;important?:boolean}[]=[
     ...(nextMatchAt&&nextMatchAt>now?[{
       kind:"match",
-      title:`Mecz • ${nextMatch?recentOpponent(nextMatch):""}`,
+      title:`Mecz • ${nextMatch?(nextMatch.home_team===CLUB?nextMatch.away_team:nextMatch.home_team):""}`,
       subtitle:nextMatch?`${datePL(nextMatch.match_date)} • ${nextMatch.match_time||"godzina do ustalenia"}`:"",
       at:nextMatchAt
     }]:[]),
