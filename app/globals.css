@@ -2905,3 +2905,20 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v900-training-history-list>div{grid-template-columns:72px minmax(0,1fr) 42px}
   .v900-training-history-list em{display:none}
 }
+
+
+/* V9.0.1 — quick training creation */
+.v901-training-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.v901-training-actions button:first-child{
+  background:linear-gradient(90deg,#d91f31,#ef2c3e);
+  color:#fff;
+  border-color:#ef2c3e;
+}
+@media(max-width:700px){
+  .v901-training-actions{width:100%}
+  .v901-training-actions button{flex:1}
+}

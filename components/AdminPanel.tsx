@@ -243,6 +243,42 @@ export default function AdminPanel(props:{
     alert(text);
   }
 
+  function trainingTableError(error:any){
+    const msg=String(error?.message||error||"");
+    if(/training_sessions.*schema cache|relation .*training_sessions.*does not exist|Could not find the table/i.test(msg)){
+      alert("Brakuje tabel Centrum Treningowego w Supabase.\n\nUruchom w SQL Editor plik:\nsupabase/v6_training_center.sql\n\ni kliknij Run.");
+      return true;
+    }
+    return false;
+  }
+
+  async function quickAddTraining(){
+    const now=new Date();
+    const date=[
+      now.getFullYear(),
+      String(now.getMonth()+1).padStart(2,"0"),
+      String(now.getDate()).padStart(2,"0")
+    ].join("-");
+
+    const {data,error}=await supabase.from("training_sessions").insert({
+      training_date:date,
+      title:"Trening",
+      start_time:"17:00",
+      end_time:"18:30",
+      location:null,
+      notes:null,
+      created_by:props.currentUser.id
+    }).select("*").single();
+
+    if(error){
+      if(trainingTableError(error))return;
+      return alert(error.message);
+    }
+
+    setTrainingSessions(prev=>[data,...prev].sort((x,y)=>y.training_date.localeCompare(x.training_date)));
+    setSelectedTrainingId(data.id);
+  }
+
   async function addTrainingSession(){
     const date=prompt("Data treningu YYYY-MM-DD"); if(!date)return;
     const title=prompt("Nazwa","Trening")||"Trening";
@@ -253,7 +289,10 @@ export default function AdminPanel(props:{
     const {data,error}=await supabase.from("training_sessions").insert({
       training_date:date,title,start_time,end_time,location,notes,created_by:props.currentUser.id
     }).select("*").single();
-    if(error)return alert(error.message);
+    if(error){
+      if(trainingTableError(error))return;
+      return alert(error.message);
+    }
     setTrainingSessions(prev=>[data,...prev].sort((x,y)=>y.training_date.localeCompare(x.training_date)));
     setSelectedTrainingId(data.id);
   }
@@ -457,7 +496,7 @@ export default function AdminPanel(props:{
 
             {tab==="training" && <div className="admin-two-col">
         <aside className="admin-card">
-          <div className="admin-card-head"><h2>Treningi</h2><button onClick={addTrainingSession}><Plus size={15}/> Dodaj</button></div>
+          <div className="admin-card-head"><h2>Treningi</h2><div className="v901-training-actions"><button onClick={quickAddTraining}><Plus size={15}/> Szybki trening dziś</button><button onClick={addTrainingSession}><CalendarDays size={15}/> Dodaj szczegółowo</button></div></div>
           <div className="admin-match-list">
             {trainingSessions.map(s=><button key={s.id} className={selectedTrainingId===s.id?"selected":""} onClick={()=>setSelectedTrainingId(s.id)}>
               <strong>{s.title||"Trening"}</strong>

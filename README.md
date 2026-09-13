@@ -488,3 +488,9 @@ Supabase → SQL Editor → uruchom:
 
 Prawidłowy wynik:
 `TRAINING CENTER READY`
+
+
+## V9.0.1 — Quick Training
+- `Szybki trening dziś` tworzy jednym kliknięciem trening na dziś 17:00–18:30.
+- `Dodaj szczegółowo` zostaje dla innych dat/godzin.
+- brak tabeli `training_sessions` pokazuje czytelny komunikat z instrukcją uruchomienia `supabase/v6_training_center.sql`.
