@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
       }, JSON.stringify({
         title:payload.title || "DELTA 2018 GM",
         body:payload.body || "",
-        url:payload.url || "/"
+        url:payload.url || "/dashboard?view=club",
+        tag:payload.tag || "delta-manual-push"
       }));
       sent++;
     } catch {

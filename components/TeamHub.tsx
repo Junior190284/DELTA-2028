@@ -17,7 +17,7 @@ type Attendance={match_id:string;player_id:string;status:string};
 type Lineup={match_id:string;player_id:string;is_starter:boolean;is_captain:boolean};
 type Event={id:string;match_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;minute:number|null;created_at:string};
 type News={id:string;type:string;title:string;body:string|null;published_at:string};
-type ClubUpdate={id:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string;synced_at:string};
+type ClubUpdate={id:string;source_key:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string;synced_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 const isRyszardPlayer=(p:{display_name:string})=>{const n=(p.display_name||"").toLocaleLowerCase("pl-PL");return n.includes("ryszard")&&n.includes("rybacki");};
@@ -106,6 +106,7 @@ export default function TeamHub(props:{
   const [events,setEvents]=useState(props.initialEvents);
   const [news,setNews]=useState(props.initialNews);
   const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
+  const [focusedClubKey,setFocusedClubKey]=useState<string|null>(null);
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
@@ -129,7 +130,7 @@ export default function TeamHub(props:{
     const refreshClub=async()=>{
       const {data}=await supabase
         .from("club_updates")
-        .select("id,source_name,source_url,title,body,priority,published_at,synced_at")
+        .select("id,source_key,source_name,source_url,title,body,priority,published_at,synced_at")
         .order("published_at",{ascending:false})
         .limit(30);
       if(!cancelled&&data)setClubUpdates(data as ClubUpdate[]);
@@ -139,8 +140,16 @@ export default function TeamHub(props:{
   },[supabase]);
 
   useEffect(()=>{
-    const view=new URLSearchParams(window.location.search).get("view");
-    if(view==="club")setTab("club");
+    const params=new URLSearchParams(window.location.search);
+    if(params.get("view")==="club"){
+      const key=params.get("club");
+      setTab("club");
+      if(key)setFocusedClubKey(key);
+      window.setTimeout(()=>{
+        const el=key?document.getElementById(`club-update-${key}`):document.getElementById("club-feed-top");
+        el?.scrollIntoView({behavior:"smooth",block:"center"});
+      },350);
+    }
   },[]);
 
   async function enableClubPush(){
@@ -436,7 +445,7 @@ export default function TeamHub(props:{
             <div className="v8-panel-title"><Shield size={18}/> Z KLUBU <span>DELTA SYNC</span></div>
             {clubUpdates.length>0?<>
               <div className="v877-club-home-list">
-                {clubUpdates.slice(0,3).map(item=><button type="button" key={item.id} onClick={()=>setTab("club")}>
+                {clubUpdates.slice(0,3).map(item=><button type="button" key={item.id} onClick={()=>{setTab("club");setFocusedClubKey(item.source_key);window.setTimeout(()=>document.getElementById(`club-update-${item.source_key}`)?.scrollIntoView({behavior:"smooth",block:"center"}),250)}}>
                   <span>{new Date(item.published_at).toLocaleDateString("pl-PL")}</span>
                   <b>{item.title}</b>
                   <ChevronRight size={14}/>
@@ -602,11 +611,11 @@ export default function TeamHub(props:{
           </div>
         </div>
 
-        <div className="v876-club-feed">
+        <div className="v876-club-feed" id="club-feed-top">
           {clubUpdates.length===0&&<article className="v876-club-empty devil-card">
             <Shield size={32}/><h3>Brak zsynchronizowanych wiadomości</h3><p>Po uruchomieniu DELTA Sync informacje z klubu pojawią się tutaj automatycznie.</p>
           </article>}
-          {clubUpdates.map(item=><article className="v876-club-card devil-card" key={item.id}>
+          {clubUpdates.map(item=><article id={`club-update-${item.source_key}`} className={`v876-club-card devil-card ${focusedClubKey===item.source_key?"v881-club-focus":""}`} key={item.id}>
             <div className="v876-club-meta">
               <span>K.S. DELTA WARSZAWA</span>
               <time>{new Date(item.published_at).toLocaleDateString("pl-PL")}</time>

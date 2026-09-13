@@ -327,3 +327,13 @@ Potem na telefonie:
 `Z klubu` → `Włącz powiadomienia na tym urządzeniu`.
 
 Jeśli nadal wystąpi błąd, aplikacja pokaże jego prawdziwą przyczynę zamiast ogólnego komunikatu.
+
+
+## V8.8.1 — Push deep links + PWA icons
+- automatyczny push „Z klubu” zawiera identyfikator konkretnej wiadomości,
+- kliknięcie powiadomienia otwiera konkretną kartę w „Z klubu” i ją podświetla,
+- service worker nawiguję już otwarte okno aplikacji do celu,
+- dodano pełne ikony PWA 192/512, maskable, Apple Touch Icon, favicony i badge Android,
+- manifest startuje na `/dashboard`.
+
+Po deployu ikona istniejącego skrótu Android może pozostać w pamięci systemu. Jeśli nie odświeży się sama, usuń stary skrót i dodaj aplikację ponownie z Chrome.

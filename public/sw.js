@@ -10,7 +10,7 @@ self.addEventListener("push",event=>{
   let data={
     title:"DELTA 2018 GM",
     body:"Nowe powiadomienie drużyny",
-    url:"/dashboard",
+    url:"/dashboard?view=club",
     tag:"delta-teamhub"
   };
   try{
@@ -19,26 +19,32 @@ self.addEventListener("push",event=>{
 
   event.waitUntil(self.registration.showNotification(data.title,{
     body:data.body,
-    icon:"/assets/devils-crest.png",
-    badge:"/assets/devils-crest.png",
+    icon:"/icons/delta-192.png",
+    badge:"/icons/delta-badge-96.png",
+    image:data.image||undefined,
     tag:data.tag||"delta-teamhub",
     renotify:true,
-    data:{url:data.url||"/dashboard"}
+    requireInteraction:false,
+    data:{url:data.url||"/dashboard?view=club"}
   }));
 });
 
 self.addEventListener("notificationclick",event=>{
   event.notification.close();
-  const target=new URL(event.notification.data?.url||"/dashboard",self.location.origin).href;
+  const raw=event.notification.data?.url||"/dashboard?view=club";
+  const target=new URL(raw,self.location.origin).href;
 
   event.waitUntil((async()=>{
-    const list=await clients.matchAll({type:"window",includeUncontrolled:true});
-    for(const client of list){
-      if("focus" in client){
-        if("navigate" in client) await client.navigate(target);
-        return client.focus();
-      }
+    const windows=await clients.matchAll({type:"window",includeUncontrolled:true});
+    // Prefer the already-open Team Hub window, but always navigate it first.
+    for(const client of windows){
+      try{
+        if(new URL(client.url).origin===self.location.origin){
+          if("navigate" in client) await client.navigate(target);
+          if("focus" in client) return client.focus();
+        }
+      }catch{}
     }
-    return clients.openWindow(target);
+    if(clients.openWindow) return clients.openWindow(target);
   })());
 });

@@ -237,8 +237,8 @@ async function sendClubPush(admin:any,newItems:ClubItem[]){
   const payload=JSON.stringify({
     title:newItems.length===1 ? "Nowa informacja z klubu" : `${newItems.length} nowe informacje z klubu`,
     body:newItems.length===1 ? primary.title : `${primary.title} (+${newItems.length-1})`,
-    url:"/dashboard?view=club",
-    tag:"delta-club-update"
+    url:`/dashboard?view=club&club=${encodeURIComponent(primary.source_key)}`,
+    tag:`delta-club-${primary.source_key}`
   });
 
   let sent=0,failed=0;

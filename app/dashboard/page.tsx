@@ -32,7 +32,7 @@ export default async function Dashboard() {
     supabase.from("match_lineup").select("match_id,player_id,is_starter,is_captain"),
     supabase.from("match_events").select("id,match_id,event_type,player_id,assist_player_id,minute,created_at").order("created_at"),
     supabase.from("news").select("id,type,title,body,published_at").order("published_at",{ascending:false}),
-    supabase.from("club_updates").select("id,source_name,source_url,title,body,priority,published_at,synced_at").order("published_at",{ascending:false}).limit(30),
+    supabase.from("club_updates").select("id,source_key,source_name,source_url,title,body,priority,published_at,synced_at").order("published_at",{ascending:false}).limit(30),
     supabase.from("parent_players").select("player_id").eq("parent_id", user.id),
   ]);
 
