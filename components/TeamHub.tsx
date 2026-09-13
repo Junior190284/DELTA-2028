@@ -98,7 +98,7 @@ export default function TeamHub(props:{
   parentPlayerIds:string[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"home"|"matches"|"players"|"achievements"|"chronicle"|"news"|"club">("home");
+  const [tab,setTab]=useState<"home"|"matches"|"players"|"stats"|"achievements"|"chronicle"|"news"|"club">("home");
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -113,6 +113,10 @@ export default function TeamHub(props:{
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [accountOpen,setAccountOpen]=useState(false);
   const [now,setNow]=useState(()=>new Date());
+  const [statsMetric,setStatsMetric]=useState<"ga"|"goals"|"assists"|"mvp"|"matches"|"captain">("ga");
+  const [compareA,setCompareA]=useState<string>("");
+  const [compareB,setCompareB]=useState<string>("");
+
 
   useEffect(()=>{
     const tick=window.setInterval(()=>setNow(new Date()),30000);
@@ -266,6 +270,79 @@ export default function TeamHub(props:{
   const seasonTopAssisters=topAssists>0 ? players.filter(p=>(stats[p.id]?.a||0)===topAssists) : [];
   const seasonTopMvp=topMvpCount>0 ? players.filter(p=>(stats[p.id]?.mvp||0)===topMvpCount) : [];
 
+
+  const statsRanking=players.slice().sort((a,b)=>{
+    const sa=stats[a.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    const sb=stats[b.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    const value=(s:any)=>{
+      if(statsMetric==="goals")return s.g;
+      if(statsMetric==="assists")return s.a;
+      if(statsMetric==="mvp")return s.mvp;
+      if(statsMetric==="matches")return s.m;
+      if(statsMetric==="captain")return s.captain;
+      return s.g+s.a;
+    };
+    const diff=value(sb)-value(sa);
+    if(diff!==0)return diff;
+    return b.g+b.a-(a.g+a.a) || a.display_name.localeCompare(b.display_name,"pl");
+  });
+
+  const statsMetricLabel=
+    statsMetric==="goals"?"GOLE":
+    statsMetric==="assists"?"ASYSTY":
+    statsMetric==="mvp"?"MVP":
+    statsMetric==="matches"?"MECZE":
+    statsMetric==="captain"?"KAPITAN":
+    "G+A";
+
+  const statsMetricValue=(p:Player)=>{
+    const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    if(statsMetric==="goals")return s.g;
+    if(statsMetric==="assists")return s.a;
+    if(statsMetric==="mvp")return s.mvp;
+    if(statsMetric==="matches")return s.m;
+    if(statsMetric==="captain")return s.captain;
+    return s.g+s.a;
+  };
+
+  const comparePlayerA=players.find(p=>p.id===compareA) || players[0] || null;
+  const comparePlayerB=players.find(p=>p.id===compareB) || players[1] || players[0] || null;
+
+  const statMax={
+    g:Math.max(1,...players.map(p=>stats[p.id]?.g||0)),
+    a:Math.max(1,...players.map(p=>stats[p.id]?.a||0)),
+    ga:Math.max(1,...players.map(p=>(stats[p.id]?.g||0)+(stats[p.id]?.a||0))),
+    m:Math.max(1,...players.map(p=>stats[p.id]?.m||0)),
+    starts:Math.max(1,...players.map(p=>stats[p.id]?.starts||0)),
+    mvp:Math.max(1,...players.map(p=>stats[p.id]?.mvp||0)),
+    captain:Math.max(1,...players.map(p=>stats[p.id]?.captain||0))
+  };
+
+  const topGA=players.slice().sort((a,b)=>((stats[b.id]?.g||0)+(stats[b.id]?.a||0))-((stats[a.id]?.g||0)+(stats[a.id]?.a||0)))[0];
+  const playersWithGoal=players.filter(p=>(stats[p.id]?.g||0)>0).length;
+  const playersWithAssist=players.filter(p=>(stats[p.id]?.a||0)>0).length;
+  const winRate=teamSummary.played?Math.round((teamSummary.wins/teamSummary.played)*100):0;
+  const goalsPerMatch=teamSummary.played?(teamSummary.goals/teamSummary.played):0;
+  const assistsPerMatch=teamSummary.played?(teamSummary.assists/teamSummary.played):0;
+
+  const biggestWin=matches
+    .filter(m=>m.status==="played")
+    .map(m=>{
+      const ours=m.home_team===CLUB?(m.home_score||0):(m.away_score||0);
+      const opp=m.home_team===CLUB?(m.away_score||0):(m.home_score||0);
+      return {match:m,ours,opp,diff:ours-opp};
+    })
+    .filter(x=>x.diff>0)
+    .sort((a,b)=>b.diff-a.diff)[0] || null;
+
+  const highestScoringMatch=matches
+    .filter(m=>m.status==="played")
+    .map(m=>{
+      const ours=m.home_team===CLUB?(m.home_score||0):(m.away_score||0);
+      const opp=m.home_team===CLUB?(m.away_score||0):(m.home_score||0);
+      return {match:m,ours,opp,total:ours+opp};
+    })
+    .sort((a,b)=>b.total-a.total)[0] || null;
   const recentMatches=matches
     .filter(m=>m.status==="played")
     .slice()
@@ -331,7 +408,7 @@ export default function TeamHub(props:{
   }
 
   const navItems:[string,string,any][]=[
-    ["home","Start",Home],["matches","Mecze",CalendarDays],["players","Drużyna",Users],
+    ["home","Start",Home],["matches","Mecze",CalendarDays],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],
     ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
@@ -421,10 +498,26 @@ export default function TeamHub(props:{
         <section className="v8-dashboard-grid">
           <article className="v8-panel v8-captain devil-card">
             <div className="v8-panel-title"><Crown size={18}/> KAPITAN DRUŻYNY</div>
-            {captainLeader?<div className="v8-captain-body"><div className="v8-captain-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">DELTA DEVILS</span>{isRyszardPlayer(captainLeader)?
-      <img src="/assets/ryszard-player-card.png" alt={captainLeader.display_name} className="v884-leader-featured-img"/>:
-      <PlayerPhoto playerId={captainLeader.id}/>
-    }</div><div><span>DELTA 2018 GM</span><h3>{captainLeader.display_name}</h3><p>{stats[captainLeader.id]?.captain||0} × kapitan</p><button onClick={()=>setSelectedPlayer(captainLeader)}>PROFIL ZAWODNIKA <ChevronRight size={15}/></button></div></div>:<p className="muted">Brak danych kapitana.</p>}
+            {captainLeader?<div className="v886-captain-layout">
+              <div className="v8-captain-photo v886-captain-photo">
+                <span className="v873-flares"/><span className="v873-embers"/>
+                <span className="v873-corner tl"/><span className="v873-corner tr"/>
+                <span className="v873-corner bl"/><span className="v873-corner br"/>
+                <span className="v873-plate">DELTA DEVILS</span>
+                {isRyszardPlayer(captainLeader)?
+                  <img src="/assets/ryszard-player-card.png" alt={captainLeader.display_name} className="v884-leader-featured-img"/>:
+                  <PlayerPhoto playerId={captainLeader.id}/>
+                }
+              </div>
+              <div className="v886-captain-info">
+                <span className="v886-captain-team">DELTA 2018 GM</span>
+                <h3>{captainLeader.display_name}</h3>
+                <p>{stats[captainLeader.id]?.captain||0} × kapitan</p>
+                <button type="button" onClick={()=>setSelectedPlayer(captainLeader)}>
+                  PROFIL ZAWODNIKA <ChevronRight size={15}/>
+                </button>
+              </div>
+            </div>:<p className="muted">Brak danych kapitana.</p>}
           </article>
 
           <article className="v8-panel v86-recent-matches devil-card">
@@ -685,6 +778,155 @@ export default function TeamHub(props:{
             </div>
           </article>
         })}</div>
+      </section>}
+
+      {tab==="stats"&&<section className="section v8-section-page v890-stats-center">
+        <div className="v890-stats-hero devil-card">
+          <div className="v890-stats-hero-bg"/>
+          <div className="v890-stats-copy">
+            <span className="eyebrow gold">DELTA 2018 GM • DATA STUDIO</span>
+            <h2>CENTRUM <span>STATYSTYK</span></h2>
+            <p>Sezon 2026/27 • liczby, liderzy, rekordy i forma drużyny w jednym miejscu.</p>
+          </div>
+          <div className="v890-stats-hero-metrics">
+            <div><strong>{teamSummary.played}</strong><span>MECZE</span></div>
+            <div><strong>{teamSummary.goals}</strong><span>GOLE</span></div>
+            <div><strong>{teamSummary.assists}</strong><span>ASYSTY</span></div>
+            <div><strong>{winRate}%</strong><span>WYGRANE</span></div>
+          </div>
+          <div className="v890-form-strip">
+            <span>FORMA</span>
+            <div>{recentMatches.length?recentMatches.map(m=><i key={m.id} className={`form-${recentResult(m).toLowerCase()}`}>{recentResult(m)}</i>):<em>—</em>}</div>
+          </div>
+        </div>
+
+        <div className="v890-kpi-grid">
+          <article className="v890-kpi devil-card"><Goal size={22}/><span>ŚREDNIA GOLI / MECZ</span><b>{goalsPerMatch.toFixed(1)}</b></article>
+          <article className="v890-kpi devil-card"><Star size={22}/><span>ŚREDNIA ASYST / MECZ</span><b>{assistsPerMatch.toFixed(1)}</b></article>
+          <article className="v890-kpi devil-card"><Users size={22}/><span>ZAWODNICY Z GOLEM</span><b>{playersWithGoal}</b></article>
+          <article className="v890-kpi devil-card"><Zap size={22}/><span>ZAWODNICY Z ASYSTĄ</span><b>{playersWithAssist}</b></article>
+        </div>
+
+        <div className="v890-main-grid">
+          <article className="v890-podium devil-card">
+            <div className="v8-panel-title"><Trophy size={18}/> PODIUM SEZONU <span>G+A</span></div>
+            <div className="v890-podium-stage">
+              {statsRanking.slice(0,3).map((p,index)=>{
+                const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+                const order=index===0?1:index===1?2:3;
+                return <button key={p.id} className={`v890-podium-player place-${order}`} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="v890-podium-rank">{order}</span>
+                  <div className="v890-podium-photo">
+                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
+                  </div>
+                  <b>{p.display_name}</b>
+                  <strong>{s.g+s.a}</strong>
+                  <small>{s.g}G • {s.a}A</small>
+                </button>
+              })}
+            </div>
+          </article>
+
+          <article className="v890-records devil-card">
+            <div className="v8-panel-title"><Award size={18}/> REKORDY SEZONU</div>
+            <div className="v890-record-list">
+              <div><span>Najwięcej G+A</span><b>{topGA?topGA.display_name:"—"}</b><strong>{topGA?(stats[topGA.id]?.g||0)+(stats[topGA.id]?.a||0):0}</strong></div>
+              <div><span>Najwięcej MVP</span><b>{topMvp&&stats[topMvp.id]?.mvp>0?topMvp.display_name:"—"}</b><strong>{topMvp?stats[topMvp.id]?.mvp||0:0}</strong></div>
+              <div><span>Najwięcej razy kapitan</span><b>{captainLeader&&stats[captainLeader.id]?.captain>0?captainLeader.display_name:"—"}</b><strong>{captainLeader?stats[captainLeader.id]?.captain||0:0}</strong></div>
+              <div><span>Największe zwycięstwo</span><b>{biggestWin?recentOpponent(biggestWin.match):"—"}</b><strong>{biggestWin?`${biggestWin.ours}:${biggestWin.opp}`:"—"}</strong></div>
+              <div><span>Najwięcej goli w meczu</span><b>{highestScoringMatch?recentOpponent(highestScoringMatch.match):"—"}</b><strong>{highestScoringMatch?highestScoringMatch.ours:0}</strong></div>
+              <div><span>Seria zwycięstw</span><b>DELTA 2018 GM</b><strong>{currentWinStreak}</strong></div>
+            </div>
+          </article>
+        </div>
+
+        <article className="v890-ranking-hub devil-card">
+          <div className="v890-ranking-head">
+            <div>
+              <span className="eyebrow gold">RANKING ZAWODNIKÓW</span>
+              <h3>{statsMetricLabel}</h3>
+            </div>
+            <div className="v890-metric-tabs">
+              {[
+                ["ga","G+A"],["goals","Gole"],["assists","Asysty"],["mvp","MVP"],["matches","Mecze"],["captain","Kapitan"]
+              ].map(([id,label])=><button key={id} className={statsMetric===id?"active":""} onClick={()=>setStatsMetric(id as any)}>{label}</button>)}
+            </div>
+          </div>
+
+          <div className="v890-ranking-table">
+            {statsRanking.map((p,index)=>{
+              const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+              const value=statsMetricValue(p);
+              const maxValue=Math.max(1,...statsRanking.map(statsMetricValue));
+              return <button key={p.id} className="v890-ranking-entry" onClick={()=>setSelectedPlayer(p)}>
+                <span className={`v890-pos p-${index+1}`}>{index+1}</span>
+                <span className="v890-entry-photo">
+                  {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
+                </span>
+                <span className="v890-entry-name"><b>{p.display_name}</b><small>{s.m} mecze • {s.starts} start</small></span>
+                <span className="v890-entry-bar"><i style={{width:`${Math.max(4,(value/maxValue)*100)}%`}}/></span>
+                <strong>{value}</strong>
+                <ChevronRight size={15}/>
+              </button>
+            })}
+          </div>
+        </article>
+
+        <div className="v890-compare-record-grid">
+          <article className="v890-compare devil-card">
+            <div className="v8-panel-title"><Users size={18}/> PORÓWNAJ ZAWODNIKÓW</div>
+            <div className="v890-compare-selects">
+              <select value={comparePlayerA?.id||""} onChange={e=>setCompareA(e.target.value)}>
+                {players.map(p=><option value={p.id} key={p.id}>{p.display_name}</option>)}
+              </select>
+              <span>VS</span>
+              <select value={comparePlayerB?.id||""} onChange={e=>setCompareB(e.target.value)}>
+                {players.map(p=><option value={p.id} key={p.id}>{p.display_name}</option>)}
+              </select>
+            </div>
+
+            {comparePlayerA&&comparePlayerB&&<div className="v890-compare-board">
+              {[["GOLE","g"],["ASYSTY","a"],["G+A","ga"],["MECZE","m"],["STARTY","starts"],["MVP","mvp"],["KAPITAN","captain"]].map(([label,key])=>{
+                const sa=stats[comparePlayerA.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+                const sb=stats[comparePlayerB.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+                const va=key==="ga"?sa.g+sa.a:(sa as any)[key];
+                const vb=key==="ga"?sb.g+sb.a:(sb as any)[key];
+                const max=(statMax as any)[key]||1;
+                return <div className="v890-compare-row" key={key}>
+                  <span className="left"><b>{va}</b><i style={{width:`${(va/max)*100}%`}}/></span>
+                  <small>{label}</small>
+                  <span className="right"><i style={{width:`${(vb/max)*100}%`}}/><b>{vb}</b></span>
+                </div>
+              })}
+            </div>}
+
+            <div className="v890-compare-names">
+              <button onClick={()=>comparePlayerA&&setSelectedPlayer(comparePlayerA)}>{comparePlayerA?.display_name||"—"}</button>
+              <button onClick={()=>comparePlayerB&&setSelectedPlayer(comparePlayerB)}>{comparePlayerB?.display_name||"—"}</button>
+            </div>
+          </article>
+
+          <article className="v890-team-form devil-card">
+            <div className="v8-panel-title"><TrendingUp size={18}/> FORMA DRUŻYNY</div>
+            <div className="v890-form-timeline">
+              {recentMatches.length?recentMatches.map(m=>{
+                const result=recentResult(m);
+                const ours=m.home_team===CLUB?(m.home_score??0):(m.away_score??0);
+                const opp=m.home_team===CLUB?(m.away_score??0):(m.home_score??0);
+                return <button key={m.id} onClick={()=>setSelectedMatch(m)}>
+                  <span className={`result result-${result.toLowerCase()}`}>{result}</span>
+                  <div><b>{recentOpponent(m)}</b><small>{datePL(m.match_date)}</small></div>
+                  <strong>{ours}:{opp}</strong>
+                </button>
+              }):<p className="muted">Pierwsze wyniki pojawią się tutaj po rozegranym meczu.</p>}
+            </div>
+            <div className="v890-streaks">
+              <div><span>Bez porażki</span><b>{currentUnbeatenStreak}</b></div>
+              <div><span>Zwycięstwa z rzędu</span><b>{currentWinStreak}</b></div>
+              <div><span>Bilans bramek</span><b>{teamSummary.goals}</b></div>
+            </div>
+          </article>
+        </div>
       </section>}
 
       {tab==="achievements"&&<section className="section v8-section-page"><div className="section-title"><h2>Osiągnięcia</h2></div><div className="achievement-grid">{[["Start sezonu",teamSummary.played>=1,teamSummary.played,1],["3 zwycięstwa",teamSummary.wins>=3,teamSummary.wins,3],["10 bramek",teamSummary.goals>=10,teamSummary.goals,10],["25 bramek",teamSummary.goals>=25,teamSummary.goals,25],["50 bramek",teamSummary.goals>=50,teamSummary.goals,50],["10 asyst",teamSummary.assists>=10,teamSummary.assists,10]].map(([name,ok,current,target])=><div className={`achievement devil-card ${ok?"unlocked":""}`} key={name as string}><Trophy size={24}/><h3>{name}</h3><p>{ok?"ZDOBYTE":`${current}/${target}`}</p></div>)}</div></section>}

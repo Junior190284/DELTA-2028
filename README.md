@@ -371,3 +371,28 @@ Po deployu:
 - „Asysty” pokazują pełny ranking wszystkich zawodników z asystami.
 - Kliknięcie zawodnika w rankingu otwiera jego profil.
 - „Najlepsi w sezonie” pokazuje tylko liderów z 1. miejsca; przy remisie wszystkich współliderów.
+
+
+## V8.8.6 — Captain Card Layout Fix
+- Premium card no longer overlaps the player name or CTA.
+- Captain card uses a clean two-column layout.
+- Image is reduced to a balanced size.
+- CTA sits below the player data.
+- Mobile layout remains compact and readable.
+
+
+## V8.9.0 — Statistics Center
+
+Nowa zakładka `Statystyki`:
+- hero sezonu z bilansem zespołu,
+- KPI: gole/mecz, asysty/mecz, zawodnicy z golem/asystą,
+- podium G+A,
+- rekordy sezonu,
+- rankingi przełączane: G+A, gole, asysty, MVP, mecze, kapitan,
+- pełne rankingi wszystkich zawodników,
+- porównanie dwóch zawodników,
+- forma drużyny i serie,
+- kliknięcie zawodnika otwiera jego profil,
+- kliknięcie meczu w historii formy otwiera Centrum Meczu.
+
+Wszystkie wartości liczą się automatycznie z danych aplikacji.
