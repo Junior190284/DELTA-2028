@@ -415,6 +415,111 @@ export default function TeamHub(props:{
     return count;
   })();
 
+  const playedMatchesChrono=matches
+    .filter(m=>m.status==="played")
+    .slice()
+    .sort((a,b)=>new Date(a.match_date).getTime()-new Date(b.match_date).getTime());
+
+  const advancedPlayerStats=useMemo(()=>{
+    const result:Record<string,{
+      goalGames:number;
+      assistGames:number;
+      contributionGames:number;
+      doubles:number;
+      hatTricks:number;
+      bestMatchGA:number;
+      bestMatchId:string|null;
+      currentGoalStreak:number;
+      currentGAStreak:number;
+      attendanceStreak:number;
+      starterStreak:number;
+      winsPlayed:number;
+      gaPerMatch:number;
+      goalsPerMatch:number;
+      assistsPerMatch:number;
+    }>={};
+
+    players.forEach(p=>{
+      let goalGames=0,assistGames=0,contributionGames=0,doubles=0,hatTricks=0;
+      let bestMatchGA=0,bestMatchId:string|null=null,winsPlayed=0;
+
+      for(const m of playedMatchesChrono){
+        const present=attendance.some(a=>a.match_id===m.id&&a.player_id===p.id&&(a.status==="present"||a.status==="yes"));
+        const goals=events.filter(e=>e.match_id===m.id&&e.event_type==="goal"&&e.player_id===p.id).length;
+        const assists=events.filter(e=>e.match_id===m.id&&e.event_type==="goal"&&e.assist_player_id===p.id).length;
+        const ga=goals+assists;
+
+        if(goals>0)goalGames++;
+        if(assists>0)assistGames++;
+        if(ga>0)contributionGames++;
+        if(goals===2)doubles++;
+        if(goals>=3)hatTricks++;
+        if(ga>bestMatchGA){bestMatchGA=ga;bestMatchId=m.id;}
+
+        const ours=m.home_team===CLUB?(m.home_score||0):(m.away_score||0);
+        const opp=m.home_team===CLUB?(m.away_score||0):(m.home_score||0);
+        if(present&&ours>opp)winsPlayed++;
+      }
+
+      let currentGoalStreak=0,currentGAStreak=0,attendanceStreak=0,starterStreak=0;
+      for(let i=playedMatchesChrono.length-1;i>=0;i--){
+        const m=playedMatchesChrono[i];
+        const goals=events.filter(e=>e.match_id===m.id&&e.event_type==="goal"&&e.player_id===p.id).length;
+        if(goals>0)currentGoalStreak++; else break;
+      }
+      for(let i=playedMatchesChrono.length-1;i>=0;i--){
+        const m=playedMatchesChrono[i];
+        const goals=events.filter(e=>e.match_id===m.id&&e.event_type==="goal"&&e.player_id===p.id).length;
+        const assists=events.filter(e=>e.match_id===m.id&&e.event_type==="goal"&&e.assist_player_id===p.id).length;
+        if(goals+assists>0)currentGAStreak++; else break;
+      }
+      for(let i=playedMatchesChrono.length-1;i>=0;i--){
+        const m=playedMatchesChrono[i];
+        const present=attendance.some(a=>a.match_id===m.id&&a.player_id===p.id&&(a.status==="present"||a.status==="yes"));
+        if(present)attendanceStreak++; else break;
+      }
+      for(let i=playedMatchesChrono.length-1;i>=0;i--){
+        const m=playedMatchesChrono[i];
+        const starter=lineup.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.is_starter);
+        if(starter)starterStreak++; else break;
+      }
+
+      const base=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+      result[p.id]={
+        goalGames,assistGames,contributionGames,doubles,hatTricks,bestMatchGA,bestMatchId,
+        currentGoalStreak,currentGAStreak,attendanceStreak,starterStreak,winsPlayed,
+        gaPerMatch:base.m?(base.g+base.a)/base.m:0,
+        goalsPerMatch:base.m?base.g/base.m:0,
+        assistsPerMatch:base.m?base.a/base.m:0,
+      };
+    });
+    return result;
+  },[players,playedMatchesChrono,attendance,events,lineup,stats]);
+
+  const advancedLeaders={
+    gaPerMatch:players.slice().sort((a,b)=>(advancedPlayerStats[b.id]?.gaPerMatch||0)-(advancedPlayerStats[a.id]?.gaPerMatch||0))[0]||null,
+    contributionGames:players.slice().sort((a,b)=>(advancedPlayerStats[b.id]?.contributionGames||0)-(advancedPlayerStats[a.id]?.contributionGames||0))[0]||null,
+    attendanceStreak:players.slice().sort((a,b)=>(advancedPlayerStats[b.id]?.attendanceStreak||0)-(advancedPlayerStats[a.id]?.attendanceStreak||0))[0]||null,
+    bestMatchGA:players.slice().sort((a,b)=>(advancedPlayerStats[b.id]?.bestMatchGA||0)-(advancedPlayerStats[a.id]?.bestMatchGA||0))[0]||null,
+  };
+
+  const automaticMilestones=(p:Player)=>{
+    const a=advancedPlayerStats[p.id];
+    const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    if(!a)return [];
+    return [
+      {label:"DUBLET",ok:a.doubles>0,value:a.doubles,icon:"2×"},
+      {label:"HAT-TRICK",ok:a.hatTricks>0,value:a.hatTricks,icon:"3×"},
+      {label:"SERIA GOLI",ok:a.currentGoalStreak>=2,value:a.currentGoalStreak,icon:"🔥"},
+      {label:"SERIA G+A",ok:a.currentGAStreak>=2,value:a.currentGAStreak,icon:"⚡"},
+      {label:"ŻELAZNA OBECNOŚĆ",ok:a.attendanceStreak>=3,value:a.attendanceStreak,icon:"✓"},
+      {label:"STAŁY STARTER",ok:a.starterStreak>=3,value:a.starterStreak,icon:"6"},
+      {label:"10 G+A",ok:s.g+s.a>=10,value:s.g+s.a,icon:"10"},
+      {label:"3 MVP",ok:s.mvp>=3,value:s.mvp,icon:"★"},
+    ].filter(x=>x.ok);
+  };
+
+
   const teamGoalTarget=50;
   const teamGoalProgress=Math.min(100,Math.round((teamSummary.goals/teamGoalTarget)*100));
 
@@ -970,6 +1075,83 @@ export default function TeamHub(props:{
             })}
           </div>
         </article>
+
+        <section className="v893-advanced-zone">
+          <div className="v893-zone-head">
+            <div>
+              <span className="eyebrow gold">AUTOMATYCZNIE Z MECZÓW</span>
+              <h3>Advanced Stats</h3>
+            </div>
+            <p>Bez dodatkowego wpisywania danych — liczone z obecności, składu, goli, asyst i wyników.</p>
+          </div>
+
+          <div className="v893-leader-strip">
+            <article className="devil-card">
+              <span>G+A / MECZ</span>
+              <b>{advancedLeaders.gaPerMatch?.display_name||"—"}</b>
+              <strong>{advancedLeaders.gaPerMatch?(advancedPlayerStats[advancedLeaders.gaPerMatch.id]?.gaPerMatch||0).toFixed(2):"0.00"}</strong>
+            </article>
+            <article className="devil-card">
+              <span>MECZE Z G+A</span>
+              <b>{advancedLeaders.contributionGames?.display_name||"—"}</b>
+              <strong>{advancedLeaders.contributionGames?advancedPlayerStats[advancedLeaders.contributionGames.id]?.contributionGames||0:0}</strong>
+            </article>
+            <article className="devil-card">
+              <span>SERIA OBECNOŚCI</span>
+              <b>{advancedLeaders.attendanceStreak?.display_name||"—"}</b>
+              <strong>{advancedLeaders.attendanceStreak?advancedPlayerStats[advancedLeaders.attendanceStreak.id]?.attendanceStreak||0:0}</strong>
+            </article>
+            <article className="devil-card">
+              <span>NAJLEPSZY MECZ G+A</span>
+              <b>{advancedLeaders.bestMatchGA?.display_name||"—"}</b>
+              <strong>{advancedLeaders.bestMatchGA?advancedPlayerStats[advancedLeaders.bestMatchGA.id]?.bestMatchGA||0:0}</strong>
+            </article>
+          </div>
+
+          <div className="v893-player-advanced-grid">
+            {players.map(p=>{
+              const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+              const a=advancedPlayerStats[p.id];
+              const badges=automaticMilestones(p);
+              return <article className="v893-player-advanced devil-card" key={p.id}>
+                <button className="v893-player-head" onClick={()=>setSelectedPlayer(p)}>
+                  <span className="v893-mini-photo">
+                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
+                  </span>
+                  <span><b>{p.display_name}</b><small>{s.m} mecze • {s.g+s.a} G+A</small></span>
+                  <ChevronRight size={15}/>
+                </button>
+
+                <div className="v893-metrics">
+                  <div><strong>{a?.gaPerMatch.toFixed(2)||"0.00"}</strong><span>G+A / MECZ</span></div>
+                  <div><strong>{a?.goalGames||0}</strong><span>MECZE Z GOLEM</span></div>
+                  <div><strong>{a?.assistGames||0}</strong><span>MECZE Z ASYSTĄ</span></div>
+                  <div><strong>{a?.contributionGames||0}</strong><span>MECZE Z G+A</span></div>
+                  <div><strong>{a?.doubles||0}</strong><span>DUBLETY</span></div>
+                  <div><strong>{a?.hatTricks||0}</strong><span>HAT-TRICKI</span></div>
+                  <div><strong>{a?.winsPlayed||0}</strong><span>WYGRANE Z UDZIAŁEM</span></div>
+                  <div><strong>{a?.bestMatchGA||0}</strong><span>BEST MATCH G+A</span></div>
+                </div>
+
+                <div className="v893-streaks">
+                  <span><b>{a?.currentGoalStreak||0}</b> seria goli</span>
+                  <span><b>{a?.currentGAStreak||0}</b> seria G+A</span>
+                  <span><b>{a?.attendanceStreak||0}</b> obecność</span>
+                  <span><b>{a?.starterStreak||0}</b> starter</span>
+                </div>
+
+                <div className="v893-auto-badges">
+                  {badges.length?badges.map(x=><span key={x.label} title={x.label}><i>{x.icon}</i><b>{x.label}</b><em>{x.value}</em></span>):<small>Pierwsze automatyczne wyróżnienia jeszcze przed nami.</small>}
+                </div>
+
+                {a?.bestMatchId&&<button className="v893-best-match" onClick={()=>{
+                  const m=matches.find(x=>x.id===a.bestMatchId);
+                  if(m)openMatch(m,"summary");
+                }}>NAJLEPSZY MECZ <ChevronRight size={12}/></button>}
+              </article>
+            })}
+          </div>
+        </section>
 
         <div className="v890-compare-record-grid">
           <article className="v890-compare devil-card">

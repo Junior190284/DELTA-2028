@@ -422,3 +422,33 @@ Prawidłowy wynik:
 - countdown „Do meczu” jest znacznie mniejszy i bardziej dyskretny,
 - kompaktowy kafel obecności pozostaje obok countdownu,
 - siatka pozostałych kart na Home została uporządkowana.
+
+
+## V8.9.3 — Advanced Stats
+Nowe statystyki liczone automatycznie bez dodatkowego wpisywania:
+- G+A na mecz,
+- gole na mecz,
+- asysty na mecz,
+- liczba meczów z golem,
+- liczba meczów z asystą,
+- liczba meczów z G+A,
+- dublety,
+- hat-tricki,
+- najlepszy mecz według G+A,
+- aktualna seria meczów z golem,
+- aktualna seria meczów z G+A,
+- seria obecności,
+- seria w wyjściowej 6,
+- liczba zwycięstw rozegranych przez zawodnika.
+
+Automatyczne wyróżnienia:
+- Dublet,
+- Hat-trick,
+- Seria goli,
+- Seria G+A,
+- Żelazna obecność,
+- Stały starter,
+- 10 G+A,
+- 3 MVP.
+
+Nie wymaga nowej tabeli ani SQL — korzysta wyłącznie z danych już zapisanych w aplikacji.

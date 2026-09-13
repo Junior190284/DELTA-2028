@@ -2717,3 +2717,94 @@ button.v85-summary-card{color:inherit;cursor:pointer}
     font-size:20px!important;
   }
 }
+
+
+/* =========================================================
+   V8.9.3 — ADVANCED STATS
+   ========================================================= */
+.v893-advanced-zone{margin-top:10px}
+.v893-zone-head{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:20px;
+  padding:14px 4px 9px
+}
+.v893-zone-head h3{margin:4px 0 0;font-size:30px}
+.v893-zone-head p{max-width:520px;margin:0;color:#79858f;font-size:8px;text-align:right}
+
+.v893-leader-strip{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px
+}
+.v893-leader-strip article{
+  min-height:115px;padding:13px 14px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  background:
+    radial-gradient(circle at 88% 12%,rgba(235,31,48,.13),transparent 32%),
+    linear-gradient(145deg,rgba(12,16,22,.98),rgba(7,10,14,.98))
+}
+.v893-leader-strip span{font-size:6px;color:#88743b;font-weight:1000;letter-spacing:.10em}
+.v893-leader-strip b{font-size:9px;margin:7px 0 3px;color:#fff}
+.v893-leader-strip strong{font-size:30px;line-height:1;color:#f1c95c}
+
+.v893-player-advanced-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:9px
+}
+.v893-player-advanced{padding:13px;overflow:hidden}
+.v893-player-head{
+  width:100%;display:grid;grid-template-columns:48px minmax(0,1fr) 17px;gap:10px;align-items:center;
+  border:0;background:transparent;color:#fff;text-align:left;cursor:pointer;padding:0 0 10px
+}
+.v893-mini-photo{width:46px;height:50px;overflow:hidden;border:1px solid rgba(246,201,82,.22);background:#080b10}
+.v893-mini-photo img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.v893-player-head>span:nth-child(2){display:flex;flex-direction:column;gap:3px}
+.v893-player-head b{font-size:11px}
+.v893-player-head small{font-size:6px;color:#76828d}
+.v893-player-head>svg{color:#64717d}
+
+.v893-metrics{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px
+}
+.v893-metrics>div{
+  min-height:70px;padding:8px 6px;display:flex;flex-direction:column;justify-content:flex-end;
+  border:1px solid rgba(255,255,255,.05);background:rgba(8,11,15,.74)
+}
+.v893-metrics strong{font-size:19px;color:#f1c95c;line-height:1}
+.v893-metrics span{font-size:5.4px;color:#6f7a84;font-weight:1000;line-height:1.25;margin-top:5px}
+
+.v893-streaks{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px
+}
+.v893-streaks span{
+  padding:7px 5px;border:1px solid rgba(229,31,47,.10);
+  color:#7e8993;font-size:5.5px;text-align:center;background:rgba(24,8,11,.28)
+}
+.v893-streaks b{color:#fff;font-size:9px;margin-right:3px}
+
+.v893-auto-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;min-height:28px}
+.v893-auto-badges>span{
+  display:grid;grid-template-columns:22px auto auto;align-items:center;gap:5px;
+  border:1px solid rgba(246,201,82,.18);background:#0a0d12;padding:4px 7px
+}
+.v893-auto-badges i{
+  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(229,31,47,.35);color:#f1c95c;font-size:7px;font-style:normal
+}
+.v893-auto-badges b{font-size:5.5px;color:#d8dde2;letter-spacing:.04em}
+.v893-auto-badges em{font-size:7px;color:#f1c95c;font-style:normal;font-weight:1000}
+.v893-auto-badges>small{font-size:6px;color:#626e78;padding:7px 0}
+
+.v893-best-match{
+  margin-top:8px;border:1px solid rgba(246,201,82,.18);background:transparent;color:#f1c95c;
+  padding:7px 9px;font-size:6px;font-weight:1000;cursor:pointer;display:flex;align-items:center;gap:6px
+}
+
+@media(max-width:1000px){
+  .v893-leader-strip{grid-template-columns:1fr 1fr}
+  .v893-player-advanced-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .v893-zone-head{align-items:flex-start;flex-direction:column}
+  .v893-zone-head p{text-align:left}
+  .v893-leader-strip{grid-template-columns:1fr 1fr}
+  .v893-leader-strip article{min-height:90px}
+  .v893-metrics{grid-template-columns:repeat(2,1fr)}
+  .v893-streaks{grid-template-columns:1fr 1fr}
+}
