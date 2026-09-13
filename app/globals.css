@@ -2951,3 +2951,134 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v902-admin-actions{width:100%}
   .v902-admin-actions button{flex:1}
 }
+
+
+/* =========================================================
+   V9.1 — PUBLIC TEAM SITE
+   ========================================================= */
+.public-team-site{
+  min-height:100vh;background:#05070a;color:#fff;
+  padding:78px 18px 28px 112px;
+  font-family:var(--font-geist-sans,system-ui,sans-serif)
+}
+.public-topbar{
+  position:fixed;z-index:50;top:0;left:0;right:0;height:64px;
+  padding:0 24px;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(4,6,9,.96);border-bottom:1px solid rgba(218,28,43,.28);backdrop-filter:blur(14px)
+}
+.public-brand{display:flex;align-items:center;gap:11px}
+.public-brand img{width:38px;height:38px;object-fit:contain}
+.public-brand div{display:flex;flex-direction:column}
+.public-brand b{font-size:11px;letter-spacing:.09em}.public-brand span{font-size:7px;color:#6f7b85;margin-top:2px}
+.public-login{
+  display:flex;align-items:center;gap:7px;padding:10px 13px;border:1px solid rgba(246,201,82,.25);
+  color:#f1c95c;text-decoration:none;font-size:7px;font-weight:1000;letter-spacing:.08em
+}
+.public-hero{
+  position:relative;min-height:420px;max-width:1480px;margin:0 auto;overflow:hidden;
+  display:flex;align-items:flex-end;padding:42px;
+  border:1px solid rgba(220,30,46,.30);
+  background:url('/assets/hero-banner-wide.png') center/cover no-repeat
+}
+.public-hero-overlay{
+  position:absolute;inset:0;background:
+    linear-gradient(90deg,rgba(4,6,9,.95) 0%,rgba(5,7,10,.70) 48%,rgba(10,7,8,.36) 100%),
+    linear-gradient(0deg,rgba(4,6,9,.92),transparent 55%)
+}
+.public-hero-copy{position:relative;z-index:2;max-width:700px}
+.public-hero-copy>span{font-size:7px;color:#f1c95c;font-weight:1000;letter-spacing:.18em}
+.public-hero-copy h1{font-size:64px;line-height:.9;margin:10px 0 10px;letter-spacing:-.055em}
+.public-hero-copy h1 em{font-style:normal;color:#f1c95c}
+.public-hero-copy p{font-size:10px;color:#9ca7b1;max-width:580px}
+.public-hero-actions{display:flex;gap:8px;margin-top:19px}
+.public-hero-actions a{
+  min-height:42px;padding:0 16px;display:flex;align-items:center;gap:7px;
+  text-decoration:none;font-size:7px;font-weight:1000
+}
+.public-hero-actions a:first-child{background:#df2032;color:#fff}
+.public-hero-actions a:last-child{border:1px solid rgba(246,201,82,.26);color:#f1c95c;background:rgba(7,10,14,.72)}
+
+.public-next-match,.public-kpis,.public-grid,.public-private-zone,.public-footer{max-width:1480px;margin-left:auto;margin-right:auto}
+.public-next-match{margin-top:10px;padding:16px 18px}
+.public-section-title{
+  display:flex;align-items:center;gap:7px;color:#f1c95c;font-size:8px;font-weight:1000;letter-spacing:.055em;
+  padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08)
+}
+.public-section-title span{margin-left:auto;color:#87929b;font-size:6px}
+.public-match-main{display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;gap:18px;padding:24px 0 14px}
+.public-match-main>div{display:flex;flex-direction:column;gap:5px}
+.public-match-main .right{text-align:right}.public-match-main .right>*{align-self:flex-end}
+.public-match-main small{font-size:6px;color:#6e7a84;font-weight:1000;letter-spacing:.11em}
+.public-match-main b{font-size:19px}.public-match-main>strong{text-align:center;color:#f1c95c;font-size:36px}
+.public-match-meta{display:flex;justify-content:center;gap:18px;color:#838f99;font-size:7px}
+.public-parent-lock{
+  margin-top:14px;padding:9px 11px;border:1px solid rgba(246,201,82,.13);background:#090c11;
+  display:flex;align-items:center;gap:9px;color:#828e98;font-size:7px
+}
+.public-parent-lock svg{color:#f1c95c}.public-parent-lock a{margin-left:auto;color:#f1c95c;text-decoration:none;font-size:6px;font-weight:1000;display:flex;gap:4px;align-items:center}
+
+.public-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.public-kpis article{
+  min-height:108px;padding:13px;border:1px solid rgba(246,201,82,.11);
+  background:linear-gradient(145deg,#0a0e13,#080a0e);
+  display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr;gap:8px 10px
+}
+.public-kpis svg{color:#f1c95c}.public-kpis b{grid-column:1/-1;align-self:end;font-size:31px}
+.public-kpis span{font-size:6px;color:#74818c;font-weight:1000;align-self:center;letter-spacing:.08em}
+
+.public-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}
+.public-card{padding:14px;min-height:250px}
+.public-results,.public-events,.public-news{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.public-results>div{
+  min-height:50px;display:grid;grid-template-columns:28px 1fr auto;gap:9px;align-items:center;
+  padding:7px;border:1px solid rgba(255,255,255,.045);background:#090c11
+}
+.public-results>div>span{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:1000}
+.public-results .w{background:#163f2d;color:#7be5a5}.public-results .d{background:#3c3216;color:#f1c95c}.public-results .l{background:#46141b;color:#ff7f8e}
+.public-results b,.public-events b,.public-news b{font-size:9px}
+.public-results small,.public-events small{display:block;font-size:6px;color:#71808b;margin-top:2px}
+.public-results strong{font-size:17px;color:#f1c95c}
+.public-events>div{display:grid;grid-template-columns:48px 1fr;gap:9px;align-items:center;padding:7px;border:1px solid rgba(255,255,255,.045)}
+.public-events>div>span{height:47px;border:1px solid rgba(246,201,82,.16);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.public-events>div>span b{font-size:17px;color:#f1c95c}.public-events>div>span small{font-size:5px}
+.public-news>div{padding:9px;border:1px solid rgba(255,255,255,.045);background:#090c11}
+.public-news>div>span{display:block;color:#8b7538;font-size:5.5px;font-weight:1000;margin-bottom:4px}
+.public-news p{font-size:7px;color:#78858f;line-height:1.45;margin:4px 0 0}
+
+.public-private-zone{
+  margin-top:9px;padding:21px;display:grid;grid-template-columns:.9fr 1.2fr auto;gap:24px;align-items:center;
+  background:linear-gradient(110deg,rgba(11,14,19,.98),rgba(36,8,12,.88))
+}
+.public-private-zone>div:first-child svg{color:#f1c95c}
+.public-private-zone>div:first-child span{display:block;color:#8c783c;font-size:6px;font-weight:1000;letter-spacing:.13em;margin:6px 0}
+.public-private-zone h2{font-size:24px;margin:0}
+.public-private-list{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.public-private-list span{font-size:7px;color:#8c98a2}
+.public-private-zone>a{
+  min-height:44px;padding:0 14px;display:flex;align-items:center;gap:6px;
+  background:#df2032;color:#fff;text-decoration:none;font-size:6px;font-weight:1000
+}
+.public-footer{margin-top:15px;padding:16px;display:flex;align-items:center;gap:9px;border-top:1px solid rgba(255,255,255,.06);color:#78848e}
+.public-footer img{width:32px;height:32px;object-fit:contain}.public-footer div{display:flex;flex-direction:column}.public-footer b{font-size:8px;color:#fff}.public-footer span{font-size:6px;margin-top:2px}
+.login-public-back{display:block;margin:10px 0;color:#f1c95c;text-decoration:none;font-size:8px;text-align:center}
+
+@media(max-width:900px){
+  .public-team-site{padding-left:18px}
+  .public-grid,.public-private-zone{grid-template-columns:1fr}
+  .public-kpis{grid-template-columns:1fr 1fr}
+  .public-private-list{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .public-team-site{padding:72px 10px 22px}
+  .public-topbar{padding:0 12px}
+  .public-brand b{font-size:9px}.public-login{padding:9px 10px}
+  .public-hero{min-height:350px;padding:24px 16px}
+  .public-hero-copy h1{font-size:44px}
+  .public-match-main{grid-template-columns:1fr 58px 1fr;gap:7px}
+  .public-match-main b{font-size:11px}.public-match-main>strong{font-size:26px}
+  .public-parent-lock{align-items:flex-start;flex-wrap:wrap}
+  .public-parent-lock a{margin-left:25px}
+  .public-kpis{grid-template-columns:1fr 1fr}
+  .public-kpis article{min-height:90px}
+  .public-private-list{grid-template-columns:1fr}
+}

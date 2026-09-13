@@ -513,3 +513,29 @@ Usunięcie treningu kasuje automatycznie powiązane:
 - gole/asysty treningowe.
 
 Nie wymaga nowego SQL.
+
+
+## V9.1 — Public Team Site + Parent Login
+
+`/` jest teraz publiczną stroną drużyny.
+
+Bez logowania widoczne:
+- najbliższy mecz,
+- wyniki drużyny,
+- ogólne KPI zespołu,
+- bezpieczne wydarzenia kalendarza,
+- aktualności drużyny,
+- feed „Z klubu”.
+
+Za logowaniem pozostają:
+- nazwiska i zdjęcia zawodników,
+- statystyki indywidualne,
+- potwierdzanie obecności,
+- Centrum Treningowe i chemia,
+- składy i zdarzenia meczowe,
+- prywatne wydarzenia powiązane z dzieckiem,
+- panel rodzica/trenera/admina.
+
+Publiczny widok pobiera dane po stronie serwera i nie wysyła do przeglądarki rekordów zawodników, obecności, składów, parent_links ani danych treningowych.
+
+Nie wymaga nowego SQL.

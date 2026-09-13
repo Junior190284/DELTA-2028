@@ -84,6 +84,8 @@ export default function LoginPage() {
 
         <button className="login-primary" onClick={signIn}>ZALOGUJ</button>
 
+        <a href="/" className="login-public-back">← Wróć do publicznej strony drużyny</a>
+
         <div className="login-note">
           Konto Google i logowanie e-mail korzystają z tego samego systemu Supabase Auth.
         </div>

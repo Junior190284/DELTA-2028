@@ -1,27 +1,49 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import PublicTeamSite from "@/components/PublicTeamSite";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   if (user) redirect("/dashboard");
 
-  return (
-    <main style={{minHeight:"100vh",background:"#07090d",color:"#fff",fontFamily:"system-ui",padding:32}}>
-      <div style={{maxWidth:900,margin:"0 auto"}}>
-        <div style={{color:"#f0c95d",fontWeight:900,letterSpacing:2}}>DELTA 2018 GM</div>
-        <h1 style={{fontSize:48,margin:"12px 0"}}>Online Team Hub</h1>
-        <p style={{color:"#a7b2bf",lineHeight:1.6}}>
-          Centrum drużyny: mecze, składy, obecności, statystyki, osiągnięcia i aktualności.
-        </p>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:24}}>
-          <Link href="/login" style={{padding:"12px 18px",background:"#d91a25",color:"#fff",textDecoration:"none",fontWeight:800}}>ZALOGUJ SIĘ</Link>
-        </div>
-      </div>
-    </main>
-  );
+  // Server-side service client is used only to build a sanitized public view.
+  // No player records, attendance, lineups, training-game data or parent links
+  // are passed to the browser.
+  const admin=createAdminClient();
+
+  const [
+    {data:matches},
+    {data:news},
+    {data:clubUpdates},
+    {data:teamEvents}
+  ]=await Promise.all([
+    admin.from("matches")
+      .select("id,round_no,match_date,match_time,venue,home_team,away_team,home_score,away_score,status")
+      .order("match_date"),
+    admin.from("news")
+      .select("id,type,title,body,published_at")
+      .order("published_at",{ascending:false})
+      .limit(10),
+    admin.from("club_updates")
+      .select("id,source_key,source_name,source_url,title,body,priority,published_at")
+      .order("published_at",{ascending:false})
+      .limit(10),
+    admin.from("team_events")
+      .select("id,title,event_type,event_date,start_time,end_time,location,details,important,player_id")
+      .is("player_id",null)
+      .neq("event_type","birthday")
+      .order("event_date")
+      .limit(12)
+  ]);
+
+  return <PublicTeamSite
+    matches={matches||[]}
+    news={news||[]}
+    clubUpdates={clubUpdates||[]}
+    teamEvents={(teamEvents||[]).map(({player_id,...event})=>event)}
+  />;
 }
