@@ -284,7 +284,7 @@ export default function TeamHub(props:{
     };
     const diff=value(sb)-value(sa);
     if(diff!==0)return diff;
-    return b.g+b.a-(a.g+a.a) || a.display_name.localeCompare(b.display_name,"pl");
+    return ((stats[b.id]?.g||0)+(stats[b.id]?.a||0))-((stats[a.id]?.g||0)+(stats[a.id]?.a||0)) || a.display_name.localeCompare(b.display_name,"pl");
   });
 
   const statsMetricLabel=
