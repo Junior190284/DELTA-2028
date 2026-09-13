@@ -19,6 +19,11 @@ type Event={id:string;match_id:string;event_type:string;player_id:string|null;as
 type News={id:string;type:string;title:string;body:string|null;published_at:string};
 type ClubUpdate={id:string;source_key:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string;synced_at:string};
 type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean;player_id:string|null;created_at:string};
+type TrainingSession={id:string;training_date:string;start_time:string|null;end_time:string|null;location:string|null;title:string;notes:string|null;created_at:string};
+type TrainingAttendance={training_id:string;player_id:string;status:string};
+type TrainingGame={id:string;training_id:string;team_a_name:string;team_b_name:string;team_a_score:number;team_b_score:number;created_at:string};
+type TrainingGamePlayer={game_id:string;player_id:string;team:"A"|"B"|string};
+type TrainingEvent={id:string;game_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;created_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 const isRyszardPlayer=(p:{display_name:string})=>{const n=(p.display_name||"").toLocaleLowerCase("pl-PL");return n.includes("ryszard")&&n.includes("rybacki");};
@@ -97,10 +102,15 @@ export default function TeamHub(props:{
   initialNews:News[];
   initialClubUpdates:ClubUpdate[];
   initialTeamEvents:TeamEvent[];
+  initialTrainingSessions:TrainingSession[];
+  initialTrainingAttendance:TrainingAttendance[];
+  initialTrainingGames:TrainingGame[];
+  initialTrainingGamePlayers:TrainingGamePlayer[];
+  initialTrainingEvents:TrainingEvent[];
   parentPlayerIds:string[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"home"|"matches"|"calendar"|"players"|"stats"|"achievements"|"chronicle"|"news"|"club">("home");
+  const [tab,setTab]=useState<"home"|"matches"|"calendar"|"training"|"players"|"stats"|"achievements"|"chronicle"|"news"|"club">("home");
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -109,6 +119,11 @@ export default function TeamHub(props:{
   const [news,setNews]=useState(props.initialNews);
   const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
   const [teamEvents,setTeamEvents]=useState(props.initialTeamEvents);
+  const [trainingSessions,setTrainingSessions]=useState(props.initialTrainingSessions);
+  const [trainingAttendance,setTrainingAttendance]=useState(props.initialTrainingAttendance);
+  const [trainingGames,setTrainingGames]=useState(props.initialTrainingGames);
+  const [trainingGamePlayers,setTrainingGamePlayers]=useState(props.initialTrainingGamePlayers);
+  const [trainingEvents,setTrainingEvents]=useState(props.initialTrainingEvents);
   const [focusedClubKey,setFocusedClubKey]=useState<string|null>(null);
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
@@ -131,7 +146,9 @@ export default function TeamHub(props:{
   useEffect(()=>{
     setPlayers(props.initialPlayers);setMatches(props.initialMatches);setAttendance(props.initialAttendance);
     setLineup(props.initialLineup);setEvents(props.initialEvents);setNews(props.initialNews);setClubUpdates(props.initialClubUpdates);setTeamEvents(props.initialTeamEvents);
-  },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews,props.initialClubUpdates,props.initialTeamEvents]);
+    setTrainingSessions(props.initialTrainingSessions);setTrainingAttendance(props.initialTrainingAttendance);
+    setTrainingGames(props.initialTrainingGames);setTrainingGamePlayers(props.initialTrainingGamePlayers);setTrainingEvents(props.initialTrainingEvents);
+  },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews,props.initialClubUpdates,props.initialTeamEvents,props.initialTrainingSessions,props.initialTrainingAttendance,props.initialTrainingGames,props.initialTrainingGamePlayers,props.initialTrainingEvents]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -523,6 +540,85 @@ export default function TeamHub(props:{
   const teamGoalTarget=50;
   const teamGoalProgress=Math.min(100,Math.round((teamSummary.goals/teamGoalTarget)*100));
 
+
+  const trainingPlayerStats=useMemo(()=>{
+    const out:Record<string,{sessions:number;goals:number;assists:number;ga:number;attendanceStreak:number;games:number;wins:number}>={};
+    players.forEach(p=>out[p.id]={sessions:0,goals:0,assists:0,ga:0,attendanceStreak:0,games:0,wins:0});
+
+    trainingSessions.forEach(s=>{
+      trainingAttendance
+        .filter(a=>a.training_id===s.id&&a.status==="present")
+        .forEach(a=>{if(out[a.player_id])out[a.player_id].sessions++;});
+    });
+
+    trainingEvents.forEach(e=>{
+      if(e.event_type==="goal"&&e.player_id&&out[e.player_id])out[e.player_id].goals++;
+      if(e.event_type==="goal"&&e.assist_player_id&&out[e.assist_player_id])out[e.assist_player_id].assists++;
+    });
+
+    trainingGames.forEach(g=>{
+      const teamPlayers=trainingGamePlayers.filter(x=>x.game_id===g.id);
+      teamPlayers.forEach(x=>{
+        if(!out[x.player_id])return;
+        out[x.player_id].games++;
+        const won=x.team==="A"?g.team_a_score>g.team_b_score:g.team_b_score>g.team_a_score;
+        if(won)out[x.player_id].wins++;
+      });
+    });
+
+    players.forEach(p=>{
+      out[p.id].ga=out[p.id].goals+out[p.id].assists;
+      let streak=0;
+      const chronological=trainingSessions.slice().sort((a,b)=>a.training_date.localeCompare(b.training_date));
+      for(let i=chronological.length-1;i>=0;i--){
+        const present=trainingAttendance.some(a=>a.training_id===chronological[i].id&&a.player_id===p.id&&a.status==="present");
+        if(present)streak++; else break;
+      }
+      out[p.id].attendanceStreak=streak;
+    });
+    return out;
+  },[players,trainingSessions,trainingAttendance,trainingGames,trainingGamePlayers,trainingEvents]);
+
+  const trainingScorers=players.slice().sort((a,b)=>(trainingPlayerStats[b.id]?.goals||0)-(trainingPlayerStats[a.id]?.goals||0));
+  const trainingAssisters=players.slice().sort((a,b)=>(trainingPlayerStats[b.id]?.assists||0)-(trainingPlayerStats[a.id]?.assists||0));
+  const trainingGA=players.slice().sort((a,b)=>(trainingPlayerStats[b.id]?.ga||0)-(trainingPlayerStats[a.id]?.ga||0));
+  const trainingAttendanceRank=players.slice().sort((a,b)=>(trainingPlayerStats[b.id]?.sessions||0)-(trainingPlayerStats[a.id]?.sessions||0));
+
+  const trainingChemistry=useMemo(()=>{
+    type Pair={a:Player;b:Player;games:number;wins:number;combinedGA:number;score:number};
+    const pairs:Pair[]=[];
+    for(let i=0;i<players.length;i++){
+      for(let j=i+1;j<players.length;j++){
+        const pa=players[i],pb=players[j];
+        let games=0,wins=0,combinedGA=0;
+
+        trainingGames.forEach(g=>{
+          const xa=trainingGamePlayers.find(x=>x.game_id===g.id&&x.player_id===pa.id);
+          const xb=trainingGamePlayers.find(x=>x.game_id===g.id&&x.player_id===pb.id);
+          if(!xa||!xb||xa.team!==xb.team)return;
+
+          games++;
+          const teamWon=xa.team==="A"?g.team_a_score>g.team_b_score:g.team_b_score>g.team_a_score;
+          if(teamWon)wins++;
+
+          const eventsInGame=trainingEvents.filter(e=>e.game_id===g.id);
+          combinedGA+=eventsInGame.filter(e=>e.player_id===pa.id||e.player_id===pb.id||e.assist_player_id===pa.id||e.assist_player_id===pb.id).length;
+        });
+
+        if(games>0){
+          const winRate=wins/games;
+          const contributionRate=Math.min(1,combinedGA/Math.max(1,games*4));
+          const score=Math.round(winRate*70+contributionRate*30);
+          pairs.push({a:pa,b:pb,games,wins,combinedGA,score});
+        }
+      }
+    }
+    return pairs.sort((x,y)=>y.score-x.score||y.games-x.games||y.combinedGA-x.combinedGA);
+  },[players,trainingGames,trainingGamePlayers,trainingEvents]);
+
+  const totalTrainingAttendance=trainingAttendance.filter(a=>a.status==="present").length;
+  const avgTrainingAttendance=trainingSessions.length?totalTrainingAttendance/trainingSessions.length:0;
+
   const unlockedCount=(p:Player)=>playerAchievements(p).filter(([,ok])=>ok).length;
 
   const playerAchievements=(p:Player)=>{
@@ -556,7 +652,7 @@ export default function TeamHub(props:{
   }
 
   const navItems:[string,string,any][]=[
-    ["home","Start",Home],["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],
+    ["home","Start",Home],["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["training","Treningi",Zap],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],
     ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
@@ -873,6 +969,122 @@ export default function TeamHub(props:{
             </article>):<div className="v891-calendar-empty devil-card"><CalendarDays size={34}/><h3>Kalendarz jest pusty</h3><p>Administrator może zaplanować treningi, turnieje, urodziny i inne wydarzenia.</p></div>
           })()}
         </div>
+      </section>}
+
+      {tab==="training"&&<section className="section v8-section-page v900-training-center">
+        <div className="v900-training-hero devil-card">
+          <div className="v900-training-hero-bg"/>
+          <div className="v900-training-copy">
+            <span className="eyebrow gold">DELTA 2018 GM • PERFORMANCE LAB</span>
+            <h2>CENTRUM <span>TRENINGOWE</span></h2>
+            <p>Frekwencja, gry kontrolne, gole treningowe, asysty i chemia zespołu — całkowicie oddzielone od statystyk meczów oficjalnych.</p>
+          </div>
+          <div className="v900-training-kpis">
+            <div><strong>{trainingSessions.length}</strong><span>TRENINGI</span></div>
+            <div><strong>{avgTrainingAttendance.toFixed(1)}</strong><span>ŚR. OBECNOŚĆ</span></div>
+            <div><strong>{trainingGames.length}</strong><span>GRY KONTROLNE</span></div>
+            <div><strong>{trainingEvents.filter(e=>e.event_type==="goal").length}</strong><span>GOLE TRENINGOWE</span></div>
+          </div>
+        </div>
+
+        <div className="v900-training-grid">
+          <article className="v900-training-card devil-card">
+            <div className="v8-panel-title"><Users size={18}/> FREKWENCJA TRENINGOWA</div>
+            <div className="v900-training-ranking">
+              {trainingAttendanceRank.map((p,index)=>{
+                const s=trainingPlayerStats[p.id];
+                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="rank">{index+1}</span>
+                  <span className="photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span>
+                  <span className="name"><b>{p.display_name}</b><small>seria: {s?.attendanceStreak||0}</small></span>
+                  <strong>{s?.sessions||0}</strong>
+                </button>
+              })}
+            </div>
+          </article>
+
+          <article className="v900-training-card devil-card">
+            <div className="v8-panel-title"><Goal size={18}/> GOLE TRENINGOWE</div>
+            <div className="v900-training-ranking compact">
+              {trainingScorers.slice(0,8).map((p,index)=>{
+                const s=trainingPlayerStats[p.id];
+                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="rank">{index+1}</span>
+                  <span className="name"><b>{p.display_name}</b><small>{s?.games||0} gier</small></span>
+                  <strong>{s?.goals||0}</strong>
+                </button>
+              })}
+            </div>
+          </article>
+
+          <article className="v900-training-card devil-card">
+            <div className="v8-panel-title"><Star size={18}/> ASYSTY TRENINGOWE</div>
+            <div className="v900-training-ranking compact">
+              {trainingAssisters.slice(0,8).map((p,index)=>{
+                const s=trainingPlayerStats[p.id];
+                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="rank">{index+1}</span>
+                  <span className="name"><b>{p.display_name}</b><small>{s?.ga||0} G+A</small></span>
+                  <strong>{s?.assists||0}</strong>
+                </button>
+              })}
+            </div>
+          </article>
+
+          <article className="v900-training-card devil-card">
+            <div className="v8-panel-title"><Zap size={18}/> G+A TRENINGOWE</div>
+            <div className="v900-training-ranking compact">
+              {trainingGA.slice(0,8).map((p,index)=>{
+                const s=trainingPlayerStats[p.id];
+                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="rank">{index+1}</span>
+                  <span className="name"><b>{p.display_name}</b><small>{s?.goals||0}G • {s?.assists||0}A</small></span>
+                  <strong>{s?.ga||0}</strong>
+                </button>
+              })}
+            </div>
+          </article>
+        </div>
+
+        <article className="v900-chemistry devil-card">
+          <div className="v900-chemistry-head">
+            <div><span className="eyebrow gold">PAIR PERFORMANCE</span><h3>Chemia zespołu</h3></div>
+            <p>Wynik oparty na wspólnych grach kontrolnych: zwycięstwach oraz wspólnym udziale przy golach. To wskaźnik zabawowy, nie ocena zawodnika.</p>
+          </div>
+
+          <div className="v900-chemistry-grid">
+            {trainingChemistry.slice(0,10).map((pair,index)=><button className="v900-pair-card" key={`${pair.a.id}-${pair.b.id}`}>
+              <span className="v900-pair-rank">#{index+1}</span>
+              <div className="v900-pair-players">
+                <span>{isRyszardPlayer(pair.a)?<img src="/assets/ryszard-player-card.png" alt={pair.a.display_name}/>:<PlayerPhoto playerId={pair.a.id}/>}</span>
+                <i>+</i>
+                <span>{isRyszardPlayer(pair.b)?<img src="/assets/ryszard-player-card.png" alt={pair.b.display_name}/>:<PlayerPhoto playerId={pair.b.id}/>}</span>
+              </div>
+              <b>{pair.a.display_name} + {pair.b.display_name}</b>
+              <strong>{pair.score}%</strong>
+              <div className="v900-chem-bar"><i style={{width:`${pair.score}%`}}/></div>
+              <small>{pair.games} wspólnych gier • {pair.wins} wygranych • {pair.combinedGA} akcji G/A</small>
+            </button>)}
+            {trainingChemistry.length===0&&<div className="v900-no-chemistry">Chemia pojawi się po zapisaniu pierwszych gier kontrolnych i składów.</div>}
+          </div>
+        </article>
+
+        <article className="v900-training-history devil-card">
+          <div className="v8-panel-title"><History size={18}/> OSTATNIE TRENINGI</div>
+          <div className="v900-training-history-list">
+            {trainingSessions.slice(0,8).map(s=>{
+              const present=trainingAttendance.filter(a=>a.training_id===s.id&&a.status==="present").length;
+              const games=trainingGames.filter(g=>g.training_id===s.id);
+              return <div key={s.id}>
+                <span className="date">{datePL(s.training_date)}</span>
+                <div><b>{s.title||"Trening"}</b><small>{[s.start_time?.slice(0,5),s.location].filter(Boolean).join(" • ")}</small></div>
+                <strong>{present}/{players.length}</strong>
+                <em>{games.length} {games.length===1?"gra":"gry"}</em>
+              </div>
+            })}
+            {trainingSessions.length===0&&<p className="muted">Pierwszy trening dodasz w panelu Admin.</p>}
+          </div>
+        </article>
       </section>}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">

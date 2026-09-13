@@ -13,6 +13,11 @@ type News={id:string;type:string;title:string;body:string|null;published_at:stri
 type Profile={id:string;display_name:string|null;role:string};
 type ParentLink={parent_id:string;player_id:string};
 type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean;player_id:string|null;created_at:string};
+type TrainingSession={id:string;training_date:string;start_time:string|null;end_time:string|null;location:string|null;title:string;notes:string|null;created_at:string};
+type TrainingAttendance={training_id:string;player_id:string;status:string};
+type TrainingGame={id:string;training_id:string;team_a_name:string;team_b_name:string;team_a_score:number;team_b_score:number;created_at:string};
+type TrainingGamePlayer={game_id:string;player_id:string;team:string};
+type TrainingEvent={id:string;game_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;created_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 
@@ -25,11 +30,16 @@ export default function AdminPanel(props:{
   initialEvents:Event[];
   initialNews:News[];
   initialTeamEvents:TeamEvent[];
+  initialTrainingSessions:TrainingSession[];
+  initialTrainingAttendance:TrainingAttendance[];
+  initialTrainingGames:TrainingGame[];
+  initialTrainingGamePlayers:TrainingGamePlayer[];
+  initialTrainingEvents:TrainingEvent[];
   allProfiles:Profile[];
   initialParentLinks:ParentLink[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"matches"|"calendar"|"players"|"news"|"parents"|"push"|"sync">("matches");
+  const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"news"|"parents"|"push"|"sync">("matches");
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -39,11 +49,21 @@ export default function AdminPanel(props:{
   const [events,setEvents]=useState(props.initialEvents);
   const [news,setNews]=useState(props.initialNews);
   const [teamEvents,setTeamEvents]=useState(props.initialTeamEvents);
+  const [trainingSessions,setTrainingSessions]=useState(props.initialTrainingSessions);
+  const [trainingAttendance,setTrainingAttendance]=useState(props.initialTrainingAttendance);
+  const [trainingGames,setTrainingGames]=useState(props.initialTrainingGames);
+  const [trainingGamePlayers,setTrainingGamePlayers]=useState(props.initialTrainingGamePlayers);
+  const [trainingEvents,setTrainingEvents]=useState(props.initialTrainingEvents);
+  const [selectedTrainingId,setSelectedTrainingId]=useState(props.initialTrainingSessions[0]?.id||"");
+  const [selectedTrainingGameId,setSelectedTrainingGameId]=useState(props.initialTrainingGames[0]?.id||"");
   const [parentLinks,setParentLinks]=useState(props.initialParentLinks);
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
   const selectedMatch=matches.find(m=>m.id===selectedMatchId)||null;
   const activePlayers=players.filter(p=>p.active!==false);
   const parents=props.allProfiles.filter(p=>p.role==="parent");
+  const selectedTraining=trainingSessions.find(s=>s.id===selectedTrainingId)||null;
+  const trainingGamesForSelected=trainingGames.filter(g=>g.training_id===selectedTrainingId);
+  const selectedTrainingGame=trainingGames.find(g=>g.id===selectedTrainingGameId)||trainingGamesForSelected[0]||null;
 
   async function addMatch(){
     const home=prompt("Gospodarz",CLUB); if(!home)return;
@@ -223,6 +243,89 @@ export default function AdminPanel(props:{
     alert(text);
   }
 
+  async function addTrainingSession(){
+    const date=prompt("Data treningu YYYY-MM-DD"); if(!date)return;
+    const title=prompt("Nazwa","Trening")||"Trening";
+    const start_time=prompt("Start HH:MM","17:00")||null;
+    const end_time=prompt("Koniec HH:MM","18:30")||null;
+    const location=prompt("Miejsce","")||null;
+    const notes=prompt("Notatka","")||null;
+    const {data,error}=await supabase.from("training_sessions").insert({
+      training_date:date,title,start_time,end_time,location,notes,created_by:props.currentUser.id
+    }).select("*").single();
+    if(error)return alert(error.message);
+    setTrainingSessions(prev=>[data,...prev].sort((x,y)=>y.training_date.localeCompare(x.training_date)));
+    setSelectedTrainingId(data.id);
+  }
+
+  async function setTrainingAttendanceStatus(playerId:string,status:string){
+    if(!selectedTraining)return;
+    const {error}=await supabase.from("training_attendance").upsert({
+      training_id:selectedTraining.id,player_id:playerId,status,updated_by:props.currentUser.id
+    },{onConflict:"training_id,player_id"});
+    if(error)return alert(error.message);
+    setTrainingAttendance(prev=>[
+      ...prev.filter(x=>!(x.training_id===selectedTraining.id&&x.player_id===playerId)),
+      {training_id:selectedTraining.id,player_id:playerId,status}
+    ]);
+  }
+
+  async function addTrainingGame(){
+    if(!selectedTraining)return alert("Najpierw wybierz trening.");
+    const team_a_name=prompt("Nazwa drużyny A","Czerwoni")||"Czerwoni";
+    const team_b_name=prompt("Nazwa drużyny B","Złoci")||"Złoci";
+    const {data,error}=await supabase.from("training_games").insert({
+      training_id:selectedTraining.id,team_a_name,team_b_name,team_a_score:0,team_b_score:0,created_by:props.currentUser.id
+    }).select("*").single();
+    if(error)return alert(error.message);
+    setTrainingGames(prev=>[data,...prev]);
+    setSelectedTrainingGameId(data.id);
+  }
+
+  async function setTrainingGameTeam(playerId:string,teamValue:"A"|"B"|null){
+    if(!selectedTrainingGame)return;
+    if(teamValue===null){
+      const {error}=await supabase.from("training_game_players").delete().eq("game_id",selectedTrainingGame.id).eq("player_id",playerId);
+      if(error)return alert(error.message);
+      setTrainingGamePlayers(prev=>prev.filter(x=>!(x.game_id===selectedTrainingGame.id&&x.player_id===playerId)));
+      return;
+    }
+    const row={game_id:selectedTrainingGame.id,player_id:playerId,team:teamValue};
+    const {error}=await supabase.from("training_game_players").upsert(row,{onConflict:"game_id,player_id"});
+    if(error)return alert(error.message);
+    setTrainingGamePlayers(prev=>[
+      ...prev.filter(x=>!(x.game_id===selectedTrainingGame.id&&x.player_id===playerId)),
+      row
+    ]);
+  }
+
+  async function saveTrainingGameScore(){
+    if(!selectedTrainingGame)return;
+    const aScore=Number((document.getElementById("trainingScoreA") as HTMLInputElement)?.value||0);
+    const bScore=Number((document.getElementById("trainingScoreB") as HTMLInputElement)?.value||0);
+    const {error}=await supabase.from("training_games").update({team_a_score:aScore,team_b_score:bScore}).eq("id",selectedTrainingGame.id);
+    if(error)return alert(error.message);
+    setTrainingGames(prev=>prev.map(g=>g.id===selectedTrainingGame.id?{...g,team_a_score:aScore,team_b_score:bScore}:g));
+  }
+
+  async function addTrainingGoal(){
+    if(!selectedTrainingGame)return;
+    const scorer=(document.getElementById("trainingScorer") as HTMLSelectElement)?.value;
+    const assist=(document.getElementById("trainingAssist") as HTMLSelectElement)?.value||null;
+    if(!scorer)return;
+    const {data,error}=await supabase.from("training_events").insert({
+      game_id:selectedTrainingGame.id,event_type:"goal",player_id:scorer,assist_player_id:assist
+    }).select("*").single();
+    if(error)return alert(error.message);
+    setTrainingEvents(prev=>[...prev,data]);
+  }
+
+  async function deleteTrainingEvent(id:string){
+    const {error}=await supabase.from("training_events").delete().eq("id",id);
+    if(error)return alert(error.message);
+    setTrainingEvents(prev=>prev.filter(x=>x.id!==id));
+  }
+
   async function addTeamEvent(){
     const title=prompt("Nazwa wydarzenia"); if(!title)return;
     const event_type=prompt("Typ: training / tournament / birthday / info / other","training")||"info";
@@ -276,6 +379,7 @@ export default function AdminPanel(props:{
     <nav className="admin-tabs">
       <button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>
       <button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>
+      <button className={tab==="training"?"active":""} onClick={()=>setTab("training")}><Goal size={17}/> Treningi</button>
       <button className={tab==="players"?"active":""} onClick={()=>setTab("players")}><Users size={17}/> Zawodnicy</button>
       <button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>
       <button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice</button>
@@ -351,7 +455,86 @@ export default function AdminPanel(props:{
         </section>
       </div>}
 
-            {tab==="calendar" && <section className="admin-card">
+            {tab==="training" && <div className="admin-two-col">
+        <aside className="admin-card">
+          <div className="admin-card-head"><h2>Treningi</h2><button onClick={addTrainingSession}><Plus size={15}/> Dodaj</button></div>
+          <div className="admin-match-list">
+            {trainingSessions.map(s=><button key={s.id} className={selectedTrainingId===s.id?"selected":""} onClick={()=>setSelectedTrainingId(s.id)}>
+              <strong>{s.title||"Trening"}</strong>
+              <span>{s.training_date} {s.start_time?.slice(0,5)||""}</span>
+            </button>)}
+          </div>
+        </aside>
+
+        <section className="admin-card">
+          {!selectedTraining?<p>Dodaj lub wybierz trening.</p>:<>
+            <div className="admin-card-head"><h2>Centrum treningowe</h2><button onClick={addTrainingGame}><Plus size={15}/> Gra kontrolna</button></div>
+            <p className="muted">{selectedTraining.training_date} • {selectedTraining.start_time?.slice(0,5)||""} • {selectedTraining.location||"—"}</p>
+
+            <h3>Obecność</h3>
+            <div className="attendance-grid">
+              {activePlayers.map(p=>{
+                const st=trainingAttendance.find(x=>x.training_id===selectedTraining.id&&x.player_id===p.id)?.status||"";
+                return <div key={p.id} className="attendance-row">
+                  <span>{p.display_name}</span>
+                  <div>
+                    <button className={st==="present"?"active yes":""} onClick={()=>setTrainingAttendanceStatus(p.id,"present")}>JEST</button>
+                    <button className={st==="absent"?"active no":""} onClick={()=>setTrainingAttendanceStatus(p.id,"absent")}>NIE</button>
+                  </div>
+                </div>
+              })}
+            </div>
+
+            <h3>Gry kontrolne</h3>
+            <div className="admin-match-list">
+              {trainingGamesForSelected.map(g=><button key={g.id} className={selectedTrainingGame?.id===g.id?"selected":""} onClick={()=>setSelectedTrainingGameId(g.id)}>
+                <strong>{g.team_a_name} {g.team_a_score}:{g.team_b_score} {g.team_b_name}</strong>
+                <span>Gra kontrolna</span>
+              </button>)}
+            </div>
+
+            {selectedTrainingGame&&<>
+              <div className="admin-form-grid">
+                <label>{selectedTrainingGame.team_a_name}<input id="trainingScoreA" type="number" min="0" defaultValue={selectedTrainingGame.team_a_score}/></label>
+                <label>{selectedTrainingGame.team_b_name}<input id="trainingScoreB" type="number" min="0" defaultValue={selectedTrainingGame.team_b_score}/></label>
+              </div>
+              <button className="push-main" onClick={saveTrainingGameScore}><Save size={15}/> Zapisz wynik gry</button>
+
+              <h3>Składy gry kontrolnej</h3>
+              <div className="attendance-grid">
+                {activePlayers.map(p=>{
+                  const team=trainingGamePlayers.find(x=>x.game_id===selectedTrainingGame.id&&x.player_id===p.id)?.team||"";
+                  return <div key={p.id} className="attendance-row">
+                    <span>{p.display_name}</span>
+                    <div>
+                      <button className={team==="A"?"active yes":""} onClick={()=>setTrainingGameTeam(p.id,"A")}>A</button>
+                      <button className={team==="B"?"active no":""} onClick={()=>setTrainingGameTeam(p.id,"B")}>B</button>
+                      <button onClick={()=>setTrainingGameTeam(p.id,null)}>—</button>
+                    </div>
+                  </div>
+                })}
+              </div>
+
+              <h3>Gol / asysta treningowa</h3>
+              <div className="admin-form-grid">
+                <label>Strzelec<select id="trainingScorer"><option value="">—</option>{activePlayers.map(p=><option value={p.id} key={p.id}>{p.display_name}</option>)}</select></label>
+                <label>Asysta<select id="trainingAssist"><option value="">Brak</option>{activePlayers.map(p=><option value={p.id} key={p.id}>{p.display_name}</option>)}</select></label>
+              </div>
+              <button className="push-main" onClick={addTrainingGoal}><Goal size={15}/> Dodaj gola treningowego</button>
+
+              <div className="event-list">
+                {trainingEvents.filter(e=>e.game_id===selectedTrainingGame.id).map(e=>{
+                  const scorer=players.find(p=>p.id===e.player_id)?.display_name||"?";
+                  const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
+                  return <div key={e.id}><span>⚽ {scorer}{assist?` • asysta ${assist}`:""}</span><button onClick={()=>deleteTrainingEvent(e.id)}><Trash2 size={14}/></button></div>
+                })}
+              </div>
+            </>}
+          </>}
+        </section>
+      </div>}
+
+      {tab==="calendar" && <section className="admin-card">
         <div className="admin-card-head"><h2>Kalendarz drużyny</h2><button onClick={addTeamEvent}><Plus size={15}/> Dodaj wydarzenie</button></div>
         <p className="muted">Tutaj planujesz treningi, turnieje, urodziny, zbiórki i inne ważne wydarzenia. Mecze nadal dodajesz w zakładce Mecze.</p>
         <div className="admin-news-list">

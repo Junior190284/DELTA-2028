@@ -452,3 +452,39 @@ Automatyczne wyróżnienia:
 - 3 MVP.
 
 Nie wymaga nowej tabeli ani SQL — korzysta wyłącznie z danych już zapisanych w aplikacji.
+
+
+## V9.0 — Training Center
+
+Nowa zakładka `Treningi`:
+- frekwencja treningowa,
+- gole treningowe,
+- asysty treningowe,
+- G+A treningowe,
+- historia treningów,
+- gry kontrolne,
+- składy Czerwoni / Złoci (lub dowolne nazwy),
+- wyniki gier kontrolnych,
+- gole i asysty treningowe są całkowicie oddzielone od meczów oficjalnych,
+- chemia zespołu dla par zawodników.
+
+Chemia pary:
+- wspólne gry w tej samej drużynie,
+- wspólne zwycięstwa,
+- łączny udział przy golach,
+- wskaźnik 0–100% ma charakter zabawowy/analityczny, nie jest oceną dziecka.
+
+Admin → Treningi:
+- dodaj trening,
+- zaznacz obecność,
+- dodaj grę kontrolną,
+- przypisz zawodników do A/B,
+- wpisz wynik,
+- dodaj gole i asysty treningowe.
+
+### Jednorazowo
+Supabase → SQL Editor → uruchom:
+`supabase/v6_training_center.sql`
+
+Prawidłowy wynik:
+`TRAINING CENTER READY`

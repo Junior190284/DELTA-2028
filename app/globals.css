@@ -2808,3 +2808,100 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v893-metrics{grid-template-columns:repeat(2,1fr)}
   .v893-streaks{grid-template-columns:1fr 1fr}
 }
+
+
+/* =========================================================
+   V9.0 — TRAINING CENTER
+   ========================================================= */
+.v900-training-center{max-width:1540px}
+.v900-training-hero{
+  position:relative;min-height:260px;overflow:hidden;padding:26px;
+  display:grid;grid-template-columns:minmax(0,1.2fr) minmax(420px,.8fr);gap:20px;align-items:center
+}
+.v900-training-hero-bg{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,rgba(5,8,12,.97),rgba(5,8,12,.72) 50%,rgba(35,8,12,.52)),
+    radial-gradient(circle at 78% 42%,rgba(229,31,47,.25),transparent 31%),
+    url('/assets/stadium3.png') center/cover no-repeat;
+  filter:saturate(1.08) contrast(1.08)
+}
+.v900-training-copy,.v900-training-kpis{position:relative;z-index:2}
+.v900-training-copy h2{font-size:50px;margin:8px 0 7px;line-height:.95}
+.v900-training-copy h2 span{color:#f1c95c}
+.v900-training-copy p{font-size:9px;color:#94a0ab;max-width:680px;line-height:1.5}
+.v900-training-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.v900-training-kpis>div{
+  min-height:88px;padding:12px 14px;border:1px solid rgba(246,201,82,.16);
+  background:rgba(8,11,15,.78);display:flex;flex-direction:column;justify-content:flex-end
+}
+.v900-training-kpis strong{font-size:31px;color:#f1c95c;line-height:1}
+.v900-training-kpis span{font-size:6px;color:#7d8993;font-weight:1000;margin-top:5px;letter-spacing:.09em}
+
+.v900-training-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}
+.v900-training-card{padding:14px}
+.v900-training-ranking{display:flex;flex-direction:column;gap:5px}
+.v900-training-ranking button{
+  min-height:56px;display:grid;grid-template-columns:28px 42px minmax(0,1fr) 42px;gap:8px;align-items:center;
+  padding:6px 8px;border:1px solid rgba(255,255,255,.045);background:#090c11;color:#fff;text-align:left;cursor:pointer
+}
+.v900-training-ranking.compact button{grid-template-columns:28px minmax(0,1fr) 42px}
+.v900-training-ranking .rank{font-size:14px;font-weight:1000;color:#6f7b85;text-align:center}
+.v900-training-ranking button:first-child .rank{color:#f1c95c;font-size:19px}
+.v900-training-ranking .photo{width:40px;height:44px;overflow:hidden;border:1px solid rgba(246,201,82,.18)}
+.v900-training-ranking .photo img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.v900-training-ranking .name{display:flex;flex-direction:column;gap:3px}
+.v900-training-ranking .name b{font-size:9px}.v900-training-ranking .name small{font-size:6px;color:#72808a}
+.v900-training-ranking strong{font-size:19px;color:#f1c95c;text-align:right}
+
+.v900-chemistry{padding:16px;margin-top:9px}
+.v900-chemistry-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:12px}
+.v900-chemistry-head h3{font-size:30px;margin:4px 0 0}
+.v900-chemistry-head p{font-size:7px;color:#7d8892;max-width:560px;text-align:right;line-height:1.45}
+.v900-chemistry-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.v900-pair-card{
+  position:relative;min-height:210px;padding:11px;border:1px solid rgba(246,201,82,.14);
+  background:linear-gradient(180deg,rgba(15,19,25,.96),rgba(7,10,14,.99));
+  color:#fff;text-align:center
+}
+.v900-pair-rank{position:absolute;top:8px;left:8px;font-size:7px;color:#f1c95c;font-weight:1000}
+.v900-pair-players{display:flex;align-items:center;justify-content:center;gap:6px;margin:17px 0 10px}
+.v900-pair-players>span{width:48px;height:54px;overflow:hidden;border:1px solid rgba(246,201,82,.18)}
+.v900-pair-players img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.v900-pair-players i{font-style:normal;color:#d92536;font-weight:1000}
+.v900-pair-card>b{display:block;font-size:7px;line-height:1.3;min-height:27px}
+.v900-pair-card>strong{display:block;font-size:25px;color:#f1c95c;margin:8px 0 4px}
+.v900-chem-bar{height:5px;background:#141920;overflow:hidden}
+.v900-chem-bar i{display:block;height:100%;background:linear-gradient(90deg,#d91f31,#f1c95c)}
+.v900-pair-card small{display:block;color:#71808a;font-size:5.5px;line-height:1.4;margin-top:7px}
+.v900-no-chemistry{grid-column:1/-1;padding:30px;text-align:center;color:#6f7b85;font-size:8px}
+
+.v900-training-history{padding:14px;margin-top:9px}
+.v900-training-history-list{display:flex;flex-direction:column;gap:5px}
+.v900-training-history-list>div{
+  display:grid;grid-template-columns:90px minmax(0,1fr) 50px 60px;gap:9px;align-items:center;
+  min-height:54px;padding:7px 9px;border:1px solid rgba(255,255,255,.045);background:#090c11
+}
+.v900-training-history-list .date{font-size:7px;color:#f1c95c;font-weight:1000}
+.v900-training-history-list b{display:block;font-size:9px}
+.v900-training-history-list small{display:block;font-size:6px;color:#70808b;margin-top:2px}
+.v900-training-history-list strong{color:#f1c95c;font-size:14px;text-align:right}
+.v900-training-history-list em{font-size:6px;color:#74808a;font-style:normal;text-align:right}
+
+@media(max-width:1100px){
+  .v900-chemistry-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:900px){
+  .v900-training-hero{grid-template-columns:1fr}
+  .v900-training-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .v900-training-hero{padding:18px 14px}
+  .v900-training-copy h2{font-size:36px}
+  .v900-training-kpis{grid-template-columns:1fr 1fr}
+  .v900-chemistry-head{align-items:flex-start;flex-direction:column}
+  .v900-chemistry-head p{text-align:left}
+  .v900-chemistry-grid{grid-template-columns:1fr 1fr}
+  .v900-training-history-list>div{grid-template-columns:72px minmax(0,1fr) 42px}
+  .v900-training-history-list em{display:none}
+}

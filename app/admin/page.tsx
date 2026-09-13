@@ -21,6 +21,11 @@ export default async function AdminPage() {
     { data: news },
     { data: profiles },
     { data: teamEvents },
+    { data: trainingSessions },
+    { data: trainingAttendance },
+    { data: trainingGames },
+    { data: trainingGamePlayers },
+    { data: trainingEvents },
     { data: parentLinks }
   ] = await Promise.all([
     supabase.from("players").select("*").order("display_name"),
@@ -31,6 +36,11 @@ export default async function AdminPage() {
     supabase.from("news").select("*").order("published_at",{ascending:false}),
     supabase.from("profiles").select("id,display_name,role").order("display_name"),
     supabase.from("team_events").select("*").order("event_date").order("start_time"),
+    supabase.from("training_sessions").select("*").order("training_date",{ascending:false}),
+    supabase.from("training_attendance").select("*"),
+    supabase.from("training_games").select("*").order("created_at",{ascending:false}),
+    supabase.from("training_game_players").select("*"),
+    supabase.from("training_events").select("*").order("created_at"),
     supabase.from("parent_players").select("*")
   ]);
 
@@ -43,6 +53,11 @@ export default async function AdminPage() {
     initialEvents={events || []}
     initialNews={news || []}
     initialTeamEvents={teamEvents || []}
+    initialTrainingSessions={trainingSessions || []}
+    initialTrainingAttendance={trainingAttendance || []}
+    initialTrainingGames={trainingGames || []}
+    initialTrainingGamePlayers={trainingGamePlayers || []}
+    initialTrainingEvents={trainingEvents || []}
     allProfiles={profiles || []}
     initialParentLinks={parentLinks || []}
   />;

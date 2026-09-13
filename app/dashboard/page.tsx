@@ -25,6 +25,11 @@ export default async function Dashboard() {
     { data: news },
     { data: clubUpdates },
     { data: teamEvents },
+    { data: trainingSessions },
+    { data: trainingAttendance },
+    { data: trainingGames },
+    { data: trainingGamePlayers },
+    { data: trainingEvents },
     { data: parentLinks }
   ] = await Promise.all([
     supabase.from("players").select("id,display_name,shirt_number,position,photo_path,active").eq("active",true).order("display_name"),
@@ -35,6 +40,11 @@ export default async function Dashboard() {
     supabase.from("news").select("id,type,title,body,published_at").order("published_at",{ascending:false}),
     supabase.from("club_updates").select("id,source_key,source_name,source_url,title,body,priority,published_at,synced_at").order("published_at",{ascending:false}).limit(30),
     supabase.from("team_events").select("id,title,event_type,event_date,start_time,end_time,location,details,important,player_id,created_at").order("event_date").order("start_time"),
+    supabase.from("training_sessions").select("id,training_date,start_time,end_time,location,title,notes,created_at").order("training_date",{ascending:false}),
+    supabase.from("training_attendance").select("training_id,player_id,status"),
+    supabase.from("training_games").select("id,training_id,team_a_name,team_b_name,team_a_score,team_b_score,created_at"),
+    supabase.from("training_game_players").select("game_id,player_id,team"),
+    supabase.from("training_events").select("id,game_id,event_type,player_id,assist_player_id,created_at"),
     supabase.from("parent_players").select("player_id").eq("parent_id", user.id),
   ]);
 
@@ -52,6 +62,11 @@ export default async function Dashboard() {
       initialNews={news || []}
       initialClubUpdates={clubUpdates || []}
       initialTeamEvents={teamEvents || []}
+      initialTrainingSessions={trainingSessions || []}
+      initialTrainingAttendance={trainingAttendance || []}
+      initialTrainingGames={trainingGames || []}
+      initialTrainingGamePlayers={trainingGamePlayers || []}
+      initialTrainingEvents={trainingEvents || []}
       parentPlayerIds={(parentLinks || []).map(x=>x.player_id)}
     />
   );
