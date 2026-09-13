@@ -483,7 +483,7 @@ export default function TeamHub(props:{
           <div className="v82-hero-vignette"/>
         </section>
 
-        {nextMatch&&<section className="v82-match-rsvp-grid">
+        {nextMatch&&<><section className="v82-match-rsvp-grid">
           <article className="v8-match-card devil-card">
             <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
             <div className="v8-match-stage">
@@ -549,7 +549,7 @@ export default function TeamHub(props:{
               <span>Brak dodatkowych ważnych informacji.</span>
             </>}
           </article>
-        </section>}
+        </section></>}
 
         <section className="v8-stats-row">
           {[
