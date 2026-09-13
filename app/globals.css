@@ -2625,3 +2625,95 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v891-calendar-event{grid-template-columns:50px minmax(0,1fr);min-height:130px}
   .v891-calendar-event>button{grid-column:2}
 }
+
+
+/* =========================================================
+   V8.9.2 — HOME CLEANUP + COMPACT MATCH CLOCK
+   ========================================================= */
+
+/* Match countdown should support the hero, not dominate it. */
+.v891-match-tools{
+  grid-template-columns:minmax(0,1fr) 235px!important;
+  gap:8px!important;
+}
+
+.v891-match-clock{
+  min-height:58px!important;
+  padding:8px 12px!important;
+  justify-content:center!important;
+}
+
+.v891-match-clock span{
+  font-size:6px!important;
+  letter-spacing:.10em!important;
+}
+
+.v891-match-clock b{
+  font-size:14px!important;
+  line-height:1.05!important;
+  margin:3px 0 2px!important;
+}
+
+.v891-match-clock small{
+  font-size:5.5px!important;
+  opacity:.82;
+}
+
+.v891-attendance-mini{
+  min-height:58px!important;
+  padding:7px 10px!important;
+}
+
+.v891-attendance-mini>span{
+  font-size:6px!important;
+}
+
+.v891-attendance-mini strong{
+  font-size:22px!important;
+  margin:3px 0!important;
+}
+
+.v891-attendance-mini strong em{
+  font-size:10px!important;
+}
+
+.v891-attendance-progress{
+  margin:3px 0 4px!important;
+  height:4px!important;
+}
+
+.v891-attendance-mini small{
+  font-size:5.5px!important;
+}
+
+/* With the squad card removed, let the remaining dashboard cards breathe. */
+.v8-dashboard-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+
+@media(max-width:900px){
+  .v8-dashboard-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:700px){
+  .v891-match-tools{
+    grid-template-columns:minmax(0,1fr) 112px!important;
+    gap:5px!important;
+  }
+  .v891-match-clock{
+    min-height:54px!important;
+    padding:7px 9px!important;
+  }
+  .v891-match-clock b{
+    font-size:12px!important;
+  }
+  .v891-attendance-mini{
+    min-height:54px!important;
+    padding:6px 8px!important;
+  }
+  .v891-attendance-mini strong{
+    font-size:20px!important;
+  }
+}

@@ -607,13 +607,6 @@ export default function TeamHub(props:{
             </div>}
           </article>
 
-          <article className="v8-panel v8-squad devil-card">
-            <div className="v8-panel-title"><UserCheck size={18}/> SKŁAD MECZOWY</div>
-            <div className="v8-progress-item"><div><b>Obecność</b><span>{nextPresent}/{players.length}</span></div><div className="v8-progress"><i style={{width:`${players.length?Math.min(100,nextPresent/players.length*100):0}%`}}/></div></div>
-            <div className="v8-progress-item"><div><b>Potwierdzenia rodziców</b><span>{nextResponseCount}/{players.length}</span></div><div className="v8-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div></div>
-            <button className="v86-squad-btn" onClick={()=>nextMatch&&setSelectedMatch(nextMatch)}>OTWÓRZ LISTĘ OBECNOŚCI <ChevronRight size={14}/></button>
-            <div className="v8-devil-note"><Flame size={18}/> Gotowi walczyć razem.</div>
-          </article>
         </section>
 
         <section className="v8-lower-grid v885-rankings-grid">

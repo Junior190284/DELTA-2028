@@ -414,3 +414,11 @@ Supabase → SQL Editor → uruchom cały plik:
 
 Prawidłowy wynik:
 `TEAM CALENDAR READY`
+
+
+## V8.9.2 — Home Cleanup & Compact Match Clock
+- usunięto z Home redundantny kafel „Skład meczowy”,
+- obecność zostaje tylko przy najbliższym meczu,
+- countdown „Do meczu” jest znacznie mniejszy i bardziej dyskretny,
+- kompaktowy kafel obecności pozostaje obok countdownu,
+- siatka pozostałych kart na Home została uporządkowana.
