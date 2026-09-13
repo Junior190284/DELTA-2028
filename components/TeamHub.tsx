@@ -595,9 +595,9 @@ export default function TeamHub(props:{
             </div>
             {isRyszardPlayer(p)?
               <div className="v874-featured-card-image"><img src="/assets/players/ryszard-card.png" alt={`Karta zawodnika ${p.display_name}`}/><span className="v874-featured-badge">FEATURED PLAYER</span></div>
-              :<div className={`v87-player-photo ${isRyszard(p)?"v883-home-featured-media":""}`}>
-              {isRyszard(p)
-                ? <img src="/assets/ryszard-player-card.png" alt={`${p.first_name} ${p.last_name}`} className="v883-home-featured-img"/>
+              :<div className={`v87-player-photo ${isRyszardPlayer(p)?"v883-home-featured-media":""}`}>
+              {isRyszardPlayer(p)
+                ? <img src="/assets/ryszard-player-card.png" alt={p.display_name} className="v883-home-featured-img"/>
                 : <PlayerPhoto playerId={p.id}/>
               }
             </div>}
