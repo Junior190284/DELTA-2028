@@ -2126,3 +2126,75 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   position:relative;
   z-index:1;
 }
+
+
+/* V8.8.5 — captain visibility + full rankings */
+.v8-captain-photo{
+  width:150px!important;
+  min-width:150px!important;
+  height:182px!important;
+  background:#090c11!important;
+  box-shadow:0 0 0 1px rgba(246,201,82,.42),0 14px 28px rgba(0,0,0,.38),0 0 24px rgba(229,31,47,.12)!important;
+}
+.v8-captain-photo::before,.v8-captain-photo::after{opacity:.12!important;pointer-events:none}
+.v8-captain-photo .v873-flares,.v8-captain-photo .v873-embers{opacity:.15!important}
+.v8-captain-photo .v884-leader-featured-img{
+  width:100%!important;height:100%!important;object-fit:cover!important;object-position:center 18%!important;
+  filter:brightness(1.48) contrast(1.05) saturate(1.10)!important;
+  opacity:1!important;mix-blend-mode:normal!important;transform:scale(1.01);
+}
+.v8-captain-photo .v873-plate{background:rgba(7,9,12,.60)!important}
+
+.v885-rankings-grid{align-items:start}
+.v885-ranking-panel{padding-bottom:12px!important}
+.v885-ranking-list{display:flex;flex-direction:column;gap:6px}
+.v885-ranking-row{
+  width:100%;min-height:62px;display:grid;
+  grid-template-columns:34px 46px minmax(0,1fr) 58px 18px;
+  gap:10px;align-items:center;padding:7px 10px;
+  border:1px solid rgba(255,255,255,.055);
+  background:linear-gradient(90deg,rgba(16,20,26,.88),rgba(8,11,15,.96));
+  color:#fff;text-align:left;cursor:pointer;transition:.18s ease
+}
+.v885-ranking-row:hover{transform:translateX(3px);border-color:rgba(246,201,82,.28);background:linear-gradient(90deg,rgba(38,18,20,.90),rgba(8,11,15,.98))}
+.v885-rank-number{font-size:18px;font-weight:1000;color:#78838e;text-align:center}
+.v885-ranking-row:nth-child(1) .v885-rank-number{color:#f3cd61;font-size:23px}
+.v885-ranking-row:nth-child(2) .v885-rank-number{color:#c8d0d7}
+.v885-ranking-row:nth-child(3) .v885-rank-number{color:#c58a58}
+.v885-rank-photo{width:44px;height:48px;overflow:hidden;border:1px solid rgba(246,201,82,.22);background:#080b10}
+.v885-rank-photo img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
+.v885-rank-name{min-width:0;display:flex;flex-direction:column;gap:3px}
+.v885-rank-name b{font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v885-rank-name small{font-size:7px;color:#77838e}
+.v885-rank-value{text-align:right}
+.v885-rank-value b{display:block;font-size:21px;color:#f3cd61;line-height:1}
+.v885-rank-value small{font-size:6px;color:#68747f;font-weight:1000;letter-spacing:.08em}
+.v885-ranking-row>svg{color:#63707d}
+.v885-ranking-empty{padding:18px;color:#697581;font-size:9px}
+
+.v885-season-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.v885-season-category{
+  min-height:135px;padding:13px 11px;border:1px solid rgba(246,201,82,.13);
+  background:radial-gradient(circle at 50% 0%,rgba(246,201,82,.08),transparent 56%),rgba(7,10,14,.76);text-align:center
+}
+.v885-season-icon{
+  width:36px;height:36px;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(246,201,82,.28);color:#f3cd61;transform:rotate(45deg)
+}
+.v885-season-icon>svg{transform:rotate(-45deg)}
+.v885-season-category>small{display:block;color:#79848e;font-size:6px;font-weight:1000;letter-spacing:.12em;margin-bottom:9px}
+.v885-season-winners{display:flex;flex-direction:column;gap:5px}
+.v885-season-winners button{border:0;background:transparent;color:#fff;cursor:pointer;padding:2px 0}
+.v885-season-winners button b{display:block;font-size:9px;line-height:1.2}
+.v885-season-winners button span{display:block;color:#f3cd61;font-size:18px;font-weight:1000;margin-top:2px}
+.v885-season-winners em{color:#66717b;font-style:normal;font-size:20px}
+
+@media(max-width:700px){
+  .v8-captain-photo{width:116px!important;min-width:116px!important;height:146px!important}
+  .v885-ranking-row{grid-template-columns:28px 40px minmax(0,1fr) 46px 14px;gap:7px;padding:6px 7px}
+  .v885-rank-photo{width:38px;height:43px}
+  .v885-rank-name b{font-size:9px}
+  .v885-rank-value b{font-size:18px}
+  .v885-season-podium{grid-template-columns:1fr}
+  .v885-season-category{min-height:auto}
+}

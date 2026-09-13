@@ -363,3 +363,11 @@ Po deployu:
 - Ryszard Rybacki uses his premium player artwork in all leader/captain tiles.
 - Covers home captain tile, team leader tile, scorer/assist/MVP leader tiles where applicable.
 - Players without their own photo continue using the standard placeholder.
+
+
+## V8.8.5 — Rankings & Leader Card Visibility
+- Karta Ryszarda w „Kapitan drużyny” jest większa, jaśniejsza i czytelniejsza.
+- „Strzelcy bramek” pokazują pełny ranking wszystkich zawodników z golami.
+- „Asysty” pokazują pełny ranking wszystkich zawodników z asystami.
+- Kliknięcie zawodnika w rankingu otwiera jego profil.
+- „Najlepsi w sezonie” pokazuje tylko liderów z 1. miejsca; przy remisie wszystkich współliderów.

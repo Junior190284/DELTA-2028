@@ -236,6 +236,36 @@ export default function TeamHub(props:{
   const topAssister=players.slice().sort((a,b)=>(stats[b.id]?.a||0)-(stats[a.id]?.a||0))[0];
   const topMvp=players.slice().sort((a,b)=>(stats[b.id]?.mvp||0)-(stats[a.id]?.mvp||0))[0];
   const captainLeader=players.slice().sort((a,b)=>(stats[b.id]?.captain||0)-(stats[a.id]?.captain||0))[0];
+  const scorersRanking=players
+    .slice()
+    .filter(p=>(stats[p.id]?.g||0)>0)
+    .sort((a,b)=>{
+      const dg=(stats[b.id]?.g||0)-(stats[a.id]?.g||0);
+      if(dg!==0)return dg;
+      const da=(stats[b.id]?.a||0)-(stats[a.id]?.a||0);
+      if(da!==0)return da;
+      return a.display_name.localeCompare(b.display_name,"pl");
+    });
+
+  const assistsRanking=players
+    .slice()
+    .filter(p=>(stats[p.id]?.a||0)>0)
+    .sort((a,b)=>{
+      const da=(stats[b.id]?.a||0)-(stats[a.id]?.a||0);
+      if(da!==0)return da;
+      const dg=(stats[b.id]?.g||0)-(stats[a.id]?.g||0);
+      if(dg!==0)return dg;
+      return a.display_name.localeCompare(b.display_name,"pl");
+    });
+
+  const topGoals=(stats[topScorer?.id]?.g||0);
+  const topAssists=(stats[topAssister?.id]?.a||0);
+  const topMvpCount=(stats[topMvp?.id]?.mvp||0);
+
+  const seasonTopScorers=topGoals>0 ? players.filter(p=>(stats[p.id]?.g||0)===topGoals) : [];
+  const seasonTopAssisters=topAssists>0 ? players.filter(p=>(stats[p.id]?.a||0)===topAssists) : [];
+  const seasonTopMvp=topMvpCount>0 ? players.filter(p=>(stats[p.id]?.mvp||0)===topMvpCount) : [];
+
   const recentMatches=matches
     .filter(m=>m.status==="played")
     .slice()
@@ -430,36 +460,73 @@ export default function TeamHub(props:{
           </article>
         </section>
 
-        <section className="v8-lower-grid">
-          <article className="v8-panel devil-card"><div className="v8-panel-title"><Target size={18}/> STRZELCY BRAMEK</div>{topScorer&&stats[topScorer.id]?.g>0?<div className="v8-leader-row"><b>{topScorer.display_name}</b><span>{stats[topScorer.id].g} goli</span></div>:<p className="muted">Brak danych • pierwszy gol jeszcze przed nami.</p>}</article>
-          <article className="v8-panel devil-card"><div className="v8-panel-title"><Star size={18}/> ASYSTY</div>{topAssister&&stats[topAssister.id]?.a>0?<div className="v8-leader-row"><b>{topAssister.display_name}</b><span>{stats[topAssister.id].a} asyst</span></div>:<p className="muted">Brak danych • pierwsza asysta jeszcze przed nami.</p>}</article>
+        <section className="v8-lower-grid v885-rankings-grid">
+          <article className="v8-panel devil-card v885-ranking-panel">
+            <div className="v8-panel-title"><Target size={18}/> STRZELCY BRAMEK</div>
+            <div className="v885-ranking-list">
+              {scorersRanking.length>0?scorersRanking.map((p,index)=>{
+                const s=stats[p.id];
+                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="v885-rank-number">{index+1}</span>
+                  <span className="v885-rank-photo">
+                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
+                  </span>
+                  <span className="v885-rank-name"><b>{p.display_name}</b><small>{s?.m||0} {s?.m===1?"mecz":"mecze"}</small></span>
+                  <span className="v885-rank-value"><b>{s?.g||0}</b><small>GOLE</small></span>
+                  <ChevronRight size={15}/>
+                </button>
+              }):<div className="v885-ranking-empty">Pierwsze gole uruchomią ranking.</div>}
+            </div>
+          </article>
+
+          <article className="v8-panel devil-card v885-ranking-panel">
+            <div className="v8-panel-title"><Star size={18}/> ASYSTY</div>
+            <div className="v885-ranking-list">
+              {assistsRanking.length>0?assistsRanking.map((p,index)=>{
+                const s=stats[p.id];
+                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                  <span className="v885-rank-number">{index+1}</span>
+                  <span className="v885-rank-photo">
+                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
+                  </span>
+                  <span className="v885-rank-name"><b>{p.display_name}</b><small>{s?.m||0} {s?.m===1?"mecz":"mecze"}</small></span>
+                  <span className="v885-rank-value"><b>{s?.a||0}</b><small>ASYSTY</small></span>
+                  <ChevronRight size={15}/>
+                </button>
+              }):<div className="v885-ranking-empty">Pierwsza asysta uruchomi ranking.</div>}
+            </div>
+          </article>
+
           <article className="v8-quote devil-card"><span>„</span><p>Drużyna to nie tylko zawodnicy. To rodzina.</p></article>
           <article className="v8-banner-small devil-card"><div>JEDEN ZESPÓŁ</div><b>WIELE MOŻLIWOŚCI</b></article>
         </section>
 
 
         <section className="v87-season-grid">
-          <article className="v87-leaders devil-card">
+          <article className="v87-leaders devil-card v885-season-best">
             <div className="v8-panel-title"><Medal size={18}/> NAJLEPSI W SEZONIE</div>
-            <div className="v87-leaders-grid">
-              <button type="button" onClick={()=>topScorer&&setSelectedPlayer(topScorer)} className="v87-leader-card">
-                <div className="v87-leader-icon"><Goal size={20}/></div>
-                <span>BRAMKI</span>
-                <b>{topScorer&&stats[topScorer.id]?.g>0?topScorer.display_name:"—"}</b>
-                <strong>{topScorer?stats[topScorer.id]?.g||0:0}</strong>
-              </button>
-              <button type="button" onClick={()=>topAssister&&setSelectedPlayer(topAssister)} className="v87-leader-card">
-                <div className="v87-leader-icon"><Star size={20}/></div>
-                <span>ASYSTY</span>
-                <b>{topAssister&&stats[topAssister.id]?.a>0?topAssister.display_name:"—"}</b>
-                <strong>{topAssister?stats[topAssister.id]?.a||0:0}</strong>
-              </button>
-              <button type="button" onClick={()=>topMvp&&setSelectedPlayer(topMvp)} className="v87-leader-card">
-                <div className="v87-leader-icon"><Trophy size={20}/></div>
-                <span>MVP</span>
-                <b>{topMvp&&stats[topMvp.id]?.mvp>0?topMvp.display_name:"—"}</b>
-                <strong>{topMvp?stats[topMvp.id]?.mvp||0:0}</strong>
-              </button>
+            <div className="v885-season-podium">
+              <div className="v885-season-category">
+                <span className="v885-season-icon"><Goal size={17}/></span>
+                <small>GOLE</small>
+                <div className="v885-season-winners">
+                  {seasonTopScorers.length>0?seasonTopScorers.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><b>{p.display_name}</b><span>{stats[p.id]?.g||0}</span></button>):<em>—</em>}
+                </div>
+              </div>
+              <div className="v885-season-category">
+                <span className="v885-season-icon"><Star size={17}/></span>
+                <small>ASYSTY</small>
+                <div className="v885-season-winners">
+                  {seasonTopAssisters.length>0?seasonTopAssisters.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><b>{p.display_name}</b><span>{stats[p.id]?.a||0}</span></button>):<em>—</em>}
+                </div>
+              </div>
+              <div className="v885-season-category">
+                <span className="v885-season-icon"><Trophy size={17}/></span>
+                <small>MVP</small>
+                <div className="v885-season-winners">
+                  {seasonTopMvp.length>0?seasonTopMvp.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><b>{p.display_name}</b><span>{stats[p.id]?.mvp||0}</span></button>):<em>—</em>}
+                </div>
+              </div>
             </div>
           </article>
 
