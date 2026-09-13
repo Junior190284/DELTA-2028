@@ -305,3 +305,25 @@ Parser jest celowo ograniczony do informacji istotnych dla rocznika 2018 / Górn
 - Kliknięcie push otwiera `/dashboard?view=club` i aplikacja przełącza się od razu na „Z klubu”.
 - Wygasłe subskrypcje Web Push (HTTP 404/410) są automatycznie usuwane.
 - Wymagane Vercel Environment Variables: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+
+
+## V8.8.0 — Push Diagnostics & Fix
+
+Najważniejsza poprawka:
+- V8.7.9 zakładał istnienie `push_subscriptions`, ale użytkownik wcześniej uruchamiał tylko migrację DELTA Sync. W tej wersji jest osobny, idempotentny plik `supabase/v4_push_setup.sql`.
+- zapis telefonu w `/api/push/subscribe` odbywa się po uwierzytelnieniu, a sam zapis wykonuje bezpiecznie klient serwisowy Supabase,
+- aplikacja pokazuje dokładny etap błędu: zgoda, VAPID, Service Worker, subskrypcja przeglądarki lub zapis w Supabase,
+- Service Worker używa `skipWaiting()` i `clients.claim()`, aby nowa wersja przejmowała stronę od razu,
+- `/api/push/status` pozwala sprawdzić konfigurację serwera.
+
+### Jednorazowo po deployu V8.8.0
+W Supabase → SQL Editor → New query:
+1. otwórz `supabase/v4_push_setup.sql`,
+2. wklej całość,
+3. Run,
+4. prawidłowy wynik: `PUSH READY`.
+
+Potem na telefonie:
+`Z klubu` → `Włącz powiadomienia na tym urządzeniu`.
+
+Jeśli nadal wystąpi błąd, aplikacja pokaże jego prawdziwą przyczynę zamiast ogólnego komunikatu.

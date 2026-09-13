@@ -1,6 +1,22 @@
+self.addEventListener("install",event=>{
+  self.skipWaiting();
+});
+
+self.addEventListener("activate",event=>{
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("push",event=>{
-  let data={title:"DELTA 2018 GM",body:"Nowe powiadomienie drużyny",url:"/dashboard",tag:"delta-teamhub"};
-  try{data=event.data.json()}catch{}
+  let data={
+    title:"DELTA 2018 GM",
+    body:"Nowe powiadomienie drużyny",
+    url:"/dashboard",
+    tag:"delta-teamhub"
+  };
+  try{
+    if(event.data)data={...data,...event.data.json()};
+  }catch{}
+
   event.waitUntil(self.registration.showNotification(data.title,{
     body:data.body,
     icon:"/assets/devils-crest.png",
@@ -10,9 +26,11 @@ self.addEventListener("push",event=>{
     data:{url:data.url||"/dashboard"}
   }));
 });
+
 self.addEventListener("notificationclick",event=>{
   event.notification.close();
   const target=new URL(event.notification.data?.url||"/dashboard",self.location.origin).href;
+
   event.waitUntil((async()=>{
     const list=await clients.matchAll({type:"window",includeUncontrolled:true});
     for(const client of list){

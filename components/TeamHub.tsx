@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchCenterModal from "./MatchCenterModal";
-import { subscribeToPush } from "@/lib/push";
+import { PushSetupError, subscribeToPush } from "@/lib/push";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star,
   Check, X, Crown, Target, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap
@@ -107,6 +107,7 @@ export default function TeamHub(props:{
   const [news,setNews]=useState(props.initialNews);
   const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
+  const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [accountOpen,setAccountOpen]=useState(false);
@@ -144,12 +145,20 @@ export default function TeamHub(props:{
 
   async function enableClubPush(){
     setPushState("working");
+    setPushMessage("");
     try{
       await subscribeToPush();
       setPushState("enabled");
-    }catch(e){
+      setPushMessage("Gotowe. Ten telefon jest zapisany do powiadomień „Z klubu”.");
+    }catch(e:any){
       console.error("Push subscribe error",e);
       setPushState("error");
+      if(e instanceof PushSetupError){
+        const suffix=e.detail?` (${e.detail})`:"";
+        setPushMessage(`${e.message}${suffix}`);
+      }else{
+        setPushMessage(`Nie udało się włączyć powiadomień: ${String(e?.message||e)}`);
+      }
     }
   }
 
@@ -585,7 +594,7 @@ export default function TeamHub(props:{
               <Bell size={17}/>
               {pushState==="working"?"Włączanie…":pushState==="enabled"?"Powiadomienia włączone":"Włącz powiadomienia na tym urządzeniu"}
             </button>
-            {pushState==="error"&&<span className="v879-push-error">Nie udało się włączyć. Sprawdź zgodę na powiadomienia w przeglądarce.</span>}
+            {pushMessage&&<span className={pushState==="enabled"?"v880-push-ok":"v879-push-error"}>{pushMessage}</span>}
           </div>
           <div className="v876-sync-status">
             <Shield size={22}/>
