@@ -2922,3 +2922,32 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v901-training-actions{width:100%}
   .v901-training-actions button{flex:1}
 }
+
+
+/* V9.0.2 — edit/delete event controls */
+.v902-admin-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.v902-event-actions{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.v902-event-actions button{
+  min-height:30px;
+}
+.v902-event-actions button:first-child{
+  border:1px solid rgba(246,201,82,.24);
+  background:transparent;
+  color:#f1c95c;
+  padding:5px 9px;
+  font-size:7px;
+  font-weight:900;
+}
+@media(max-width:700px){
+  .v902-admin-actions{width:100%}
+  .v902-admin-actions button{flex:1}
+}

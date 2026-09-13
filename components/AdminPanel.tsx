@@ -166,6 +166,52 @@ export default function AdminPanel(props:{
     setEvents(prev=>prev.filter(e=>e.id!==id));
   }
 
+  async function editMatchEvent(id:string){
+    const event=events.find(e=>e.id===id);
+    if(!event)return;
+
+    if(event.event_type==="goal"){
+      const currentScorer=players.find(p=>p.id===event.player_id)?.display_name||"";
+      const currentAssist=players.find(p=>p.id===event.assist_player_id)?.display_name||"";
+
+      const scorerName=prompt("Strzelec gola",currentScorer);
+      if(scorerName===null)return;
+      const scorer=players.find(p=>p.display_name.toLowerCase()===scorerName.trim().toLowerCase());
+      if(!scorer)return alert("Nie znaleziono zawodnika o takiej nazwie.");
+
+      const assistName=prompt("Asysta (zostaw puste = brak)",currentAssist);
+      if(assistName===null)return;
+
+      let assistId:string|null=null;
+      if(assistName.trim()){
+        const assist=players.find(p=>p.display_name.toLowerCase()===assistName.trim().toLowerCase());
+        if(!assist)return alert("Nie znaleziono zawodnika dla asysty.");
+        assistId=assist.id;
+      }
+
+      const {error}=await supabase.from("match_events").update({
+        player_id:scorer.id,
+        assist_player_id:assistId
+      }).eq("id",id);
+
+      if(error)return alert(error.message);
+
+      setEvents(prev=>prev.map(e=>e.id===id?{...e,player_id:scorer.id,assist_player_id:assistId}:e));
+      return;
+    }
+
+    if(event.event_type==="mvp"){
+      const current=players.find(p=>p.id===event.player_id)?.display_name||"";
+      const name=prompt("MVP",current);
+      if(name===null)return;
+      const player=players.find(p=>p.display_name.toLowerCase()===name.trim().toLowerCase());
+      if(!player)return alert("Nie znaleziono zawodnika.");
+      const {error}=await supabase.from("match_events").update({player_id:player.id}).eq("id",id);
+      if(error)return alert(error.message);
+      setEvents(prev=>prev.map(e=>e.id===id?{...e,player_id:player.id}:e));
+    }
+  }
+
   async function addPlayer(){
     const name=prompt("Imię i nazwisko zawodnika"); if(!name)return;
     const number=prompt("Numer koszulki")||null;
@@ -365,6 +411,76 @@ export default function AdminPanel(props:{
     setTrainingEvents(prev=>prev.filter(x=>x.id!==id));
   }
 
+  async function editTrainingEvent(id:string){
+    const event=trainingEvents.find(e=>e.id===id);
+    if(!event)return;
+
+    const currentScorer=players.find(p=>p.id===event.player_id)?.display_name||"";
+    const currentAssist=players.find(p=>p.id===event.assist_player_id)?.display_name||"";
+
+    const scorerName=prompt("Strzelec gola treningowego",currentScorer);
+    if(scorerName===null)return;
+
+    const scorer=players.find(p=>p.display_name.toLowerCase()===scorerName.trim().toLowerCase());
+    if(!scorer)return alert("Nie znaleziono zawodnika o takiej nazwie.");
+
+    const assistName=prompt("Asysta (zostaw puste = brak)",currentAssist);
+    if(assistName===null)return;
+
+    let assistId:string|null=null;
+    if(assistName.trim()){
+      const assist=players.find(p=>p.display_name.toLowerCase()===assistName.trim().toLowerCase());
+      if(!assist)return alert("Nie znaleziono zawodnika dla asysty.");
+      assistId=assist.id;
+    }
+
+    const {error}=await supabase.from("training_events").update({
+      player_id:scorer.id,
+      assist_player_id:assistId
+    }).eq("id",id);
+
+    if(error)return alert(error.message);
+
+    setTrainingEvents(prev=>prev.map(e=>e.id===id?{...e,player_id:scorer.id,assist_player_id:assistId}:e));
+  }
+
+  async function deleteTrainingGame(id:string){
+    if(!confirm("Usunąć tę grę kontrolną? Wynik, składy oraz gole/asysty z tej gry zostaną usunięte."))return;
+
+    const {error}=await supabase.from("training_games").delete().eq("id",id);
+    if(error)return alert(error.message);
+
+    setTrainingGames(prev=>prev.filter(g=>g.id!==id));
+    setTrainingGamePlayers(prev=>prev.filter(x=>x.game_id!==id));
+    setTrainingEvents(prev=>prev.filter(x=>x.game_id!==id));
+
+    if(selectedTrainingGameId===id){
+      const next=trainingGamesForSelected.find(g=>g.id!==id);
+      setSelectedTrainingGameId(next?.id||"");
+    }
+  }
+
+  async function deleteTrainingSession(id:string){
+    if(!confirm("Usunąć cały trening?\n\nUsunięte zostaną również:\n• obecności,\n• gry kontrolne,\n• składy,\n• gole i asysty treningowe.\n\nTej operacji nie można cofnąć."))return;
+
+    const gameIds=trainingGames.filter(g=>g.training_id===id).map(g=>g.id);
+
+    const {error}=await supabase.from("training_sessions").delete().eq("id",id);
+    if(error)return alert(error.message);
+
+    setTrainingSessions(prev=>prev.filter(s=>s.id!==id));
+    setTrainingAttendance(prev=>prev.filter(x=>x.training_id!==id));
+    setTrainingGames(prev=>prev.filter(g=>g.training_id!==id));
+    setTrainingGamePlayers(prev=>prev.filter(x=>!gameIds.includes(x.game_id)));
+    setTrainingEvents(prev=>prev.filter(x=>!gameIds.includes(x.game_id)));
+
+    if(selectedTrainingId===id){
+      const next=trainingSessions.find(s=>s.id!==id);
+      setSelectedTrainingId(next?.id||"");
+      setSelectedTrainingGameId("");
+    }
+  }
+
   async function addTeamEvent(){
     const title=prompt("Nazwa wydarzenia"); if(!title)return;
     const event_type=prompt("Typ: training / tournament / birthday / info / other","training")||"info";
@@ -487,7 +603,7 @@ export default function AdminPanel(props:{
               {matchEvents.map(e=>{
                 const player=players.find(p=>p.id===e.player_id)?.display_name||"?";
                 const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
-                return <div key={e.id}><span>{e.event_type==="goal"?`⚽ ${player}${assist?` • asysta ${assist}`:""}`:`⭐ MVP: ${player}`}</span><button onClick={()=>deleteEvent(e.id)}><Trash2 size={14}/></button></div>
+                return <div key={e.id}><span>{e.event_type==="goal"?`⚽ ${player}${assist?` • asysta ${assist}`:""}`:`⭐ MVP: ${player}`}</span><div className="v902-event-actions"><button onClick={()=>editMatchEvent(e.id)}>Edytuj</button><button onClick={()=>deleteEvent(e.id)}><Trash2 size={14}/></button></div></div>
               })}
             </div>
           </>}
@@ -507,7 +623,7 @@ export default function AdminPanel(props:{
 
         <section className="admin-card">
           {!selectedTraining?<p>Dodaj lub wybierz trening.</p>:<>
-            <div className="admin-card-head"><h2>Centrum treningowe</h2><button onClick={addTrainingGame}><Plus size={15}/> Gra kontrolna</button></div>
+            <div className="admin-card-head"><h2>Centrum treningowe</h2><div className="v902-admin-actions"><button onClick={addTrainingGame}><Plus size={15}/> Gra kontrolna</button><button className="danger-btn" onClick={()=>deleteTrainingSession(selectedTraining.id)}><Trash2 size={15}/> Usuń trening</button></div></div>
             <p className="muted">{selectedTraining.training_date} • {selectedTraining.start_time?.slice(0,5)||""} • {selectedTraining.location||"—"}</p>
 
             <h3>Obecność</h3>
@@ -537,7 +653,10 @@ export default function AdminPanel(props:{
                 <label>{selectedTrainingGame.team_a_name}<input id="trainingScoreA" type="number" min="0" defaultValue={selectedTrainingGame.team_a_score}/></label>
                 <label>{selectedTrainingGame.team_b_name}<input id="trainingScoreB" type="number" min="0" defaultValue={selectedTrainingGame.team_b_score}/></label>
               </div>
-              <button className="push-main" onClick={saveTrainingGameScore}><Save size={15}/> Zapisz wynik gry</button>
+              <div className="v902-admin-actions">
+                <button className="push-main" onClick={saveTrainingGameScore}><Save size={15}/> Zapisz wynik gry</button>
+                <button className="danger-btn" onClick={()=>deleteTrainingGame(selectedTrainingGame.id)}><Trash2 size={15}/> Usuń grę</button>
+              </div>
 
               <h3>Składy gry kontrolnej</h3>
               <div className="attendance-grid">
@@ -565,7 +684,7 @@ export default function AdminPanel(props:{
                 {trainingEvents.filter(e=>e.game_id===selectedTrainingGame.id).map(e=>{
                   const scorer=players.find(p=>p.id===e.player_id)?.display_name||"?";
                   const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
-                  return <div key={e.id}><span>⚽ {scorer}{assist?` • asysta ${assist}`:""}</span><button onClick={()=>deleteTrainingEvent(e.id)}><Trash2 size={14}/></button></div>
+                  return <div key={e.id}><span>⚽ {scorer}{assist?` • asysta ${assist}`:""}</span><div className="v902-event-actions"><button onClick={()=>editTrainingEvent(e.id)}>Edytuj</button><button onClick={()=>deleteTrainingEvent(e.id)}><Trash2 size={14}/></button></div></div>
                 })}
               </div>
             </>}

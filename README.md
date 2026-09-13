@@ -494,3 +494,22 @@ Prawidłowy wynik:
 - `Szybki trening dziś` tworzy jednym kliknięciem trening na dziś 17:00–18:30.
 - `Dodaj szczegółowo` zostaje dla innych dat/godzin.
 - brak tabeli `training_sessions` pokazuje czytelny komunikat z instrukcją uruchomienia `supabase/v6_training_center.sql`.
+
+
+## V9.0.2 — Edit & Delete Events
+Admin może teraz:
+- usunąć cały trening,
+- usunąć grę kontrolną,
+- usunąć pojedynczy gol/asystę treningową,
+- edytować strzelca i asystę treningową,
+- edytować strzelca i asystę w meczu oficjalnym,
+- edytować MVP,
+- usuwać pojedyncze zdarzenia z meczu.
+
+Usunięcie treningu kasuje automatycznie powiązane:
+- obecności,
+- gry kontrolne,
+- składy gier,
+- gole/asysty treningowe.
+
+Nie wymaga nowego SQL.
