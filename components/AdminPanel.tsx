@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, Link2, Bell, Goal, Crown, Star, Shield, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
 type Match={id:string;round_no:number|null;match_date:string;match_time:string|null;venue:string|null;home_team:string;away_team:string;home_score:number|null;away_score:number|null;status:string};
@@ -12,6 +12,7 @@ type Event={id:string;match_id:string;event_type:string;player_id:string|null;as
 type News={id:string;type:string;title:string;body:string|null;published_at:string};
 type Profile={id:string;display_name:string|null;role:string};
 type ParentLink={parent_id:string;player_id:string};
+type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean;player_id:string|null;created_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 
@@ -23,11 +24,12 @@ export default function AdminPanel(props:{
   initialLineup:Lineup[];
   initialEvents:Event[];
   initialNews:News[];
+  initialTeamEvents:TeamEvent[];
   allProfiles:Profile[];
   initialParentLinks:ParentLink[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"matches"|"players"|"news"|"parents"|"push"|"sync">("matches");
+  const [tab,setTab]=useState<"matches"|"calendar"|"players"|"news"|"parents"|"push"|"sync">("matches");
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -36,6 +38,7 @@ export default function AdminPanel(props:{
   const [lineup,setLineup]=useState(props.initialLineup);
   const [events,setEvents]=useState(props.initialEvents);
   const [news,setNews]=useState(props.initialNews);
+  const [teamEvents,setTeamEvents]=useState(props.initialTeamEvents);
   const [parentLinks,setParentLinks]=useState(props.initialParentLinks);
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
   const selectedMatch=matches.find(m=>m.id===selectedMatchId)||null;
@@ -220,6 +223,29 @@ export default function AdminPanel(props:{
     alert(text);
   }
 
+  async function addTeamEvent(){
+    const title=prompt("Nazwa wydarzenia"); if(!title)return;
+    const event_type=prompt("Typ: training / tournament / birthday / info / other","training")||"info";
+    const event_date=prompt("Data YYYY-MM-DD"); if(!event_date)return;
+    const start_time=prompt("Godzina HH:MM","17:00")||null;
+    const end_time=prompt("Koniec HH:MM","18:30")||null;
+    const location=prompt("Miejsce","")||null;
+    const details=prompt("Dodatkowa informacja","")||null;
+    const important=confirm("Czy oznaczyć wydarzenie jako WAŻNE?");
+    const {data,error}=await supabase.from("team_events").insert({
+      title,event_type,event_date,start_time,end_time,location,details,important,created_by:props.currentUser.id
+    }).select("*").single();
+    if(error)return alert(error.message);
+    setTeamEvents(prev=>[...prev,data].sort((x,y)=>`${x.event_date} ${x.start_time||""}`.localeCompare(`${y.event_date} ${y.start_time||""}`)));
+  }
+
+  async function deleteTeamEvent(id:string){
+    if(!confirm("Usunąć wydarzenie z kalendarza?"))return;
+    const {error}=await supabase.from("team_events").delete().eq("id",id);
+    if(error)return alert(error.message);
+    setTeamEvents(prev=>prev.filter(e=>e.id!==id));
+  }
+
   async function runDeltaSync(){
     setSyncing(true);
     setSyncResult("");
@@ -249,6 +275,7 @@ export default function AdminPanel(props:{
 
     <nav className="admin-tabs">
       <button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>
+      <button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>
       <button className={tab==="players"?"active":""} onClick={()=>setTab("players")}><Users size={17}/> Zawodnicy</button>
       <button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>
       <button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice</button>
@@ -324,7 +351,22 @@ export default function AdminPanel(props:{
         </section>
       </div>}
 
-      {tab==="players" && <section className="admin-card">
+            {tab==="calendar" && <section className="admin-card">
+        <div className="admin-card-head"><h2>Kalendarz drużyny</h2><button onClick={addTeamEvent}><Plus size={15}/> Dodaj wydarzenie</button></div>
+        <p className="muted">Tutaj planujesz treningi, turnieje, urodziny, zbiórki i inne ważne wydarzenia. Mecze nadal dodajesz w zakładce Mecze.</p>
+        <div className="admin-news-list">
+          {teamEvents.length?teamEvents.map(e=><article key={e.id}>
+            <div>
+              <strong>{e.title}</strong>
+              <p>{e.event_type} • {e.event_date} {e.start_time?.slice(0,5)||""} {e.location?`• ${e.location}`:""} {e.important?"• WAŻNE":""}</p>
+              {e.details&&<p>{e.details}</p>}
+            </div>
+            <button onClick={()=>deleteTeamEvent(e.id)}><Trash2 size={14}/></button>
+          </article>):<p className="muted">Brak dodatkowych wydarzeń w kalendarzu.</p>}
+        </div>
+      </section>}
+
+{tab==="players" && <section className="admin-card">
         <div className="admin-card-head"><h2>Zawodnicy</h2><button onClick={addPlayer}><Plus size={15}/> Dodaj zawodnika</button></div>
         <div className="admin-roster">
           {players.map(p=><div className="admin-player-row" key={p.id}>

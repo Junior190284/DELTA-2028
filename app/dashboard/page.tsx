@@ -24,6 +24,7 @@ export default async function Dashboard() {
     { data: events },
     { data: news },
     { data: clubUpdates },
+    { data: teamEvents },
     { data: parentLinks }
   ] = await Promise.all([
     supabase.from("players").select("id,display_name,shirt_number,position,photo_path,active").eq("active",true).order("display_name"),
@@ -33,6 +34,7 @@ export default async function Dashboard() {
     supabase.from("match_events").select("id,match_id,event_type,player_id,assist_player_id,minute,created_at").order("created_at"),
     supabase.from("news").select("id,type,title,body,published_at").order("published_at",{ascending:false}),
     supabase.from("club_updates").select("id,source_key,source_name,source_url,title,body,priority,published_at,synced_at").order("published_at",{ascending:false}).limit(30),
+    supabase.from("team_events").select("id,title,event_type,event_date,start_time,end_time,location,details,important,player_id,created_at").order("event_date").order("start_time"),
     supabase.from("parent_players").select("player_id").eq("parent_id", user.id),
   ]);
 
@@ -49,6 +51,7 @@ export default async function Dashboard() {
       initialEvents={events || []}
       initialNews={news || []}
       initialClubUpdates={clubUpdates || []}
+      initialTeamEvents={teamEvents || []}
       parentPlayerIds={(parentLinks || []).map(x=>x.player_id)}
     />
   );

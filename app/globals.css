@@ -2524,3 +2524,104 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v890-compare-row{grid-template-columns:1fr 45px 1fr}
   .v890-compare-names{gap:25px}
 }
+
+
+/* =========================================================
+   V8.9.1 — SMART MATCH HUB + TEAM CALENDAR
+   ========================================================= */
+.v82-match-rsvp-grid{grid-template-columns:1fr!important}
+.v891-match-tools{
+  display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:10px;margin-top:0
+}
+.v891-match-clock,.v891-attendance-mini{
+  min-height:82px;border:1px solid rgba(246,201,82,.14);
+  background:linear-gradient(145deg,rgba(9,13,18,.94),rgba(23,9,12,.86));
+}
+.v891-match-clock{padding:12px 14px;display:flex;flex-direction:column;justify-content:center}
+.v891-match-clock span,.v891-attendance-mini>span{font-size:7px;color:#f1c95c;font-weight:1000;letter-spacing:.12em}
+.v891-match-clock b{font-size:18px;margin:4px 0;color:#fff}
+.v891-match-clock small{font-size:6px;color:#75818c}
+
+.v891-attendance-mini{
+  border-color:rgba(246,201,82,.22);padding:10px 12px;color:#fff;text-align:left;cursor:pointer
+}
+.v891-attendance-mini>span{display:flex;align-items:center;gap:6px}
+.v891-attendance-mini strong{display:block;font-size:27px;color:#f1c95c;line-height:1.05;margin:5px 0}
+.v891-attendance-mini strong em{font-size:12px;color:#7c8791;font-style:normal}
+.v891-attendance-progress{height:5px;background:#151a21;overflow:hidden;margin:4px 0 6px}
+.v891-attendance-progress i{display:block;height:100%;background:linear-gradient(90deg,#df2132,#f1c95c)}
+.v891-attendance-mini small{display:flex;align-items:center;justify-content:space-between;color:#929da7;font-size:6px;font-weight:800}
+.v891-attendance-mini:hover{border-color:rgba(246,201,82,.44);filter:brightness(1.05)}
+
+.v891-team-clock-row{display:grid;grid-template-columns:1.45fr .55fr;gap:10px;margin-top:10px}
+.v891-team-clock{
+  min-height:108px;padding:14px 16px;display:grid;grid-template-columns:46px minmax(0,1fr) auto 18px;
+  gap:13px;align-items:center;cursor:pointer;
+  background:
+    linear-gradient(90deg,rgba(8,11,15,.96),rgba(28,9,12,.87)),
+    radial-gradient(circle at 80% 50%,rgba(222,31,47,.16),transparent 30%)
+}
+.v891-clock-icon{width:43px;height:43px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(246,201,82,.30);color:#f1c95c;transform:rotate(45deg)}
+.v891-clock-icon svg{transform:rotate(-45deg)}
+.v891-clock-copy>span,.v891-clock-time small{font-size:6px;color:#9b833d;font-weight:1000;letter-spacing:.12em}
+.v891-clock-copy h3{font-size:15px;margin:3px 0;color:#fff}
+.v891-clock-copy p{font-size:7px;color:#7c8893;margin:0}
+.v891-clock-time{text-align:right;min-width:140px}
+.v891-clock-time b{display:block;color:#f1c95c;font-size:18px;margin-top:4px}
+.v891-team-clock>svg{color:#64717c}
+.v891-team-clock:hover{border-color:rgba(246,201,82,.35)}
+
+.v891-important-note{padding:13px;min-height:108px;cursor:pointer}
+.v891-important-note>b{display:block;font-size:11px;color:#fff;margin:6px 0}
+.v891-important-note>span{display:block;font-size:6px;color:#f1c95c}
+.v891-important-note>p{font-size:7px;color:#7e8993;line-height:1.4}
+.v891-important-note.has-event{background:linear-gradient(145deg,rgba(30,10,13,.94),rgba(8,11,15,.97))}
+
+.v891-calendar-hero{
+  min-height:175px;padding:22px 25px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
+  background:linear-gradient(90deg,rgba(6,9,13,.96),rgba(31,8,12,.72)),url('/assets/stadium2.png') center/cover
+}
+.v891-calendar-hero h2{font-size:40px;margin:6px 0}
+.v891-calendar-hero p{font-size:9px;color:#97a3ae;margin:0}
+.v891-calendar-next{min-width:260px;padding:13px;border:1px solid rgba(246,201,82,.20);background:rgba(7,10,14,.78)}
+.v891-calendar-next span{display:block;font-size:6px;color:#8c783c;font-weight:1000}
+.v891-calendar-next b{display:block;font-size:11px;margin:5px 0}
+.v891-calendar-next strong{display:block;color:#f1c95c;font-size:18px}
+
+.v891-calendar-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.v891-calendar-event{
+  min-height:145px;padding:13px;display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:13px;align-items:center
+}
+.v891-calendar-event.important{border-color:rgba(229,31,47,.35)}
+.v891-event-date{width:55px;height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(246,201,82,.22);background:#090c11}
+.v891-event-date b{font-size:23px;color:#f1c95c;line-height:1}
+.v891-event-date span{font-size:7px;color:#8f9aa4;font-weight:1000;margin-top:4px}
+.v891-event-type{font-size:6px;font-weight:1000;color:#d72335;letter-spacing:.11em}
+.v891-event-main h3{font-size:13px;margin:5px 0}
+.v891-event-main p{font-size:7px;color:#f1c95c;margin:0 0 5px}
+.v891-event-main small{font-size:7px;color:#7f8b95;line-height:1.4}
+.v891-calendar-event>button{
+  border:1px solid rgba(246,201,82,.22);background:transparent;color:#f1c95c;padding:9px 10px;font-size:6px;font-weight:1000;cursor:pointer
+}
+.v891-calendar-empty{grid-column:1/-1;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#7c8791}
+.v891-calendar-empty svg{color:#f1c95c}
+.v891-calendar-empty h3{color:#fff;margin:8px 0 3px}
+.v891-calendar-empty p{font-size:8px}
+
+@media(max-width:900px){
+  .v891-team-clock-row{grid-template-columns:1fr}
+  .v891-calendar-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .v891-match-tools{grid-template-columns:1fr 125px;gap:6px}
+  .v891-match-clock,.v891-attendance-mini{min-height:76px}
+  .v891-match-clock b{font-size:15px}
+  .v891-attendance-mini strong{font-size:23px}
+  .v891-team-clock{grid-template-columns:40px minmax(0,1fr) 15px}
+  .v891-clock-time{grid-column:2;grid-row:2;text-align:left;min-width:0}
+  .v891-clock-time b{font-size:15px}
+  .v891-calendar-hero{align-items:flex-start;flex-direction:column}
+  .v891-calendar-next{min-width:0;width:100%}
+  .v891-calendar-event{grid-template-columns:50px minmax(0,1fr);min-height:130px}
+  .v891-calendar-event>button{grid-column:2}
+}

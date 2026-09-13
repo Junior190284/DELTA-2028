@@ -29,6 +29,7 @@ export default function MatchCenterModal(props:{
   currentUserId:string;
   currentUserRole:string;
   parentPlayerIds:string[];
+  initialTab?:Tab;
   onClose:()=>void;
   onDataChange:(data:{match?:Match;attendance?:Attendance[];lineup?:Lineup[];events?:Event[]})=>void;
 }) {
@@ -36,7 +37,7 @@ export default function MatchCenterModal(props:{
   const router=useRouter();
   const {match,players}=props;
   const staff=props.currentUserRole==="admin"||props.currentUserRole==="coach";
-  const [tab,setTab]=useState<Tab>("summary");
+  const [tab,setTab]=useState<Tab>(props.initialTab||"summary");
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState("");
 

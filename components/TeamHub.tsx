@@ -18,6 +18,7 @@ type Lineup={match_id:string;player_id:string;is_starter:boolean;is_captain:bool
 type Event={id:string;match_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;minute:number|null;created_at:string};
 type News={id:string;type:string;title:string;body:string|null;published_at:string};
 type ClubUpdate={id:string;source_key:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string;synced_at:string};
+type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean;player_id:string|null;created_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 const isRyszardPlayer=(p:{display_name:string})=>{const n=(p.display_name||"").toLocaleLowerCase("pl-PL");return n.includes("ryszard")&&n.includes("rybacki");};
@@ -95,10 +96,11 @@ export default function TeamHub(props:{
   initialEvents:Event[];
   initialNews:News[];
   initialClubUpdates:ClubUpdate[];
+  initialTeamEvents:TeamEvent[];
   parentPlayerIds:string[];
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"home"|"matches"|"players"|"stats"|"achievements"|"chronicle"|"news"|"club">("home");
+  const [tab,setTab]=useState<"home"|"matches"|"calendar"|"players"|"stats"|"achievements"|"chronicle"|"news"|"club">("home");
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -106,11 +108,13 @@ export default function TeamHub(props:{
   const [events,setEvents]=useState(props.initialEvents);
   const [news,setNews]=useState(props.initialNews);
   const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
+  const [teamEvents,setTeamEvents]=useState(props.initialTeamEvents);
   const [focusedClubKey,setFocusedClubKey]=useState<string|null>(null);
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
+  const [matchInitialTab,setMatchInitialTab]=useState<"summary"|"attendance"|"lineup"|"events"|"mvp">("summary");
   const [accountOpen,setAccountOpen]=useState(false);
   const [now,setNow]=useState(()=>new Date());
   const [statsMetric,setStatsMetric]=useState<"ga"|"goals"|"assists"|"mvp"|"matches"|"captain">("ga");
@@ -126,8 +130,8 @@ export default function TeamHub(props:{
 
   useEffect(()=>{
     setPlayers(props.initialPlayers);setMatches(props.initialMatches);setAttendance(props.initialAttendance);
-    setLineup(props.initialLineup);setEvents(props.initialEvents);setNews(props.initialNews);setClubUpdates(props.initialClubUpdates);
-  },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews,props.initialClubUpdates]);
+    setLineup(props.initialLineup);setEvents(props.initialEvents);setNews(props.initialNews);setClubUpdates(props.initialClubUpdates);setTeamEvents(props.initialTeamEvents);
+  },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews,props.initialClubUpdates,props.initialTeamEvents]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -231,6 +235,40 @@ export default function TeamHub(props:{
     : formatCountdown(nextTraining.start.getTime()-now.getTime());
   const nextTrainingLabel=nextTraining.start.toLocaleDateString("pl-PL",{weekday:"long",day:"2-digit",month:"2-digit"})+
     " • "+nextTraining.start.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})+"–18:30";
+
+  const futureTeamEvents=teamEvents
+    .map(e=>{
+      const tm=e.start_time?.slice(0,5)||"00:00";
+      return {...e,at:new Date(`${e.event_date}T${tm}:00`)};
+    })
+    .filter(e=>e.at.getTime()>=now.getTime()-60000)
+    .sort((a,b)=>a.at.getTime()-b.at.getTime());
+
+  const smartCandidates:{kind:string;title:string;subtitle:string;at:Date;important?:boolean}[]=[
+    ...(nextMatchAt&&nextMatchAt>now?[{
+      kind:"match",
+      title:`Mecz • ${nextMatch?recentOpponent(nextMatch):""}`,
+      subtitle:nextMatch?`${datePL(nextMatch.match_date)} • ${nextMatch.match_time||"godzina do ustalenia"}`:"",
+      at:nextMatchAt
+    }]:[]),
+    ...(!nextTraining.isLive?[{
+      kind:"training",
+      title:"Trening drużyny",
+      subtitle:nextTrainingLabel,
+      at:nextTraining.start
+    }]:[]),
+    ...futureTeamEvents.map(e=>({
+      kind:e.event_type,
+      title:e.title,
+      subtitle:[e.event_date,e.start_time?.slice(0,5),e.location].filter(Boolean).join(" • "),
+      at:e.at,
+      important:e.important
+    }))
+  ].sort((a,b)=>a.at.getTime()-b.at.getTime());
+
+  const nextTeamEvent=smartCandidates[0]||null;
+  const teamClockCountdown=nextTeamEvent?formatCountdown(nextTeamEvent.at.getTime()-now.getTime()):"Brak wydarzeń";
+  const importantTeamEvent=futureTeamEvents.find(e=>e.important)||futureTeamEvents.find(e=>e.event_type==="birthday")||null;
   const nextPresent=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&(a.status==="present"||a.status==="yes")).length:0;
   const nextResponses=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&["yes","no","maybe"].includes(a.status)):[];
   const nextResponseCount=new Set(nextResponses.map(a=>a.player_id)).size;
@@ -392,6 +430,11 @@ export default function TeamHub(props:{
     ];
   };
 
+  function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary"){
+    setMatchInitialTab(initial);
+    setSelectedMatch(match);
+  }
+
   async function setParentAttendance(matchId:string,playerId:string,status:"yes"|"no"|"maybe"){
     const {error}=await supabase.from("match_attendance").upsert({match_id:matchId,player_id:playerId,status,updated_by:props.profile.id},{onConflict:"match_id,player_id"});
     if(!error)setAttendance(prev=>[...prev.filter(a=>!(a.match_id===matchId&&a.player_id===playerId)),{match_id:matchId,player_id:playerId,status}]);
@@ -408,7 +451,7 @@ export default function TeamHub(props:{
   }
 
   const navItems:[string,string,any][]=[
-    ["home","Start",Home],["matches","Mecze",CalendarDays],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],
+    ["home","Start",Home],["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],
     ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
@@ -461,30 +504,50 @@ export default function TeamHub(props:{
               </div>
             </div>
 
-            <div className="v84-countdown-row">
-              <div className="v84-countdown v84-match-countdown">
+            <div className="v891-match-tools">
+              <div className="v891-match-clock">
                 <span>DO MECZU</span>
                 <b>{nextMatchCountdown}</b>
                 <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"godzina do ustalenia"}</small>
               </div>
-              <div className={`v84-countdown v84-training-countdown ${nextTraining.isLive?"live":""}`}>
-                <span>{nextTraining.isLive?"TRENING TERAZ":"DO TRENINGU"}</span>
-                <b>{trainingCountdown}</b>
-                <small>{nextTrainingLabel}</small>
-              </div>
+
+              <button type="button" className="v891-attendance-mini" onClick={()=>openMatch(nextMatch,"attendance")}>
+                <span><UserCheck size={16}/> OBECNOŚĆ</span>
+                <strong>{nextResponseCount}<em>/ {players.length}</em></strong>
+                <div className="v891-attendance-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
+                <small>{staff?"Zobacz odpowiedzi":"Potwierdź udział dziecka"} <ChevronRight size={12}/></small>
+              </button>
             </div>
 
-            <button className="v8-red-cta" onClick={()=>setSelectedMatch(nextMatch)}>CENTRUM MECZU <ChevronRight size={17}/></button>
+            <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary")}>CENTRUM MECZU <ChevronRight size={17}/></button>
+          </article>
+        </section>
+
+        <section className="v891-team-clock-row">
+          <article className="v891-team-clock devil-card" onClick={()=>setTab("calendar")}>
+            <div className="v891-clock-icon"><CalendarDays size={22}/></div>
+            <div className="v891-clock-copy">
+              <span>ZEGAR DRUŻYNY</span>
+              <h3>{nextTeamEvent?.title||"Brak zaplanowanych wydarzeń"}</h3>
+              <p>{nextTeamEvent?.subtitle||"Dodaj wydarzenia w Kalendarzu drużyny."}</p>
+            </div>
+            <div className="v891-clock-time">
+              <small>DO WYDARZENIA</small>
+              <b>{teamClockCountdown}</b>
+            </div>
+            <ChevronRight size={18}/>
           </article>
 
-          <article className="v85-home-attendance devil-card">
-            <div className="v8-panel-title"><UserCheck size={18}/> OBECNOŚĆ NA MECZU</div>
-            <div className="v85-home-attendance-number"><b>{nextResponseCount}</b><span>/ {players.length}</span></div>
-            <p>{staff?"Rodzice potwierdzili udział zawodników.":"Potwierdź udział swojego zawodnika w Centrum Meczu."}</p>
-            <div className="v8-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
-            <button onClick={()=>setSelectedMatch(nextMatch)}>
-              {staff?"ZOBACZ LISTĘ OBECNOŚCI":"POTWIERDŹ OBECNOŚĆ"} <ChevronRight size={15}/>
-            </button>
+          <article className={`v891-important-note devil-card ${importantTeamEvent?"has-event":""}`} onClick={()=>setTab("calendar")}>
+            <div className="v8-panel-title"><Bell size={16}/> WAŻNE</div>
+            {importantTeamEvent?<>
+              <b>{importantTeamEvent.title}</b>
+              <span>{[importantTeamEvent.event_date,importantTeamEvent.start_time?.slice(0,5),importantTeamEvent.location].filter(Boolean).join(" • ")}</span>
+              {importantTeamEvent.details&&<p>{importantTeamEvent.details}</p>}
+            </>:<>
+              <b>Spokojny tydzień</b>
+              <span>Brak dodatkowych ważnych informacji.</span>
+            </>}
           </article>
         </section>}
 
@@ -669,7 +732,50 @@ export default function TeamHub(props:{
         </section>
       </>}
 
-      {tab==="matches"&&<section className="section v8-section-page"><div className="section-title"><h2>Mecze</h2></div><div className="list">{matches.map(m=><article className="match-row devil-card" key={m.id}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">{datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>setSelectedMatch(m)}>{staff?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>)}</div></section>}
+      {tab==="matches"&&<section className="section v8-section-page"><div className="section-title"><h2>Mecze</h2></div><div className="list">{matches.map(m=><article className="match-row devil-card" key={m.id}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">{datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>openMatch(m,"summary")}>{staff?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>)}</div></section>}
+
+      {tab==="calendar"&&<section className="section v8-section-page v891-calendar-page">
+        <div className="v891-calendar-hero devil-card">
+          <div>
+            <span className="eyebrow gold">DELTA 2018 GM • PLAN DRUŻYNY</span>
+            <h2>Kalendarz drużyny</h2>
+            <p>Mecze, treningi, turnieje, urodziny i ważne informacje w jednym miejscu.</p>
+          </div>
+          <div className="v891-calendar-next">
+            <span>NAJBLIŻSZE</span>
+            <b>{nextTeamEvent?.title||"Brak wydarzeń"}</b>
+            <strong>{teamClockCountdown}</strong>
+          </div>
+        </div>
+
+        <div className="v891-calendar-grid">
+          {(()=>{
+            const items=[
+              ...matches.filter(m=>m.status==="scheduled").map(m=>({
+                id:`match-${m.id}`,kind:"match",date:m.match_date,time:m.match_time||"",title:`Mecz • ${recentOpponent(m)}`,
+                location:m.venue||"",details:`${m.home_team} — ${m.away_team}`,important:true,match:m
+              })),
+              ...teamEvents.map(e=>({
+                id:e.id,kind:e.event_type,date:e.event_date,time:e.start_time?.slice(0,5)||"",title:e.title,
+                location:e.location||"",details:e.details||"",important:e.important,match:null as Match|null
+              }))
+            ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+            return items.length?items.map(item=><article key={item.id} className={`v891-calendar-event devil-card type-${item.kind} ${item.important?"important":""}`}>
+              <div className="v891-event-date">
+                <b>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit"})}</b>
+                <span>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{month:"short"}).replace(".","").toUpperCase()}</span>
+              </div>
+              <div className="v891-event-main">
+                <span className="v891-event-type">{item.kind==="match"?"MECZ":item.kind==="training"?"TRENING":item.kind==="birthday"?"URODZINY":item.kind==="tournament"?"TURNIEJ":"WYDARZENIE"}</span>
+                <h3>{item.title}</h3>
+                <p>{[item.time,item.location].filter(Boolean).join(" • ")||"Szczegóły do ustalenia"}</p>
+                {item.details&&<small>{item.details}</small>}
+              </div>
+              {item.match?<button onClick={()=>openMatch(item.match!,"summary")}>CENTRUM MECZU <ChevronRight size={13}/></button>:null}
+            </article>):<div className="v891-calendar-empty devil-card"><CalendarDays size={34}/><h3>Kalendarz jest pusty</h3><p>Administrator może zaplanować treningi, turnieje, urodziny i inne wydarzenia.</p></div>
+          })()}
+        </div>
+      </section>}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
         <div className="v871-team-hero devil-card">

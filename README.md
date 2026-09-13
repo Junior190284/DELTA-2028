@@ -396,3 +396,21 @@ Nowa zakładka `Statystyki`:
 - kliknięcie meczu w historii formy otwiera Centrum Meczu.
 
 Wszystkie wartości liczą się automatycznie z danych aplikacji.
+
+
+## V8.9.1 — Team Calendar & Smart Match Hub
+- usunięty duży osobny baner obecności,
+- mały kafel „Obecność” jest przy najbliższym meczu i pokazuje np. 5/11,
+- kliknięcie kafla otwiera Centrum Meczu od razu w zakładce Obecność,
+- countdown meczu zostaje przy meczu,
+- nowy „Zegar drużyny” liczy czas do najbliższego: meczu, treningu lub wydarzenia z kalendarza,
+- ważne wydarzenia mogą być wyróżnione na stronie Start,
+- nowa zakładka „Kalendarz”,
+- Admin → Kalendarz pozwala dodawać treningi, turnieje, urodziny, zbiórki i inne wydarzenia.
+
+### Jednorazowa konfiguracja
+Supabase → SQL Editor → uruchom cały plik:
+`supabase/v5_team_calendar.sql`
+
+Prawidłowy wynik:
+`TEAM CALENDAR READY`

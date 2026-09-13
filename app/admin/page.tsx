@@ -20,6 +20,7 @@ export default async function AdminPage() {
     { data: events },
     { data: news },
     { data: profiles },
+    { data: teamEvents },
     { data: parentLinks }
   ] = await Promise.all([
     supabase.from("players").select("*").order("display_name"),
@@ -29,6 +30,7 @@ export default async function AdminPage() {
     supabase.from("match_events").select("*").order("created_at"),
     supabase.from("news").select("*").order("published_at",{ascending:false}),
     supabase.from("profiles").select("id,display_name,role").order("display_name"),
+    supabase.from("team_events").select("*").order("event_date").order("start_time"),
     supabase.from("parent_players").select("*")
   ]);
 
@@ -40,6 +42,7 @@ export default async function AdminPage() {
     initialLineup={lineup || []}
     initialEvents={events || []}
     initialNews={news || []}
+    initialTeamEvents={teamEvents || []}
     allProfiles={profiles || []}
     initialParentLinks={parentLinks || []}
   />;
