@@ -28,6 +28,8 @@ export default function MatchCenterModal(props:{
   events:Event[];
   currentUserId:string;
   currentUserRole:string;
+  canManageMatch?:boolean;
+  canEditEvents?:boolean;
   parentPlayerIds:string[];
   initialTab?:Tab;
   onClose:()=>void;
@@ -36,7 +38,10 @@ export default function MatchCenterModal(props:{
   const supabase=createClient();
   const router=useRouter();
   const {match,players}=props;
-  const staff=props.currentUserRole==="admin"||props.currentUserRole==="coach";
+  const coreStaff=props.currentUserRole==="admin"||props.currentUserRole==="coach";
+  const canManageMatch=coreStaff||!!props.canManageMatch;
+  const canEditEvents=canManageMatch||!!props.canEditEvents;
+  const staff=canManageMatch||canEditEvents;
   const [tab,setTab]=useState<Tab>(props.initialTab||"summary");
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState("");
@@ -171,12 +176,33 @@ export default function MatchCenterModal(props:{
     confirmSaved("Zdarzenie usunięte");
   }
 
-  const tabs:{id:Tab;label:string;icon:any;staffOnly?:boolean}[]=[
-    {id:"summary",label:"Podsumowanie",icon:CalendarDays},
-    {id:"attendance",label:"Obecność",icon:UserCheck},
-    {id:"lineup",label:"Skład",icon:Users,staffOnly:true},
-    {id:"events",label:"Zdarzenia",icon:Goal,staffOnly:true},
-    {id:"mvp",label:"MVP",icon:Star,staffOnly:true},
+  async function editGoal(id:string){
+    const e=props.events.find(x=>x.id===id);
+    if(!e)return;
+    const currentScorer=players.find(p=>p.id===e.player_id)?.display_name||"";
+    const currentAssist=players.find(p=>p.id===e.assist_player_id)?.display_name||"";
+    const scorerName=prompt("Strzelec gola",currentScorer); if(scorerName===null)return;
+    const scorer=players.find(p=>p.display_name.toLowerCase()===scorerName.trim().toLowerCase());
+    if(!scorer)return alert("Nie znaleziono zawodnika.");
+    const assistName=prompt("Asysta (puste = brak)",currentAssist); if(assistName===null)return;
+    let assistId:string|null=null;
+    if(assistName.trim()){
+      const assist=players.find(p=>p.display_name.toLowerCase()===assistName.trim().toLowerCase());
+      if(!assist)return alert("Nie znaleziono zawodnika dla asysty.");
+      assistId=assist.id;
+    }
+    const {error}=await supabase.from("match_events").update({player_id:scorer.id,assist_player_id:assistId}).eq("id",id);
+    if(error)return alert(error.message);
+    props.onDataChange({events:props.events.map(x=>x.id===id?{...x,player_id:scorer.id,assist_player_id:assistId}:x)});
+    confirmSaved("Gol poprawiony");
+  }
+
+  const tabs:{id:Tab;label:string;icon:any;allowed?:boolean}[]=[
+    {id:"summary",label:"Podsumowanie",icon:CalendarDays,allowed:true},
+    {id:"attendance",label:"Obecność",icon:UserCheck,allowed:true},
+    {id:"lineup",label:"Skład",icon:Users,allowed:canManageMatch},
+    {id:"events",label:"Zdarzenia",icon:Goal,allowed:canEditEvents},
+    {id:"mvp",label:"MVP",icon:Star,allowed:canEditEvents},
   ];
 
   return <div className="match-center-overlay" onClick={props.onClose}>
@@ -197,7 +223,7 @@ export default function MatchCenterModal(props:{
       {saved&&<div className="mc-saved">✓ {saved}</div>}
 
       <nav className="v85-tabs">
-        {tabs.filter(t=>!t.staffOnly||staff).map(({id,label,icon:Icon})=>
+        {tabs.filter(t=>t.allowed!==false).map(({id,label,icon:Icon})=>
           <button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>
             <Icon size={16}/><span>{label}</span>
             {id==="attendance"&&<em>{responseCount}/{players.length}</em>}
@@ -214,7 +240,7 @@ export default function MatchCenterModal(props:{
             <div className="v85-summary-card"><span>WYJŚCIOWA 6</span><b>{selectedStarterIds.size}/6</b><small>{matchLineup.find(l=>l.is_captain)?"Kapitan wybrany":"Kapitan do ustalenia"}</small></div>
           </div>
 
-          {staff&&<div className="mc-basics v85-basics">
+          {canManageMatch&&<div className="mc-basics v85-basics">
             <label>Status<select id="mc-status" defaultValue={match.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
             <label>Godzina<input id="mc-time" defaultValue={match.match_time||""}/></label>
             <label>Miejsce<input id="mc-venue" defaultValue={match.venue||""}/></label>
@@ -223,7 +249,7 @@ export default function MatchCenterModal(props:{
             <button className="mc-save" onClick={saveMatchBasics}><Save size={16}/> {saving?"Zapisywanie…":"Zapisz mecz"}</button>
           </div>}
 
-          {!staff&&<button className="v85-parent-cta" onClick={()=>setTab("attendance")}><UserCheck size={18}/> POTWIERDŹ OBECNOŚĆ ZAWODNIKA <ChevronRight size={16}/></button>}
+          {!canManageMatch&&!canEditEvents&&<button className="v85-parent-cta" onClick={()=>setTab("attendance")}><UserCheck size={18}/> POTWIERDŹ OBECNOŚĆ ZAWODNIKA <ChevronRight size={16}/></button>}
         </>}
 
         {tab==="attendance"&&<>
@@ -232,7 +258,7 @@ export default function MatchCenterModal(props:{
             <div className="v85-progress"><i style={{width:`${players.length?Math.min(100,responseCount/players.length*100):0}%`}}/></div>
           </div>
 
-          {staff?<div className="v85-attendance-table">
+          {canManageMatch?<div className="v85-attendance-table">
             {players.map(p=>{
               const response=responseStatus(p.id);
               const actual=actualAttendance(p.id);
@@ -262,7 +288,7 @@ export default function MatchCenterModal(props:{
           </div>}
         </>}
 
-        {staff&&tab==="lineup"&&<>
+        {canManageMatch&&tab==="lineup"&&<>
           <div className="v85-section-intro"><Users size={19}/><div><b>Wyjściowa 6 i kapitan</b><span>Wybierz maksymalnie sześciu starterów.</span></div><strong>{selectedStarterIds.size}/6</strong></div>
           <div className="v85-lineup-grid">
             {players.map(p=>{
@@ -280,7 +306,7 @@ export default function MatchCenterModal(props:{
           </div>
         </>}
 
-        {staff&&tab==="events"&&<>
+        {canEditEvents&&tab==="events"&&<>
           <div className="v85-events-layout">
             <div className="mc-box v85-event-form">
               <div className="mc-title"><Goal size={18}/> Dodaj bramkę</div>
@@ -294,13 +320,13 @@ export default function MatchCenterModal(props:{
               {matchEvents.filter(e=>e.event_type==="goal").map(e=>{
                 const scorer=players.find(p=>p.id===e.player_id)?.display_name||"?";
                 const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
-                return <div className="v85-event-row" key={e.id}><span>⚽ <b>{scorer}</b>{assist?` • asysta ${assist}`:""}</span><button onClick={()=>deleteEvent(e.id)}>Usuń</button></div>
+                return <div className="v85-event-row" key={e.id}><span>⚽ <b>{scorer}</b>{assist?` • asysta ${assist}`:""}</span><div className="v10-event-tools"><button onClick={()=>editGoal(e.id)}>Edytuj</button><button onClick={()=>deleteEvent(e.id)}>Usuń</button></div></div>
               })}
             </div>
           </div>
         </>}
 
-        {staff&&tab==="mvp"&&<>
+        {canEditEvents&&tab==="mvp"&&<>
           <div className="v85-mvp">
             <Star size={34}/>
             <h3>MVP meczu</h3>

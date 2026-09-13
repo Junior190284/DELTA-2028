@@ -539,3 +539,34 @@ Za logowaniem pozostają:
 Publiczny widok pobiera dane po stronie serwera i nie wysyła do przeglądarki rekordów zawodników, obecności, składów, parent_links ani danych treningowych.
 
 Nie wymaga nowego SQL.
+
+# V10 — MEGA PACK
+
+Duża wersja konsolidująca dotychczasowe moduły i nowe zaakceptowane ulepszenia.
+
+## Nowe w V10
+- **Parent Permissions / Team Helpers** — administrator nadaje pojedyncze uprawnienia rodzicom bez dawania pełnego admina.
+- **Moje dziecko** — prywatny panel rodzica z meczami, G+A, treningami, serią obecności, formą i chemią.
+- **Match Day Mode** — szybka obsługa obecności, wyjściowej 6, kapitana, goli/asyst, MVP i wyniku.
+- **Edycja błędów meczowych** — zmiana strzelca/asysty i kasowanie zdarzeń.
+- **Hall of Fame / Centrum rekordów** — rekordy meczowe, treningowe, kapitańskie i chemia duetów.
+- **Automatyczne podsumowanie meczu** — tekst do skopiowania.
+- **Automatyczne podsumowanie miesiąca** — mecze, wygrane, gole i treningi.
+- **Porównanie sezonów** — automatycznie grupowane na podstawie dat meczów.
+- **Generator PNG** — grafika wyniku meczu i grafika powołanych/potwierdzonych.
+- **Foto-kronika meczu** — prywatny bucket `match-media`, zdjęcia dostępne wyłącznie po zalogowaniu.
+- **Wyzwania treningowe** — proste automatyczne cele w panelu dziecka.
+- **Smart Reminders** — opcjonalny endpoint + cron dla push: brak RSVP przed meczem, trening jutro, urodziny.
+- **Deep links z powiadomień** — Match Day / Treningi / Kalendarz / Z klubu.
+
+## Prywatność
+Publiczna strona nie otrzymuje danych dzieci, obecności, składów, statystyk indywidualnych ani zdjęć kroniki. Dane zawodników pozostają w części po zalogowaniu, a foto-kronika korzysta z prywatnego storage Supabase i podpisywanych URL-i.
+
+## Baza danych
+Najprościej uruchomić jeden plik:
+
+`supabase/V10_MEGA_PACK_RUN_ONCE.sql`
+
+Opcjonalne automatyczne przypomnienia:
+
+`supabase/v8_smart_reminders_cron.sql`

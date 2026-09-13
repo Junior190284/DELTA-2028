@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { UserPermissions } from "@/lib/permissions";
+import { EMPTY_PERMISSIONS } from "@/lib/permissions";
 import { ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -12,12 +14,14 @@ type Event={id:string;match_id:string;event_type:string;player_id:string|null;as
 type News={id:string;type:string;title:string;body:string|null;published_at:string};
 type Profile={id:string;display_name:string|null;role:string};
 type ParentLink={parent_id:string;player_id:string};
+type PermissionRow=UserPermissions&{user_id:string;updated_by?:string|null;updated_at?:string};
 type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean;player_id:string|null;created_at:string};
 type TrainingSession={id:string;training_date:string;start_time:string|null;end_time:string|null;location:string|null;title:string;notes:string|null;created_at:string};
 type TrainingAttendance={training_id:string;player_id:string;status:string};
 type TrainingGame={id:string;training_id:string;team_a_name:string;team_b_name:string;team_a_score:number;team_b_score:number;created_at:string};
 type TrainingGamePlayer={game_id:string;player_id:string;team:string};
 type TrainingEvent={id:string;game_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;created_at:string};
+type MatchMedia={id:string;match_id:string;storage_path:string;caption:string|null;created_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 
@@ -35,11 +39,26 @@ export default function AdminPanel(props:{
   initialTrainingGames:TrainingGame[];
   initialTrainingGamePlayers:TrainingGamePlayer[];
   initialTrainingEvents:TrainingEvent[];
+  initialMatchMedia:MatchMedia[];
   allProfiles:Profile[];
   initialParentLinks:ParentLink[];
+  initialPermissions:PermissionRow[];
+  currentPermissions:UserPermissions;
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"news"|"parents"|"push"|"sync">("matches");
+  const coreStaff=props.currentUser.role==="admin"||props.currentUser.role==="coach";
+  const isAdmin=props.currentUser.role==="admin";
+  const canMatchBasics=coreStaff||props.currentPermissions.can_manage_matches;
+  const canMatchEvents=canMatchBasics||props.currentPermissions.can_edit_match_events;
+  const canMatches=canMatchBasics||canMatchEvents;
+  const canCalendar=coreStaff||props.currentPermissions.can_manage_calendar;
+  const canTrainingFull=coreStaff||props.currentPermissions.can_manage_training;
+  const canTrainingAttendance=canTrainingFull||props.currentPermissions.can_manage_training_attendance;
+  const canTraining=canTrainingFull||canTrainingAttendance;
+  const canPlayers=coreStaff||props.currentPermissions.can_manage_players;
+  const canNews=coreStaff||props.currentPermissions.can_manage_news;
+  const firstTab:string=canMatches?"matches":canTraining?"training":canCalendar?"calendar":canNews?"news":canPlayers?"players":"matches";
+  const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"news"|"parents"|"push"|"sync">(firstTab as any);
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -54,9 +73,11 @@ export default function AdminPanel(props:{
   const [trainingGames,setTrainingGames]=useState(props.initialTrainingGames);
   const [trainingGamePlayers,setTrainingGamePlayers]=useState(props.initialTrainingGamePlayers);
   const [trainingEvents,setTrainingEvents]=useState(props.initialTrainingEvents);
+  const [matchMedia,setMatchMedia]=useState(props.initialMatchMedia);
   const [selectedTrainingId,setSelectedTrainingId]=useState(props.initialTrainingSessions[0]?.id||"");
   const [selectedTrainingGameId,setSelectedTrainingGameId]=useState(props.initialTrainingGames[0]?.id||"");
   const [parentLinks,setParentLinks]=useState(props.initialParentLinks);
+  const [permissions,setPermissions]=useState<PermissionRow[]>(props.initialPermissions);
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
   const selectedMatch=matches.find(m=>m.id===selectedMatchId)||null;
   const activePlayers=players.filter(p=>p.active!==false);
@@ -212,6 +233,27 @@ export default function AdminPanel(props:{
     }
   }
 
+  async function uploadMatchPhoto(){
+    if(!selectedMatch||!canMatchBasics)return;
+    const input=document.getElementById("matchPhotoInput") as HTMLInputElement|null;
+    const file=input?.files?.[0]; if(!file)return alert("Wybierz zdjęcie.");
+    const ext=(file.name.split(".").pop()||"jpg").replace(/[^a-z0-9]/gi,"").toLowerCase();
+    const path=`${selectedMatch.id}/${crypto.randomUUID()}.${ext}`;
+    const {error:uploadError}=await supabase.storage.from("match-media").upload(path,file,{upsert:false,contentType:file.type||undefined});
+    if(uploadError)return alert(uploadError.message.includes("Bucket")?"Uruchom najpierw SQL v7_permissions_megapack.sql.":uploadError.message);
+    const caption=prompt("Podpis do zdjęcia (opcjonalnie)","")||null;
+    const {data,error}=await supabase.from("match_media").insert({match_id:selectedMatch.id,storage_path:path,caption,created_by:props.currentUser.id}).select("id,match_id,storage_path,caption,created_at").single();
+    if(error){await supabase.storage.from("match-media").remove([path]);return alert(error.message);}
+    setMatchMedia(prev=>[...prev,data]); if(input)input.value="";
+  }
+
+  async function deleteMatchPhoto(row:MatchMedia){
+    if(!confirm("Usunąć to zdjęcie z kroniki meczu?"))return;
+    const {error}=await supabase.from("match_media").delete().eq("id",row.id); if(error)return alert(error.message);
+    await supabase.storage.from("match-media").remove([row.storage_path]);
+    setMatchMedia(prev=>prev.filter(x=>x.id!==row.id));
+  }
+
   async function addPlayer(){
     const name=prompt("Imię i nazwisko zawodnika"); if(!name)return;
     const number=prompt("Numer koszulki")||null;
@@ -254,6 +296,19 @@ export default function AdminPanel(props:{
     const {error}=await supabase.from("parent_players").delete().eq("parent_id",parentId).eq("player_id",playerId);
     if(error)return alert(error.message);
     setParentLinks(prev=>prev.filter(x=>!(x.parent_id===parentId&&x.player_id===playerId)));
+  }
+
+  function permissionFor(userId:string):PermissionRow{
+    return permissions.find(x=>x.user_id===userId)||{user_id:userId,...EMPTY_PERMISSIONS};
+  }
+
+  async function updatePermission(userId:string,key:keyof UserPermissions,value:boolean|string){
+    if(!isAdmin)return alert("Tylko administrator może nadawać uprawnienia.");
+    const current=permissionFor(userId);
+    const next={...current,[key]:value,user_id:userId,updated_by:props.currentUser.id,updated_at:new Date().toISOString()};
+    const {error}=await supabase.from("user_permissions").upsert(next,{onConflict:"user_id"});
+    if(error)return alert(error.message.includes("user_permissions")?"Najpierw uruchom SQL v7_permissions_megapack.sql w Supabase.":error.message);
+    setPermissions(prev=>[...prev.filter(x=>x.user_id!==userId),next]);
   }
 
   async function sendPush(){
@@ -528,24 +583,24 @@ export default function AdminPanel(props:{
         <div className="eyebrow gold">DELTA 2018 GM</div>
         <h1>Centrum administratora</h1>
       </div>
-      <span className="admin-role">{props.currentUser.role}</span>
+      <span className="admin-role">{coreStaff?props.currentUser.role:props.currentPermissions.role_label||"Pomocnik"}</span>
     </header>
 
     <nav className="admin-tabs">
-      <button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>
-      <button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>
-      <button className={tab==="training"?"active":""} onClick={()=>setTab("training")}><Goal size={17}/> Treningi</button>
-      <button className={tab==="players"?"active":""} onClick={()=>setTab("players")}><Users size={17}/> Zawodnicy</button>
-      <button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>
-      <button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice</button>
-      <button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>
-      <button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>
+      {canMatches&&<button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>}
+      {canCalendar&&<button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>}
+      {canTraining&&<button className={tab==="training"?"active":""} onClick={()=>setTab("training")}><Goal size={17}/> Treningi</button>}
+      {canPlayers&&<button className={tab==="players"?"active":""} onClick={()=>setTab("players")}><Users size={17}/> Zawodnicy</button>}
+      {canNews&&<button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>}
+      {coreStaff&&<button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice i role</button>}
+      {coreStaff&&<button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>}
+      {coreStaff&&<button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>}
     </nav>
 
     <main className="admin-main">
-      {tab==="matches" && <div className="admin-two-col">
+      {tab==="matches" && canMatches && <div className="admin-two-col">
         <aside className="admin-card">
-          <div className="admin-card-head"><h2>Mecze</h2><button onClick={addMatch}><Plus size={15}/> Dodaj</button></div>
+          <div className="admin-card-head"><h2>Mecze</h2>{canMatchBasics&&<button onClick={addMatch}><Plus size={15}/> Dodaj</button>}</div>
           <div className="admin-match-list">
             {matches.map(m=><button key={m.id} className={selectedMatchId===m.id?"selected":""} onClick={()=>setSelectedMatchId(m.id)}>
               <strong>{m.home_team} — {m.away_team}</strong>
@@ -556,17 +611,17 @@ export default function AdminPanel(props:{
 
         <section className="admin-card">
           {!selectedMatch ? <p>Wybierz mecz.</p> : <>
-            <div className="admin-card-head"><h2>Centrum meczu</h2><button onClick={saveMatchBasics}><Save size={15}/> Zapisz</button></div>
-            <div className="admin-form-grid">
+            <div className="admin-card-head"><h2>Centrum meczu</h2>{canMatchBasics&&<button onClick={saveMatchBasics}><Save size={15}/> Zapisz</button>}</div>
+            {canMatchBasics&&<div className="admin-form-grid">
               <label>Status<select id="mstatus" defaultValue={selectedMatch.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
               <label>Godzina<input id="mtime" defaultValue={selectedMatch.match_time||""}/></label>
               <label>Miejsce<input id="mvenue" defaultValue={selectedMatch.venue||""}/></label>
               <label>Gospodarz<input value={selectedMatch.home_team} readOnly/></label>
               <label>Wynik gospodarza<input id="mhs" type="number" defaultValue={selectedMatch.home_score??""}/></label>
               <label>Wynik gościa<input id="mas" type="number" defaultValue={selectedMatch.away_score??""}/></label>
-            </div>
+            </div>}
 
-            <h3>Obecność • wyjściowa 6 • kapitan</h3>
+            {canMatchBasics&&<><h3>Obecność • wyjściowa 6 • kapitan</h3>
             <div className="admin-roster">
               {activePlayers.map(p=>{
                 const att=attendance.find(a=>a.match_id===selectedMatch.id&&a.player_id===p.id)?.status||"";
@@ -581,9 +636,9 @@ export default function AdminPanel(props:{
                   </div>
                 </div>
               })}
-            </div>
+            </div></>}
 
-            <div className="admin-event-grid">
+            {canMatchEvents&&<div className="admin-event-grid">
               <div className="admin-subcard">
                 <h3><Goal size={17}/> Dodaj gola</h3>
                 <select id="goalScorer"><option value="">Strzelec</option>{activePlayers.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select>
@@ -596,23 +651,24 @@ export default function AdminPanel(props:{
                 <select id="mvpPlayer"><option value="">Wybierz</option>{activePlayers.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select>
                 <button onClick={setMvp}>Ustaw MVP</button>
               </div>
-            </div>
+            </div>}
 
-            <h3>Zdarzenia</h3>
+            {canMatchEvents&&<><h3>Zdarzenia</h3>
             <div className="event-list">
               {matchEvents.map(e=>{
                 const player=players.find(p=>p.id===e.player_id)?.display_name||"?";
                 const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
                 return <div key={e.id}><span>{e.event_type==="goal"?`⚽ ${player}${assist?` • asysta ${assist}`:""}`:`⭐ MVP: ${player}`}</span><div className="v902-event-actions"><button onClick={()=>editMatchEvent(e.id)}>Edytuj</button><button onClick={()=>deleteEvent(e.id)}><Trash2 size={14}/></button></div></div>
               })}
-            </div>
+            </div></>}
+            {canMatchBasics&&<div className="v10-admin-gallery"><h3>Foto-kronika meczu</h3><div className="v10-upload-row"><input id="matchPhotoInput" type="file" accept="image/*"/><button onClick={uploadMatchPhoto}><Plus size={14}/> Dodaj zdjęcie</button></div><div className="event-list">{matchMedia.filter(x=>x.match_id===selectedMatch.id).map(row=><div key={row.id}><span>📷 {row.caption||row.storage_path.split("/").pop()}</span><button onClick={()=>deleteMatchPhoto(row)}><Trash2 size={14}/></button></div>)}</div></div>}
           </>}
         </section>
       </div>}
 
-            {tab==="training" && <div className="admin-two-col">
+            {tab==="training" && canTraining && <div className="admin-two-col">
         <aside className="admin-card">
-          <div className="admin-card-head"><h2>Treningi</h2><div className="v901-training-actions"><button onClick={quickAddTraining}><Plus size={15}/> Szybki trening dziś</button><button onClick={addTrainingSession}><CalendarDays size={15}/> Dodaj szczegółowo</button></div></div>
+          <div className="admin-card-head"><h2>Treningi</h2>{canTrainingFull&&<div className="v901-training-actions"><button onClick={quickAddTraining}><Plus size={15}/> Szybki trening dziś</button><button onClick={addTrainingSession}><CalendarDays size={15}/> Dodaj szczegółowo</button></div>}</div>
           <div className="admin-match-list">
             {trainingSessions.map(s=><button key={s.id} className={selectedTrainingId===s.id?"selected":""} onClick={()=>setSelectedTrainingId(s.id)}>
               <strong>{s.title||"Trening"}</strong>
@@ -623,7 +679,7 @@ export default function AdminPanel(props:{
 
         <section className="admin-card">
           {!selectedTraining?<p>Dodaj lub wybierz trening.</p>:<>
-            <div className="admin-card-head"><h2>Centrum treningowe</h2><div className="v902-admin-actions"><button onClick={addTrainingGame}><Plus size={15}/> Gra kontrolna</button><button className="danger-btn" onClick={()=>deleteTrainingSession(selectedTraining.id)}><Trash2 size={15}/> Usuń trening</button></div></div>
+            <div className="admin-card-head"><h2>Centrum treningowe</h2>{canTrainingFull&&<div className="v902-admin-actions"><button onClick={addTrainingGame}><Plus size={15}/> Gra kontrolna</button><button className="danger-btn" onClick={()=>deleteTrainingSession(selectedTraining.id)}><Trash2 size={15}/> Usuń trening</button></div>}</div>
             <p className="muted">{selectedTraining.training_date} • {selectedTraining.start_time?.slice(0,5)||""} • {selectedTraining.location||"—"}</p>
 
             <h3>Obecność</h3>
@@ -640,7 +696,7 @@ export default function AdminPanel(props:{
               })}
             </div>
 
-            <h3>Gry kontrolne</h3>
+            {canTrainingFull&&<><h3>Gry kontrolne</h3>
             <div className="admin-match-list">
               {trainingGamesForSelected.map(g=><button key={g.id} className={selectedTrainingGame?.id===g.id?"selected":""} onClick={()=>setSelectedTrainingGameId(g.id)}>
                 <strong>{g.team_a_name} {g.team_a_score}:{g.team_b_score} {g.team_b_name}</strong>
@@ -687,12 +743,12 @@ export default function AdminPanel(props:{
                   return <div key={e.id}><span>⚽ {scorer}{assist?` • asysta ${assist}`:""}</span><div className="v902-event-actions"><button onClick={()=>editTrainingEvent(e.id)}>Edytuj</button><button onClick={()=>deleteTrainingEvent(e.id)}><Trash2 size={14}/></button></div></div>
                 })}
               </div>
-            </>}
+            </>}</>}
           </>}
         </section>
       </div>}
 
-      {tab==="calendar" && <section className="admin-card">
+      {tab==="calendar" && canCalendar && <section className="admin-card">
         <div className="admin-card-head"><h2>Kalendarz drużyny</h2><button onClick={addTeamEvent}><Plus size={15}/> Dodaj wydarzenie</button></div>
         <p className="muted">Tutaj planujesz treningi, turnieje, urodziny, zbiórki i inne ważne wydarzenia. Mecze nadal dodajesz w zakładce Mecze.</p>
         <div className="admin-news-list">
@@ -707,7 +763,7 @@ export default function AdminPanel(props:{
         </div>
       </section>}
 
-{tab==="players" && <section className="admin-card">
+{tab==="players" && canPlayers && <section className="admin-card">
         <div className="admin-card-head"><h2>Zawodnicy</h2><button onClick={addPlayer}><Plus size={15}/> Dodaj zawodnika</button></div>
         <div className="admin-roster">
           {players.map(p=><div className="admin-player-row" key={p.id}>
@@ -717,19 +773,34 @@ export default function AdminPanel(props:{
         </div>
       </section>}
 
-      {tab==="news" && <section className="admin-card">
+      {tab==="news" && canNews && <section className="admin-card">
         <div className="admin-card-head"><h2>Aktualności</h2><button onClick={addNewsItem}><Plus size={15}/> Dodaj</button></div>
         <div className="admin-news-list">
           {news.map(n=><article key={n.id}><div><span className="tag">{n.type}</span><h3>{n.title}</h3><p>{n.body}</p></div><button onClick={()=>deleteNews(n.id)}><Trash2 size={14}/></button></article>)}
         </div>
       </section>}
 
-      {tab==="parents" && <section className="admin-card">
+      {tab==="parents" && coreStaff && <section className="admin-card">
         <div className="admin-card-head"><h2>Rodzic → dziecko</h2></div>
-        <p className="muted">Tutaj przypisujesz konto rodzica do zawodnika. Dzięki temu rodzic widzi prywatny profil i może potwierdzać obecność tylko swojego dziecka.</p>
+        <p className="muted">Przypisz rodzica do dziecka i — jako administrator — nadaj wybrane dodatkowe uprawnienia. Rodzic bez dodatkowych praw może tylko korzystać ze swojej strefy i potwierdzać obecność dziecka.</p>
         <div className="parent-grid">
           {parents.map(parent=><div className="admin-subcard" key={parent.id}>
             <h3>{parent.display_name||"Rodzic"}</h3>
+            <div className="v10-parent-role">
+              <label>Rola / opis<select value={permissionFor(parent.id).role_label} disabled={!isAdmin} onChange={e=>updatePermission(parent.id,"role_label",e.target.value)}><option>Rodzic</option><option>Pomocnik trenera</option><option>Statystyk</option><option>Koordynator</option></select></label>
+              <div className="v10-permission-grid">
+                {([
+                  ["can_manage_matches","Mecze i składy"],
+                  ["can_edit_match_events","Gole / asysty / MVP"],
+                  ["can_manage_training","Pełne treningi"],
+                  ["can_manage_training_attendance","Obecność treningowa"],
+                  ["can_manage_calendar","Kalendarz"],
+                  ["can_manage_news","Aktualności"],
+                  ["can_manage_players","Zawodnicy"]
+                ] as [keyof UserPermissions,string][]).map(([key,label])=><label key={key} className="v10-permission-check"><input type="checkbox" disabled={!isAdmin} checked={Boolean(permissionFor(parent.id)[key])} onChange={e=>updatePermission(parent.id,key,e.target.checked)}/><span>{label}</span></label>)}
+              </div>
+            </div>
+            <h4>Powiązanie z zawodnikiem</h4>
             {activePlayers.map(p=>{
               const linked=parentLinks.some(x=>x.parent_id===parent.id&&x.player_id===p.id);
               return <label className="parent-check" key={p.id}>
@@ -741,13 +812,13 @@ export default function AdminPanel(props:{
         </div>
       </section>}
 
-      {tab==="push" && <section className="admin-card">
+      {tab==="push" && coreStaff && <section className="admin-card">
         <div className="admin-card-head"><h2>Powiadomienia push</h2></div>
         <p className="muted">Test otwiera po kliknięciu zakładkę „Z klubu”. Jeśli któreś urządzenie jest martwe, serwer automatycznie usunie je z bazy. Przy błędzie zobaczysz dokładny kod HTTP.</p>
         <button className="push-main" onClick={sendPush}><Bell size={18}/> Wyślij test push do wszystkich</button>
       </section>}
 
-      {tab==="sync" && <section className="admin-card">
+      {tab==="sync" && coreStaff && <section className="admin-card">
         <div className="admin-card-head"><h2>DELTA Sync</h2></div>
         <p className="muted">Pobiera nowe informacje z oficjalnej strony drużyny i zapisuje je w kafelku „Z klubu”. Automatyczne odpytywanie można uruchomić co minutę przez Supabase Cron.</p>
         <button className="push-main" disabled={syncing} onClick={runDeltaSync}><RefreshCw size={18}/>{syncing?" Synchronizacja…":" Synchronizuj teraz"}</button>

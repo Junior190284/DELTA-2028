@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/current-profile";
 import TeamHub from "@/components/TeamHub";
+import { EMPTY_PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,9 @@ export default async function Dashboard() {
     { data: trainingGames },
     { data: trainingGamePlayers },
     { data: trainingEvents },
-    { data: parentLinks }
+    { data: matchMedia },
+    { data: parentLinks },
+    { data: permissions }
   ] = await Promise.all([
     supabase.from("players").select("id,display_name,shirt_number,position,photo_path,active").eq("active",true).order("display_name"),
     supabase.from("matches").select("id,round_no,match_date,match_time,venue,home_team,away_team,home_score,away_score,status").order("match_date"),
@@ -45,7 +48,9 @@ export default async function Dashboard() {
     supabase.from("training_games").select("id,training_id,team_a_name,team_b_name,team_a_score,team_b_score,created_at"),
     supabase.from("training_game_players").select("game_id,player_id,team"),
     supabase.from("training_events").select("id,game_id,event_type,player_id,assist_player_id,created_at"),
+    supabase.from("match_media").select("id,match_id,storage_path,caption,created_at").order("created_at"),
     supabase.from("parent_players").select("player_id").eq("parent_id", user.id),
+    supabase.from("user_permissions").select("role_label,can_manage_matches,can_edit_match_events,can_manage_training,can_manage_training_attendance,can_manage_calendar,can_manage_news,can_manage_players").eq("user_id",user.id).maybeSingle(),
   ]);
 
   if (playersError) console.error("Players load error:", playersError.message);
@@ -67,7 +72,9 @@ export default async function Dashboard() {
       initialTrainingGames={trainingGames || []}
       initialTrainingGamePlayers={trainingGamePlayers || []}
       initialTrainingEvents={trainingEvents || []}
-      parentPlayerIds={(parentLinks || []).map(x=>x.player_id)}
+      initialMatchMedia={matchMedia || []}
+      parentPlayerIds={(parentLinks || []).map((x:any)=>x.player_id)}
+      userPermissions={permissions || EMPTY_PERMISSIONS}
     />
   );
 }
