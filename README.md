@@ -337,3 +337,29 @@ Jeśli nadal wystąpi błąd, aplikacja pokaże jego prawdziwą przyczynę zamia
 - manifest startuje na `/dashboard`.
 
 Po deployu ikona istniejącego skrótu Android może pozostać w pamięci systemu. Jeśli nie odświeży się sama, usuń stary skrót i dodaj aplikację ponownie z Chrome.
+
+
+## V8.8.2 — Push Repair
+- Admin → Push pokazuje dokładny kod HTTP i treść błędu z dostawcy push.
+- HTTP 404/410 automatycznie usuwa martwą subskrypcję z Supabase.
+- Testowy push prowadzi do `/dashboard?view=club`.
+- W „Z klubu” jest opcja „NAPRAW / ZAPISZ TELEFON PONOWNIE”.
+- Naprawa usuwa starą subskrypcję zarówno w przeglądarce, jak i bazie, a następnie tworzy nową z aktualnym kluczem VAPID.
+
+Po deployu:
+1. Na telefonie: Z klubu → NAPRAW / ZAPISZ TELEFON PONOWNIE.
+2. W Admin → Push → Wyślij test push do wszystkich.
+3. Kliknij powiadomienie — powinno otworzyć „Z klubu”.
+
+
+## V8.8.3 — Home Player Card Fix
+- Ryszard Rybacki ma specjalną kartę także na stronie Start, nie tylko w zakładce Drużyna.
+- Karta używa tej samej grafiki premium.
+- Obraz jest wyświetlany przez `contain`, więc nie jest przycinany.
+- Pozostali zawodnicy zachowują standardowe karty do czasu dodania ich zdjęć.
+
+
+## V8.8.4 — Leader Cards Photo Fix
+- Ryszard Rybacki uses his premium player artwork in all leader/captain tiles.
+- Covers home captain tile, team leader tile, scorer/assist/MVP leader tiles where applicable.
+- Players without their own photo continue using the standard placeholder.

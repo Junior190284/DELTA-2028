@@ -188,12 +188,36 @@ export default function AdminPanel(props:{
   }
 
   async function sendPush(){
-    const title=prompt("Tytuł powiadomienia","DELTA 2018 GM"); if(!title)return;
-    const body=prompt("Treść powiadomienia"); if(!body)return;
-    const res=await fetch("/api/push/send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({title,body,url:"/dashboard"})});
+    const title=prompt("Tytuł powiadomienia","DELTA 2018 GM — test"); if(!title)return;
+    const body=prompt("Treść powiadomienia","Kliknij, aby otworzyć informacje Z klubu."); if(!body)return;
+
+    const res=await fetch("/api/push/send",{
+      method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        title,
+        body,
+        url:"/dashboard?view=club",
+        tag:`delta-admin-test-${Date.now()}`
+      })
+    });
+
     const data=await res.json();
-    if(!res.ok)return alert(data.error||"Błąd");
-    alert(`Wysłano: ${data.sent}, błędy: ${data.failed}`);
+
+    if(!res.ok){
+      return alert(`${data.message||data.error||"Błąd wysyłki"}${data.detail?`\n\n${data.detail}`:""}`);
+    }
+
+    let text=`Wysłano: ${data.sent}\nBłędy: ${data.failed}\nUsunięto martwe urządzenia: ${data.removed||0}`;
+
+    if(data.errors?.length){
+      text+="\n\nSzczegóły:";
+      data.errors.slice(0,5).forEach((e:any)=>{
+        text+=`\n• HTTP ${e.statusCode||"?"}: ${e.message}`;
+      });
+    }
+
+    alert(text);
   }
 
   async function runDeltaSync(){
@@ -336,8 +360,8 @@ export default function AdminPanel(props:{
 
       {tab==="push" && <section className="admin-card">
         <div className="admin-card-head"><h2>Powiadomienia push</h2></div>
-        <p className="muted">Wysyłka działa po ustawieniu VAPID keys i zapisaniu subskrypcji urządzeń rodziców.</p>
-        <button className="push-main" onClick={sendPush}><Bell size={18}/> Wyślij powiadomienie do wszystkich</button>
+        <p className="muted">Test otwiera po kliknięciu zakładkę „Z klubu”. Jeśli któreś urządzenie jest martwe, serwer automatycznie usunie je z bazy. Przy błędzie zobaczysz dokładny kod HTTP.</p>
+        <button className="push-main" onClick={sendPush}><Bell size={18}/> Wyślij test push do wszystkich</button>
       </section>}
 
       {tab==="sync" && <section className="admin-card">

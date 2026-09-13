@@ -115,3 +115,36 @@ export async function subscribeToPush() {
 
   return {subscription,server:data};
 }
+
+
+export async function resetPushSubscription(){
+  if(!("serviceWorker" in navigator) || !("PushManager" in window)){
+    throw new PushSetupError("support","Ta przeglądarka nie obsługuje Web Push.");
+  }
+
+  let reg:ServiceWorkerRegistration;
+  try{
+    reg=await navigator.serviceWorker.register("/sw.js",{scope:"/"});
+    reg=await navigator.serviceWorker.ready;
+  }catch(e:any){
+    throw new PushSetupError("service-worker","Nie udało się uruchomić Service Workera.",String(e?.message||e));
+  }
+
+  const old=await reg.pushManager.getSubscription();
+
+  if(old){
+    try{
+      await fetch("/api/push/unsubscribe",{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({endpoint:old.endpoint})
+      });
+    }catch{}
+
+    try{
+      await old.unsubscribe();
+    }catch{}
+  }
+
+  return subscribeToPush();
+}

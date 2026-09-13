@@ -2048,3 +2048,81 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   0%,100%{transform:translateY(0)}
   50%{transform:translateY(-3px);filter:brightness(1.13)}
 }
+
+
+/* V8.8.2 — push repair */
+.v882-repair-push{
+  margin-top:8px;
+  border:0;
+  background:transparent;
+  color:#8b98a5;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-decoration:underline;
+  cursor:pointer;
+}
+.v882-repair-push:hover{color:#f1c95c}
+.v882-repair-push:disabled{opacity:.45;cursor:wait}
+
+
+/* V8.8.3 — featured Ryszard card on HOME */
+.v883-home-player-card{cursor:pointer}
+.v883-home-featured-media{
+  background:#070b12;
+  min-height:0!important;
+  height:auto!important;
+  overflow:hidden;
+  border-bottom:1px solid rgba(246,201,82,.18);
+}
+.v883-home-featured-img{
+  width:100%;
+  height:auto!important;
+  max-height:520px;
+  object-fit:contain!important;
+  object-position:center top!important;
+  display:block;
+  background:#070b12;
+}
+@media(max-width:700px){
+  .v883-home-featured-img{max-height:460px}
+}
+
+
+/* V8.8.4 — leader cards use Ryszard featured art where applicable */
+.v8-captain-photo .v884-leader-featured-img,
+.v871-team-leader-photo .v884-leader-featured-img,
+.v87-leader-card .v884-leader-featured-img,
+.v87-leader-photo .v884-leader-featured-img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center 18%;
+  background:#070b12;
+}
+
+/* keep decorations over the image */
+.v8-captain-photo,
+.v871-team-leader-photo,
+.v87-leader-photo{
+  position:relative;
+  overflow:hidden;
+}
+
+.v8-captain-photo .v873-flares,
+.v8-captain-photo .v873-embers,
+.v8-captain-photo .v873-corner,
+.v8-captain-photo .v873-plate,
+.v871-team-leader-photo .v873-flares,
+.v871-team-leader-photo .v873-embers,
+.v871-team-leader-photo .v873-corner,
+.v871-team-leader-photo .v873-plate{
+  z-index:3;
+}
+
+.v8-captain-photo .v884-leader-featured-img,
+.v871-team-leader-photo .v884-leader-featured-img{
+  position:relative;
+  z-index:1;
+}

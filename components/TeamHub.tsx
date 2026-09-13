@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchCenterModal from "./MatchCenterModal";
-import { PushSetupError, subscribeToPush } from "@/lib/push";
+import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star,
   Check, X, Crown, Target, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap
@@ -167,6 +167,25 @@ export default function TeamHub(props:{
         setPushMessage(`${e.message}${suffix}`);
       }else{
         setPushMessage(`Nie udało się włączyć powiadomień: ${String(e?.message||e)}`);
+      }
+    }
+  }
+
+  async function repairClubPush(){
+    setPushState("working");
+    setPushMessage("Ponownie zapisuję ten telefon…");
+    try{
+      await resetPushSubscription();
+      setPushState("enabled");
+      setPushMessage("Gotowe. Stara subskrypcja została zastąpiona nową.");
+    }catch(e:any){
+      console.error("Push repair error",e);
+      setPushState("error");
+      if(e instanceof PushSetupError){
+        const suffix=e.detail?` (${e.detail})`:"";
+        setPushMessage(`${e.message}${suffix}`);
+      }else{
+        setPushMessage(`Nie udało się ponownie zapisać telefonu: ${String(e?.message||e)}`);
       }
     }
   }
@@ -372,7 +391,10 @@ export default function TeamHub(props:{
         <section className="v8-dashboard-grid">
           <article className="v8-panel v8-captain devil-card">
             <div className="v8-panel-title"><Crown size={18}/> KAPITAN DRUŻYNY</div>
-            {captainLeader?<div className="v8-captain-body"><div className="v8-captain-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">DELTA DEVILS</span><PlayerPhoto playerId={captainLeader.id}/></div><div><span>DELTA 2018 GM</span><h3>{captainLeader.display_name}</h3><p>{stats[captainLeader.id]?.captain||0} × kapitan</p><button onClick={()=>setSelectedPlayer(captainLeader)}>PROFIL ZAWODNIKA <ChevronRight size={15}/></button></div></div>:<p className="muted">Brak danych kapitana.</p>}
+            {captainLeader?<div className="v8-captain-body"><div className="v8-captain-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">DELTA DEVILS</span>{isRyszardPlayer(captainLeader)?
+      <img src="/assets/ryszard-player-card.png" alt={captainLeader.display_name} className="v884-leader-featured-img"/>:
+      <PlayerPhoto playerId={captainLeader.id}/>
+    }</div><div><span>DELTA 2018 GM</span><h3>{captainLeader.display_name}</h3><p>{stats[captainLeader.id]?.captain||0} × kapitan</p><button onClick={()=>setSelectedPlayer(captainLeader)}>PROFIL ZAWODNIKA <ChevronRight size={15}/></button></div></div>:<p className="muted">Brak danych kapitana.</p>}
           </article>
 
           <article className="v8-panel v86-recent-matches devil-card">
@@ -510,7 +532,10 @@ export default function TeamHub(props:{
           <article className="v871-team-leader devil-card">
             <div className="v8-panel-title"><Crown size={18}/> LIDER KAPITAŃSKI</div>
             {captainLeader?<button onClick={()=>setSelectedPlayer(captainLeader)}>
-              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">CAPTAIN</span><PlayerPhoto playerId={captainLeader.id}/></div>
+              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">CAPTAIN</span>{isRyszardPlayer(captainLeader)?
+      <img src="/assets/ryszard-player-card.png" alt={captainLeader.display_name} className="v884-leader-featured-img"/>:
+      <PlayerPhoto playerId={captainLeader.id}/>
+    }</div>
               <div><span>DELTA 2018 GM</span><b>{captainLeader.display_name}</b><small>{stats[captainLeader.id]?.captain||0} × kapitan</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Brak danych.</p>}
@@ -521,7 +546,10 @@ export default function TeamHub(props:{
             onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topScorer&&stats[topScorer.id]?.g>0)setSelectedPlayer(topScorer)}}>
             <div className="v8-panel-title"><Goal size={18}/> NAJLEPSZY STRZELEC</div>
             {topScorer&&stats[topScorer.id]?.g>0?<button type="button" onClick={e=>{e.stopPropagation();setSelectedPlayer(topScorer)}}>
-              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP SCORER</span><PlayerPhoto playerId={topScorer.id}/></div>
+              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP SCORER</span>{isRyszardPlayer(topScorer)?
+      <img src="/assets/ryszard-player-card.png" alt={topScorer.display_name} className="v884-leader-featured-img"/>:
+      <PlayerPhoto playerId={topScorer.id}/>
+    }</div>
               <div><span>DELTA 2018 GM</span><b>{topScorer.display_name}</b><small>{stats[topScorer.id]?.g||0} goli</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Pierwszy lider strzelców jeszcze przed nami.</p>}
@@ -532,7 +560,10 @@ export default function TeamHub(props:{
             onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topAssister&&stats[topAssister.id]?.a>0)setSelectedPlayer(topAssister)}}>
             <div className="v8-panel-title"><Star size={18}/> LIDER ASYST</div>
             {topAssister&&stats[topAssister.id]?.a>0?<button type="button" onClick={e=>{e.stopPropagation();setSelectedPlayer(topAssister)}}>
-              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP ASSIST</span><PlayerPhoto playerId={topAssister.id}/></div>
+              <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP ASSIST</span>{isRyszardPlayer(topAssister)?
+      <img src="/assets/ryszard-player-card.png" alt={topAssister.display_name} className="v884-leader-featured-img"/>:
+      <PlayerPhoto playerId={topAssister.id}/>
+    }</div>
               <div><span>DELTA 2018 GM</span><b>{topAssister.display_name}</b><small>{stats[topAssister.id]?.a||0} asyst</small></div>
               <ChevronRight size={16}/>
             </button>:<p className="muted">Pierwsza asysta uruchomi ranking.</p>}
@@ -564,10 +595,12 @@ export default function TeamHub(props:{
             </div>
             {isRyszardPlayer(p)?
               <div className="v874-featured-card-image"><img src="/assets/players/ryszard-card.png" alt={`Karta zawodnika ${p.display_name}`}/><span className="v874-featured-badge">FEATURED PLAYER</span></div>
-              :<div className="v87-player-photo">
-                <PlayerPhoto playerId={p.id} className="v87-player-photo-img"/>
-                <div className="v87-player-smoke"/>
-              </div>}
+              :<div className={`v87-player-photo ${isRyszard(p)?"v883-home-featured-media":""}`}>
+              {isRyszard(p)
+                ? <img src="/assets/ryszard-player-card.png" alt={`${p.first_name} ${p.last_name}`} className="v883-home-featured-img"/>
+                : <PlayerPhoto playerId={p.id}/>
+              }
+            </div>}
             <div className="v87-player-content">
               <h3>{p.display_name}</h3>
               <div className="v87-player-primary">
@@ -604,6 +637,9 @@ export default function TeamHub(props:{
               {pushState==="working"?"Włączanie…":pushState==="enabled"?"Powiadomienia włączone":"Włącz powiadomienia na tym urządzeniu"}
             </button>
             {pushMessage&&<span className={pushState==="enabled"?"v880-push-ok":"v879-push-error"}>{pushMessage}</span>}
+            <button type="button" className="v882-repair-push" disabled={pushState==="working"} onClick={repairClubPush}>
+              NAPRAW / ZAPISZ TELEFON PONOWNIE
+            </button>
           </div>
           <div className="v876-sync-status">
             <Shield size={22}/>
