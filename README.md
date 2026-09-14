@@ -598,3 +598,21 @@ Poprawki mobilne:
 
 Desktop zachowuje pełne efekty V10.1.1.
 Nie wymaga nowego SQL.
+
+
+## V10.1.3 — Stadium Immersion
+
+Ta wersja wzmacnia realny stadionowy charakter aplikacji.
+
+Najważniejsze:
+- stadion jest tłem całej publicznej strony i całego zalogowanego Team Hub,
+- główne karty są półprzezroczyste, żeby trybuny i światła były widoczne,
+- Hero używa prawdziwego stadionu, nie płaskiego banera,
+- Match Hub ma osobne stadionowe tło,
+- Centrum Statystyk ma własne tło broadcast/stadium,
+- Centrum Treningowe ma własne nocne boisko/reflektory,
+- Drużyna / Klub / Kalendarz mają stadionowe hero,
+- mocniejsze reflektory, czerwony dym i terrace glow,
+- mobile zachowuje stadion w kadrze, ale bez ciężkich animacji.
+
+Nie wymaga nowego SQL.

@@ -3577,3 +3577,309 @@ button.v85-summary-card{color:inherit;cursor:pointer}
     transform:translateY(-2px);
   }
 }
+
+
+/* =========================================================
+   V10.1.3 — STADIUM IMMERSION
+   Real stadium imagery becomes part of the composition,
+   not only a subtle effect layer.
+   ========================================================= */
+
+/* GLOBAL STADIUM CANVAS */
+.public-team-site.v101-public-home,
+.v101-stadium-hub{
+  position:relative;
+  isolation:isolate;
+  background:
+    linear-gradient(180deg,rgba(3,5,8,.76),rgba(3,5,8,.90)),
+    url('/assets/stadium2.png') center top/cover fixed no-repeat !important;
+}
+
+.public-team-site.v101-public-home:after,
+.v101-stadium-hub:after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 10% 22%,rgba(225,24,42,.24),transparent 22%),
+    radial-gradient(circle at 90% 35%,rgba(241,201,92,.10),transparent 20%),
+    linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.28));
+  mix-blend-mode:screen;
+  opacity:.8;
+}
+
+.public-team-site.v101-public-home > *,
+.v101-stadium-hub > *{
+  position:relative;
+  z-index:1;
+}
+
+/* CARDS ARE NOW DARK GLASS OVER THE STADIUM */
+.v101-public-home .devil-card,
+.v101-stadium-hub .devil-card,
+.v101-stadium-hub .v8-panel,
+.v101-stadium-hub .devil-tile{
+  background:
+    linear-gradient(145deg,rgba(7,10,14,.82),rgba(10,11,15,.90)) !important;
+  backdrop-filter:blur(10px) saturate(1.08);
+  -webkit-backdrop-filter:blur(10px) saturate(1.08);
+  border-color:rgba(241,201,92,.18)!important;
+  box-shadow:
+    0 18px 48px rgba(0,0,0,.46),
+    inset 0 1px rgba(255,255,255,.025),
+    inset 0 -1px rgba(226,29,46,.055)!important;
+}
+
+/* HERO — TRUE STADIUM COMPOSITION */
+.v101-public-hero{
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.92) 0%,rgba(3,5,8,.55) 42%,rgba(15,3,7,.28) 72%,rgba(3,5,8,.62) 100%),
+    linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.20) 55%,rgba(3,5,8,.96) 100%),
+    url('/assets/stadium3.png') center 60%/cover no-repeat!important;
+  min-height:540px!important;
+  overflow:hidden;
+}
+
+.v101-public-hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 7% 87%,rgba(231,26,43,.46),transparent 20%),
+    radial-gradient(circle at 95% 82%,rgba(255,122,47,.25),transparent 18%),
+    linear-gradient(104deg,transparent 32%,rgba(255,240,202,.065) 41%,transparent 51%);
+  box-shadow:inset 0 -110px 120px rgba(0,0,0,.56);
+}
+
+.v101-public-hero .public-hero-copy,
+.v101-public-hero .public-hero-overlay{
+  z-index:2;
+}
+
+/* MATCH HUB — STANDS + FLOODLIGHTS */
+.v101-public-match-hub,
+.v8-match-card.v101-logged-match{
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(145deg,rgba(7,9,13,.76),rgba(12,5,8,.88)),
+    url('/assets/stadium.png') center 68%/cover no-repeat!important;
+}
+
+.v101-public-match-hub:after,
+.v8-match-card.v101-logged-match:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(226,28,46,.11),transparent 30%,transparent 70%,rgba(241,201,92,.08)),
+    radial-gradient(circle at 50% 0%,rgba(255,238,183,.10),transparent 26%);
+  z-index:0;
+}
+
+.v101-public-match-hub > *,
+.v8-match-card.v101-logged-match > *{
+  position:relative;
+  z-index:1;
+}
+
+/* PUBLIC STATS — BROADCAST STADIUM */
+.v101-public-stats-zone{
+  position:relative;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(7,10,14,.76),rgba(5,7,10,.90)),
+    url('/assets/stadium2.png') center 54%/cover no-repeat!important;
+  border-color:rgba(241,201,92,.16)!important;
+}
+
+.v101-public-stats-zone:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.42)),
+    radial-gradient(circle at 50% 0%,rgba(248,216,128,.08),transparent 32%);
+}
+
+/* STATS CENTER — DISTINCT BROADCAST LOOK */
+.v890-stats-center{
+  position:relative;
+  isolation:isolate;
+}
+
+.v890-stats-center:before{
+  content:"";
+  position:absolute;
+  inset:-26px -20px;
+  z-index:-2;
+  background:
+    linear-gradient(180deg,rgba(4,6,9,.22),rgba(4,6,9,.84)),
+    url('/assets/stadium3.png') center top/cover no-repeat;
+  opacity:.88;
+}
+
+.v890-stats-hero{
+  background:
+    linear-gradient(110deg,rgba(5,7,10,.62),rgba(7,9,13,.78)),
+    url('/assets/stadium3.png') center 55%/cover no-repeat!important;
+  box-shadow:0 22px 60px rgba(0,0,0,.52),inset 0 -70px 90px rgba(0,0,0,.38)!important;
+}
+
+.v890-ranking-hub,
+.v890-podium,
+.v890-records,
+.v890-team-form,
+.v890-compare{
+  background:
+    linear-gradient(150deg,rgba(7,10,14,.84),rgba(8,10,14,.92))!important;
+}
+
+/* TRAINING CENTER — NIGHT TRAINING GROUND */
+.v900-training-center{
+  position:relative;
+  isolation:isolate;
+}
+
+.v900-training-center:before{
+  content:"";
+  position:absolute;
+  inset:-26px -20px;
+  z-index:-2;
+  background:
+    linear-gradient(180deg,rgba(4,6,9,.35),rgba(4,6,9,.88)),
+    url('/assets/stadium.png') center 64%/cover no-repeat;
+  opacity:.74;
+}
+
+.v900-training-hero{
+  background:
+    linear-gradient(110deg,rgba(5,8,11,.64),rgba(12,6,8,.80)),
+    url('/assets/stadium.png') center 70%/cover no-repeat!important;
+}
+
+.v900-training-card,
+.v900-chemistry,
+.v900-training-history{
+  background:
+    linear-gradient(150deg,rgba(6,9,13,.83),rgba(8,10,14,.93))!important;
+}
+
+/* TEAM HERO / CLUB HERO — KEEP THE STADIUM PRESENT */
+.v871-team-hero,
+.v876-club-hero,
+.v891-calendar-hero{
+  background:
+    linear-gradient(110deg,rgba(6,8,12,.68),rgba(11,6,9,.82)),
+    url('/assets/stadium2.png') center 56%/cover no-repeat!important;
+}
+
+/* SECTION DIVIDER — RED TERRACE GLOW */
+.v101-stadium-hub .section,
+.v101-public-home section{
+  position:relative;
+}
+
+.v101-stadium-hub .section:before,
+.v101-public-home section:before{
+  content:"";
+  position:absolute;
+  left:2%;
+  right:2%;
+  top:-5px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(226,28,46,.45),rgba(241,201,92,.18),transparent);
+  box-shadow:0 0 16px rgba(226,28,46,.18);
+  pointer-events:none;
+}
+
+/* EXTRA FLOODLIGHT GLOW AT THE TOP OF BIG SECTIONS */
+.v890-stats-hero:after,
+.v900-training-hero:after,
+.v871-team-hero:after,
+.v876-club-hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 18% -8%,rgba(255,242,201,.16),transparent 24%),
+    radial-gradient(circle at 82% -8%,rgba(255,242,201,.13),transparent 24%);
+  mix-blend-mode:screen;
+}
+
+/* DESKTOP: SHOW THE STADIUM MORE CLEARLY */
+@media (min-width:901px){
+  .v101-public-home .devil-card,
+  .v101-stadium-hub .devil-card,
+  .v101-stadium-hub .v8-panel{
+    background-color:rgba(6,9,13,.80)!important;
+  }
+
+  .v101-public-match-hub,
+  .v8-match-card.v101-logged-match{
+    min-height:300px;
+  }
+}
+
+/* MOBILE: STADIUM REMAINS VISIBLE BUT STABLE */
+@media (max-width:760px){
+  .public-team-site.v101-public-home,
+  .v101-stadium-hub{
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,8,.91)),
+      url('/assets/stadium3.png') center top/auto 100vh no-repeat!important;
+    background-attachment:scroll!important;
+  }
+
+  .public-team-site.v101-public-home:after,
+  .v101-stadium-hub:after{
+    position:absolute;
+    opacity:.45;
+  }
+
+  .v101-public-home .devil-card,
+  .v101-stadium-hub .devil-card,
+  .v101-stadium-hub .v8-panel,
+  .v101-stadium-hub .devil-tile{
+    background:
+      linear-gradient(145deg,rgba(7,10,14,.84),rgba(8,10,14,.93))!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+
+  .v101-public-hero{
+    min-height:365px!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.08),rgba(3,5,8,.32) 42%,rgba(3,5,8,.97) 88%),
+      url('/assets/stadium3.png') center 56%/cover no-repeat!important;
+  }
+
+  .v101-public-match-hub,
+  .v8-match-card.v101-logged-match{
+    background:
+      linear-gradient(180deg,rgba(7,9,13,.60),rgba(10,6,9,.90)),
+      url('/assets/stadium.png') center 70%/cover no-repeat!important;
+  }
+
+  .v890-stats-center:before,
+  .v900-training-center:before{
+    inset:-12px -8px;
+    opacity:.58;
+    background-attachment:scroll!important;
+  }
+
+  .v890-stats-hero,
+  .v900-training-hero,
+  .v871-team-hero,
+  .v876-club-hero,
+  .v891-calendar-hero{
+    background-position:center 62%!important;
+  }
+}
