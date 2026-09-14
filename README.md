@@ -645,3 +645,19 @@ Zmiany:
 - tekst DELTA / przyciski pozostają HTML-em, więc nic nie jest ucinane,
 - zachowana poprawka horizontal-lock z V10.1.4,
 - brak nowego SQL.
+
+
+## V10.1.6 — Tile Atmosphere + Stadium Identity
+
+Nowości:
+- nowe hero desktop i mobile z klubowym herbem w ogniu/dymie oraz napisem „Górny Mokotów 2018”,
+- kliknięcie logo w lewym górnym rogu przenosi na Start,
+- publiczne logo prowadzi do `/`,
+- cztery rodziny kafelków: stat / event / live / premium,
+- mocniejsze stadionowe tła kart eventowych,
+- złote narożniki, czerwony upper-blade, broadcast lower-thirds,
+- mocniejsze podziały wizualne kart,
+- hover premium tylko na desktopie,
+- mobile pozostaje stabilny i bez podskakiwania.
+
+Nie wymaga nowego SQL.

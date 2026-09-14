@@ -4083,3 +4083,293 @@ body > main,
     overflow:hidden!important;
   }
 }
+
+
+/* =========================================================
+   V10.1.6 — TILE ATMOSPHERE + STADIUM IDENTITY
+   Stronger stadium identity, richer card families, clickable home logo.
+   ========================================================= */
+
+:root{
+  --stadium-red:#df1f31;
+  --stadium-red-deep:#690a14;
+  --stadium-gold:#f1c95c;
+  --stadium-gold-soft:#8d7430;
+  --stadium-black:#05070a;
+}
+
+/* CLICKABLE TOP-LEFT HOME BRAND */
+.v101-home-logo-btn{
+  border:0!important;
+  cursor:pointer!important;
+  color:inherit!important;
+  font:inherit!important;
+  text-align:left!important;
+}
+.v8-mini-brand.v101-home-logo-btn{
+  background:transparent!important;
+  padding:0!important;
+}
+.v8-side-brand.v101-home-logo-btn{
+  background:transparent!important;
+}
+.v101-home-logo-btn:hover img{
+  filter:drop-shadow(0 0 10px rgba(239,31,49,.52)) drop-shadow(0 0 18px rgba(241,201,92,.18));
+}
+.v101-home-logo-btn:focus-visible{
+  outline:1px solid rgba(241,201,92,.55);
+  outline-offset:4px;
+}
+
+/* NEW APPROVED HERO IDENTITY GRAPHICS */
+.v101-public-hero{
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.12),rgba(2,4,7,.04) 50%,rgba(4,2,3,.08)),
+    linear-gradient(180deg,rgba(2,4,7,.02),rgba(2,4,7,.12) 54%,rgba(2,4,7,.88) 100%),
+    url('/assets/hero-stadium-identity-desktop.png') center 53%/cover no-repeat!important;
+}
+.v101-logged-hero{
+  background:
+    linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.18) 50%,rgba(3,5,8,.88)),
+    url('/assets/hero-stadium-identity-desktop.png') center 53%/cover no-repeat!important;
+}
+
+/* On public home the artwork already carries crest + Górny Mokotów identity.
+   Keep HTML content lower and cleaner so it complements, not duplicates, the art. */
+.v101-public-hero .public-hero-copy{
+  align-self:flex-end;
+  max-width:720px!important;
+  padding:14px 16px 8px!important;
+  background:linear-gradient(90deg,rgba(3,5,8,.74),rgba(3,5,8,.38),transparent);
+  border-left:2px solid rgba(223,31,49,.72);
+}
+.v101-public-hero .public-hero-copy h1{
+  font-size:clamp(38px,5vw,70px)!important;
+  margin:3px 0 5px!important;
+}
+
+/* =========================================================
+   CARD FAMILIES
+   ========================================================= */
+
+/* Shared premium geometry */
+.v101-public-home .devil-card,
+.v101-stadium-hub .devil-card,
+.v101-stadium-hub .v8-panel,
+.v101-stadium-hub .devil-tile,
+.v101-stat-tiles article{
+  position:relative;
+  overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,15px 100%,0 calc(100% - 15px));
+  border:1px solid rgba(241,201,92,.16)!important;
+}
+
+/* glowing upper blade */
+.v101-public-home .devil-card:before,
+.v101-stadium-hub .devil-card:before,
+.v101-stadium-hub .v8-panel:before,
+.v101-stat-tiles article:before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  left:0;right:0;top:0;
+  height:2px;
+  background:linear-gradient(90deg,var(--stadium-red),rgba(241,201,92,.68),transparent 72%);
+  box-shadow:0 0 16px rgba(223,31,49,.36);
+  pointer-events:none;
+}
+.v101-public-home .devil-card>*,
+.v101-stadium-hub .devil-card>*,
+.v101-stadium-hub .v8-panel>*,
+.v101-stat-tiles article>*{
+  position:relative;
+  z-index:1;
+}
+
+/* TYPE A — STAT CARDS */
+.v101-stat-tiles article,
+.v82-team-kpis .devil-tile,
+.v890-kpi{
+  background:
+    linear-gradient(145deg,rgba(7,10,14,.84),rgba(9,7,10,.92)),
+    radial-gradient(circle at 100% 0%,rgba(223,31,49,.13),transparent 35%)!important;
+}
+.v101-stat-tiles article:after,
+.v82-team-kpis .devil-tile:after{
+  content:"";
+  position:absolute;
+  inset:auto -28px -30px auto;
+  width:92px;height:92px;
+  border:1px solid rgba(241,201,92,.08);
+  transform:rotate(45deg);
+  pointer-events:none;
+}
+
+/* TYPE B — EVENT / MATCH / CALENDAR */
+.v101-public-match-hub,
+.v101-smart-clock,
+.v101-calendar-card,
+.v101-logged-match{
+  background:
+    linear-gradient(145deg,rgba(6,8,12,.70),rgba(13,5,8,.86)),
+    url('/assets/stadium.png') center 68%/cover no-repeat!important;
+}
+.v101-smart-clock:after,
+.v101-calendar-card:after,
+.v101-public-match-hub:after,
+.v101-logged-match:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 86% 10%,rgba(255,223,142,.12),transparent 24%),
+    linear-gradient(115deg,transparent 58%,rgba(223,31,49,.08) 75%,transparent 92%);
+  pointer-events:none;
+}
+
+/* TYPE C — LIVE / IMPORTANT */
+.v101-today-card,
+.v101-now-card,
+.v101-club-feed{
+  background:
+    linear-gradient(145deg,rgba(18,6,9,.84),rgba(6,9,13,.92)),
+    radial-gradient(circle at 10% 100%,rgba(223,31,49,.15),transparent 34%)!important;
+}
+.v101-today-card:after,
+.v101-now-card:after,
+.v101-club-feed:after{
+  content:"LIVE";
+  position:absolute;
+  top:10px;right:12px;
+  font-size:5px;
+  font-weight:1000;
+  letter-spacing:.16em;
+  color:#ff4d60;
+  border:1px solid rgba(255,55,73,.28);
+  padding:4px 6px;
+  background:rgba(40,6,10,.54);
+}
+
+/* TYPE D — PREMIUM / RECORDS / FEATURED */
+.v101-record-wall,
+.v101-featured-lock,
+.v101-season-goal,
+.v890-podium,
+.v890-records{
+  background:
+    linear-gradient(145deg,rgba(16,12,6,.90),rgba(7,9,13,.94)),
+    radial-gradient(circle at 84% 0%,rgba(241,201,92,.14),transparent 31%)!important;
+  border-color:rgba(241,201,92,.29)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.38),inset 0 0 32px rgba(241,201,92,.025)!important;
+}
+
+/* GOLD CORNER ACCENTS */
+.v101-season-goal:after,
+.v101-record-wall:after,
+.v101-featured-lock:after{
+  content:"";
+  position:absolute;
+  right:0;bottom:0;
+  width:48px;height:48px;
+  border-right:2px solid rgba(241,201,92,.70);
+  border-bottom:2px solid rgba(241,201,92,.70);
+  pointer-events:none;
+}
+
+/* SECTION TITLES — broadcast lower-third character */
+.v101-card-title,
+.v8-section-label,
+.v8-panel-title{
+  position:relative;
+  padding-left:11px!important;
+}
+.v101-card-title:before,
+.v8-section-label:before,
+.v8-panel-title:before{
+  content:"";
+  position:absolute;
+  left:0;top:12%;
+  width:3px;height:76%;
+  background:linear-gradient(180deg,#f1c95c,#df1f31);
+  box-shadow:0 0 10px rgba(223,31,49,.28);
+}
+
+/* MATCH DAY CTA */
+.v101-match-cta,
+.v8-match-center-btn{
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
+  box-shadow:0 0 22px rgba(223,31,49,.14);
+}
+
+/* "ON FIRE" accent for season goal and important progression */
+.v101-goal-progress,
+.v890-bar,
+.v900-chem-bar{
+  position:relative;
+  overflow:visible!important;
+}
+.v101-goal-progress i,
+.v890-bar i,
+.v900-chem-bar i{
+  box-shadow:0 0 11px rgba(223,31,49,.42),0 0 18px rgba(241,201,92,.14);
+}
+
+/* Desktop hover — premium, restrained */
+@media (hover:hover) and (pointer:fine){
+  .v101-public-home .devil-card,
+  .v101-stadium-hub .devil-card,
+  .v101-stadium-hub .v8-panel,
+  .v101-stat-tiles article{
+    transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,filter .22s ease;
+  }
+  .v101-public-home .devil-card:hover,
+  .v101-stadium-hub .devil-card:hover,
+  .v101-stadium-hub .v8-panel:hover,
+  .v101-stat-tiles article:hover{
+    transform:translateY(-3px);
+    border-color:rgba(241,201,92,.34)!important;
+    box-shadow:0 22px 58px rgba(0,0,0,.46),0 0 20px rgba(223,31,49,.09)!important;
+  }
+}
+
+/* =========================================================
+   MOBILE — keep identity, remove restless motion
+   ========================================================= */
+@media (max-width:760px){
+  .v101-public-hero{
+    min-height:365px!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.01),rgba(2,4,7,.10) 42%,rgba(2,4,7,.91) 86%,rgba(2,4,7,.99)),
+      url('/assets/hero-stadium-identity-mobile.png') center 58%/cover no-repeat!important;
+  }
+  .v101-logged-hero{
+    min-height:255px!important;
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.01),rgba(3,5,8,.14) 48%,rgba(3,5,8,.91)),
+      url('/assets/hero-stadium-identity-mobile.png') center 59%/cover no-repeat!important;
+  }
+
+  .v101-public-hero .public-hero-copy{
+    padding:9px 10px 6px!important;
+    background:linear-gradient(90deg,rgba(3,5,8,.78),rgba(3,5,8,.32),transparent);
+  }
+  .v101-public-hero .public-hero-copy h1{
+    font-size:31px!important;
+  }
+
+  /* touch screens: no card jumping */
+  .v101-public-home .devil-card,
+  .v101-stadium-hub .devil-card,
+  .v101-stadium-hub .v8-panel,
+  .v101-stat-tiles article{
+    transform:none!important;
+  }
+
+  /* keep card atmosphere readable on small screens */
+  .v101-public-match-hub,
+  .v101-smart-clock,
+  .v101-calendar-card,
+  .v101-logged-match{
+    background-position:center 72%!important;
+  }
+}

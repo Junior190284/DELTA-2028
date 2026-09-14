@@ -102,7 +102,7 @@ export default function PublicTeamSite(props:{
     <StadiumFX intro/>
 
     <header className="public-topbar v101-public-topbar">
-      <a href="#top" className="public-brand">
+      <a href="/" className="public-brand" aria-label="Strona główna DELTA 2018 GM">
         <img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/>
         <div><b>DELTA 2018 GM</b><span>Górny Mokotów • Team Hub</span></div>
       </a>

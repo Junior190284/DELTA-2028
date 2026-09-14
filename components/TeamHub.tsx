@@ -693,13 +693,13 @@ export default function TeamHub(props:{
     <StadiumFX intro/>
     {viewFx&&<div className="v101-cinematic-veil" aria-hidden="true"><span className="v101-cinematic-smoke"/><span className="v101-cinematic-flare"/></div>}
     <aside className="v8-side-nav">
-      <div className="v8-side-brand"><img src="/teamlogos/gm.png" alt=""/><span>GM</span></div>
+      <button className="v8-side-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><span>GM</span></button>
       {navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={21}/><span>{label}</span></button>)}
       <div className="v8-side-devil"><Flame size={22}/><span>DIABEŁKI</span></div>
     </aside>
 
     <header className="hub-top v8-topbar">
-      <div className="v8-mini-brand"><img src="/teamlogos/gm.png" alt=""/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></div>
+      <button className="v8-mini-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
       <div className="v8-top-spacer"/>
       {canOpenAdmin&&<a href="/admin" className="admin-link v8-admin-chip">{staff?"ADMIN":"POMOCNIK"}</a>}
       <div className="v8-account-wrap">
