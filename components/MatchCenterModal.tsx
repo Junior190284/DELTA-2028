@@ -45,6 +45,7 @@ export default function MatchCenterModal(props:{
   const [tab,setTab]=useState<Tab>(props.initialTab||"summary");
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState("");
+  const [celebration,setCelebration]=useState<"goal"|"hattrick"|"mvp"|null>(null);
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -63,6 +64,11 @@ export default function MatchCenterModal(props:{
     setSaved(message);
     window.setTimeout(()=>setSaved(""),1800);
     router.refresh();
+  }
+
+  function triggerCelebration(kind:"goal"|"hattrick"|"mvp"){
+    setCelebration(kind);
+    window.setTimeout(()=>setCelebration(null),1500);
   }
 
   function responseStatus(playerId:string){
@@ -150,6 +156,8 @@ export default function MatchCenterModal(props:{
     }).select("*").single();
     if(error)return alert(error.message);
     props.onDataChange({events:[...props.events,data]});
+    const scorerGoals=matchEvents.filter(e=>e.event_type==="goal"&&e.player_id===scorer).length+1;
+    triggerCelebration(scorerGoals>=3?"hattrick":"goal");
     confirmSaved("Gol zapisany");
   }
 
@@ -166,6 +174,7 @@ export default function MatchCenterModal(props:{
       ...props.events.filter(e=>!(e.match_id===match.id&&e.event_type==="mvp")),
       data
     ]});
+    triggerCelebration("mvp");
     confirmSaved("MVP zapisany");
   }
 
@@ -206,6 +215,11 @@ export default function MatchCenterModal(props:{
   ];
 
   return <div className="match-center-overlay" onClick={props.onClose}>
+    {celebration&&<div className={`v101-celebration ${celebration}`} aria-hidden="true">
+      <div className="v101-celebration-smoke"/><div className="v101-celebration-flare"/>
+      <span>{celebration==="goal"?"GOOOL!":celebration==="hattrick"?"HAT-TRICK!":"MVP"}</span>
+      <b>{celebration==="mvp"?"MOST VALUABLE PLAYER":"DELTA 2018 GM"}</b>
+    </div>}
     <div className="match-center-sheet v85-match-center" onClick={e=>e.stopPropagation()}>
       <button className="close" onClick={props.onClose}>×</button>
 

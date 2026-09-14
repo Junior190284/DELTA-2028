@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchGallery from "./MatchGallery";
 import MatchCenterModal from "./MatchCenterModal";
+import StadiumFX from "./StadiumFX";
 import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -118,6 +119,7 @@ export default function TeamHub(props:{
 }){
   const supabase=createClient();
   const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club">("home");
+  const [viewFx,setViewFx]=useState(false);
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -144,6 +146,12 @@ export default function TeamHub(props:{
   const [compareA,setCompareA]=useState<string>("");
   const [compareB,setCompareB]=useState<string>("");
 
+
+  useEffect(()=>{
+    setViewFx(true);
+    const timer=window.setTimeout(()=>setViewFx(false),520);
+    return ()=>window.clearTimeout(timer);
+  },[tab]);
 
   useEffect(()=>{
     const tick=window.setInterval(()=>setNow(new Date()),30000);
@@ -681,7 +689,9 @@ export default function TeamHub(props:{
     ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
-  return <div className="hub v8-hub">
+  return <div className="hub v8-hub v101-stadium-hub">
+    <StadiumFX intro/>
+    {viewFx&&<div className="v101-screen-wipe" aria-hidden="true"><span/><i/></div>}
     <aside className="v8-side-nav">
       <div className="v8-side-brand"><img src="/teamlogos/gm.png" alt=""/><span>GM</span></div>
       {navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={21}/><span>{label}</span></button>)}
@@ -705,12 +715,12 @@ export default function TeamHub(props:{
 
     <main className="hub-main v8-main">
       {tab==="home"&&<>
-        <section className="v8-hero v82-hero-clean" aria-label="DELTA 2018 GM — Górny Mokotów">
+        <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
         </section>
 
         {nextMatch&&<><section className="v82-match-rsvp-grid">
-          <article className="v8-match-card devil-card">
+          <article className="v8-match-card devil-card v101-logged-match">
             <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
             <div className="v8-match-stage">
               <div className="v8-team">
@@ -785,28 +795,20 @@ export default function TeamHub(props:{
         </section>
 
         <section className="v8-dashboard-grid">
-          <article className="v8-panel v8-captain devil-card">
-            <div className="v8-panel-title"><Crown size={18}/> KAPITAN DRUŻYNY</div>
-            {captainLeader?<div className="v886-captain-layout">
-              <div className="v8-captain-photo v886-captain-photo">
-                <span className="v873-flares"/><span className="v873-embers"/>
-                <span className="v873-corner tl"/><span className="v873-corner tr"/>
-                <span className="v873-corner bl"/><span className="v873-corner br"/>
-                <span className="v873-plate">DELTA DEVILS</span>
-                {isRyszardPlayer(captainLeader)?
-                  <img src="/assets/ryszard-player-card.png" alt={captainLeader.display_name} className="v884-leader-featured-img"/>:
-                  <PlayerPhoto playerId={captainLeader.id}/>
-                }
+          <article className="v8-panel v101-now-card devil-card" onClick={()=>setTab("calendar")}>
+            <div className="v8-panel-title"><Flame size={18}/> DZIEJE SIĘ TERAZ <span className="v101-live-dot">LIVE</span></div>
+            <div className="v101-now-main">
+              <div className="v101-now-icon"><CalendarDays size={28}/></div>
+              <div>
+                <span>NAJBLIŻSZE WYDARZENIE</span>
+                <h3>{nextTeamEvent?.title||"Spokojny dzień"}</h3>
+                <p>{nextTeamEvent?.subtitle||"Kolejne wydarzenia pojawią się automatycznie z kalendarza."}</p>
               </div>
-              <div className="v886-captain-info">
-                <span className="v886-captain-team">DELTA 2018 GM</span>
-                <h3>{captainLeader.display_name}</h3>
-                <p>{stats[captainLeader.id]?.captain||0} × kapitan</p>
-                <button type="button" onClick={()=>setSelectedPlayer(captainLeader)}>
-                  PROFIL ZAWODNIKA <ChevronRight size={15}/>
-                </button>
-              </div>
-            </div>:<p className="muted">Brak danych kapitana.</p>}
+            </div>
+            <div className="v101-now-footer">
+              <span><Bell size={13}/>{clubUpdates[0]?.title||"Brak nowych komunikatów"}</span>
+              <ChevronRight size={15}/>
+            </div>
           </article>
 
           <article className="v8-panel v86-recent-matches devil-card">

@@ -75,7 +75,11 @@ export default function AdminPanel(props:{
   const [trainingEvents,setTrainingEvents]=useState(props.initialTrainingEvents);
   const [matchMedia,setMatchMedia]=useState(props.initialMatchMedia);
   const [selectedTrainingId,setSelectedTrainingId]=useState(props.initialTrainingSessions[0]?.id||"");
-  const [selectedTrainingGameId,setSelectedTrainingGameId]=useState(props.initialTrainingGames[0]?.id||"");
+  const [selectedTrainingGameId,setSelectedTrainingGameId]=useState(
+    props.initialTrainingGames.find(g=>g.training_id===props.initialTrainingSessions[0]?.id)?.id||""
+  );
+  const [trainingBusy,setTrainingBusy]=useState<string|null>(null);
+  const [trainingFeedback,setTrainingFeedback]=useState<string>("");
   const [parentLinks,setParentLinks]=useState(props.initialParentLinks);
   const [permissions,setPermissions]=useState<PermissionRow[]>(props.initialPermissions);
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
@@ -84,7 +88,22 @@ export default function AdminPanel(props:{
   const parents=props.allProfiles.filter(p=>p.role==="parent");
   const selectedTraining=trainingSessions.find(s=>s.id===selectedTrainingId)||null;
   const trainingGamesForSelected=trainingGames.filter(g=>g.training_id===selectedTrainingId);
-  const selectedTrainingGame=trainingGames.find(g=>g.id===selectedTrainingGameId)||trainingGamesForSelected[0]||null;
+  const selectedTrainingGame=trainingGamesForSelected.find(g=>g.id===selectedTrainingGameId)||trainingGamesForSelected[0]||null;
+  const selectedTrainingPresentCount=selectedTraining?trainingAttendance.filter(x=>x.training_id===selectedTraining.id&&x.status==="present").length:0;
+  const selectedTeamACount=selectedTrainingGame?trainingGamePlayers.filter(x=>x.game_id===selectedTrainingGame.id&&x.team==="A").length:0;
+  const selectedTeamBCount=selectedTrainingGame?trainingGamePlayers.filter(x=>x.game_id===selectedTrainingGame.id&&x.team==="B").length:0;
+
+  function flashTrainingFeedback(message:string){
+    setTrainingFeedback(message);
+    window.setTimeout(()=>setTrainingFeedback(current=>current===message?"":current),1800);
+  }
+
+  function friendlyTrainingError(error:any){
+    const msg=String(error?.message||error||"Nieznany błąd");
+    if(/row-level security|permission denied|policy/i.test(msg))return "Brak uprawnień do zapisu. Sprawdź rolę i uprawnienia Centrum Treningowego w Admin → Rodzice.";
+    if(/network|fetch/i.test(msg))return "Nie udało się połączyć z bazą. Sprawdź internet i spróbuj ponownie.";
+    return `Nie udało się zapisać: ${msg}`;
+  }
 
   async function addMatch(){
     const home=prompt("Gospodarz",CLUB); if(!home)return;
@@ -400,14 +419,25 @@ export default function AdminPanel(props:{
 
   async function setTrainingAttendanceStatus(playerId:string,status:string){
     if(!selectedTraining)return;
-    const {error}=await supabase.from("training_attendance").upsert({
-      training_id:selectedTraining.id,player_id:playerId,status,updated_by:props.currentUser.id
-    },{onConflict:"training_id,player_id"});
-    if(error)return alert(error.message);
+    const trainingId=selectedTraining.id;
+    const previous=trainingAttendance.find(x=>x.training_id===trainingId&&x.player_id===playerId)||null;
+    const optimistic={training_id:trainingId,player_id:playerId,status};
+    setTrainingBusy(`attendance-${playerId}`);
     setTrainingAttendance(prev=>[
-      ...prev.filter(x=>!(x.training_id===selectedTraining.id&&x.player_id===playerId)),
-      {training_id:selectedTraining.id,player_id:playerId,status}
+      ...prev.filter(x=>!(x.training_id===trainingId&&x.player_id===playerId)),optimistic
     ]);
+    const {error}=await supabase.from("training_attendance").upsert({
+      training_id:trainingId,player_id:playerId,status,updated_by:props.currentUser.id
+    },{onConflict:"training_id,player_id"});
+    setTrainingBusy(null);
+    if(error){
+      setTrainingAttendance(prev=>[
+        ...prev.filter(x=>!(x.training_id===trainingId&&x.player_id===playerId)),
+        ...(previous?[previous]:[])
+      ]);
+      const message=friendlyTrainingError(error);flashTrainingFeedback(message);return alert(message);
+    }
+    flashTrainingFeedback(status==="present"?"✓ Obecność zapisana":"✓ Nieobecność zapisana");
   }
 
   async function addTrainingGame(){
@@ -424,19 +454,35 @@ export default function AdminPanel(props:{
 
   async function setTrainingGameTeam(playerId:string,teamValue:"A"|"B"|null){
     if(!selectedTrainingGame)return;
+    const gameId=selectedTrainingGame.id;
+    const previous=trainingGamePlayers.find(x=>x.game_id===gameId&&x.player_id===playerId)||null;
+    setTrainingBusy(`team-${playerId}`);
+
     if(teamValue===null){
-      const {error}=await supabase.from("training_game_players").delete().eq("game_id",selectedTrainingGame.id).eq("player_id",playerId);
-      if(error)return alert(error.message);
-      setTrainingGamePlayers(prev=>prev.filter(x=>!(x.game_id===selectedTrainingGame.id&&x.player_id===playerId)));
+      setTrainingGamePlayers(prev=>prev.filter(x=>!(x.game_id===gameId&&x.player_id===playerId)));
+      const {error}=await supabase.from("training_game_players").delete().eq("game_id",gameId).eq("player_id",playerId);
+      setTrainingBusy(null);
+      if(error){
+        if(previous)setTrainingGamePlayers(prev=>[...prev.filter(x=>!(x.game_id===gameId&&x.player_id===playerId)),previous]);
+        const message=friendlyTrainingError(error);flashTrainingFeedback(message);return alert(message);
+      }
+      flashTrainingFeedback("✓ Zawodnik usunięty ze składu");
       return;
     }
-    const row={game_id:selectedTrainingGame.id,player_id:playerId,team:teamValue};
-    const {error}=await supabase.from("training_game_players").upsert(row,{onConflict:"game_id,player_id"});
-    if(error)return alert(error.message);
+
+    const row={game_id:gameId,player_id:playerId,team:teamValue};
     setTrainingGamePlayers(prev=>[
-      ...prev.filter(x=>!(x.game_id===selectedTrainingGame.id&&x.player_id===playerId)),
-      row
+      ...prev.filter(x=>!(x.game_id===gameId&&x.player_id===playerId)),row
     ]);
+    const {error}=await supabase.from("training_game_players").upsert(row,{onConflict:"game_id,player_id"});
+    setTrainingBusy(null);
+    if(error){
+      setTrainingGamePlayers(prev=>[
+        ...prev.filter(x=>!(x.game_id===gameId&&x.player_id===playerId)),...(previous?[previous]:[])
+      ]);
+      const message=friendlyTrainingError(error);flashTrainingFeedback(message);return alert(message);
+    }
+    flashTrainingFeedback(`✓ ${teamValue==="A"?selectedTrainingGame.team_a_name:selectedTrainingGame.team_b_name}: zapisano`);
   }
 
   async function saveTrainingGameScore(){
@@ -670,7 +716,7 @@ export default function AdminPanel(props:{
         <aside className="admin-card">
           <div className="admin-card-head"><h2>Treningi</h2>{canTrainingFull&&<div className="v901-training-actions"><button onClick={quickAddTraining}><Plus size={15}/> Szybki trening dziś</button><button onClick={addTrainingSession}><CalendarDays size={15}/> Dodaj szczegółowo</button></div>}</div>
           <div className="admin-match-list">
-            {trainingSessions.map(s=><button key={s.id} className={selectedTrainingId===s.id?"selected":""} onClick={()=>setSelectedTrainingId(s.id)}>
+            {trainingSessions.map(s=><button key={s.id} className={selectedTrainingId===s.id?"selected":""} onClick={()=>{setSelectedTrainingId(s.id);setSelectedTrainingGameId(trainingGames.find(g=>g.training_id===s.id)?.id||"")}}>
               <strong>{s.title||"Trening"}</strong>
               <span>{s.training_date} {s.start_time?.slice(0,5)||""}</span>
             </button>)}
@@ -681,16 +727,17 @@ export default function AdminPanel(props:{
           {!selectedTraining?<p>Dodaj lub wybierz trening.</p>:<>
             <div className="admin-card-head"><h2>Centrum treningowe</h2>{canTrainingFull&&<div className="v902-admin-actions"><button onClick={addTrainingGame}><Plus size={15}/> Gra kontrolna</button><button className="danger-btn" onClick={()=>deleteTrainingSession(selectedTraining.id)}><Trash2 size={15}/> Usuń trening</button></div>}</div>
             <p className="muted">{selectedTraining.training_date} • {selectedTraining.start_time?.slice(0,5)||""} • {selectedTraining.location||"—"}</p>
+            {trainingFeedback&&<div className="v101-training-feedback">{trainingFeedback}</div>}
 
-            <h3>Obecność</h3>
+            <div className="v101-training-section-head"><h3>Obecność</h3><strong>{selectedTrainingPresentCount}/{activePlayers.length} obecnych</strong></div>
             <div className="attendance-grid">
               {activePlayers.map(p=>{
                 const st=trainingAttendance.find(x=>x.training_id===selectedTraining.id&&x.player_id===p.id)?.status||"";
                 return <div key={p.id} className="attendance-row">
                   <span>{p.display_name}</span>
                   <div>
-                    <button className={st==="present"?"active yes":""} onClick={()=>setTrainingAttendanceStatus(p.id,"present")}>JEST</button>
-                    <button className={st==="absent"?"active no":""} onClick={()=>setTrainingAttendanceStatus(p.id,"absent")}>NIE</button>
+                    <button type="button" disabled={trainingBusy===`attendance-${p.id}`} className={st==="present"?"active yes":""} onClick={()=>setTrainingAttendanceStatus(p.id,"present")}>JEST</button>
+                    <button type="button" disabled={trainingBusy===`attendance-${p.id}`} className={st==="absent"?"active no":""} onClick={()=>setTrainingAttendanceStatus(p.id,"absent")}>NIE</button>
                   </div>
                 </div>
               })}
@@ -705,6 +752,12 @@ export default function AdminPanel(props:{
             </div>
 
             {selectedTrainingGame&&<>
+              <div className="v101-training-versus">
+                <div><span>DRUŻYNA A</span><b>{selectedTrainingGame.team_a_name}</b><strong>{selectedTeamACount}</strong></div>
+                <em>{selectedTeamACount} <small>VS</small> {selectedTeamBCount}</em>
+                <div className="right"><span>DRUŻYNA B</span><b>{selectedTrainingGame.team_b_name}</b><strong>{selectedTeamBCount}</strong></div>
+              </div>
+              <p className="v101-flexible-note">Składy są elastyczne — może być 3 na 3, 4 na 4, 6 na 6 albo dowolna inna liczba zawodników.</p>
               <div className="admin-form-grid">
                 <label>{selectedTrainingGame.team_a_name}<input id="trainingScoreA" type="number" min="0" defaultValue={selectedTrainingGame.team_a_score}/></label>
                 <label>{selectedTrainingGame.team_b_name}<input id="trainingScoreB" type="number" min="0" defaultValue={selectedTrainingGame.team_b_score}/></label>
@@ -714,16 +767,16 @@ export default function AdminPanel(props:{
                 <button className="danger-btn" onClick={()=>deleteTrainingGame(selectedTrainingGame.id)}><Trash2 size={15}/> Usuń grę</button>
               </div>
 
-              <h3>Składy gry kontrolnej</h3>
+              <div className="v101-training-section-head"><h3>Składy gry kontrolnej</h3><strong>{selectedTeamACount} vs {selectedTeamBCount}</strong></div>
               <div className="attendance-grid">
                 {activePlayers.map(p=>{
                   const team=trainingGamePlayers.find(x=>x.game_id===selectedTrainingGame.id&&x.player_id===p.id)?.team||"";
                   return <div key={p.id} className="attendance-row">
                     <span>{p.display_name}</span>
                     <div>
-                      <button className={team==="A"?"active yes":""} onClick={()=>setTrainingGameTeam(p.id,"A")}>A</button>
-                      <button className={team==="B"?"active no":""} onClick={()=>setTrainingGameTeam(p.id,"B")}>B</button>
-                      <button onClick={()=>setTrainingGameTeam(p.id,null)}>—</button>
+                      <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team==="A"?"active team-a":""} onClick={()=>setTrainingGameTeam(p.id,"A")}>A</button>
+                      <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team==="B"?"active team-b":""} onClick={()=>setTrainingGameTeam(p.id,"B")}>B</button>
+                      <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team===""?"active neutral":""} onClick={()=>setTrainingGameTeam(p.id,null)}>—</button>
                     </div>
                   </div>
                 })}

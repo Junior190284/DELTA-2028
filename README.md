@@ -570,3 +570,10 @@ Najprościej uruchomić jeden plik:
 Opcjonalne automatyczne przypomnienia:
 
 `supabase/v8_smart_reminders_cron.sql`
+
+
+---
+
+# V10.1 — PREMIUM STADIUM EXPERIENCE
+
+Zobacz `V10_1_START_HERE.md`. V10.1 dodaje przebudowany publiczny HOME, Fire Reveal, stadionową warstwę motion/FX, większą hierarchię wizualną oraz poprawki niezawodności Centrum Treningowego.
