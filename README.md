@@ -707,3 +707,17 @@ Duży lifting wizualny inspirowany zaakceptowanymi wizualizacjami:
 - zachowane wcześniejsze poprawki mobile, kliknięcie logo -> Start, Training Center reliability itd.
 
 Nie wymaga nowego SQL.
+
+
+## V10.2.1 — Visual Density / Stadium Tune
+
+Dalsza poprawka po review screenshotów.
+Najważniejsze zmiany:
+- mniej pustych, ciemnych przestrzeni,
+- mocniejsze i czytelniejsze hero sekcji,
+- więcej stadium / premium / broadcast,
+- gęstszy układ w Treningach, Statystykach i Hall of Fame,
+- dodatkowe badge i storytelling w hero blokach,
+- poprawiona kompozycja HOME i sekcji Drużyna.
+
+Nie wymaga SQL.

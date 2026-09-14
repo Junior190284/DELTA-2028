@@ -5254,3 +5254,331 @@ body > main,
     scroll-behavior:auto!important;
   }
 }
+
+
+/* =========================================================
+   V10.2.1 — VISUAL DENSITY / STADIUM TUNE
+   Cel: mniej pustki, więcej klimatu, lepsza czytelność.
+   ========================================================= */
+
+.v8-section-page.v900-training-center,
+.v8-section-page.v890-stats-center,
+.section.v10-hof,
+.v871-team-page{
+  position:relative;
+  isolation:isolate;
+}
+
+.v8-section-page.v900-training-center::before,
+.v8-section-page.v890-stats-center::before,
+.section.v10-hof::before,
+.v871-team-page::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(237,31,47,.12), transparent 24%),
+    radial-gradient(circle at 86% 10%, rgba(241,201,92,.06), transparent 20%),
+    linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,.14));
+}
+
+/* HOME HERO - cleaner and better balanced */
+.v101-logged-hero{
+  min-height:330px!important;
+  border-color:rgba(241,201,92,.22)!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.84) 0%,rgba(2,4,7,.72) 34%,rgba(2,4,7,.28) 58%,rgba(2,4,7,.45) 100%),
+    linear-gradient(180deg,rgba(2,4,7,.08),rgba(2,4,7,.16) 48%,rgba(2,4,7,.90)),
+    url('/assets/hero-stadium-identity-desktop.png') center 50%/cover no-repeat!important;
+}
+.v101-logged-hero .v101-hero-club-identity{
+  gap:20px!important;
+  padding:18px 22px!important;
+  border:1px solid rgba(241,201,92,.16);
+  background:linear-gradient(135deg,rgba(9,12,16,.34),rgba(13,7,10,.58));
+  backdrop-filter: blur(3px);
+}
+.v101-logged-hero .v101-hero-identity-copy strong{font-size:17px!important;letter-spacing:.10em!important}
+.v101-logged-hero .v101-hero-identity-copy b{font-size:52px!important;line-height:.92!important}
+.v101-logged-hero .v101-hero-inner{align-items:flex-end!important}
+
+.v8-match-card.v101-logged-match{
+  min-height:292px!important;
+  background:
+    linear-gradient(145deg,rgba(4,7,11,.78),rgba(9,7,10,.86)),
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 58%/cover no-repeat!important;
+}
+
+/* Reusable hero enrichments */
+.v103-hero-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:14px;
+}
+.v103-hero-badges span{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px;
+  border:1px solid rgba(241,201,92,.18);
+  background:linear-gradient(145deg,rgba(8,11,15,.74),rgba(12,7,9,.84));
+  color:#d9dee5;
+  font-size:11px;
+  border-radius:999px;
+}
+.v103-hero-badges b{color:#f1c95c;font-size:14px;line-height:1}
+.v103-hero-story{
+  margin-top:12px;
+  padding:12px 14px;
+  border-left:2px solid rgba(241,201,92,.85);
+  background:linear-gradient(90deg,rgba(241,201,92,.07),rgba(241,201,92,0));
+  max-width:580px;
+}
+.v103-hero-story small{
+  display:block;
+  color:#f1c95c;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.18em;
+  margin-bottom:5px;
+}
+.v103-hero-story strong{
+  display:block;
+  color:#fff;
+  font-size:14px;
+  line-height:1.45;
+}
+.v103-team-story{max-width:520px}
+
+/* TEAM */
+.v102-team-hero{
+  min-height:360px!important;
+  align-items:center!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.86) 0%,rgba(2,4,7,.70) 36%,rgba(2,4,7,.38) 58%,rgba(2,4,7,.48) 100%),
+    linear-gradient(180deg,rgba(2,4,7,.06),rgba(2,4,7,.22) 48%,rgba(2,4,7,.88)),
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 52%/cover no-repeat!important;
+}
+.v102-team-hero .v871-team-crest{
+  width:220px!important;
+  align-self:center!important;
+  justify-self:end!important;
+}
+.v102-team-hero .v871-team-copy h2{margin-bottom:14px!important}
+.v871-team-dashboard{gap:14px!important}
+.v871-team-leader, .v871-team-form{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(237,31,47,.10),transparent 28%),
+    linear-gradient(145deg,rgba(8,11,15,.92),rgba(11,7,9,.95))!important;
+}
+
+/* TRAINING */
+.v900-training-hero{
+  min-height:290px!important;
+  grid-template-columns:1.15fr .85fr!important;
+  gap:22px!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.80),rgba(2,4,7,.50) 42%,rgba(2,4,7,.18) 68%,rgba(2,4,7,.38)),
+    linear-gradient(180deg,rgba(2,4,7,.04),rgba(2,4,7,.18) 54%,rgba(2,4,7,.90)),
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 36%/cover no-repeat!important;
+}
+.v900-training-hero::after{
+  content:"MATCHDAY ENERGY • TRENING • ROZWÓJ • CHEMIA";
+  position:absolute;
+  left:24px; right:24px; bottom:10px;
+  color:rgba(241,201,92,.78);
+  font-size:10px;
+  letter-spacing:.26em;
+  font-weight:900;
+}
+.v900-training-copy{max-width:720px}
+.v900-training-copy h2{margin-bottom:10px!important}
+.v900-training-kpis{align-content:end!important}
+.v900-training-kpis>div{min-height:84px!important}
+.v900-training-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+.v900-training-card{
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(241,201,92,.08),transparent 22%),
+    linear-gradient(145deg,rgba(8,11,15,.95),rgba(10,7,9,.96))!important;
+}
+.v900-training-card:nth-child(1), .v900-training-card:nth-child(2){min-height:440px}
+.v900-training-card:nth-child(3), .v900-training-card:nth-child(4){min-height:390px}
+.v900-training-history,
+.v900-chemistry{
+  background:
+    linear-gradient(145deg,rgba(7,10,14,.92),rgba(10,7,9,.95))!important;
+  border-color:rgba(241,201,92,.18)!important;
+}
+.v900-chemistry-head{margin-bottom:18px!important}
+
+/* STATS */
+.v890-stats-hero{
+  min-height:295px!important;
+  gap:22px!important;
+  grid-template-columns:1.1fr .9fr!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.78),rgba(2,4,7,.46) 42%,rgba(2,4,7,.20) 68%,rgba(2,4,7,.42)),
+    linear-gradient(180deg,rgba(2,4,7,.03),rgba(2,4,7,.18) 54%,rgba(2,4,7,.90)),
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 42%/cover no-repeat!important;
+}
+.v890-stats-hero::after{
+  content:"SEZON • LIDERZY • REKORDY • FORMA";
+  position:absolute;
+  left:24px; right:24px; bottom:10px;
+  color:rgba(241,201,92,.78);
+  font-size:10px;
+  letter-spacing:.26em;
+  font-weight:900;
+}
+.v890-form-strip{
+  margin-top:12px!important;
+  background:linear-gradient(90deg,rgba(237,31,47,.08),rgba(241,201,92,.04));
+  padding:10px 12px!important;
+  border:1px solid rgba(241,201,92,.14);
+}
+.v890-kpi-grid{gap:14px!important}
+.v890-kpi{
+  min-height:134px!important;
+  padding:20px 22px!important;
+}
+.v890-kpi b{font-size:52px!important}
+.v890-main-grid{
+  grid-template-columns:1.3fr .7fr!important;
+  gap:14px!important;
+}
+.v890-podium,
+.v890-records,
+.v890-ranking-hub,
+.v890-compare,
+.v890-team-form,
+.v893-leader-strip article,
+.v893-player-advanced{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(237,31,47,.08),transparent 22%),
+    linear-gradient(145deg,rgba(8,11,15,.95),rgba(10,7,9,.96))!important;
+}
+.v893-leader-strip{gap:12px!important}
+.v893-zone-head{margin-bottom:16px!important}
+.v893-player-advanced-grid{gap:14px!important}
+
+/* HALL OF FAME */
+.section.v10-hof .v102-hof-hero{
+  min-height:250px!important;
+  padding:32px 36px!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.78),rgba(2,4,7,.60) 38%,rgba(2,4,7,.18) 66%,rgba(2,4,7,.34)),
+    linear-gradient(180deg,rgba(2,4,7,.04),rgba(2,4,7,.16) 54%,rgba(2,4,7,.90)),
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 40%/cover no-repeat!important;
+}
+.section.v10-hof .v10-hof-team{
+  display:grid!important;
+  grid-template-columns:repeat(4,1fr)!important;
+  gap:12px!important;
+}
+.section.v10-hof .v10-hof-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+.section.v10-hof .v10-hof-grid>button{
+  min-height:250px!important;
+  background:
+    linear-gradient(180deg,rgba(6,8,11,.24),rgba(6,8,11,.96)),
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 62%/cover no-repeat!important;
+}
+.section.v10-hof .v10-seasons,
+.section.v10-hof .v10-month,
+.section.v10-hof .v10-duos{
+  margin-top:14px!important;
+}
+.section.v10-hof .v10-seasons,
+.section.v10-hof .v10-duos{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(237,31,47,.09),transparent 26%),
+    linear-gradient(145deg,rgba(8,11,15,.95),rgba(10,7,9,.96))!important;
+}
+.section.v10-hof .v10-month{
+  background:
+    linear-gradient(145deg,rgba(67,8,14,.75),rgba(8,11,15,.96))!important;
+}
+
+/* general density */
+.v8-panel-title{font-size:15px!important}
+.v900-training-ranking button,
+.v890-ranking-entry,
+.v893-player-head,
+.v890-record-list>div,
+.v900-training-history-list>div,
+.v10-duos>div>div{
+  border-radius:0!important;
+}
+
+/* responsive */
+@media (max-width: 1100px){
+  .v900-training-grid,
+  .section.v10-hof .v10-hof-grid,
+  .section.v10-hof .v10-hof-team,
+  .v890-main-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media (max-width: 760px){
+  .v101-logged-hero{
+    min-height:210px!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.10),rgba(2,4,7,.20) 42%,rgba(2,4,7,.92)),
+      url('/assets/hero-stadium-identity-mobile.png') center 54%/cover no-repeat!important;
+  }
+  .v101-logged-hero .v101-hero-club-identity{
+    width:100%!important;
+    padding:12px 12px!important;
+    gap:10px!important;
+    justify-content:flex-start!important;
+  }
+  .v101-logged-hero .v101-hero-identity-copy strong{font-size:12px!important}
+  .v101-logged-hero .v101-hero-identity-copy b{font-size:34px!important}
+  .v8-match-card.v101-logged-match{
+    min-height:280px!important;
+    background:
+      linear-gradient(145deg,rgba(4,7,11,.74),rgba(9,7,10,.84)),
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 56%/cover no-repeat!important;
+  }
+
+  .v102-team-hero,
+  .v900-training-hero,
+  .v890-stats-hero,
+  .section.v10-hof .v102-hof-hero{
+    min-height:auto!important;
+    padding:18px 14px 18px!important;
+    background-position:center 50%!important;
+  }
+  .v102-team-hero .v871-team-crest{width:120px!important;margin:0 auto 10px!important}
+  .v900-training-hero::after,
+  .v890-stats-hero::after{display:none}
+  .v103-hero-badges{gap:6px}
+  .v103-hero-badges span{font-size:10px;padding:7px 9px}
+  .v103-hero-story{padding:10px 12px;margin-top:10px}
+  .v103-hero-story strong{font-size:13px}
+  .v900-training-grid,
+  .v890-kpi-grid,
+  .section.v10-hof .v10-hof-team,
+  .section.v10-hof .v10-hof-grid{
+    grid-template-columns:1fr!important;
+  }
+  .v900-training-card:nth-child(1), .v900-training-card:nth-child(2),
+  .v900-training-card:nth-child(3), .v900-training-card:nth-child(4),
+  .section.v10-hof .v10-hof-grid>button,
+  .v890-kpi{
+    min-height:auto!important;
+  }
+  .v890-main-grid{grid-template-columns:1fr!important}
+}

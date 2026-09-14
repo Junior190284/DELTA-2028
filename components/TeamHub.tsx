@@ -1031,6 +1031,15 @@ export default function TeamHub(props:{
             <span className="eyebrow gold">DELTA 2018 GM • PERFORMANCE LAB</span>
             <h2>CENTRUM <span>TRENINGOWE</span></h2>
             <p>Frekwencja, gry kontrolne, gole treningowe, asysty i chemia zespołu — całkowicie oddzielone od statystyk meczów oficjalnych.</p>
+            <div className="v103-hero-badges">
+              <span><b>{trainingSessions.length}</b> jednostek</span>
+              <span><b>{trainingGames.length}</b> gier kontrolnych</span>
+              <span><b>{trainingChemistry[0]?.score||0}%</b> top chemia</span>
+            </div>
+            <div className="v103-hero-story">
+              <small>OSTATNIA JEDNOSTKA</small>
+              <strong>{trainingSessions[0]?`${datePL(trainingSessions[0].training_date)} • ${trainingSessions[0].title||"Trening drużyny"}`:"Pierwszy trening pojawi się po dodaniu danych"}</strong>
+            </div>
           </div>
           <div className="v900-training-kpis">
             <div><strong>{trainingSessions.length}</strong><span>TRENINGI</span></div>
@@ -1154,6 +1163,10 @@ export default function TeamHub(props:{
               <span><Star size={14}/>{teamSummary.assists} asyst</span>
               <span><Trophy size={14}/>{teamSummary.wins} zwycięstw</span>
             </div>
+            <div className="v103-hero-story v103-team-story">
+              <small>TOŻSAMOŚĆ DRUŻYNY</small>
+              <strong>Waleczność, rozwój i stadionowy charakter • DELTA 2018 GM</strong>
+            </div>
           </div>
         </div>
 
@@ -1256,6 +1269,15 @@ export default function TeamHub(props:{
             <span className="eyebrow gold">DELTA 2018 GM • DATA STUDIO</span>
             <h2>CENTRUM <span>STATYSTYK</span></h2>
             <p>Sezon 2026/27 • liczby, liderzy, rekordy i forma drużyny w jednym miejscu.</p>
+            <div className="v103-hero-badges">
+              <span><b>{goalsPerMatch.toFixed(1)}</b> gola / mecz</span>
+              <span><b>{playersWithGoal}</b> strzelców</span>
+              <span><b>{currentUnbeatenStreak}</b> bez porażki</span>
+            </div>
+            <div className="v103-hero-story">
+              <small>AKTUALNY LIDER G+A</small>
+              <strong>{topGA?`${topGA.display_name} • ${(stats[topGA.id]?.g||0)+(stats[topGA.id]?.a||0)} G+A`:"Czekamy na lidera sezonu"}</strong>
+            </div>
           </div>
           <div className="v890-stats-hero-metrics">
             <div><strong>{teamSummary.played}</strong><span>MECZE</span></div>
