@@ -725,3 +725,20 @@ Nie wymaga SQL.
 
 ## V10.2.2 — Start Hero + HOF Refinement
 Redesign Start hero na wzór najlepiej ocenionej sekcji Hall of Fame. Pełny stadionowy kadr, brak uciętego tekstu, lepszy desktop/mobile, cleanup Treningów i Statystyk. Nie wymaga SQL.
+
+
+## V10.2.3 — Hero Layout Rescue
+
+Naprawa rozjechanego hero START z V10.2.2.
+
+Zmiany:
+- tło hero to czysta grafika stadionowa,
+- herb jest osobnym, kontrolowanym elementem,
+- tekst / statystyki / herb mają własne warstwy,
+- stała, bezpieczna kompozycja desktop,
+- osobna kompozycja mobile,
+- `overflow:hidden` i ograniczone rozmiary herbu,
+- brak ogromnego przyciętego logo,
+- zachowany kierunek wizualny Hall of Fame.
+
+Nie wymaga SQL.
