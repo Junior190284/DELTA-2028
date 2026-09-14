@@ -736,9 +736,10 @@ export default function TeamHub(props:{
           <div className="v1022-start-motto">WIĘCEJ NIŻ KLUB</div>
         </section>
 
-        {nextMatch&&<><section className="v82-match-rsvp-grid">
+        {nextMatch&&<><section className="v82-match-rsvp-grid v1024-match-zone">
           <article className="v8-match-card devil-card v101-logged-match v1022-home-match">
             <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
+            <div className="v1024-match-statusline"><span>MATCHDAY</span><i/> <b>{datePL(nextMatch.match_date)}</b><i/> <b>{nextMatch.venue||"Miejsce do ustalenia"}</b></div>
             <div className="v8-match-stage">
               <div className="v8-team">
                 <Logo team={nextMatch.home_team} size={76}/>
@@ -776,7 +777,7 @@ export default function TeamHub(props:{
           </article>
         </section>
 
-        <section className="v891-team-clock-row">
+        <section className="v891-team-clock-row v1024-clock-zone">
           <article className="v891-team-clock devil-card" onClick={()=>setTab("calendar")}>
             <div className="v891-clock-icon"><CalendarDays size={22}/></div>
             <div className="v891-clock-copy">
@@ -804,14 +805,14 @@ export default function TeamHub(props:{
           </article>
         </section></>}
 
-        <section className="v8-stats-row">
+        <section className="v8-stats-row v1024-home-stats">
           {[
             ["MECZE",teamSummary.played,Target],["WYGRANE",teamSummary.wins,Trophy],["REMISY",teamSummary.draws,Shield],
             ["PORAŻKI",teamSummary.losses,X],["BRAMKI",teamSummary.goals,Goal],["ASYSTY",teamSummary.assists,Star]
           ].map(([label,val,Icon]:any)=><div className="v8-stat devil-tile" key={label}><Icon size={25}/><b>{val}</b><span>{label}</span></div>)}
         </section>
 
-        <section className="v8-dashboard-grid">
+        <section className="v8-dashboard-grid v1024-home-dashboard">
           <article className="v8-panel v101-now-card devil-card" onClick={()=>setTab("calendar")}>
             <div className="v8-panel-title"><Flame size={18}/> DZIEJE SIĘ TERAZ <span className="v101-live-dot">LIVE</span></div>
             <div className="v101-now-main">
@@ -854,7 +855,7 @@ export default function TeamHub(props:{
 
         </section>
 
-        <section className="v8-lower-grid v885-rankings-grid">
+        <section className="v8-lower-grid v885-rankings-grid v1024-home-rankings">
           <article className="v8-panel devil-card v885-ranking-panel">
             <div className="v8-panel-title"><Target size={18}/> STRZELCY BRAMEK</div>
             <div className="v885-ranking-list">
@@ -896,7 +897,7 @@ export default function TeamHub(props:{
         </section>
 
 
-        <section className="v87-season-grid">
+        <section className="v87-season-grid v1024-home-season">
           <article className="v87-leaders devil-card v885-season-best">
             <div className="v8-panel-title"><Medal size={18}/> NAJLEPSI W SEZONIE</div>
             <div className="v885-season-podium">
@@ -963,7 +964,7 @@ export default function TeamHub(props:{
           </article>
         </section>
 
-        <section className="v8-bottom-grid">
+        <section className="v8-bottom-grid v1024-home-bottom">
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>setTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Newspaper size={18}/> AKTUALNOŚCI {staff&&<button onClick={saveNewsItem}>DODAJ</button>}</div><div className="v8-news-list">{news.slice(0,3).map(n=><div key={n.id}><i/><div><b>{n.title}</b><span>{new Date(n.published_at).toLocaleDateString("pl-PL")}</span></div></div>)}{news.length===0&&<p className="muted">Brak aktualności.</p>}</div></article>
           <article className="v8-panel devil-card"><div className="v8-panel-title"><History size={18}/> KRONIKA</div><div className="v8-chronicle-preview">{matches.filter(m=>m.status==="played").slice(-2).reverse().map(m=><div key={m.id}><b>{datePL(m.match_date)}</b><span>{m.home_team} {m.home_score}:{m.away_score} {m.away_team}</span></div>)}{matches.filter(m=>m.status==="played").length===0&&<p className="muted">Historia sezonu dopiero się zaczyna.</p>}</div></article>

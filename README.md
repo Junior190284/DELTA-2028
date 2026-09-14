@@ -742,3 +742,21 @@ Zmiany:
 - zachowany kierunek wizualny Hall of Fame.
 
 Nie wymaga SQL.
+
+
+## V10.2.4 — Home Polish + Match Card + Tile Upgrade
+
+Hero V10.2.3 pozostaje bez przebudowy.
+
+Zmiany:
+- premium redesign bloku Najbliższy mecz,
+- nowy matchday status strip,
+- lepszy Zegar drużyny / Ważne,
+- sześć KPI dostało bardziej broadcastowy wygląd,
+- Dzieje się teraz i Ostatnie mecze są gęstsze i bardziej czytelne,
+- rankingi, cytat i club-identity card zostały dopracowane,
+- Cel drużyny / seria / Z klubu / Najlepsi w sezonie otrzymały spójniejszy styl,
+- dolne kafelki również dostały premium polish,
+- osobne strojenie mobile bez ruchu/skakania.
+
+Nie wymaga SQL.
