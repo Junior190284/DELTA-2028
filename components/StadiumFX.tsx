@@ -35,6 +35,11 @@ export default function StadiumFX({intro=true,compact=false}:Props){
       <span className="v101-smoke smoke-b"/>
       <span className="v101-smoke smoke-c"/>
       <span className="v101-embers"/>
+      <span className="v101-ultras-flare flare-left"/>
+      <span className="v101-ultras-flare flare-right"/>
+      <span className="v101-terrace-haze"/>
+      <span className="v101-floodlight-glow glow-left"/>
+      <span className="v101-floodlight-glow glow-right"/>
     </div>
     {showIntro&&<div className="v101-fire-reveal" aria-hidden="true">
       <div className="v101-fire-smoke"/>

@@ -691,7 +691,7 @@ export default function TeamHub(props:{
 
   return <div className="hub v8-hub v101-stadium-hub">
     <StadiumFX intro/>
-    {viewFx&&<div className="v101-screen-wipe" aria-hidden="true"><span/><i/></div>}
+    {viewFx&&<div className="v101-cinematic-veil" aria-hidden="true"><span className="v101-cinematic-smoke"/><span className="v101-cinematic-flare"/></div>}
     <aside className="v8-side-nav">
       <div className="v8-side-brand"><img src="/teamlogos/gm.png" alt=""/><span>GM</span></div>
       {navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={21}/><span>{label}</span></button>)}
@@ -713,7 +713,7 @@ export default function TeamHub(props:{
       <button className="icon-btn v8-bell" onClick={enablePush}><Bell size={18}/></button>
     </header>
 
-    <main className="hub-main v8-main">
+    <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
       {tab==="home"&&<>
         <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>

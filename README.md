@@ -577,3 +577,7 @@ Opcjonalne automatyczne przypomnienia:
 # V10.1 — PREMIUM STADIUM EXPERIENCE
 
 Zobacz `V10_1_START_HERE.md`. V10.1 dodaje przebudowany publiczny HOME, Fire Reveal, stadionową warstwę motion/FX, większą hierarchię wizualną oraz poprawki niezawodności Centrum Treningowego.
+
+
+## V10.1.1 — Stadium / Ultras Visual Direction
+Visual patch wzmacniający nocny stadionowy charakter aplikacji bez zmiany danych i SQL. Stary transition bar został usunięty i zastąpiony krótkim cinematic crossfade + smoke/light sweep.

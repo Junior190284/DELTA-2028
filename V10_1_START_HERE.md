@@ -37,3 +37,12 @@ git push origin main
 ## Uwaga o prywatności
 
 Publiczny HOME pokazuje statystyki i informacje drużynowe. Nazwiska, zdjęcia, profile oraz indywidualne statystyki dzieci pozostają w części po zalogowaniu.
+
+
+## V10.1.1 — Stadium Visual Patch
+- Usunięto widoczny pasek przejścia między ekranami.
+- Nowe przejście: cinematic crossfade + rozproszony czerwono-złoty light sweep + dym.
+- Mocniejszy klimat stadionu: race/flare glow, dym trybun, reflektory, żar i głębsze tła.
+- Match Hub, Centrum Statystyk, Centrum Treningowe, Match Day i Hall of Fame mają bardziej graficzne tła.
+- Karty dostały sportowe ścięte narożniki, mocniejszy glow i broadcast-style detale.
+- Mobile zachowuje klimat, ale efekty są lżejsze.
