@@ -116,6 +116,17 @@ export default function PublicTeamSite(props:{
       <div className="public-hero-overlay"/>
       <div className="v101-hero-lights"/>
       <div className="v101-hero-flare"/>
+      <div className="v101-hero-club-identity public">
+        <div className="v101-hero-crest-wrap">
+          <span className="v101-hero-crest-fire"/>
+          <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
+        </div>
+        <div className="v101-hero-identity-copy">
+          <span>K.S. DELTA WARSZAWA</span>
+          <strong>GÓRNY MOKOTÓW</strong>
+          <b>2018</b>
+        </div>
+      </div>
       <div className="public-hero-copy">
         <span className="v101-live-eyebrow"><Radio size={13}/> K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
         <h1>DELTA <em>2018</em> GM</h1>

@@ -717,6 +717,17 @@ export default function TeamHub(props:{
       {tab==="home"&&<>
         <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
+          <div className="v101-hero-club-identity">
+            <div className="v101-hero-crest-wrap">
+              <span className="v101-hero-crest-fire"/>
+              <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
+            </div>
+            <div className="v101-hero-identity-copy">
+              <span>K.S. DELTA WARSZAWA</span>
+              <strong>GÓRNY MOKOTÓW</strong>
+              <b>2018</b>
+            </div>
+          </div>
         </section>
 
         {nextMatch&&<><section className="v82-match-rsvp-grid">
@@ -1130,7 +1141,7 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
-        <div className="v871-team-hero devil-card">
+        <div className="v871-team-hero v102-team-hero devil-card">
           <div className="v871-team-hero-overlay"/>
           <div className="v871-team-crest"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/></div>
           <div className="v871-team-copy">

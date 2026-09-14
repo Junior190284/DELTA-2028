@@ -661,3 +661,49 @@ Nowości:
 - mobile pozostaje stabilny i bez podskakiwania.
 
 Nie wymaga nowego SQL.
+
+
+## V10.1.7 — Hero Composition Fix
+
+Poprawka hero po złym kadrowaniu wersji z tekstem/herbem wbudowanym w grafikę.
+
+Zmiany:
+- wrócono do czystej grafiki stadionowej bez tekstu,
+- prawdziwy herb drużyny jest osobną warstwą,
+- ogień/dym wokół herbu robiony CSS-em, więc nie psuje kadru,
+- „GÓRNY MOKOTÓW 2018” jest osobnym tekstem HTML,
+- desktop i mobile mają osobne tła,
+- hero ma mniejszą, bardziej proporcjonalną wysokość,
+- zachowane wszystkie poprawki kafelków, logo→Start i stabilności mobile.
+
+Nie wymaga SQL.
+
+
+## V10.1.8 — Mobile Hero Redesign
+
+Poprawki:
+- hero po zalogowaniu na mobile ma tylko 185 px wysokości,
+- stadion jest tłem, nie plakatem,
+- herb jest mały i pełni funkcję akcentu,
+- Górny Mokotów 2018 jest kompaktowym overlayem,
+- publiczny hero również jest niższy,
+- nowe nazwy assetów v2 omijają cache przeglądarki/PWA,
+- najbliższy mecz staje się głównym elementem ekranu mobilnego.
+
+Nie wymaga SQL.
+
+
+## V10.2 — Visual Broadcast Mega Pack
+
+Duży lifting wizualny inspirowany zaakceptowanymi wizualizacjami:
+- HOME jak klubowy broadcast hub,
+- Centrum Treningowe jako Performance Lab,
+- Centrum Statystyk jako Data Studio,
+- Hall of Fame jako stadionowa ściana rekordów,
+- Drużyna z mocniejszym hero i premium kartami,
+- mocniejsze czerwono-złote ramki, światła, stadion i głębia,
+- lepsza hierarchia kafelków,
+- osobne dekoracyjne bannery wycięte z przygotowanych wizualizacji,
+- zachowane wcześniejsze poprawki mobile, kliknięcie logo -> Start, Training Center reliability itd.
+
+Nie wymaga nowego SQL.

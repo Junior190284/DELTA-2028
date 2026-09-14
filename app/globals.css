@@ -4373,3 +4373,884 @@ body > main,
     background-position:center 72%!important;
   }
 }
+
+
+/* =========================================================
+   V10.1.7 — HERO COMPOSITION FIX
+   Clean stadium art + real club crest + HTML identity overlay.
+   No baked-in text/logo, so desktop/mobile crop stays correct.
+   ========================================================= */
+
+/* Clean stadium background */
+.v101-public-hero{
+  min-height:430px!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.92) 0%,rgba(2,4,7,.62) 38%,rgba(5,3,5,.18) 66%,rgba(2,4,7,.24) 100%),
+    linear-gradient(180deg,rgba(2,4,7,.03),rgba(2,4,7,.12) 54%,rgba(2,4,7,.94) 100%),
+    url('/assets/hero-stadium-clean-desktop.png') center 56%/cover no-repeat!important;
+  display:flex!important;
+  align-items:flex-end!important;
+}
+
+.v101-logged-hero{
+  min-height:285px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.76),rgba(3,5,8,.28) 45%,rgba(3,5,8,.10)),
+    linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.77) 100%),
+    url('/assets/hero-stadium-clean-desktop.png') center 58%/cover no-repeat!important;
+  position:relative!important;
+}
+
+/* Remove the old baked-image-oriented composition */
+.v101-public-hero .public-hero-copy{
+  max-width:620px!important;
+  margin:0 0 22px 22px!important;
+  padding:12px 14px 10px!important;
+  background:linear-gradient(90deg,rgba(3,5,8,.79),rgba(3,5,8,.44),transparent)!important;
+  border-left:2px solid rgba(223,31,49,.70)!important;
+}
+.v101-public-hero .public-hero-copy h1{
+  font-size:clamp(40px,4.7vw,66px)!important;
+  margin:3px 0 5px!important;
+}
+
+/* Real crest + separate team identity */
+.v101-hero-club-identity{
+  position:absolute;
+  right:4.2%;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:4;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  pointer-events:none;
+}
+.v101-hero-club-identity.public{
+  right:4%;
+  top:49%;
+}
+
+.v101-hero-crest-wrap{
+  position:relative;
+  width:165px;
+  height:165px;
+  display:grid;
+  place-items:center;
+}
+.v101-hero-crest-wrap img{
+  width:138px;
+  height:138px;
+  object-fit:contain;
+  position:relative;
+  z-index:2;
+  filter:
+    drop-shadow(0 0 10px rgba(255,47,63,.48))
+    drop-shadow(0 0 23px rgba(241,201,92,.20));
+}
+.v101-hero-crest-fire{
+  position:absolute;
+  inset:7px;
+  z-index:1;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 60%,rgba(255,197,75,.28),transparent 28%),
+    radial-gradient(circle at 50% 50%,rgba(228,24,43,.46),transparent 58%);
+  filter:blur(13px);
+  box-shadow:
+    0 -18px 35px rgba(234,32,48,.38),
+    22px 0 34px rgba(246,115,43,.18),
+    -22px 0 34px rgba(226,23,43,.18);
+}
+.v101-hero-crest-fire:before,
+.v101-hero-crest-fire:after{
+  content:"";
+  position:absolute;
+  bottom:15%;
+  width:42%;
+  height:58%;
+  background:linear-gradient(180deg,rgba(255,168,61,.05),rgba(231,26,44,.48));
+  filter:blur(12px);
+  border-radius:65% 35% 62% 38%;
+  transform:rotate(-14deg);
+}
+.v101-hero-crest-fire:before{left:5%}
+.v101-hero-crest-fire:after{right:5%;transform:rotate(14deg)}
+
+.v101-hero-identity-copy{
+  min-width:225px;
+  text-align:right;
+  text-shadow:0 3px 18px rgba(0,0,0,.84);
+}
+.v101-hero-identity-copy span{
+  display:block;
+  color:#e6cf82;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.20em;
+}
+.v101-hero-identity-copy strong{
+  display:block;
+  color:#fff;
+  font-size:25px;
+  line-height:1;
+  margin-top:7px;
+  letter-spacing:.035em;
+}
+.v101-hero-identity-copy b{
+  display:block;
+  color:#f1c95c;
+  font-size:48px;
+  line-height:.92;
+  margin-top:3px;
+  letter-spacing:.05em;
+}
+
+/* Make the public copy and crest breathe */
+@media (min-width:1000px){
+  .v101-public-hero .public-hero-copy{
+    max-width:560px!important;
+  }
+}
+
+/* MOBILE: use clean vertical art and stack identity cleanly */
+@media (max-width:760px){
+  .v101-public-hero{
+    min-height:390px!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.02),rgba(2,4,7,.10) 38%,rgba(2,4,7,.87) 79%,rgba(2,4,7,.98)),
+      url('/assets/hero-stadium-clean-mobile.png') center 62%/cover no-repeat!important;
+    align-items:flex-end!important;
+  }
+  .v101-logged-hero{
+    min-height:255px!important;
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.18) 50%,rgba(3,5,8,.88)),
+      url('/assets/hero-stadium-clean-mobile.png') center 61%/cover no-repeat!important;
+  }
+
+  .v101-hero-club-identity,
+  .v101-hero-club-identity.public{
+    top:25px;
+    left:14px;
+    right:14px;
+    transform:none;
+    justify-content:center;
+    gap:8px;
+  }
+  .v101-hero-crest-wrap{
+    width:92px;
+    height:92px;
+  }
+  .v101-hero-crest-wrap img{
+    width:78px;
+    height:78px;
+  }
+  .v101-hero-identity-copy{
+    min-width:0;
+    text-align:left;
+  }
+  .v101-hero-identity-copy span{
+    font-size:4.8px;
+    letter-spacing:.12em;
+  }
+  .v101-hero-identity-copy strong{
+    font-size:16px;
+    margin-top:4px;
+  }
+  .v101-hero-identity-copy b{
+    font-size:30px;
+  }
+
+  .v101-public-hero .public-hero-copy{
+    margin:0 8px 13px!important;
+    padding:8px 10px 7px!important;
+    max-width:none!important;
+  }
+  .v101-public-hero .public-hero-copy h1{
+    font-size:28px!important;
+  }
+}
+
+/* Mid desktop / laptop */
+@media (min-width:761px) and (max-width:1180px){
+  .v101-hero-club-identity{
+    right:2.5%;
+  }
+  .v101-hero-crest-wrap{
+    width:130px;height:130px;
+  }
+  .v101-hero-crest-wrap img{
+    width:110px;height:110px;
+  }
+  .v101-hero-identity-copy strong{font-size:20px}
+  .v101-hero-identity-copy b{font-size:40px}
+}
+
+
+/* =========================================================
+   V10.1.8 — MOBILE HERO REDESIGN
+   Mobile hero becomes a compact stadium banner, not a poster.
+   ========================================================= */
+
+@media (max-width:760px){
+
+  /* LOGGED HOME HERO — compact, cinematic strip */
+  .v101-logged-hero{
+    min-height:185px!important;
+    height:185px!important;
+    border-radius:0!important;
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.06),rgba(3,5,8,.18) 46%,rgba(3,5,8,.89)),
+      linear-gradient(90deg,rgba(3,5,8,.28),transparent 52%,rgba(9,3,5,.22)),
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 72%/cover no-repeat!important;
+    box-shadow:
+      inset 0 -58px 70px rgba(0,0,0,.62),
+      0 10px 25px rgba(0,0,0,.30)!important;
+    margin-bottom:10px!important;
+  }
+
+  /* Small identity — no giant crest */
+  .v101-logged-hero .v101-hero-club-identity{
+    top:auto!important;
+    left:14px!important;
+    right:14px!important;
+    bottom:12px!important;
+    transform:none!important;
+    justify-content:flex-start!important;
+    gap:9px!important;
+  }
+
+  .v101-logged-hero .v101-hero-crest-wrap{
+    width:56px!important;
+    height:56px!important;
+    flex:0 0 56px!important;
+  }
+  .v101-logged-hero .v101-hero-crest-wrap img{
+    width:50px!important;
+    height:50px!important;
+  }
+  .v101-logged-hero .v101-hero-crest-fire{
+    inset:5px!important;
+    opacity:.55!important;
+    filter:blur(8px)!important;
+  }
+  .v101-logged-hero .v101-hero-identity-copy{
+    text-align:left!important;
+    min-width:0!important;
+    padding:7px 10px 6px!important;
+    background:linear-gradient(90deg,rgba(4,6,9,.72),rgba(4,6,9,.28),transparent)!important;
+    border-left:2px solid rgba(223,31,49,.72)!important;
+  }
+  .v101-logged-hero .v101-hero-identity-copy span{
+    font-size:4.2px!important;
+    letter-spacing:.11em!important;
+  }
+  .v101-logged-hero .v101-hero-identity-copy strong{
+    font-size:14px!important;
+    margin-top:2px!important;
+  }
+  .v101-logged-hero .v101-hero-identity-copy b{
+    font-size:24px!important;
+    line-height:.9!important;
+    margin-top:2px!important;
+  }
+
+  /* PUBLIC HERO — still stronger, but not oversized */
+  .v101-public-hero{
+    min-height:285px!important;
+    height:auto!important;
+    padding:0!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.03),rgba(2,4,7,.13) 38%,rgba(2,4,7,.88) 79%,rgba(2,4,7,.98)),
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 68%/cover no-repeat!important;
+  }
+
+  .v101-public-hero .v101-hero-club-identity.public{
+    top:14px!important;
+    left:14px!important;
+    right:14px!important;
+    transform:none!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+  }
+  .v101-public-hero .v101-hero-crest-wrap{
+    width:54px!important;
+    height:54px!important;
+  }
+  .v101-public-hero .v101-hero-crest-wrap img{
+    width:48px!important;
+    height:48px!important;
+  }
+  .v101-public-hero .v101-hero-identity-copy{
+    text-align:left!important;
+  }
+  .v101-public-hero .v101-hero-identity-copy span{
+    font-size:4px!important;
+  }
+  .v101-public-hero .v101-hero-identity-copy strong{
+    font-size:13px!important;
+    margin-top:2px!important;
+  }
+  .v101-public-hero .v101-hero-identity-copy b{
+    font-size:22px!important;
+  }
+
+  .v101-public-hero .public-hero-copy{
+    margin:0 10px 10px!important;
+    padding:8px 9px!important;
+    max-width:none!important;
+    background:linear-gradient(90deg,rgba(3,5,8,.76),rgba(3,5,8,.32),transparent)!important;
+  }
+  .v101-public-hero .public-hero-copy h1{
+    font-size:25px!important;
+    margin:3px 0 4px!important;
+  }
+  .v101-public-hero .public-hero-copy p{
+    font-size:6.6px!important;
+    max-width:88%!important;
+  }
+  .v101-public-hero .public-hero-actions{
+    margin-top:8px!important;
+    gap:5px!important;
+  }
+  .v101-public-hero .public-hero-actions a{
+    min-height:33px!important;
+    font-size:5.2px!important;
+  }
+
+  /* keep the next match visually dominant on mobile */
+  .v82-match-rsvp-grid{
+    margin-top:0!important;
+  }
+
+  /* Never let hero overflow sideways */
+  .v101-logged-hero,
+  .v101-public-hero{
+    width:100%!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+}
+
+
+/* =========================================================
+   V10.2 — VISUAL BROADCAST MEGA PACK
+   Target: stadium / ultras / TV-broadcast premium appearance.
+   ========================================================= */
+
+:root{
+  --v102-red:#ed1f2f;
+  --v102-red2:#7a0c17;
+  --v102-gold:#f1c95c;
+  --v102-gold2:#a88732;
+  --v102-ink:#06080b;
+  --v102-panel:rgba(7,10,14,.90);
+  --v102-line:rgba(241,201,92,.20);
+}
+
+/* ---------------------------
+   GLOBAL BROADCAST LANGUAGE
+   --------------------------- */
+.v101-stadium-hub{
+  background:
+    linear-gradient(180deg,rgba(3,5,8,.90),rgba(3,5,8,.82)),
+    url('/assets/stadium3.png') center top/cover fixed no-repeat!important;
+}
+
+.v8-main{
+  position:relative;
+}
+.v8-main:before{
+  content:"";
+  position:fixed;
+  inset:0 0 0 92px;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 10% 18%,rgba(230,26,43,.13),transparent 24%),
+    radial-gradient(circle at 88% 14%,rgba(241,201,92,.055),transparent 22%),
+    linear-gradient(180deg,transparent,rgba(0,0,0,.16));
+}
+
+/* broadcast frame */
+.v8-section-page,
+.v82-match-rsvp-grid,
+.v891-team-clock-row,
+.v8-dashboard-grid,
+.v8-stats-row{
+  position:relative;
+}
+
+.v8-section-page:before{
+  content:"";
+  position:absolute;
+  inset:-8px -8px auto;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--v102-red),rgba(241,201,92,.52),transparent);
+  box-shadow:0 0 18px rgba(237,31,47,.15);
+}
+
+/* ---------------------------
+   HOME — like a club broadcast hub
+   --------------------------- */
+.v101-logged-hero{
+  min-height:380px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.78),rgba(3,5,8,.18) 56%,rgba(3,5,8,.22)),
+    linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.24) 55%,rgba(3,5,8,.88)),
+    url('/assets/broadcast-home-banner.jpg') center 46%/cover no-repeat!important;
+  box-shadow:inset 0 -110px 110px rgba(0,0,0,.54),0 18px 60px rgba(0,0,0,.42)!important;
+}
+
+.v101-logged-hero:before{
+  content:"TRADYCJA  •  CHARAKTER  •  PASJA  •  MOKOTÓW";
+  position:absolute;
+  left:24px;
+  bottom:14px;
+  color:#f1c95c;
+  font-size:7px;
+  letter-spacing:.30em;
+  font-weight:1000;
+  text-shadow:0 2px 16px #000;
+}
+
+.v101-logged-hero .v101-hero-club-identity{
+  right:4%!important;
+}
+.v101-logged-hero .v101-hero-identity-copy strong{
+  font-size:30px!important;
+}
+.v101-logged-hero .v101-hero-identity-copy b{
+  font-size:58px!important;
+}
+
+/* bigger editorial hierarchy */
+.v82-match-rsvp-grid{
+  margin-top:14px!important;
+}
+.v8-match-card.v101-logged-match{
+  min-height:315px;
+  background:
+    linear-gradient(145deg,rgba(6,8,11,.76),rgba(12,5,8,.86)),
+    url('/assets/stadium.png') center 65%/cover no-repeat!important;
+  border-color:rgba(241,201,92,.26)!important;
+}
+.v8-match-card.v101-logged-match:before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:3px;
+  background:linear-gradient(90deg,var(--v102-red),var(--v102-gold),transparent 72%);
+  box-shadow:0 0 18px rgba(237,31,47,.40);
+}
+.v8-vs strong{
+  text-shadow:0 0 18px rgba(241,201,92,.16);
+}
+.v8-red-cta{
+  background:linear-gradient(90deg,#ca1625,#f02b38)!important;
+  border:1px solid rgba(255,98,109,.24)!important;
+  box-shadow:0 10px 30px rgba(218,23,42,.20)!important;
+}
+
+.v8-stats-row .v8-stat{
+  min-height:88px;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(237,31,47,.13),transparent 34%),
+    linear-gradient(145deg,rgba(8,10,14,.92),rgba(11,7,9,.94))!important;
+}
+.v8-stats-row .v8-stat b{
+  color:var(--v102-gold)!important;
+  text-shadow:0 0 14px rgba(241,201,92,.10);
+}
+
+/* richer dashboard cards */
+.v8-dashboard-grid .v8-panel,
+.v891-team-clock-row .devil-card{
+  border-color:rgba(241,201,92,.18)!important;
+  background:
+    linear-gradient(145deg,rgba(7,10,14,.90),rgba(10,7,9,.94))!important;
+  box-shadow:0 20px 52px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.02)!important;
+}
+
+/* ---------------------------
+   TEAM PAGE
+   --------------------------- */
+.v102-team-hero{
+  min-height:460px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.86),rgba(3,5,8,.42) 42%,rgba(3,5,8,.12)),
+    url('/assets/broadcast-home-banner.jpg') center 48%/cover no-repeat!important;
+}
+.v102-team-hero .v871-team-copy{
+  max-width:600px;
+}
+.v102-team-hero .v871-team-copy h2{
+  font-size:clamp(54px,6vw,92px)!important;
+  line-height:.88!important;
+}
+.v102-team-hero .v871-team-crest{
+  filter:drop-shadow(0 0 24px rgba(237,31,47,.26));
+}
+
+/* leader cards like premium player cards */
+.v871-team-leader{
+  background:
+    radial-gradient(circle at 80% 10%,rgba(241,201,92,.10),transparent 30%),
+    linear-gradient(145deg,#0a0d12,#09070a)!important;
+}
+.v871-team-leader-photo{
+  border:1px solid rgba(241,201,92,.22)!important;
+  box-shadow:inset 0 0 40px rgba(237,31,47,.06),0 12px 38px rgba(0,0,0,.38)!important;
+}
+
+/* ---------------------------
+   TRAINING CENTER — PERFORMANCE LAB
+   --------------------------- */
+.v900-training-center{
+  padding-top:0!important;
+}
+.v900-training-hero{
+  min-height:370px!important;
+  display:grid!important;
+  grid-template-columns:1.4fr .9fr!important;
+  align-items:end!important;
+  padding:38px 40px 32px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.72),rgba(3,5,8,.20) 58%,rgba(3,5,8,.22)),
+    linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.22) 60%,rgba(3,5,8,.84)),
+    url('/assets/broadcast-training-banner.jpg') center 45%/cover no-repeat!important;
+  border-color:rgba(241,201,92,.26)!important;
+}
+.v900-training-hero-bg{display:none!important}
+.v900-training-copy{
+  align-self:end;
+}
+.v900-training-copy h2{
+  font-size:clamp(52px,5.6vw,88px)!important;
+  line-height:.86!important;
+  margin:6px 0 12px!important;
+  text-shadow:0 4px 22px rgba(0,0,0,.76);
+}
+.v900-training-copy p{
+  max-width:620px!important;
+  color:#e0e6eb!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+.v900-training-copy:after{
+  content:"Praca. Charakter. Wyniki.";
+  display:block;
+  margin-top:12px;
+  color:#f1c95c;
+  font-family:Georgia,serif;
+  font-style:italic;
+  font-size:22px;
+}
+.v900-training-kpis{
+  align-self:end;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:10px!important;
+}
+.v900-training-kpis>div{
+  min-height:90px;
+  padding:14px!important;
+  background:linear-gradient(145deg,rgba(5,8,11,.82),rgba(15,7,9,.90))!important;
+  border:1px solid rgba(241,201,92,.22)!important;
+  box-shadow:inset 0 0 24px rgba(237,31,47,.04)!important;
+}
+.v900-training-kpis strong{
+  color:#f1c95c!important;
+  font-size:32px!important;
+}
+
+/* training ranking cards */
+.v900-training-card{
+  background:
+    linear-gradient(145deg,rgba(6,9,13,.94),rgba(9,7,10,.96))!important;
+  border-color:rgba(241,201,92,.18)!important;
+}
+.v900-training-ranking button{
+  border-bottom:1px solid rgba(255,255,255,.055)!important;
+  background:linear-gradient(90deg,rgba(255,255,255,.015),transparent)!important;
+}
+.v900-training-ranking button:hover{
+  background:linear-gradient(90deg,rgba(237,31,47,.08),rgba(241,201,92,.02))!important;
+}
+.v900-training-ranking .rank{
+  color:#f1c95c!important;
+  font-size:19px!important;
+}
+.v900-chemistry{
+  background:
+    linear-gradient(145deg,rgba(6,9,13,.90),rgba(12,6,9,.94)),
+    url('/assets/stadium2.png') center/cover no-repeat!important;
+}
+.v900-pair-card{
+  background:linear-gradient(145deg,rgba(5,8,11,.90),rgba(14,7,10,.94))!important;
+  border:1px solid rgba(241,201,92,.16)!important;
+}
+.v900-pair-card strong{
+  color:#77e38b!important;
+  text-shadow:0 0 12px rgba(58,220,105,.16);
+}
+
+/* ---------------------------
+   STATS — DATA STUDIO
+   --------------------------- */
+.v890-stats-hero{
+  min-height:355px!important;
+  display:grid!important;
+  grid-template-columns:1.25fr .95fr!important;
+  align-items:end!important;
+  padding:36px 40px 30px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.68),rgba(3,5,8,.24) 56%,rgba(3,5,8,.34)),
+    linear-gradient(180deg,rgba(3,5,8,.04),rgba(3,5,8,.24) 60%,rgba(3,5,8,.86)),
+    url('/assets/broadcast-stats-banner.jpg') center 44%/cover no-repeat!important;
+}
+.v890-stats-hero-bg{display:none!important}
+.v890-stats-copy{
+  align-self:end;
+}
+.v890-stats-copy h2{
+  font-size:clamp(52px,5.8vw,90px)!important;
+  line-height:.90!important;
+  margin:6px 0 10px!important;
+}
+.v890-stats-copy p{
+  color:#d5dce4!important;
+}
+.v890-stats-hero-metrics{
+  display:grid!important;
+  grid-template-columns:repeat(2,1fr)!important;
+  gap:10px!important;
+}
+.v890-stats-hero-metrics>div{
+  min-height:94px;
+  padding:14px!important;
+  border:1px solid rgba(241,201,92,.22)!important;
+  background:linear-gradient(145deg,rgba(9,7,9,.87),rgba(5,8,11,.88))!important;
+}
+.v890-stats-hero-metrics strong{
+  color:#f1c95c!important;
+  font-size:34px!important;
+}
+.v890-form-strip{
+  grid-column:1/-1;
+}
+
+/* Data-studio KPI and panels */
+.v890-kpi{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(237,31,47,.10),transparent 30%),
+    linear-gradient(145deg,#080b10,#09070a)!important;
+}
+.v890-main-grid{
+  gap:14px!important;
+}
+.v890-podium,
+.v890-records,
+.v890-ranking-hub,
+.v890-compare,
+.v890-team-form{
+  border-color:rgba(241,201,92,.18)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.32)!important;
+}
+.v890-podium{
+  background:
+    linear-gradient(145deg,rgba(6,9,13,.91),rgba(10,7,9,.94)),
+    url('/assets/stadium.png') center 70%/cover no-repeat!important;
+}
+.v890-podium-player.place-1{
+  box-shadow:0 0 0 1px rgba(241,201,92,.42),0 0 32px rgba(241,201,92,.09)!important;
+}
+
+/* ---------------------------
+   HALL OF FAME — trophy wall
+   --------------------------- */
+.v102-hof-hero{
+  min-height:340px!important;
+  padding:38px 40px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.76),rgba(3,5,8,.22) 58%,rgba(3,5,8,.26)),
+    linear-gradient(180deg,rgba(3,5,8,.03),rgba(3,5,8,.24) 60%,rgba(3,5,8,.88)),
+    url('/assets/broadcast-hof-banner.jpg') center 43%/cover no-repeat!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:space-between!important;
+}
+.v102-hof-hero h2{
+  font-size:clamp(54px,6vw,92px)!important;
+  line-height:.9!important;
+  margin:5px 0 9px!important;
+}
+.v102-hof-hero blockquote{
+  max-width:330px;
+  margin:0 0 4px auto;
+  padding:14px 16px;
+  color:#eee1b1;
+  background:rgba(5,7,10,.54);
+  border-left:2px solid #f1c95c;
+  font:italic 17px/1.35 Georgia,serif;
+}
+.v10-hof-team article{
+  min-height:105px;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(241,201,92,.08),transparent 32%),
+    linear-gradient(145deg,#080b10,#0a0709)!important;
+  border:1px solid rgba(241,201,92,.17)!important;
+}
+.v10-hof-team article b{
+  font-size:40px!important;
+  color:#f1c95c!important;
+}
+.v10-hof-grid{
+  gap:12px!important;
+}
+.v10-hof-grid>button{
+  min-height:315px!important;
+  text-align:left!important;
+  background:
+    linear-gradient(180deg,rgba(6,8,11,.42),rgba(6,8,11,.96)),
+    url('/assets/stadium.png') center 65%/cover no-repeat!important;
+  border-color:rgba(241,201,92,.21)!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.33)!important;
+}
+.v10-hof-grid>button .v10-avatar{
+  width:104px!important;height:130px!important;
+  border:1px solid rgba(241,201,92,.30)!important;
+  box-shadow:0 0 22px rgba(237,31,47,.10)!important;
+}
+.v10-hof-grid>button>b{
+  font-size:38px!important;
+  color:#f1c95c!important;
+}
+.v10-seasons,
+.v10-month,
+.v10-duos{
+  background:
+    linear-gradient(145deg,rgba(7,10,14,.93),rgba(11,7,9,.95))!important;
+  border-color:rgba(241,201,92,.18)!important;
+}
+
+/* ---------------------------
+   COMMON CARD DETAILING
+   --------------------------- */
+.v8-panel-title,
+.v101-card-title,
+.v890-ranking-head,
+.v900-chemistry-head{
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+.v8-panel-title svg,
+.v101-card-title svg{
+  color:#f1c95c!important;
+}
+
+.devil-card,
+.v8-panel,
+.v8-stat,
+.v890-kpi,
+.v900-training-card{
+  position:relative;
+}
+.devil-card:after,
+.v8-panel:after,
+.v890-kpi:after,
+.v900-training-card:after{
+  content:"";
+  position:absolute;
+  width:24px;height:24px;
+  right:0;bottom:0;
+  border-right:1px solid rgba(241,201,92,.32);
+  border-bottom:1px solid rgba(241,201,92,.32);
+  pointer-events:none;
+}
+
+/* ---------------------------
+   RESPONSIVE — keep it premium, not cramped
+   --------------------------- */
+@media (max-width:1100px){
+  .v900-training-hero,
+  .v890-stats-hero{
+    grid-template-columns:1fr!important;
+  }
+  .v900-training-kpis,
+  .v890-stats-hero-metrics{
+    grid-template-columns:repeat(4,1fr)!important;
+    margin-top:18px!important;
+  }
+  .v102-hof-hero blockquote{display:none}
+}
+
+@media (max-width:760px){
+  .v8-main:before{inset:0!important}
+
+  .v101-logged-hero{
+    min-height:190px!important;
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.06),rgba(3,5,8,.18) 44%,rgba(3,5,8,.90)),
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 70%/cover no-repeat!important;
+  }
+  .v101-logged-hero:before{display:none!important}
+
+  .v900-training-hero,
+  .v890-stats-hero,
+  .v102-hof-hero,
+  .v102-team-hero{
+    min-height:280px!important;
+    padding:20px 16px 16px!important;
+    display:block!important;
+  }
+
+  .v900-training-copy h2,
+  .v890-stats-copy h2,
+  .v102-hof-hero h2,
+  .v102-team-hero .v871-team-copy h2{
+    font-size:36px!important;
+    line-height:.92!important;
+  }
+
+  .v900-training-kpis,
+  .v890-stats-hero-metrics{
+    grid-template-columns:1fr 1fr!important;
+    gap:7px!important;
+  }
+  .v900-training-kpis>div,
+  .v890-stats-hero-metrics>div{
+    min-height:68px!important;
+    padding:9px!important;
+  }
+  .v900-training-kpis strong,
+  .v890-stats-hero-metrics strong{
+    font-size:24px!important;
+  }
+
+  .v102-hof-hero blockquote{display:none!important}
+
+  .v10-hof-grid>button{
+    min-height:250px!important;
+  }
+
+  .v8-stats-row{
+    grid-template-columns:repeat(3,1fr)!important;
+  }
+
+  /* no jumpiness on touch */
+  .devil-card,
+  .v8-panel,
+  .v890-kpi,
+  .v900-training-card{
+    transform:none!important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+  }
+}
