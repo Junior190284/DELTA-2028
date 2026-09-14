@@ -3883,3 +3883,203 @@ button.v85-summary-card{color:inherit;cursor:pointer}
     background-position:center 62%!important;
   }
 }
+
+
+/* =========================================================
+   V10.1.4 — MOBILE HORIZONTAL LOCK
+   Prevent small left/right movement on touch devices.
+   ========================================================= */
+
+html, body{
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+#__next,
+body > main,
+.public-team-site,
+.v101-public-home,
+.v101-stadium-hub{
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+@media (max-width:760px){
+  html,body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden!important;
+    overscroll-behavior-x:none;
+    touch-action:pan-y pinch-zoom;
+  }
+
+  .public-team-site,
+  .v101-public-home,
+  .v101-stadium-hub,
+  .section,
+  .v8-section-page,
+  .devil-card,
+  .devil-tile,
+  .v8-panel,
+  .v8-match-card,
+  .v101-public-match-hub,
+  .v890-stats-center,
+  .v900-training-center{
+    box-sizing:border-box!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+
+  /* Pseudo/background layers must never become wider than viewport */
+  .public-team-site.v101-public-home:after,
+  .v101-stadium-hub:after,
+  .v890-stats-center:before,
+  .v900-training-center:before{
+    left:0!important;
+    right:0!important;
+    width:auto!important;
+    max-width:100%!important;
+    transform:none!important;
+  }
+
+  /* Avoid mobile sections escaping with negative margins/insets */
+  .v890-stats-center:before,
+  .v900-training-center:before{
+    inset:-10px 0!important;
+  }
+
+  .v101-stadium-hub .section:before,
+  .v101-public-home section:before{
+    left:0!important;
+    right:0!important;
+  }
+
+  /* Horizontal rows can scroll internally without moving the whole page */
+  .v8-side-nav,
+  .v890-metric-tabs,
+  .v101-live-ticker,
+  .v101-ticker-track{
+    max-width:100%!important;
+  }
+
+  .v8-side-nav{
+    overscroll-behavior-x:contain;
+  }
+
+  /* Images/video must stay inside cards */
+  img,video,canvas,svg{
+    max-width:100%;
+  }
+}
+
+
+/* =========================================================
+   V10.1.5 — NEW STADIUM HERO
+   Dedicated no-text stadium artwork for desktop and mobile.
+   ========================================================= */
+
+/* PUBLIC HERO */
+.v101-public-hero{
+  min-height:520px!important;
+  background:
+    linear-gradient(90deg,rgba(2,4,7,.94) 0%,rgba(2,4,7,.62) 38%,rgba(6,3,5,.26) 68%,rgba(2,4,7,.54) 100%),
+    linear-gradient(180deg,rgba(2,4,7,.02) 0%,rgba(2,4,7,.12) 44%,rgba(2,4,7,.96) 100%),
+    url('/assets/hero-stadium-desktop.png') center 56%/cover no-repeat!important;
+  border-color:rgba(231,32,49,.34)!important;
+  box-shadow:
+    inset 0 -120px 130px rgba(0,0,0,.60),
+    inset 0 0 100px rgba(213,19,38,.09),
+    0 20px 60px rgba(0,0,0,.45)!important;
+}
+
+/* Keep text readable and let the stadium remain visible */
+.v101-public-hero .public-hero-overlay{
+  background:
+    radial-gradient(circle at 18% 55%,rgba(0,0,0,.34),transparent 32%),
+    linear-gradient(90deg,rgba(3,5,8,.56),rgba(3,5,8,.14) 54%,rgba(3,5,8,.06))!important;
+}
+
+.v101-public-hero .public-hero-copy{
+  max-width:690px!important;
+}
+
+.v101-public-hero .public-hero-copy h1{
+  text-shadow:
+    0 4px 18px rgba(0,0,0,.82),
+    0 0 32px rgba(226,29,47,.12)!important;
+}
+
+/* LOGGED-IN HERO */
+.v101-logged-hero{
+  min-height:320px!important;
+  background:
+    linear-gradient(90deg,rgba(3,5,8,.86),rgba(3,5,8,.35) 46%,rgba(8,3,6,.18)),
+    linear-gradient(180deg,rgba(3,5,8,.04),rgba(3,5,8,.78) 100%),
+    url('/assets/hero-stadium-desktop.png') center 58%/cover no-repeat!important;
+  box-shadow:
+    inset 0 -90px 100px rgba(0,0,0,.52),
+    0 18px 48px rgba(0,0,0,.38)!important;
+}
+
+/* A touch more stadium atmosphere around the hero only */
+.v101-public-hero:after,
+.v101-logged-hero:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 8% 85%,rgba(222,21,41,.16),transparent 18%),
+    radial-gradient(circle at 92% 80%,rgba(245,179,64,.08),transparent 18%);
+  mix-blend-mode:screen;
+  opacity:.70;
+}
+
+/* MOBILE — dedicated vertical stadium artwork */
+@media (max-width:760px){
+  .v101-public-hero{
+    min-height:335px!important;
+    padding:18px 14px 16px!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.05) 0%,rgba(2,4,7,.20) 42%,rgba(2,4,7,.94) 86%,rgba(2,4,7,.99) 100%),
+      linear-gradient(90deg,rgba(6,2,4,.16),rgba(3,5,8,.02),rgba(6,2,4,.14)),
+      url('/assets/hero-stadium-mobile.png') center 66%/cover no-repeat!important;
+    box-shadow:
+      inset 0 -90px 100px rgba(0,0,0,.62),
+      0 14px 36px rgba(0,0,0,.42)!important;
+  }
+
+  .v101-public-hero .public-hero-overlay{
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.01),rgba(3,5,8,.10) 46%,rgba(3,5,8,.84) 86%)!important;
+  }
+
+  .v101-public-hero .public-hero-copy h1{
+    font-size:36px!important;
+    line-height:.94!important;
+    margin:6px 0!important;
+  }
+
+  .v101-public-hero .public-hero-copy p{
+    font-size:7px!important;
+    line-height:1.42!important;
+    max-width:92%!important;
+  }
+
+  .v101-logged-hero{
+    min-height:230px!important;
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.08),rgba(3,5,8,.32) 48%,rgba(3,5,8,.92)),
+      url('/assets/hero-stadium-mobile.png') center 66%/cover no-repeat!important;
+    box-shadow:
+      inset 0 -70px 90px rgba(0,0,0,.58),
+      0 12px 28px rgba(0,0,0,.32)!important;
+  }
+
+  /* Horizontal lock from V10.1.4 remains in effect */
+  .v101-public-hero,
+  .v101-logged-hero{
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+}

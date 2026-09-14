@@ -616,3 +616,32 @@ Najważniejsze:
 - mobile zachowuje stadion w kadrze, ale bez ciężkich animacji.
 
 Nie wymaga nowego SQL.
+
+
+## V10.1.4 — Mobile Horizontal Lock
+Poprawka lekkiego przesuwania całej strony w lewo/prawo na urządzeniach dotykowych.
+
+Zmiany:
+- blokada globalnego overflow-x,
+- touch-action ograniczone do pionowego scrolla + pinch zoom,
+- pseudo-elementy stadionowych teł nie wychodzą poza viewport,
+- usunięte mobilne ujemne boczne insets,
+- wszystkie główne sekcje/karty mają max-width:100% i min-width:0,
+- wewnętrzne poziome paski mogą przewijać się bez przesuwania całej strony.
+
+Nie wymaga nowego SQL.
+
+
+## V10.1.5 — New Stadium Hero
+
+Nowy hero bez napisów w grafice:
+- desktop: `public/assets/hero-stadium-desktop.png`
+- mobile: `public/assets/hero-stadium-mobile.png`
+
+Zmiany:
+- publiczny HOME korzysta z nowej grafiki stadionowej,
+- ekran po zalogowaniu również korzysta z nowej grafiki,
+- osobny pionowy kadr na telefon,
+- tekst DELTA / przyciski pozostają HTML-em, więc nic nie jest ucinane,
+- zachowana poprawka horizontal-lock z V10.1.4,
+- brak nowego SQL.
