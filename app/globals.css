@@ -3410,3 +3410,170 @@ button.v85-summary-card{color:inherit;cursor:pointer}
   .v101-cinematic-veil{display:none!important}
   .v101-view-enter,.v101-ultras-flare,.v101-terrace-haze,.v101-floodlight-glow,.v10-matchday-hero:after,.v101-public-hero:before{animation:none!important}
 }
+
+
+/* =========================================================
+   V10.1.2 — MOBILE STABILITY + HERO FIX
+   Mobile should feel cinematic, not restless.
+   ========================================================= */
+
+@media (max-width:760px){
+  /* 1) STOP CONTINUOUS PULSING/JUMPING ON MOBILE
+     Keep the atmosphere visually present, but static. */
+  .v101-stadium-beam,
+  .v101-smoke,
+  .v101-embers,
+  .v101-ultras-flare,
+  .v101-terrace-haze,
+  .v101-floodlight-glow,
+  .v101-hero-lights,
+  .v101-hero-flare,
+  .v101-public-hero:before,
+  .v101-public-hero .public-hero-copy h1 em:after,
+  .v101-match-center>em,
+  .v101-today-visual .pulse,
+  .v101-live-dot:before,
+  .v101-logged-hero:after,
+  .v10-matchday-hero:after,
+  .v890-podium-player,
+  .v900-chem-bar i,
+  .v101-public-home>section,
+  .v101-public-home>.v101-live-ticker,
+  .v8-match-card,
+  .v8-side-nav>button.active,
+  .v8-bell{
+    animation:none!important;
+  }
+
+  /* No full-screen cinematic transition on a phone.
+     Section change is instant/stable; active nav still gives feedback. */
+  .v101-cinematic-veil{display:none!important}
+  .v101-view-enter{animation:none!important;transform:none!important;filter:none!important}
+
+  /* Prevent hover transforms from firing on touch devices. */
+  .v101-stadium-hub .devil-card:hover,
+  .v101-stadium-hub .v8-panel:hover,
+  .v101-stat-tiles article:hover,
+  .v101-calendar-list>div:hover,
+  .v101-public-hero .public-hero-actions a:hover{
+    transform:none!important;
+  }
+
+  /* Make atmospheric layers cheaper and visually calmer. */
+  .v101-atmosphere{opacity:.20!important}
+  .v101-stadium-beam{opacity:.07!important}
+  .v101-smoke{opacity:.07!important;filter:blur(42px)!important}
+  .v101-embers{opacity:.06!important}
+  .v101-ultras-flare{opacity:.07!important}
+  .v101-terrace-haze{opacity:.08!important}
+  .v101-floodlight-glow{opacity:.06!important}
+
+  /* Ticker should not constantly move on a narrow screen. */
+  .v101-ticker-track{
+    animation:none!important;
+    min-width:0!important;
+    width:100%;
+    overflow:hidden;
+  }
+  .v101-ticker-track b{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:72vw;
+  }
+  .v101-ticker-track i,
+  .v101-ticker-track b:nth-of-type(n+2){display:none}
+
+  /* 2) PUBLIC HERO — USE A MOBILE-FRIENDLY IMAGE, NOT THE ULTRA-WIDE CROP */
+  .v101-public-hero{
+    min-height:350px!important;
+    display:flex!important;
+    align-items:flex-end!important;
+    padding:20px 15px 18px!important;
+    background:
+      linear-gradient(180deg,rgba(2,4,7,.15) 0%,rgba(3,5,8,.34) 38%,rgba(3,5,8,.96) 82%),
+      linear-gradient(90deg,rgba(14,3,7,.25),rgba(6,8,11,.08),rgba(20,4,8,.20)),
+      url('/assets/hero-banner.png') center 34%/cover no-repeat!important;
+    box-shadow:inset 0 -95px 110px rgba(0,0,0,.74),0 12px 34px rgba(0,0,0,.42)!important;
+  }
+  .v101-public-hero .public-hero-overlay{
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.02) 0%,rgba(3,5,8,.18) 46%,rgba(3,5,8,.96) 88%),
+      radial-gradient(circle at 50% 18%,rgba(229,29,47,.10),transparent 40%)!important;
+  }
+  .v101-public-hero .public-hero-copy{
+    width:100%;
+    max-width:none!important;
+    padding-top:0!important;
+  }
+  .v101-public-hero .public-hero-copy h1{
+    font-size:39px!important;
+    line-height:.92!important;
+    margin:7px 0 7px!important;
+    text-shadow:0 5px 22px rgba(0,0,0,.82)!important;
+  }
+  .v101-live-eyebrow{
+    font-size:5.7px!important;
+    letter-spacing:.11em!important;
+  }
+  .v101-public-hero .public-hero-copy p{
+    font-size:7.2px!important;
+    line-height:1.45!important;
+    max-width:95%!important;
+    color:#c0c7ce!important;
+  }
+  .v101-public-hero .public-hero-actions{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:6px!important;
+    margin-top:12px!important;
+  }
+  .v101-public-hero .public-hero-actions a{
+    min-height:37px!important;
+    justify-content:center!important;
+    padding:0 8px!important;
+    font-size:5.7px!important;
+    background:rgba(7,10,14,.86);
+    backdrop-filter:blur(7px);
+  }
+  .v101-public-hero .public-hero-actions a:first-child{
+    background:linear-gradient(90deg,#bd1422,#e31d2f)!important;
+  }
+
+  /* The "Dzieje się teraz" panel is redundant on mobile; ticker + smart clock
+     already carry the same information and the old panel made the hero too tall. */
+  .v101-hero-side-panel{display:none!important}
+
+  /* 3) LOGGED-IN HERO — SAME MOBILE CROPPING FIX */
+  .v101-logged-hero{
+    min-height:245px!important;
+    background:
+      linear-gradient(180deg,rgba(3,5,8,.12),rgba(3,5,8,.42) 46%,rgba(3,5,8,.93)),
+      url('/assets/hero-banner.png') center 34%/cover no-repeat!important;
+    box-shadow:inset 0 -75px 95px rgba(0,0,0,.62),0 12px 30px rgba(0,0,0,.35)!important;
+  }
+  .v101-logged-hero:before{
+    font-size:4.5px!important;
+    letter-spacing:.12em!important;
+    bottom:5px!important;
+    padding:4px 0!important;
+  }
+
+  /* Mobile browsers can stutter on fixed backgrounds. */
+  .v101-public-stats-zone{
+    background-attachment:scroll!important;
+  }
+
+  /* A calmer card language on touch. */
+  .devil-card,.devil-tile,.v8-panel{
+    transition:border-color .15s ease,box-shadow .15s ease!important;
+  }
+}
+
+/* Pointer-based hover effects only where a real mouse exists. */
+@media (hover:hover) and (pointer:fine){
+  .v101-stadium-hub .devil-card:hover,
+  .v101-stadium-hub .v8-panel:hover{
+    transform:translateY(-2px);
+  }
+}

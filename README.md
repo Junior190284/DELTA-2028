@@ -581,3 +581,20 @@ Zobacz `V10_1_START_HERE.md`. V10.1 dodaje przebudowany publiczny HOME, Fire Rev
 
 ## V10.1.1 — Stadium / Ultras Visual Direction
 Visual patch wzmacniający nocny stadionowy charakter aplikacji bez zmiany danych i SQL. Stary transition bar został usunięty i zastąpiony krótkim cinematic crossfade + smoke/light sweep.
+
+
+## V10.1.2 — Mobile Stability + Hero Fix
+
+Poprawki mobilne:
+- wyłączone ciągłe pulsowanie/skalowanie/dymne animacje na telefonach,
+- wyłączone pełnoekranowe przejście między zakładkami na mobile,
+- brak hover-transform na urządzeniach dotykowych,
+- ticker na mobile jest statyczny i nie przesuwa całego układu,
+- publiczny hero używa teraz pionowo/praktyczniej kadrowanego `hero-banner.png`,
+- zmniejszona wysokość hero, większa czytelność treści,
+- ukryty powtarzający się panel „Dzieje się teraz” wewnątrz hero na telefonie,
+- poprawiony hero po zalogowaniu,
+- wyłączone `background-attachment: fixed` na mobile dla płynniejszego scrolla.
+
+Desktop zachowuje pełne efekty V10.1.1.
+Nie wymaga nowego SQL.
