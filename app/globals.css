@@ -4894,3 +4894,265 @@ body > main,
 .v101-mobile-matchday-strip:not(.show){
   display:none;
 }
+
+/* =========================================================
+   V10.2 — VISUAL REFINEMENT PACK
+   Public hero redesign, calmer composition, stronger tile atmosphere.
+   ========================================================= */
+
+.v102-public-hero{
+  min-height:auto!important;
+  padding:26px!important;
+  border:1px solid rgba(229,29,47,.28)!important;
+  background:
+    radial-gradient(circle at 10% 18%,rgba(255,164,52,.12),transparent 18%),
+    radial-gradient(circle at 80% 22%,rgba(227,29,47,.16),transparent 20%),
+    linear-gradient(135deg,rgba(6,9,13,.96),rgba(18,7,9,.92))!important;
+  overflow:hidden!important;
+}
+.v102-public-hero .public-hero-overlay{
+  background:
+    linear-gradient(90deg,rgba(4,6,9,.88),rgba(4,6,9,.35) 44%,rgba(4,6,9,.10) 60%,rgba(4,6,9,.48)),
+    radial-gradient(circle at 70% 28%,rgba(229,29,47,.18),transparent 28%)!important;
+}
+.v102-hero-grid{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:minmax(340px, 1fr) minmax(460px, 740px);
+  gap:28px;
+  align-items:stretch;
+}
+.v102-hero-copy-block{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:22px 4px 6px 0!important;
+  margin:0!important;
+  max-width:none!important;
+  background:none!important;
+}
+.v102-hero-copy-block h1{
+  font-size:68px!important;
+  line-height:.92!important;
+  margin:12px 0 12px!important;
+}
+.v102-hero-copy-block p{
+  max-width:620px!important;
+  font-size:13px!important;
+  color:#a9b3bd!important;
+}
+.v102-hero-meta{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+  margin-top:16px;
+  margin-bottom:18px;
+}
+.v102-hero-meta span{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  padding:9px 12px;
+  border:1px solid rgba(241,201,92,.14);
+  background:linear-gradient(90deg,rgba(9,13,18,.86),rgba(18,8,12,.55));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+  font-size:10px;
+  color:#dde4ea;
+}
+.v102-hero-art{
+  position:relative;
+  min-height:360px;
+  border:1px solid rgba(233,34,50,.22);
+  border-radius:18px;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(6,9,13,.04),rgba(6,9,13,.28) 54%,rgba(6,9,13,.7)),
+    url('/assets/v102-hero-public-desktop.png') center center/cover no-repeat;
+  box-shadow:0 30px 80px rgba(0,0,0,.34), inset 0 -80px 90px rgba(0,0,0,.38);
+}
+.v102-hero-art:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(6,9,13,.00) 35%,rgba(6,9,13,.16) 100%);
+}
+.v102-hero-art-glow{
+  position:absolute;
+  inset:auto -8% -22% 30%;
+  height:54%;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(228,29,46,.18),transparent 62%);
+  filter:blur(10px);
+  pointer-events:none;
+}
+.v102-hero-art-card{
+  position:absolute;
+  right:22px;
+  bottom:22px;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:16px 18px 14px;
+  width:min(310px, calc(100% - 44px));
+  border:1px solid rgba(241,201,92,.18);
+  background:linear-gradient(180deg,rgba(7,10,14,.88),rgba(11,6,8,.82));
+  backdrop-filter:blur(3px);
+  box-shadow:0 16px 40px rgba(0,0,0,.34);
+}
+.v102-hero-art-card span{font-size:9px;letter-spacing:.18em;color:#f1c95c;font-weight:900}
+.v102-hero-art-card strong{font-size:30px;line-height:.95;color:#fff}
+.v102-hero-art-card b{font-size:38px;line-height:.9;color:#f1c95c}
+.v102-hero-art-card small{font-size:8px;color:#9ca7b1;letter-spacing:.12em}
+.v102-hero-bottom-strip{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-top:18px;
+}
+.v102-hero-bottom-strip>div{
+  min-height:84px;
+  padding:14px 16px;
+  border:1px solid rgba(241,201,92,.12);
+  background:linear-gradient(120deg,rgba(8,11,16,.92),rgba(17,7,10,.74));
+}
+.v102-hero-bottom-strip span{display:block;font-size:8px;letter-spacing:.16em;color:#f1c95c;font-weight:900;margin-bottom:4px}
+.v102-hero-bottom-strip b{display:block;font-size:17px;color:#fff;margin-bottom:3px}
+.v102-hero-bottom-strip small{font-size:9px;color:#96a1ab;line-height:1.4}
+
+.v102-public-home .devil-card,
+.v102-public-home .v101-public-match-hub{
+  position:relative;
+  overflow:hidden;
+}
+.v102-public-home .devil-card:before,
+.v102-public-home .v101-public-match-hub:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(135deg,rgba(229,29,47,.08),transparent 24%),
+    linear-gradient(315deg,rgba(241,201,92,.06),transparent 22%),
+    radial-gradient(circle at 88% 18%,rgba(255,162,63,.06),transparent 15%);
+}
+.v102-public-home .devil-card:hover,
+.v102-public-home .v101-public-match-hub:hover{
+  box-shadow:0 20px 56px rgba(0,0,0,.34),0 0 0 1px rgba(232,31,48,.12), inset 0 1px 0 rgba(255,255,255,.03)!important;
+}
+.v102-public-home .devil-card>* ,
+.v102-public-home .v101-public-match-hub>*{position:relative;z-index:1}
+
+.v102-public-home .v101-public-match-hub{
+  margin-top:12px!important;
+  background:
+    linear-gradient(180deg,rgba(9,13,18,.97),rgba(18,7,10,.95)),
+    url('/assets/stadium3.png') center bottom/cover no-repeat!important;
+}
+.v102-public-home .v101-match-stage{
+  padding:34px 26px 16px!important;
+  gap:18px!important;
+}
+.v102-public-home .v101-match-team b{font-size:18px!important;line-height:1.12!important}
+.v102-public-home .v101-match-center>strong{font-size:18px!important}
+.v102-public-home .v101-match-center>em{font-size:68px!important;line-height:.9!important}
+.v102-public-home .v101-match-tools-public{
+  grid-template-columns:minmax(240px,340px) minmax(240px,340px)!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  padding:0 26px 26px!important;
+}
+.v102-public-home .v101-match-cta{justify-content:center!important;min-height:74px!important}
+
+@media (max-width:1180px){
+  .v102-hero-grid{grid-template-columns:1fr}
+  .v102-hero-copy-block h1{font-size:54px!important}
+  .v102-hero-art{min-height:320px}
+}
+
+@media (max-width:760px){
+  .v102-public-hero{
+    padding:12px!important;
+    border-radius:18px!important;
+  }
+  .v102-hero-grid{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .v102-hero-copy-block{
+    padding:6px 2px 0!important;
+  }
+  .v102-hero-copy-block h1{
+    font-size:34px!important;
+    margin:8px 0 8px!important;
+  }
+  .v102-hero-copy-block p{
+    font-size:10px!important;
+    max-width:none!important;
+  }
+  .v102-hero-meta{
+    gap:6px;
+    margin-top:10px;
+    margin-bottom:12px;
+  }
+  .v102-hero-meta span{
+    width:100%;
+    font-size:8px;
+    padding:8px 10px;
+  }
+  .v102-public-hero .public-hero-actions{
+    gap:6px!important;
+    margin-top:0!important;
+  }
+  .v102-public-hero .public-hero-actions a{
+    flex:1 1 calc(50% - 6px);
+    min-width:0;
+    min-height:38px!important;
+    font-size:7px!important;
+    justify-content:center;
+  }
+  .v102-hero-art{
+    min-height:250px;
+    border-radius:16px;
+    background:
+      linear-gradient(180deg,rgba(6,9,13,.02),rgba(6,9,13,.20) 52%,rgba(6,9,13,.82)),
+      url('/assets/v102-hero-public-mobile.png') center 38%/cover no-repeat;
+  }
+  .v102-hero-art-card{
+    right:12px;
+    left:12px;
+    bottom:12px;
+    width:auto;
+    padding:12px 14px;
+  }
+  .v102-hero-art-card span{font-size:7px}
+  .v102-hero-art-card strong{font-size:20px}
+  .v102-hero-art-card b{font-size:28px}
+  .v102-hero-art-card small{font-size:7px}
+  .v102-hero-bottom-strip{
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:10px;
+  }
+  .v102-hero-bottom-strip>div{
+    min-height:auto;
+    padding:10px 12px;
+  }
+  .v102-hero-bottom-strip b{font-size:14px}
+  .v102-hero-bottom-strip small{font-size:8px}
+
+  .v102-public-home .v101-match-stage{
+    padding:18px 12px 10px!important;
+    gap:8px!important;
+  }
+  .v102-public-home .v101-match-center>em{font-size:50px!important}
+  .v102-public-home .v101-match-team b{font-size:12px!important}
+  .v102-public-home .v101-match-center>strong{font-size:12px!important}
+  .v102-public-home .v101-match-tools-public{
+    grid-template-columns:1fr!important;
+    padding:0 12px 14px!important;
+  }
+}

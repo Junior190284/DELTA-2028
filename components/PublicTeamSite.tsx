@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import StadiumFX from "./StadiumFX";
 import {
   Activity, ArrowUpRight, CalendarDays, ChevronRight, Clock3, Flame, Goal,
-  LockKeyhole, MapPin, Newspaper, Radio, Shield, Sparkles, Star, Target,
+  LockKeyhole, MapPin, Radio, Shield, Sparkles, Star, Target,
   Trophy, Users, Zap
 } from "lucide-react";
 
@@ -40,9 +40,16 @@ function countdown(target:Date,now:number){
   const ms=target.getTime()-now;
   if(ms<=0)return "TERAZ";
   const mins=Math.floor(ms/60000),days=Math.floor(mins/1440),hours=Math.floor((mins%1440)/60),m=mins%60;
-  if(days>0)return `${days}D ${hours}H`;
-  if(hours>0)return `${hours}H ${m}M`;
-  return `${Math.max(1,m)} MIN`;
+  if(days>0)return `${days} d ${hours} godz. ${m} min`;
+  if(hours>0)return `${hours} godz. ${m} min`;
+  return `${Math.max(1,m)} min`;
+}
+function shortCountdown(target:Date,now:number){
+  const ms=target.getTime()-now;
+  if(ms<=0)return "TERAZ";
+  const mins=Math.floor(ms/60000),days=Math.floor(mins/1440),hours=Math.floor((mins%1440)/60);
+  if(days>0)return `${days} d • ${hours} h`;
+  return `${Math.max(1,hours)} h`;
 }
 function Logo({team,size=72}:{team:string,size?:number}){
   const src=teamLogos[team];
@@ -98,7 +105,7 @@ export default function PublicTeamSite(props:{
     ...props.teamEvents.slice(0,8).map(e=>({id:`e-${e.id}`,date:e.event_date,time:e.start_time,title:e.title,type:e.event_type.toUpperCase(),location:e.location}))
   ].sort((a,b)=>`${a.date} ${a.time||""}`.localeCompare(`${b.date} ${b.time||""}`)).slice(0,6);
 
-  return <main className="public-team-site v101-public-home">
+  return <main className="public-team-site v101-public-home v102-public-home">
     <StadiumFX intro/>
 
     <header className="public-topbar v101-public-topbar">
@@ -112,36 +119,53 @@ export default function PublicTeamSite(props:{
       <Link href="/login" className="public-login"><LockKeyhole size={15}/> STREFA RODZICA</Link>
     </header>
 
-    <section id="top" className="public-hero v101-public-hero">
+    <section id="top" className="public-hero v101-public-hero v102-public-hero">
       <div className="public-hero-overlay"/>
-      <div className="v101-hero-lights"/>
-      <div className="v101-hero-flare"/>
-      <div className="v101-hero-club-identity public">
-        <div className="v101-hero-crest-wrap">
-          <span className="v101-hero-crest-fire"/>
-          <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
+      <div className="v102-hero-grid">
+        <div className="public-hero-copy v102-hero-copy-block">
+          <span className="v101-live-eyebrow"><Radio size={13}/> K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
+          <h1>DELTA <em>2018</em> GM</h1>
+          <p>Mecze, wyniki, wydarzenia i oficjalne informacje drużyny. Stadionowy Team Hub Diabełków — bardziej czytelny, żywy i w klubowym klimacie.</p>
+          <div className="v102-hero-meta">
+            <span>{nextMatch?`Najbliższy mecz • ${datePL(nextMatch.match_date)} • ${opponent(nextMatch)}`:"Terminarz gotowy na kolejne wydarzenia"}</span>
+            <span>{lastMatch?`Ostatni wynik • ${ours(lastMatch)}:${theirs(lastMatch)} z ${opponent(lastMatch)}`:"Pierwsze wyniki sezonu pojawią się tutaj"}</span>
+            <span>{latestClub?`Z klubu • ${latestClub.title}`:"Live info • aktualności i kalendarz drużyny"}</span>
+          </div>
+          <div className="public-hero-actions">
+            <a href="#mecz">NAJBLIŻSZY MECZ <ChevronRight size={15}/></a>
+            <a href="#kalendarz">KALENDARZ</a>
+            <a href="#klub">Z KLUBU</a>
+            <Link href="/login"><LockKeyhole size={14}/> STREFA RODZICA</Link>
+          </div>
         </div>
-        <div className="v101-hero-identity-copy">
-          <span>K.S. DELTA WARSZAWA</span>
-          <strong>GÓRNY MOKOTÓW</strong>
-          <b>2018</b>
+
+        <div className="v102-hero-art" aria-label="Stadionowa oprawa drużyny DELTA 2018 GM">
+          <div className="v102-hero-art-glow"/>
+          <div className="v102-hero-art-card">
+            <span>K.S. DELTA WARSZAWA</span>
+            <strong>GÓRNY MOKOTÓW</strong>
+            <b>2018</b>
+            <small>RACE • DYM • ŚWIATŁA • TRYBUNY</small>
+          </div>
         </div>
       </div>
-      <div className="public-hero-copy">
-        <span className="v101-live-eyebrow"><Radio size={13}/> K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
-        <h1>DELTA <em>2018</em> GM</h1>
-        <p>Mecze, wyniki, wydarzenia i oficjalne informacje drużyny. Stadionowy Team Hub Diabełków.</p>
-        <div className="public-hero-actions">
-          <a href="#mecz">NAJBLIŻSZY MECZ <ChevronRight size={15}/></a>
-          <a href="#kalendarz">KALENDARZ</a>
-          <a href="#klub">Z KLUBU</a>
-          <Link href="/login"><LockKeyhole size={14}/> STREFA RODZICA</Link>
+
+      <div className="v102-hero-bottom-strip">
+        <div>
+          <span>NEXT EVENT</span>
+          <b>{nextEvent?.title||"Brak wydarzenia"}</b>
+          <small>{nextEvent?`${shortCountdown(nextEvent.date,now)} • ${nextEvent.subtitle||datePL(nextEvent.date.toISOString().slice(0,10))}`:"Kalendarz odświeży się automatycznie."}</small>
         </div>
-      </div>
-      <div className="v101-hero-side-panel">
-        <span>DZIEJE SIĘ TERAZ</span>
-        <b>{nextEvent?.title||"Czekamy na kolejne wydarzenie"}</b>
-        <small>{nextEvent?`${countdown(nextEvent.date,now)} • ${nextEvent.subtitle||datePL(nextEvent.date.toISOString().slice(0,10))}`:"Aktualności pojawią się tutaj automatycznie."}</small>
+        <div>
+          <span>TRYBUNY</span>
+          <b>Stadionowy klimat</b>
+          <small>Dym, race, światła i czerwono-złote detale.</small>
+        </div>
+        <div>
+          <span>RODZICE</span>
+          <b>Pełny dostęp po zalogowaniu</b>
+          <small>Obecność, kalendarz, treningi i dane drużyny.</small>
+        </div>
       </div>
     </section>
 
