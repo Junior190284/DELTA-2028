@@ -715,23 +715,29 @@ export default function TeamHub(props:{
 
     <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
       {tab==="home"&&<>
-        <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
+        <section className="v8-hero v82-hero-clean v101-logged-hero v1022-start-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
-          <div className="v101-hero-club-identity">
-            <div className="v101-hero-crest-wrap">
-              <span className="v101-hero-crest-fire"/>
-              <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
-            </div>
-            <div className="v101-hero-identity-copy">
-              <span>K.S. DELTA WARSZAWA</span>
-              <strong>GÓRNY MOKOTÓW</strong>
-              <b>2018</b>
+          <div className="v1022-start-copy">
+            <span className="eyebrow gold">K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
+            <h1>DELTA <em>2018 GM</em></h1>
+            <h2>GÓRNY MOKOTÓW</h2>
+            <p>Diabełki z Mokotowa • jedna drużyna, wspólna historia.</p>
+            <div className="v1022-start-pills">
+              <span><Users size={16}/><b>{players.length}</b> zawodników</span>
+              <span><Goal size={16}/><b>{teamSummary.goals}</b> bramek</span>
+              <span><Star size={16}/><b>{teamSummary.assists}</b> asyst</span>
+              <span><Trophy size={16}/><b>{teamSummary.wins}</b> zwycięstw</span>
             </div>
           </div>
+          <div className="v1022-start-crest" aria-hidden="true">
+            <span className="v1022-crest-glow"/>
+            <img src="/teamlogos/gm.png" alt=""/>
+          </div>
+          <div className="v1022-start-motto">WIĘCEJ NIŻ KLUB</div>
         </section>
 
         {nextMatch&&<><section className="v82-match-rsvp-grid">
-          <article className="v8-match-card devil-card v101-logged-match">
+          <article className="v8-match-card devil-card v101-logged-match v1022-home-match">
             <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
             <div className="v8-match-stage">
               <div className="v8-team">

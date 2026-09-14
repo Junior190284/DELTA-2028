@@ -721,3 +721,7 @@ Najważniejsze zmiany:
 - poprawiona kompozycja HOME i sekcji Drużyna.
 
 Nie wymaga SQL.
+
+
+## V10.2.2 — Start Hero + HOF Refinement
+Redesign Start hero na wzór najlepiej ocenionej sekcji Hall of Fame. Pełny stadionowy kadr, brak uciętego tekstu, lepszy desktop/mobile, cleanup Treningów i Statystyk. Nie wymaga SQL.
