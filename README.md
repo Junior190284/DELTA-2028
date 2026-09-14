@@ -693,70 +693,16 @@ Poprawki:
 Nie wymaga SQL.
 
 
-## V10.2 — Visual Broadcast Mega Pack
-
-Duży lifting wizualny inspirowany zaakceptowanymi wizualizacjami:
-- HOME jak klubowy broadcast hub,
-- Centrum Treningowe jako Performance Lab,
-- Centrum Statystyk jako Data Studio,
-- Hall of Fame jako stadionowa ściana rekordów,
-- Drużyna z mocniejszym hero i premium kartami,
-- mocniejsze czerwono-złote ramki, światła, stadion i głębia,
-- lepsza hierarchia kafelków,
-- osobne dekoracyjne bannery wycięte z przygotowanych wizualizacji,
-- zachowane wcześniejsze poprawki mobile, kliknięcie logo -> Start, Training Center reliability itd.
-
-Nie wymaga nowego SQL.
-
-
-## V10.2.1 — Visual Density / Stadium Tune
-
-Dalsza poprawka po review screenshotów.
-Najważniejsze zmiany:
-- mniej pustych, ciemnych przestrzeni,
-- mocniejsze i czytelniejsze hero sekcji,
-- więcej stadium / premium / broadcast,
-- gęstszy układ w Treningach, Statystykach i Hall of Fame,
-- dodatkowe badge i storytelling w hero blokach,
-- poprawiona kompozycja HOME i sekcji Drużyna.
-
-Nie wymaga SQL.
-
-
-## V10.2.2 — Start Hero + HOF Refinement
-Redesign Start hero na wzór najlepiej ocenionej sekcji Hall of Fame. Pełny stadionowy kadr, brak uciętego tekstu, lepszy desktop/mobile, cleanup Treningów i Statystyk. Nie wymaga SQL.
-
-
-## V10.2.3 — Hero Layout Rescue
-
-Naprawa rozjechanego hero START z V10.2.2.
+## V10.1.9 — Mobile Polish
 
 Zmiany:
-- tło hero to czysta grafika stadionowa,
-- herb jest osobnym, kontrolowanym elementem,
-- tekst / statystyki / herb mają własne warstwy,
-- stała, bezpieczna kompozycja desktop,
-- osobna kompozycja mobile,
-- `overflow:hidden` i ograniczone rozmiary herbu,
-- brak ogromnego przyciętego logo,
-- zachowany kierunek wizualny Hall of Fame.
-
-Nie wymaga SQL.
-
-
-## V10.2.4 — Home Polish + Match Card + Tile Upgrade
-
-Hero V10.2.3 pozostaje bez przebudowy.
-
-Zmiany:
-- premium redesign bloku Najbliższy mecz,
-- nowy matchday status strip,
-- lepszy Zegar drużyny / Ważne,
-- sześć KPI dostało bardziej broadcastowy wygląd,
-- Dzieje się teraz i Ostatnie mecze są gęstsze i bardziej czytelne,
-- rankingi, cytat i club-identity card zostały dopracowane,
-- Cel drużyny / seria / Z klubu / Najlepsi w sezonie otrzymały spójniejszy styl,
-- dolne kafelki również dostały premium polish,
-- osobne strojenie mobile bez ruchu/skakania.
+- mniejszy hero mobile (145 px),
+- Match Day nie pojawia się wiele dni przed meczem,
+- mocniejszy statyczny klimat stadionowy w Match Hub,
+- krótszy Zegar Drużyny,
+- puste „Ważne” jest kompaktowym paskiem,
+- gęstsze i bardziej broadcastowe KPI,
+- większy bezpieczny padding nad dolnym dockiem,
+- brak nowych ciężkich animacji na telefonie.
 
 Nie wymaga SQL.

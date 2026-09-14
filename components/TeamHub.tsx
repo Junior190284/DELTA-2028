@@ -275,6 +275,10 @@ export default function TeamHub(props:{
 
   const nextMatch=matches.find(m=>m.status==="scheduled");
   const nextMatchAt=nextMatch?parseLocalMatchDate(nextMatch.match_date,nextMatch.match_time):null;
+  const isMatchDay=nextMatch?(()=>{
+    const ms=new Date(`${nextMatch.match_date}T${(nextMatch.match_time||"12:00").slice(0,5)}:00`).getTime()-Date.now();
+    return ms>=-3*60*60*1000&&ms<=24*60*60*1000;
+  })():false;
   const nextMatchCountdown=nextMatchAt?formatCountdown(nextMatchAt.getTime()-now.getTime()):"—";
   const nextTraining=getNextTraining(now);
   const trainingCountdown=nextTraining.isLive
@@ -715,31 +719,24 @@ export default function TeamHub(props:{
 
     <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
       {tab==="home"&&<>
-        <section className="v8-hero v82-hero-clean v101-logged-hero v1022-start-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
+        <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
-          <div className="v1022-start-copy">
-            <span className="eyebrow gold">K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
-            <h1>DELTA <em>2018 GM</em></h1>
-            <h2>GÓRNY MOKOTÓW</h2>
-            <p>Diabełki z Mokotowa • jedna drużyna, wspólna historia.</p>
-            <div className="v1022-start-pills">
-              <span><Users size={16}/><b>{players.length}</b> zawodników</span>
-              <span><Goal size={16}/><b>{teamSummary.goals}</b> bramek</span>
-              <span><Star size={16}/><b>{teamSummary.assists}</b> asyst</span>
-              <span><Trophy size={16}/><b>{teamSummary.wins}</b> zwycięstw</span>
+          <div className="v101-hero-club-identity">
+            <div className="v101-hero-crest-wrap">
+              <span className="v101-hero-crest-fire"/>
+              <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
+            </div>
+            <div className="v101-hero-identity-copy">
+              <span>K.S. DELTA WARSZAWA</span>
+              <strong>GÓRNY MOKOTÓW</strong>
+              <b>2018</b>
             </div>
           </div>
-          <div className="v1022-start-crest" aria-hidden="true">
-            <span className="v1022-crest-glow"/>
-            <img src="/teamlogos/gm.png" alt=""/>
-          </div>
-          <div className="v1022-start-motto">WIĘCEJ NIŻ KLUB</div>
         </section>
 
-        {nextMatch&&<><section className="v82-match-rsvp-grid v1024-match-zone">
-          <article className="v8-match-card devil-card v101-logged-match v1022-home-match">
+        {nextMatch&&<><section className="v82-match-rsvp-grid">
+          <article className="v8-match-card devil-card v101-logged-match">
             <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
-            <div className="v1024-match-statusline"><span>MATCHDAY</span><i/> <b>{datePL(nextMatch.match_date)}</b><i/> <b>{nextMatch.venue||"Miejsce do ustalenia"}</b></div>
             <div className="v8-match-stage">
               <div className="v8-team">
                 <Logo team={nextMatch.home_team} size={76}/>
@@ -777,7 +774,7 @@ export default function TeamHub(props:{
           </article>
         </section>
 
-        <section className="v891-team-clock-row v1024-clock-zone">
+        <section className="v891-team-clock-row">
           <article className="v891-team-clock devil-card" onClick={()=>setTab("calendar")}>
             <div className="v891-clock-icon"><CalendarDays size={22}/></div>
             <div className="v891-clock-copy">
@@ -792,7 +789,7 @@ export default function TeamHub(props:{
             <ChevronRight size={18}/>
           </article>
 
-          <article className={`v891-important-note devil-card ${importantTeamEvent?"has-event":""}`} onClick={()=>setTab("calendar")}>
+          <article className={`v891-important-note devil-card ${importantTeamEvent?"has-event":"is-empty"}`} onClick={()=>setTab("calendar")}>
             <div className="v8-panel-title"><Bell size={16}/> WAŻNE</div>
             {importantTeamEvent?<>
               <b>{importantTeamEvent.title}</b>
@@ -805,14 +802,14 @@ export default function TeamHub(props:{
           </article>
         </section></>}
 
-        <section className="v8-stats-row v1024-home-stats">
+        <section className="v8-stats-row">
           {[
             ["MECZE",teamSummary.played,Target],["WYGRANE",teamSummary.wins,Trophy],["REMISY",teamSummary.draws,Shield],
             ["PORAŻKI",teamSummary.losses,X],["BRAMKI",teamSummary.goals,Goal],["ASYSTY",teamSummary.assists,Star]
           ].map(([label,val,Icon]:any)=><div className="v8-stat devil-tile" key={label}><Icon size={25}/><b>{val}</b><span>{label}</span></div>)}
         </section>
 
-        <section className="v8-dashboard-grid v1024-home-dashboard">
+        <section className="v8-dashboard-grid">
           <article className="v8-panel v101-now-card devil-card" onClick={()=>setTab("calendar")}>
             <div className="v8-panel-title"><Flame size={18}/> DZIEJE SIĘ TERAZ <span className="v101-live-dot">LIVE</span></div>
             <div className="v101-now-main">
@@ -855,7 +852,7 @@ export default function TeamHub(props:{
 
         </section>
 
-        <section className="v8-lower-grid v885-rankings-grid v1024-home-rankings">
+        <section className="v8-lower-grid v885-rankings-grid">
           <article className="v8-panel devil-card v885-ranking-panel">
             <div className="v8-panel-title"><Target size={18}/> STRZELCY BRAMEK</div>
             <div className="v885-ranking-list">
@@ -897,7 +894,7 @@ export default function TeamHub(props:{
         </section>
 
 
-        <section className="v87-season-grid v1024-home-season">
+        <section className="v87-season-grid">
           <article className="v87-leaders devil-card v885-season-best">
             <div className="v8-panel-title"><Medal size={18}/> NAJLEPSI W SEZONIE</div>
             <div className="v885-season-podium">
@@ -964,7 +961,7 @@ export default function TeamHub(props:{
           </article>
         </section>
 
-        <section className="v8-bottom-grid v1024-home-bottom">
+        <section className="v8-bottom-grid">
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>setTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Newspaper size={18}/> AKTUALNOŚCI {staff&&<button onClick={saveNewsItem}>DODAJ</button>}</div><div className="v8-news-list">{news.slice(0,3).map(n=><div key={n.id}><i/><div><b>{n.title}</b><span>{new Date(n.published_at).toLocaleDateString("pl-PL")}</span></div></div>)}{news.length===0&&<p className="muted">Brak aktualności.</p>}</div></article>
           <article className="v8-panel devil-card"><div className="v8-panel-title"><History size={18}/> KRONIKA</div><div className="v8-chronicle-preview">{matches.filter(m=>m.status==="played").slice(-2).reverse().map(m=><div key={m.id}><b>{datePL(m.match_date)}</b><span>{m.home_team} {m.home_score}:{m.away_score} {m.away_team}</span></div>)}{matches.filter(m=>m.status==="played").length===0&&<p className="muted">Historia sezonu dopiero się zaczyna.</p>}</div></article>
@@ -1038,15 +1035,6 @@ export default function TeamHub(props:{
             <span className="eyebrow gold">DELTA 2018 GM • PERFORMANCE LAB</span>
             <h2>CENTRUM <span>TRENINGOWE</span></h2>
             <p>Frekwencja, gry kontrolne, gole treningowe, asysty i chemia zespołu — całkowicie oddzielone od statystyk meczów oficjalnych.</p>
-            <div className="v103-hero-badges">
-              <span><b>{trainingSessions.length}</b> jednostek</span>
-              <span><b>{trainingGames.length}</b> gier kontrolnych</span>
-              <span><b>{trainingChemistry[0]?.score||0}%</b> top chemia</span>
-            </div>
-            <div className="v103-hero-story">
-              <small>OSTATNIA JEDNOSTKA</small>
-              <strong>{trainingSessions[0]?`${datePL(trainingSessions[0].training_date)} • ${trainingSessions[0].title||"Trening drużyny"}`:"Pierwszy trening pojawi się po dodaniu danych"}</strong>
-            </div>
           </div>
           <div className="v900-training-kpis">
             <div><strong>{trainingSessions.length}</strong><span>TRENINGI</span></div>
@@ -1157,7 +1145,7 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
-        <div className="v871-team-hero v102-team-hero devil-card">
+        <div className="v871-team-hero devil-card">
           <div className="v871-team-hero-overlay"/>
           <div className="v871-team-crest"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/></div>
           <div className="v871-team-copy">
@@ -1169,10 +1157,6 @@ export default function TeamHub(props:{
               <span><Goal size={14}/>{teamSummary.goals} bramek</span>
               <span><Star size={14}/>{teamSummary.assists} asyst</span>
               <span><Trophy size={14}/>{teamSummary.wins} zwycięstw</span>
-            </div>
-            <div className="v103-hero-story v103-team-story">
-              <small>TOŻSAMOŚĆ DRUŻYNY</small>
-              <strong>Waleczność, rozwój i stadionowy charakter • DELTA 2018 GM</strong>
             </div>
           </div>
         </div>
@@ -1276,15 +1260,6 @@ export default function TeamHub(props:{
             <span className="eyebrow gold">DELTA 2018 GM • DATA STUDIO</span>
             <h2>CENTRUM <span>STATYSTYK</span></h2>
             <p>Sezon 2026/27 • liczby, liderzy, rekordy i forma drużyny w jednym miejscu.</p>
-            <div className="v103-hero-badges">
-              <span><b>{goalsPerMatch.toFixed(1)}</b> gola / mecz</span>
-              <span><b>{playersWithGoal}</b> strzelców</span>
-              <span><b>{currentUnbeatenStreak}</b> bez porażki</span>
-            </div>
-            <div className="v103-hero-story">
-              <small>AKTUALNY LIDER G+A</small>
-              <strong>{topGA?`${topGA.display_name} • ${(stats[topGA.id]?.g||0)+(stats[topGA.id]?.a||0)} G+A`:"Czekamy na lidera sezonu"}</strong>
-            </div>
           </div>
           <div className="v890-stats-hero-metrics">
             <div><strong>{teamSummary.played}</strong><span>MECZE</span></div>
