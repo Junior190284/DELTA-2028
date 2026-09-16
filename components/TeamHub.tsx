@@ -124,6 +124,7 @@ export default function TeamHub(props:{
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [matchInitialTab,setMatchInitialTab]=useState<"summary"|"attendance"|"lineup"|"events"|"mvp">("summary");
+  const [matchPlacement,setMatchPlacement]=useState<"home"|"overlay">("overlay");
   const [accountOpen,setAccountOpen]=useState(false);
   const [now,setNow]=useState(()=>new Date());
   const [statsMetric,setStatsMetric]=useState<"ga"|"goals"|"assists"|"mvp"|"matches"|"captain">("ga");
@@ -747,9 +748,11 @@ export default function TeamHub(props:{
   const chronicleWins=chronicleMatches.filter(m=>recentResult(m)==="W").length;
   const chronicleGoals=chronicleMatches.reduce((sum,m)=>sum+(m.home_team===CLUB?(m.home_score||0):(m.away_score||0)),0);
 
-  function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary"){
+  function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary",placement:"home"|"overlay"="overlay"){
     setMatchInitialTab(initial);
+    setMatchPlacement(placement);
     setSelectedMatch(match);
+    if(placement==="home")window.setTimeout(()=>document.getElementById("home-match-center")?.scrollIntoView({behavior:"smooth",block:"start"}),90);
   }
 
   async function setParentAttendance(matchId:string,playerId:string,status:"yes"|"no"|"maybe"){
@@ -846,7 +849,7 @@ export default function TeamHub(props:{
                 <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"godzina do ustalenia"}</small>
               </div>
 
-              <button type="button" className="v891-attendance-mini" onClick={()=>openMatch(nextMatch,"attendance")}>
+              <button type="button" className="v891-attendance-mini" onClick={()=>openMatch(nextMatch,"attendance","home")}>
                 <span><UserCheck size={16}/> OBECNOŚĆ</span>
                 <strong>{nextResponseCount}<em>/ {players.length}</em></strong>
                 <div className="v891-attendance-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
@@ -854,7 +857,7 @@ export default function TeamHub(props:{
               </button>
             </div>
 
-            <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary")}>CENTRUM MECZU <ChevronRight size={17}/></button>
+            <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary","home")}>CENTRUM MECZU <ChevronRight size={17}/></button>
           </article>
           <div className="v105-command-side">
           <article className={`v891-team-clock devil-card event-${nextTeamEvent?.kind||"other"}`} onClick={()=>setTab("calendar")}>
@@ -883,7 +886,14 @@ export default function TeamHub(props:{
             </>}
           </article>
           </div>
-        </section></>}
+        </section>
+        {selectedMatch&&matchPlacement==="home"&&<div id="home-match-center" className="v110-home-match-center"><MatchCenterModal
+          embedded match={selectedMatch} players={players} attendance={attendance} lineup={lineup} events={events}
+          currentUserId={props.profile.id} currentUserRole={props.profile.role} canManageMatch={canManageMatches} canEditEvents={canEditMatchEvents}
+          parentPlayerIds={props.parentPlayerIds} initialTab={matchInitialTab} onClose={()=>setSelectedMatch(null)}
+          onDataChange={(d)=>{if(d.match){setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));setSelectedMatch(d.match);}if(d.attendance)setAttendance(d.attendance);if(d.lineup)setLineup(d.lineup);if(d.events)setEvents(d.events);}}
+        /></div>}
+        </>}
 
         <section className="v8-stats-row">
           {[
@@ -981,21 +991,21 @@ export default function TeamHub(props:{
                 <span className="v885-season-icon"><Goal size={17}/></span>
                 <small>GOLE</small>
                 <div className="v885-season-winners">
-                  {seasonTopScorers.length>0?seasonTopScorers.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><b>{p.display_name}</b><span>{stats[p.id]?.g||0}</span></button>):<em>—</em>}
+                  {seasonTopScorers.length>0?seasonTopScorers.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.g||0}</span></button>):<em>—</em>}
                 </div>
               </div>
               <div className="v885-season-category">
                 <span className="v885-season-icon"><Star size={17}/></span>
                 <small>ASYSTY</small>
                 <div className="v885-season-winners">
-                  {seasonTopAssisters.length>0?seasonTopAssisters.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><b>{p.display_name}</b><span>{stats[p.id]?.a||0}</span></button>):<em>—</em>}
+                  {seasonTopAssisters.length>0?seasonTopAssisters.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.a||0}</span></button>):<em>—</em>}
                 </div>
               </div>
               <div className="v885-season-category">
                 <span className="v885-season-icon"><Trophy size={17}/></span>
                 <small>MVP</small>
                 <div className="v885-season-winners">
-                  {seasonTopMvp.length>0?seasonTopMvp.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><b>{p.display_name}</b><span>{stats[p.id]?.mvp||0}</span></button>):<em>—</em>}
+                  {seasonTopMvp.length>0?seasonTopMvp.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.mvp||0}</span></button>):<em>—</em>}
                 </div>
               </div>
             </div>
@@ -1604,8 +1614,8 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="chronicle"&&<section className="section v8-section-page v108-chronicle-page">
-        <div className="v108-chronicle-hero devil-card"><div><span className="eyebrow gold">KRONIKA SEZONU • 2026/27</span><h2>NASZA HISTORIA<br/><em>PISANA MECZAMI</em></h2><p>Wyniki są ważne. Jeszcze ważniejsze są emocje, bohaterowie i chwile, które budują drużynę.</p></div><div className="v108-season-minute"><span>SEZON W JEDNEJ MINUCIE</span><div><b>{chronicleMatches.length}<small>MECZÓW</small></b><b>{chronicleWins}<small>WYGRANYCH</small></b><b>{chronicleGoals}<small>GOLI</small></b></div></div></div>
-        <div className="v108-timeline">{chronicleMatches.length?chronicleMatches.map((m,index)=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;const mvpName=players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name;const result=recentResult(m);return <article className={`v108-story-card devil-card result-${result.toLowerCase()}`} key={m.id}><div className="v108-timeline-marker"><span>{String(chronicleMatches.length-index).padStart(2,"0")}</span></div><div className="v108-story-cover"><div className="v108-story-date"><span>KOLEJKA {m.round_no||"—"}</span><b>{datePL(m.match_date)}</b></div><div className="v108-story-score"><span>{m.home_team}</span><strong>{m.home_score}:{m.away_score}</strong><span>{m.away_team}</span></div><div className="v108-story-result">{result==="W"?"ZWYCIĘSTWO":result==="R"?"REMIS":"LEKCJA NA PRZYSZŁOŚĆ"}</div></div><div className="v108-story-content"><div><small>BOHATER SPOTKANIA</small><h3>{mvpName||captainName||"Cała drużyna"}</h3><p>{result==="W"?"Wspólna praca, odwaga i konsekwencja przyniosły drużynie kolejne zwycięstwo.":"Każdy mecz daje doświadczenie, z którego drużyna buduje kolejny krok."}</p></div><div className="v108-story-details"><span><Goal size={15}/>{matchEvents.filter(e=>e.event_type==="goal").length} akcji bramkowych</span><span><Crown size={15}/>Kapitan: {captainName||"—"}</span><span><Users size={15}/>{starters.length} w wyjściowym składzie</span></div><MatchGallery matchId={m.id} media={matchMedia}/></div></article>}):<div className="v108-chronicle-empty devil-card"><History size={42}/><h3>Pierwszy rozdział jeszcze przed nami</h3><p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p></div>}</div>
+        <div className="v108-chronicle-hero devil-card"><div><span className="eyebrow gold">KRONIKA SEZONU • 2026/27</span><h2>KAŻDY MECZ.<br/><em>NOWY ROZDZIAŁ.</em></h2><p>Nie zapisujemy wyłącznie wyników. Zbieramy emocje, bohaterów, gole i chwile, do których drużyna będzie wracać.</p><span className="v110-chronicle-sign">DELTA 2018 GM • ARCHIWUM DRUŻYNY</span></div><div className="v108-season-minute"><span>SEZON W JEDNEJ MINUCIE</span><div><b>{chronicleMatches.length}<small>MECZÓW</small></b><b>{chronicleWins}<small>WYGRANYCH</small></b><b>{chronicleGoals}<small>GOLI</small></b></div></div></div>
+        <div className="v108-timeline">{chronicleMatches.length?chronicleMatches.map((m,index)=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;const mvpName=players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name;const result=recentResult(m);return <article className={`v108-story-card devil-card result-${result.toLowerCase()}`} key={m.id}><div className="v108-timeline-marker"><span>{String(chronicleMatches.length-index).padStart(2,"0")}</span></div><div className="v108-story-cover"><div className="v108-story-date"><span>ROZDZIAŁ {String(chronicleMatches.length-index).padStart(2,"0")} • KOLEJKA {m.round_no||"—"}</span><b>{datePL(m.match_date)}</b></div><div className="v108-story-score"><span><Logo team={m.home_team} size={54}/>{m.home_team}</span><strong>{m.home_score}:{m.away_score}</strong><span><Logo team={m.away_team} size={54}/>{m.away_team}</span></div><div className="v108-story-result">{result==="W"?"ZWYCIĘSTWO":result==="R"?"REMIS":"LEKCJA NA PRZYSZŁOŚĆ"}</div></div><div className="v108-story-content"><div><small>BOHATER SPOTKANIA</small><h3>{mvpName||captainName||"Cała drużyna"}</h3><p>{result==="W"?"Wspólna praca, odwaga i konsekwencja przyniosły drużynie kolejne zwycięstwo.":"Każdy mecz daje doświadczenie, z którego drużyna buduje kolejny krok."}</p></div><div className="v108-story-details"><span><Goal size={15}/>{matchEvents.filter(e=>e.event_type==="goal").length} akcji bramkowych</span><span><Crown size={15}/>Kapitan: {captainName||"—"}</span><span><Users size={15}/>{starters.length} w wyjściowym składzie</span></div><MatchGallery matchId={m.id} media={matchMedia}/><button className="v110-story-open" onClick={()=>openMatch(m,"summary")}>OTWÓRZ CENTRUM MECZU <ChevronRight size={14}/></button></div></article>}):<div className="v108-chronicle-empty devil-card"><History size={42}/><h3>Pierwszy rozdział jeszcze przed nami</h3><p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p></div>}</div>
       </section>}
 
       {tab==="club"&&<section className="section v8-section-page v876-club-page">
@@ -1660,7 +1670,7 @@ export default function TeamHub(props:{
         <div className="premium-info"><span className="eyebrow gold">PROFIL ZAWODNIKA</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div>
       </div><h3>Osiągnięcia zawodnika</h3><div className="achievement-grid">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={name as string} className={`achievement ${ok?"unlocked":""}`}><Star size={20}/><h3>{name}</h3><p>{ok?"ZDOBYTE":progress}</p></div>)}</div></div></div>}
 
-    {selectedMatch&&<MatchCenterModal
+    {selectedMatch&&matchPlacement==="overlay"&&<MatchCenterModal
       match={selectedMatch}
       players={players}
       attendance={attendance}

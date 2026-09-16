@@ -42,6 +42,7 @@ export default function MatchCenterModal(props:{
   canEditEvents?:boolean;
   parentPlayerIds:string[];
   initialTab?:Tab;
+  embedded?:boolean;
   onClose:()=>void;
   onDataChange:(data:{match?:Match;attendance?:Attendance[];lineup?:Lineup[];events?:Event[]})=>void;
 }) {
@@ -232,7 +233,7 @@ export default function MatchCenterModal(props:{
     {id:"mvp",label:"MVP",icon:Star,allowed:canEditEvents},
   ];
 
-  return <div className="match-center-overlay" onClick={props.onClose}>
+  return <div className={props.embedded?"match-center-embedded":"match-center-overlay"} onClick={props.embedded?undefined:props.onClose}>
     {celebration&&<div className={`v101-celebration ${celebration}`} aria-hidden="true">
       <div className="v101-celebration-smoke"/><div className="v101-celebration-flare"/>
       <span>{celebration==="goal"?"GOOOL!":celebration==="hattrick"?"HAT-TRICK!":"MVP"}</span>
