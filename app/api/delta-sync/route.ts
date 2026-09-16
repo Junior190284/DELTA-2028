@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/current-profile";
 import crypto from "node:crypto";
 import webpush from "web-push";
+import { decodeHtmlEntities } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,17 +18,6 @@ type ClubItem = {
   priority:number;
   source_url:string;
 };
-
-function decodeEntities(input:string){
-  return input
-    .replace(/&nbsp;|&#160;/gi," ")
-    .replace(/&amp;/gi,"&")
-    .replace(/&quot;/gi,'"')
-    .replace(/&#039;|&apos;/gi,"'")
-    .replace(/&lt;/gi,"<")
-    .replace(/&gt;/gi,">")
-    .replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n)));
-}
 
 function decoderScore(text:string){
   let score=0;
@@ -58,7 +48,7 @@ function htmlToTokens(html:string){
     .replace(/<(br|\/p|\/div|\/li|\/tr|\/td|\/h\d|\/a)>/gi,"\n")
     .replace(/<[^>]+>/g," ");
 
-  return decodeEntities(cleaned)
+  return decodeHtmlEntities(cleaned)
     .replace(/\r/g,"")
     .split(/\n+/)
     .map(x=>x.replace(/\s+/g," ").trim())

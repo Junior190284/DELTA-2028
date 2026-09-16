@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import StadiumFX from "./StadiumFX";
+import { decodeHtmlEntities } from "@/lib/text";
 import {
   Activity, ArrowUpRight, CalendarDays, ChevronRight, Clock3, Flame, Goal,
   LockKeyhole, MapPin, Radio, Shield, Sparkles, Star, Target,
@@ -36,6 +37,11 @@ function ours(m:Match){return m.home_team===CLUB?(m.home_score??0):(m.away_score
 function theirs(m:Match){return m.home_team===CLUB?(m.away_score??0):(m.home_score??0)}
 function result(m:Match){return ours(m)>theirs(m)?"W":ours(m)===theirs(m)?"R":"P"}
 function localDate(date:string,time?:string|null){return new Date(`${date}T${time?.slice(0,5)||"12:00"}:00`)}
+function seasonLabel(date?:string){
+  const value=date?new Date(`${date}T12:00:00`):new Date();
+  const start=value.getMonth()>=6?value.getFullYear():value.getFullYear()-1;
+  return `${start}/${String(start+1).slice(-2)}`;
+}
 function countdown(target:Date,now:number){
   const ms=target.getTime()-now;
   if(ms<=0)return "TERAZ";
@@ -81,6 +87,7 @@ export default function PublicTeamSite(props:{
   const winRate=played.length?Math.round(wins/played.length*100):0;
   const nextAttendance=nextMatch?props.attendanceSummary.find(x=>x.match_id===nextMatch.id):null;
   const lastMatch=recent[0]||null;
+  const currentSeason=seasonLabel(nextMatch?.match_date||lastMatch?.match_date);
 
   const eventCandidates=useMemo(()=>{
     const events=props.teamEvents.map(e=>({
@@ -99,19 +106,23 @@ export default function PublicTeamSite(props:{
   const goalProgress=Math.min(100,Math.round(goals/GOAL_TARGET*100));
   const latestClub=props.clubUpdates[0]||null;
   const isMatchDay=nextMatch?localDate(nextMatch.match_date,nextMatch.match_time).getTime()-now<=24*60*60*1000&&localDate(nextMatch.match_date,nextMatch.match_time).getTime()>now-3*60*60*1000:false;
+  const liveEvent=eventCandidates.find(event=>{
+    const startsIn=event.date.getTime()-now;
+    return startsIn<=30*60*1000&&startsIn>=-2*60*60*1000;
+  })||null;
 
   const publicCalendar=[
     ...scheduled.slice(0,4).map(m=>({id:`m-${m.id}`,date:m.match_date,time:m.match_time,title:`${m.home_team} — ${m.away_team}`,type:"MECZ",location:m.venue})),
     ...props.teamEvents.slice(0,8).map(e=>({id:`e-${e.id}`,date:e.event_date,time:e.start_time,title:e.title,type:e.event_type.toUpperCase(),location:e.location}))
   ].sort((a,b)=>`${a.date} ${a.time||""}`.localeCompare(`${b.date} ${b.time||""}`)).slice(0,6);
 
-  return <main className="public-team-site v101-public-home v102-public-home">
+  return <main className="public-team-site v101-public-home v102-public-home v104-public">
     <StadiumFX intro/>
 
     <header className="public-topbar v101-public-topbar">
       <a href="/" className="public-brand" aria-label="Strona główna DELTA 2018 GM">
         <img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/>
-        <div><b>DELTA 2018 GM</b><span>Górny Mokotów • Team Hub</span></div>
+        <div><b>DELTA 2018 GM</b><span>Górny Mokotów • Rocznik 2018</span></div>
       </a>
       <nav className="v101-public-nav">
         <a href="#mecz">MECZ</a><a href="#statystyki">STATYSTYKI</a><a href="#kalendarz">KALENDARZ</a><a href="#klub">Z KLUBU</a>
@@ -124,12 +135,13 @@ export default function PublicTeamSite(props:{
       <div className="v102-hero-grid">
         <div className="public-hero-copy v102-hero-copy-block">
           <span className="v101-live-eyebrow"><Radio size={13}/> K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
+          <span className="v104-broadcast-kicker">PASJA <i/> ROZWÓJ <i/> PRZYJAŹŃ <i/> DRUŻYNA</span>
           <h1>DELTA <em>2018</em> GM</h1>
-          <p>Mecze, wyniki, wydarzenia i oficjalne informacje drużyny. Stadionowy Team Hub Diabełków — bardziej czytelny, żywy i w klubowym klimacie.</p>
+          <p>Mecze, treningi, wyniki i najważniejsze informacje jednej drużyny. Razem rozwijamy pasję, charakter i przyjaźń.</p>
           <div className="v102-hero-meta">
             <span>{nextMatch?`Najbliższy mecz • ${datePL(nextMatch.match_date)} • ${opponent(nextMatch)}`:"Terminarz gotowy na kolejne wydarzenia"}</span>
             <span>{lastMatch?`Ostatni wynik • ${ours(lastMatch)}:${theirs(lastMatch)} z ${opponent(lastMatch)}`:"Pierwsze wyniki sezonu pojawią się tutaj"}</span>
-            <span>{latestClub?`Z klubu • ${latestClub.title}`:"Live info • aktualności i kalendarz drużyny"}</span>
+            <span>{latestClub?`Z klubu • ${decodeHtmlEntities(latestClub.title)}`:"Live info • aktualności i kalendarz drużyny"}</span>
           </div>
           <div className="public-hero-actions">
             <a href="#mecz">NAJBLIŻSZY MECZ <ChevronRight size={15}/></a>
@@ -141,28 +153,30 @@ export default function PublicTeamSite(props:{
 
         <div className="v102-hero-art" aria-label="Stadionowa oprawa drużyny DELTA 2018 GM">
           <div className="v102-hero-art-glow"/>
+          <img className="v106-hero-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM stojący razem przed meczem"/>
+          <img className="v102-hero-crest" src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
           <div className="v102-hero-art-card">
             <span>K.S. DELTA WARSZAWA</span>
             <strong>GÓRNY MOKOTÓW</strong>
             <b>2018</b>
-            <small>RACE • DYM • ŚWIATŁA • TRYBUNY</small>
+            <small>PASJA • ROZWÓJ • PRZYJAŹŃ • DRUŻYNA</small>
           </div>
         </div>
       </div>
 
       <div className="v102-hero-bottom-strip">
         <div>
-          <span>NEXT EVENT</span>
+          <span>NAJBLIŻSZE WYDARZENIE</span>
           <b>{nextEvent?.title||"Brak wydarzenia"}</b>
           <small>{nextEvent?`${shortCountdown(nextEvent.date,now)} • ${nextEvent.subtitle||datePL(nextEvent.date.toISOString().slice(0,10))}`:"Kalendarz odświeży się automatycznie."}</small>
         </div>
         <div>
-          <span>TRYBUNY</span>
-          <b>Stadionowy klimat</b>
-          <small>Dym, race, światła i czerwono-złote detale.</small>
+          <span>NASZA DRUŻYNA</span>
+          <b>Więcej niż futbol</b>
+          <small>Wspólna pasja, rozwój i przyjaźń na każdym treningu.</small>
         </div>
         <div>
-          <span>RODZICE</span>
+          <span>STREFA RODZICA</span>
           <b>Pełny dostęp po zalogowaniu</b>
           <small>Obecność, kalendarz, treningi i dane drużyny.</small>
         </div>
@@ -170,26 +184,27 @@ export default function PublicTeamSite(props:{
     </section>
 
     <div className="v101-live-ticker" aria-label="Najważniejsze informacje">
-      <span><Flame size={14}/> LIVE INFO</span>
+      <span><Flame size={14}/> NA BIEŻĄCO</span>
       <div className="v101-ticker-track">
         <b>{nextMatch?`NAJBLIŻSZY MECZ: ${datePL(nextMatch.match_date)} • ${opponent(nextMatch)}`:"TERMINARZ: do synchronizacji"}</b>
         <i>•</i>
-        <b>{lastMatch?`OSTATNI WYNIK: ${ours(lastMatch)}:${theirs(lastMatch)} z ${opponent(lastMatch)}`:"SEZON 2026/27"}</b>
+        <b>{lastMatch?`OSTATNI WYNIK: ${ours(lastMatch)}:${theirs(lastMatch)} z ${opponent(lastMatch)}`:`SEZON ${currentSeason}`}</b>
         <i>•</i>
-        <b>{latestClub?`Z KLUBU: ${latestClub.title}`:"DELTA 2018 GM"}</b>
+        <b>{latestClub?`Z KLUBU: ${decodeHtmlEntities(latestClub.title)}`:"DELTA 2018 GM"}</b>
       </div>
     </div>
 
+    <div className="v106-match-command">
     <section id="mecz" className={`v101-public-match-hub devil-card ${isMatchDay?"match-day":""}`}>
       <div className="v101-match-topline">
-        <div><CalendarDays size={17}/><span>{isMatchDay?"MATCH DAY":"NAJBLIŻSZY MECZ"}</span></div>
+        <div><CalendarDays size={17}/><span>{isMatchDay?"DZIEŃ MECZU":"NAJBLIŻSZY MECZ"}</span></div>
         <b>{nextMatch?`KOLEJKA ${nextMatch.round_no||"—"}`:"TERMIN DO USTALENIA"}</b>
       </div>
       {nextMatch?<>
         <div className="v101-match-stage">
           <div className="v101-match-team"><Logo team={nextMatch.home_team}/><small>GOSPODARZ</small><b>{nextMatch.home_team}</b></div>
           <div className="v101-match-center">
-            <span>DO MECZU</span><strong>{countdown(localDate(nextMatch.match_date,nextMatch.match_time),now)}</strong><em>VS</em>
+            <span>DO PIERWSZEGO GWIZDKA</span><strong>{countdown(localDate(nextMatch.match_date,nextMatch.match_time),now)}</strong><em>VS</em>
             <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time?.slice(0,5)||"—"}</small>
             <p><MapPin size={12}/>{nextMatch.venue||"Miejsce do ustalenia"}</p>
           </div>
@@ -207,27 +222,32 @@ export default function PublicTeamSite(props:{
       </>:<div className="v101-empty-stage"><Trophy size={34}/><b>Najbliższy mecz pojawi się po synchronizacji terminarza.</b></div>}
     </section>
 
-    <section className="v101-public-smart-row">
+    <aside className="v101-public-smart-row v106-match-side">
       <article className="v101-smart-clock devil-card">
         <div className="v101-smart-icon"><Clock3 size={24}/></div>
-        <div><span>SMART TEAM CLOCK</span><h3>{nextEvent?.title||"Brak wydarzeń"}</h3><p>{nextEvent?.subtitle||"Kalendarz drużyny jest aktualizowany na bieżąco."}</p></div>
+        <div><span>ZEGAR DRUŻYNY</span><h3>{nextEvent?.title||"Brak wydarzeń"}</h3><p>{nextEvent?.subtitle||"Kalendarz drużyny jest aktualizowany na bieżąco."}</p></div>
         <strong>{nextEvent?countdown(nextEvent.date,now):"—"}</strong>
       </article>
       <article className="v101-season-goal devil-card">
         <div><Target size={20}/><span>CEL SEZONU</span></div><b>{goals}<em>/ {GOAL_TARGET}</em></b>
-        <div className="v101-goal-progress"><i style={{width:`${goalProgress}%`}}/></div><small>{goalProgress}% drogi do 50 bramek</small>
+        <div className="v101-goal-progress"><i style={{width:`${goalProgress}%`}}/></div><small>{goalProgress}% drogi do {GOAL_TARGET} bramek</small>
       </article>
-    </section>
+    </aside>
+    </div>
+
+    <div className="v107-slogan-band" aria-label="Hasło drużyny">
+      <span>JEDNA DRUŻYNA</span><b>MAŁE KROKI. WIELKIE MARZENIA.</b><span>GÓRNY MOKOTÓW</span>
+    </div>
 
     <section id="statystyki" className="v101-public-stats-zone">
-      <div className="v101-zone-head"><div><span className="v101-zone-eyebrow">SEASON DATA • 2026/27</span><h2>CENTRUM <em>STATYSTYK</em></h2></div><div className="v101-form-line"><span>FORMA</span>{recent.map(m=><i key={m.id} className={`r-${result(m).toLowerCase()}`}>{result(m)}</i>)}</div></div>
+      <div className="v101-zone-head"><div><span className="v101-zone-eyebrow">SEZON • {currentSeason}</span><h2>CENTRUM <em>STATYSTYK</em></h2></div><div className="v101-form-line"><span>FORMA</span>{recent.map(m=><i key={m.id} className={`r-${result(m).toLowerCase()}`}>{result(m)}</i>)}</div></div>
       <div className="v101-stat-tiles">
         <article><Trophy/><b>{played.length}</b><span>MECZE</span></article>
         <article><Zap/><b>{wins}</b><span>WYGRANE</span></article>
         <article><Goal/><b>{goals}</b><span>BRAMKI</span></article>
         <article><Activity/><b>{goalsPerMatch.toFixed(1)}</b><span>GOLI / MECZ</span></article>
-        <article><Star/><b>{winRate}%</b><span>WIN RATE</span></article>
-        <article><Shield/><b>{wins}-{draws}-{losses}</b><span>W-R-P</span></article>
+        <article><Star/><b>{winRate}%</b><span>SKUTECZNOŚĆ</span></article>
+        <article><Shield/><b>{wins}-{draws}-{losses}</b><span>ZWYCIĘSTWA • REMISY • PORAŻKI</span></article>
       </div>
       <div className="v101-stat-lower">
         <article className="v101-recent-matches devil-card">
@@ -238,7 +258,7 @@ export default function PublicTeamSite(props:{
           </div>):<p className="v101-public-muted">Pierwsze wyniki sezonu pojawią się tutaj.</p>}
         </article>
         <article className="v101-record-wall devil-card">
-          <div className="v101-card-title"><Sparkles size={17}/> MINI HALL OF FAME</div>
+          <div className="v101-card-title"><Sparkles size={17}/> NAJWAŻNIEJSZE LICZBY</div>
           <div><span>NAJWIĘKSZA WYGRANA</span><b>{biggestWin?`${ours(biggestWin)}:${theirs(biggestWin)} • ${opponent(biggestWin)}`:"—"}</b></div>
           <div><span>NAJWIĘCEJ GOLI W MECZU</span><b>{highestGoals?`${ours(highestGoals)} • ${opponent(highestGoals)}`:"—"}</b></div>
           <div><span>AKTUALNA SERIA WYGRANYCH</span><b>{currentWinStreak}</b></div>
@@ -259,12 +279,12 @@ export default function PublicTeamSite(props:{
           {!publicCalendar.length&&<p className="v101-public-muted">Brak publicznych wydarzeń.</p>}
         </div>
       </article>
-      <article className="v101-today-card devil-card">
+      <article className={`v101-today-card devil-card ${liveEvent?"is-live":""}`}>
         <div className="v101-card-title"><Radio size={17}/> DZIŚ W DRUŻYNIE</div>
-        <div className="v101-today-visual"><span className="pulse"/><Flame size={34}/></div>
-        <span>NAJBLIŻSZE WYDARZENIE</span><h3>{nextEvent?.title||"Spokojny dzień"}</h3>
-        <p>{nextEvent?.subtitle||"Kolejne wydarzenia pojawią się automatycznie z kalendarza."}</p>
-        {nextEvent&&<b>{countdown(nextEvent.date,now)}</b>}
+        <div className="v101-today-visual">{liveEvent&&<span className="pulse"/>}<Flame size={34}/></div>
+        <span>{liveEvent?"TRWA TERAZ":"NAJBLIŻSZE WYDARZENIE"}</span><h3>{(liveEvent||nextEvent)?.title||"Spokojny dzień"}</h3>
+        <p>{(liveEvent||nextEvent)?.subtitle||"Kolejne wydarzenia pojawią się automatycznie z kalendarza."}</p>
+        {(liveEvent||nextEvent)&&<b>{liveEvent?"TERAZ":countdown(nextEvent!.date,now)}</b>}
       </article>
     </section>
 
@@ -274,7 +294,7 @@ export default function PublicTeamSite(props:{
         <div className="v101-news-list">
           {props.clubUpdates.slice(0,4).map((x,index)=><article key={x.id}>
             <div><span>{index===0?"NOWE":"DELTA"}</span><small>{new Date(x.published_at).toLocaleDateString("pl-PL")}</small></div>
-            <h3>{x.title}</h3>{x.body&&<p>{x.body.slice(0,250)}{x.body.length>250?"…":""}</p>}
+            <h3>{decodeHtmlEntities(x.title)}</h3>{x.body&&<p>{decodeHtmlEntities(x.body.slice(0,250))}{x.body.length>250?"…":""}</p>}
             {x.source_url&&<a href={x.source_url} target="_blank" rel="noreferrer">ŹRÓDŁO <ArrowUpRight size={12}/></a>}
           </article>)}
           {!props.clubUpdates.length&&<p className="v101-public-muted">Brak nowych informacji z klubu.</p>}
@@ -283,7 +303,7 @@ export default function PublicTeamSite(props:{
       <article className="v101-team-life devil-card">
         <div className="v101-card-title"><Sparkles size={17}/> ŻYCIE DRUŻYNY</div>
         <div className="v101-life-mosaic">
-          <figure className="large"><img src="/assets/stadium3.png" alt="Stadion"/><figcaption>MATCH DAY</figcaption></figure>
+          <figure className="large"><img src="/assets/stadium3.png" alt="Stadion"/><figcaption>DZIEŃ MECZU</figcaption></figure>
           <figure><img src="/assets/stadium.png" alt="Trybuny"/><figcaption>DIABEŁKI</figcaption></figure>
           <figure><img src="/assets/stadium2.png" alt="Światła stadionu"/><figcaption>GÓRNY MOKOTÓW</figcaption></figure>
         </div>
@@ -292,7 +312,7 @@ export default function PublicTeamSite(props:{
     </section>
 
     <section className="v101-featured-lock devil-card">
-      <div className="v101-featured-art"><div className="v101-player-silhouette"><Users size={48}/></div><span>PREMIUM PLAYER CARD</span></div>
+      <div className="v101-featured-art"><div className="v101-player-silhouette"><Users size={48}/></div><span>BOHATEROWIE DRUŻYNY</span></div>
       <div><span className="v101-zone-eyebrow">WYRÓŻNIENIA ZAWODNIKÓW</span><h2>Profile, osiągnięcia i liderzy — po zalogowaniu</h2><p>Chronimy dane i zdjęcia młodych zawodników. W Strefie Rodzica dostępne są profile, statystyki, MVP, kapitan, osiągnięcia i pełne rankingi.</p></div>
       <Link href="/login"><LockKeyhole size={15}/> ZOBACZ STREFĘ DRUŻYNY <ChevronRight size={15}/></Link>
     </section>
@@ -300,14 +320,14 @@ export default function PublicTeamSite(props:{
     <section className="public-private-zone v101-parent-zone devil-card">
       <div><LockKeyhole size={28}/><span>STREFA RODZICA</span><h2>Pełna aplikacja po zalogowaniu</h2><p>Każdy zalogowany rodzic ma dostęp do całej części drużynowej. Uprawnienia dodatkowe dotyczą tylko edycji danych.</p></div>
       <div className="public-private-list">
-        <span>✓ Mecze i pełny kalendarz</span><span>✓ Centrum Treningowe</span><span>✓ Profile i statystyki zawodników</span>
-        <span>✓ Team Chemistry</span><span>✓ Osiągnięcia i Hall of Fame</span><span>✓ Potwierdzanie obecności dziecka</span>
+        <span>✓ Mecze i pełny kalendarz</span><span>✓ Centrum treningowe</span><span>✓ Profile i statystyki zawodników</span>
+        <span>✓ Chemia zespołu</span><span>✓ Osiągnięcia i wyróżnienia</span><span>✓ Potwierdzanie obecności dziecka</span>
       </div>
       <Link href="/login">WEJDŹ DO STREFY RODZICA <ChevronRight size={15}/></Link>
     </section>
 
     <footer className="public-footer v101-footer">
-      <img src="/teamlogos/gm.png" alt=""/><div><b>DELTA 2018 GM</b><span>Górny Mokotów • Premium Stadium Team Hub</span></div><small>2026/27</small>
+      <img src="/teamlogos/gm.png" alt=""/><div><b>DELTA 2018 GM</b><span>Górny Mokotów • Oficjalny serwis drużyny</span></div><small>{currentSeason}</small>
     </footer>
   </main>;
 }

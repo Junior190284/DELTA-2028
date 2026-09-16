@@ -26,6 +26,13 @@ function Avatar({p}:{p:Player}){
   return <span className="v10-avatar">{ryszard(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span>;
 }
 
+function TeamBadge({team}:{team:string}){
+  const key=team.toLocaleLowerCase("pl-PL");
+  const src=team===CLUB?"/teamlogos/gm.png":key.includes("alfa")?"/teamlogos/alfa.png":key.includes("vizja")?"/teamlogos/vizja.png":key.includes("ursus")?"/teamlogos/ursus.png":key.includes("julian")?"/teamlogos/julianow.png":"";
+  if(src)return <span className="v108-team-badge"><img src={src} alt={team}/></span>;
+  return <span className="v108-team-badge v108-team-fallback">{team.split(/\s+/).map(part=>part[0]).join("").slice(0,3)}</span>;
+}
+
 export function MyChildCenter(props:{
   players:Player[];parentPlayerIds:string[];stats:Record<string,Stat>;trainingStats:Record<string,TrainingStat>;
   matches:Match[];attendance:Attendance[];events:Event[];trainingSessions:TrainingSession[];trainingAttendance:TrainingAttendance[];
@@ -74,6 +81,9 @@ export function MatchDayMode(props:{match:Match|null;players:Player[];attendance
   const goals=props.events.filter(e=>e.match_id===match.id&&e.event_type==="goal");
   const captain=props.players.find(p=>p.id===props.lineup.find(x=>x.match_id===match.id&&x.is_captain)?.player_id);
   const mvp=props.players.find(p=>p.id===props.events.find(e=>e.match_id===match.id&&e.event_type==="mvp")?.player_id);
+  const confirmed=props.players.filter(p=>props.attendance.some(a=>a.match_id===match.id&&a.player_id===p.id&&(a.status==="yes"||a.status==="present")));
+  const startersList=props.players.filter(p=>props.lineup.some(x=>x.match_id===match.id&&x.player_id===p.id&&x.is_starter));
+  const phase=match.status==="played"?"PO MECZU":goals.length?"NA ŻYWO":"PRZED MECZEM";
   async function copySummary(){
     const goalLines=goals.map(e=>{const g=props.players.find(p=>p.id===e.player_id)?.display_name||"?";const a=props.players.find(p=>p.id===e.assist_player_id)?.display_name;return `⚽ ${g}${a?` (asysta: ${a})`:""}`;}).join("\n");
     const score=match.status==="played"?`${match.home_team} ${match.home_score??0}:${match.away_score??0} ${match.away_team}`:`${match.home_team} vs ${match.away_team}`;
@@ -95,18 +105,33 @@ export function MatchDayMode(props:{match:Match|null;players:Player[];attendance
   function generateCallupGraphic(){
     const {c,x}=baseCanvas("POWOŁANI / POTWIERDZENI");const confirmed=props.players.filter(p=>props.attendance.some(a=>a.match_id===match.id&&a.player_id===p.id&&(a.status==="yes"||a.status==="present")));x.fillStyle="#aeb7c0";x.font="600 27px Arial";x.fillText(`${fmt(match.match_date)} • ${opponent(match)}`,70,260);x.fillStyle="#fff";x.font="700 28px Arial";let y=340;confirmed.forEach((p,i)=>{x.fillText(`${String(i+1).padStart(2,"0")}. ${p.display_name}`,80,y);y+=45;});x.fillStyle="#e2b94f";x.font="800 25px Arial";x.fillText(`Razem: ${confirmed.length} zawodników`,70,990);downloadCanvas(c,`delta-${match.match_date}-powolani.png`);
   }
-  return <section className="section v10-matchday">
-    <div className="v10-matchday-hero devil-card"><span className="eyebrow gold">MATCH DAY MODE</span><h2>{match.home_team}<em> VS </em>{match.away_team}</h2><p>{fmt(match.match_date)} • {match.match_time||"godzina do ustalenia"} • {match.venue||"miejsce do ustalenia"}</p><div className="v10-matchday-score">{match.status==="played"?`${match.home_score??0}:${match.away_score??0}`:"VS"}</div></div>
-    <div className="v10-matchday-grid">
-      <button onClick={()=>props.onOpen(match,"attendance")}><UserCheck/><span>OBECNOŚĆ</span><b>{att}/{props.players.length}</b><small>Potwierdzenia i obecni</small></button>
-      {props.canManage&&<button onClick={()=>props.onOpen(match,"lineup")}><Users/><span>WYJŚCIOWA 6</span><b>{starters}/6</b><small>{captain?`Kapitan: ${captain.display_name}`:"Wybierz kapitana"}</small></button>}
-      {props.canEvents&&<button onClick={()=>props.onOpen(match,"events")}><Goal/><span>GOLE / ASYSTY</span><b>{goals.length}</b><small>Szybkie zdarzenia</small></button>}
-      {props.canEvents&&<button onClick={()=>props.onOpen(match,"mvp")}><Star/><span>MVP</span><b>{mvp?"✓":"—"}</b><small>{mvp?.display_name||"Wybierz po meczu"}</small></button>}
-      {props.canManage&&<button onClick={()=>props.onOpen(match,"summary")}><Trophy/><span>WYNIK / DANE</span><b>{match.status==="played"?`${match.home_score??0}:${match.away_score??0}`:"–:–"}</b><small>Godzina, miejsce, wynik</small></button>}
-      <button onClick={copySummary}><ChevronRight/><span>PODSUMOWANIE</span><b>TXT</b><small>Kopiuj gotową wiadomość</small></button>
-      <button onClick={generateMatchGraphic}><Trophy/><span>GRAFIKA PO MECZU</span><b>PNG</b><small>Gotowa karta wyniku</small></button>
-      <button onClick={generateCallupGraphic}><Users/><span>GRAFIKA POWOŁANI</span><b>PNG</b><small>Lista potwierdzonych</small></button>
+  return <section className="section v10-matchday v108-matchday">
+    <div className="v108-matchday-hero devil-card">
+      <div className="v108-broadcast-top"><span><Flame size={14}/>{phase}</span><b>KOLEJKA {match.round_no||"—"}</b><small>DELTA 2018 GM • MATCH CENTER</small></div>
+      <div className="v108-score-stage">
+        <div className="v108-side-team"><TeamBadge team={match.home_team}/><span>GOSPODARZ</span><h2>{match.home_team}</h2></div>
+        <div className="v108-score-core"><small>{fmt(match.match_date)} • {match.match_time||"—"}</small><strong>{match.status==="played"?`${match.home_score??0}:${match.away_score??0}`:"VS"}</strong><p>{match.venue||"Miejsce do ustalenia"}</p></div>
+        <div className="v108-side-team"><TeamBadge team={match.away_team}/><span>GOŚĆ</span><h2>{match.away_team}</h2></div>
+      </div>
+      <div className="v108-matchday-status"><div><UserCheck size={17}/><span>POTWIERDZENI</span><b>{att}/{props.players.length}</b></div><div><Users size={17}/><span>WYJŚCIOWA 6</span><b>{starters}/6</b></div><div><Crown size={17}/><span>KAPITAN</span><b>{captain?.display_name||"Do wyboru"}</b></div><div><Star size={17}/><span>MVP</span><b>{mvp?.display_name||"Po meczu"}</b></div></div>
     </div>
+
+    <div className="v108-matchday-command">
+      <article className="v108-matchday-primary devil-card">
+        <div className="v8-panel-title"><Users size={18}/> KADRA MECZOWA <button onClick={()=>props.onOpen(match,"lineup")}>ZARZĄDZAJ</button></div>
+        <div className="v108-squad-pitch">
+          <div className="v108-pitch-lines"/>
+          {(startersList.length?startersList:confirmed.slice(0,6)).map((p,index)=><button key={p.id} className={`v108-pitch-player p${index+1}`} onClick={()=>props.onOpen(match,"lineup")}><Avatar p={p}/><span>{p.shirt_number||index+1}</span><b>{p.display_name.split(" ")[0]}</b></button>)}
+          {!startersList.length&&!confirmed.length&&<div className="v108-pitch-empty"><Users size={34}/><b>Ustaw wyjściową szóstkę</b><span>Skład pojawi się bezpośrednio na boisku.</span></div>}
+        </div>
+      </article>
+      <div className="v108-matchday-side">
+        <article className="v108-live-timeline devil-card"><div className="v8-panel-title"><Goal size={18}/> WYDARZENIA MECZU</div>{goals.length?goals.map((event,index)=>{const scorer=props.players.find(p=>p.id===event.player_id);const assist=props.players.find(p=>p.id===event.assist_player_id);return <div className="v108-event-row" key={event.id}><span>{event.minute?`${event.minute}'`:String(index+1).padStart(2,"0")}</span><Goal size={17}/><div><b>{scorer?.display_name||"Gol drużyny"}</b><small>{assist?`Asysta: ${assist.display_name}`:"DELTA 2018 GM"}</small></div></div>}):<div className="v108-timeline-empty"><Goal size={30}/><b>Pierwszy gwizdek przed nami</b><span>Zdarzenia pojawią się tutaj w trakcie meczu.</span></div>}</article>
+        <article className="v108-match-actions devil-card"><div className="v8-panel-title"><Zap size={18}/> SZYBKIE AKCJE</div><button onClick={()=>props.onOpen(match,"attendance")}><UserCheck/><span>OBECNOŚĆ</span><ChevronRight/></button>{props.canEvents&&<button onClick={()=>props.onOpen(match,"events")}><Goal/><span>DODAJ ZDARZENIE</span><ChevronRight/></button>}{props.canEvents&&<button onClick={()=>props.onOpen(match,"mvp")}><Star/><span>WYBIERZ MVP</span><ChevronRight/></button>}{props.canManage&&<button onClick={()=>props.onOpen(match,"summary")}><Trophy/><span>WYNIK I DANE</span><ChevronRight/></button>}</article>
+      </div>
+    </div>
+
+    <div className="v108-matchday-tools"><button onClick={copySummary}><ChevronRight/><div><b>KOPIUJ PODSUMOWANIE</b><span>Gotowa wiadomość tekstowa</span></div></button><button onClick={generateMatchGraphic}><Trophy/><div><b>GRAFIKA WYNIKU</b><span>Kwadratowa karta PNG</span></div></button><button onClick={generateCallupGraphic}><Users/><div><b>GRAFIKA POWOŁAŃ</b><span>Lista potwierdzonych zawodników</span></div></button></div>
   </section>;
 }
 
@@ -131,10 +156,12 @@ export function HallOfFame(props:{players:Player[];stats:Record<string,Stat>;tra
   const seasonLabels=Array.from(new Set(played.map(m=>seasonLabel(m.match_date)))).sort().reverse();
   const seasonSummaries=seasonLabels.map(label=>{const ms=played.filter(m=>seasonLabel(m.match_date)===label);return {label,matches:ms.length,wins:ms.filter(m=>ours(m)>opp(m)).length,goals:ms.reduce((n,m)=>n+ours(m),0)};});
   async function copyMonth(){const text=`DELTA 2018 GM — PODSUMOWANIE ${latestMonth}\nMecze: ${monthMatches.length} • Wygrane: ${monthWins} • Gole: ${monthGoals} • Treningi: ${monthTrainings}`;await navigator.clipboard.writeText(text);alert("Podsumowanie miesiąca skopiowane.");}
-  return <section className="section v10-hof">
-    <div className="v10-page-hero devil-card"><div><span className="eyebrow gold">REKORDY DRUŻYNY</span><h2>HALL OF <em>FAME</em></h2><p>Liderzy sezonu, treningów i najlepsza chemia zespołu.</p></div><Trophy size={56}/></div>
+  const podium=records.slice(0,3);
+  return <section className="section v10-hof v108-hof">
+    <div className="v108-hof-hero devil-card"><div className="v108-hof-copy"><span className="eyebrow gold">REKORDY • CHARAKTER • HISTORIA</span><h2>HALL OF <em>FAME</em></h2><p>Tu zapisują się zawodnicy, którzy każdego dnia podnoszą poziom całej drużyny.</p><div><span>{played.length} MECZÓW</span><span>{goals} GOLI</span><span>{wins} ZWYCIĘSTW</span></div></div><img src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM"/><span className="v108-hof-crest"><img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/></span></div>
+    <div className="v108-podium devil-card"><div className="v8-panel-title"><Crown size={18}/> PODIUM SEZONU</div><div className="v108-podium-stage">{podium.map(([title,p,value,unit],index)=><button key={title} className={`v108-podium-place place-${index+1}`} onClick={()=>p&&props.onOpenPlayer(p)}>{p?<><span className="v108-podium-crown">{index===0?"★":""}</span><Avatar p={p}/><small>{title}</small><h3>{p.display_name}</h3><b>{value(p)} <em>{unit}</em></b></>:<p>Brak danych</p>}</button>)}</div></div>
     <div className="v10-hof-team"><article><b>{played.length}</b><span>MECZE</span></article><article><b>{wins}</b><span>WYGRANE</span></article><article><b>{goals}</b><span>GOLE</span></article><article><b>{props.chemistry[0]?.score||0}%</b><span>TOP CHEMIA</span></article></div>
-    <div className="v10-hof-grid">{records.map(([title,p,value,unit,Icon])=><button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card"><Icon size={22}/><small>{title}</small>{p?<><Avatar p={p}/><h3>{p.display_name}</h3><b>{value(p)}</b><span>{unit}</span></>:<p>Brak danych</p>}</button>)}</div>
+    <div className="v10-hof-grid">{records.slice(3).map(([title,p,value,unit,Icon])=><button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card"><Icon size={22}/><small>{title}</small>{p?<><Avatar p={p}/><h3>{p.display_name}</h3><b>{value(p)}</b><span>{unit}</span></>:<p>Brak danych</p>}</button>)}</div>
     <article className="v10-seasons devil-card"><div className="v8-panel-title"><CalendarDays size={18}/> PORÓWNANIE SEZONÓW</div><div>{seasonSummaries.length?seasonSummaries.map(x=><div key={x.label}><b>{x.label}</b><span>{x.matches} meczów</span><span>{x.wins} wygranych</span><strong>{x.goals} goli</strong></div>):<p className="muted">Dane pojawią się po rozegranych meczach.</p>}</div></article>
     <article className="v10-month devil-card"><div><small>AUTOMATYCZNE PODSUMOWANIE MIESIĄCA</small><h3>{latestMonth}</h3><p>{monthMatches.length} meczów • {monthWins} wygranych • {monthGoals} goli • {monthTrainings} treningów</p></div><button onClick={copyMonth}>KOPIUJ PODSUMOWANIE</button></article>
     <article className="v10-duos devil-card"><div className="v8-panel-title"><Zap size={18}/> NAJLEPSZE DUETY — CHEMIA</div><div>{props.chemistry.slice(0,5).map((x,i)=><div key={`${x.a.id}-${x.b.id}`}><strong>#{i+1}</strong><span>{x.a.display_name} + {x.b.display_name}</span><b>{x.score}%</b><small>{x.games} gier • {x.wins} wygranych • {x.combinedGA} akcji G/A</small></div>)}</div></article>

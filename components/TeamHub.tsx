@@ -10,9 +10,10 @@ import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
 import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
+import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star,
-  Check, X, Crown, Target, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -30,6 +31,7 @@ type TrainingGame={id:string;training_id:string;team_a_name:string;team_b_name:s
 type TrainingGamePlayer={game_id:string;player_id:string;team:"A"|"B"|string};
 type TrainingEvent={id:string;game_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;created_at:string};
 type MatchMedia={id:string;match_id:string;storage_path:string;caption:string|null;created_at:string};
+type CalendarItem={id:string;kind:string;date:string;time:string;title:string;location:string;details:string;important:boolean;match:Match|null};
 
 const CLUB="K.S. Delta Warszawa GM";
 const isRyszardPlayer=(p:{display_name:string})=>{const n=(p.display_name||"").toLocaleLowerCase("pl-PL");return n.includes("ryszard")&&n.includes("rybacki");};
@@ -42,6 +44,13 @@ const teamLogos:Record<string,string>={
 };
 
 function datePL(x:string){return new Date(`${x}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit",month:"2-digit",year:"numeric"});}
+
+function calendarKindLabel(kind:string){
+  return ({
+    match:"MECZ",training:"TRENING",meeting:"ZBIÓRKA",gathering:"ZBIÓRKA",
+    tournament:"TURNIEJ",birthday:"URODZINY",info:"WAŻNE",club:"KLUBOWE"
+  } as Record<string,string>)[kind]||"WYDARZENIE";
+}
 
 
 function formatCountdown(ms:number){
@@ -60,35 +69,10 @@ function parseLocalMatchDate(date:string,time?:string|null){
   return new Date(`${date}T${safeTime}:00`);
 }
 
-function getNextTraining(now:Date){
-  // Wednesday = 3, Friday = 5. Training: 17:00–18:30.
-  for(let add=0;add<=7;add++){
-    const start=new Date(now);
-    start.setDate(now.getDate()+add);
-    start.setHours(17,0,0,0);
-
-    const day=start.getDay();
-    if(day!==3&&day!==5)continue;
-
-    const end=new Date(start);
-    end.setHours(18,30,0,0);
-
-    if(add===0&&now>=start&&now<end){
-      return {start,end,isLive:true};
-    }
-
-    if(start>now){
-      return {start,end,isLive:false};
-    }
-  }
-
-  // Safety fallback; normal loop above should always return.
-  const start=new Date(now);
-  start.setDate(now.getDate()+7);
-  start.setHours(17,0,0,0);
-  const end=new Date(start);
-  end.setHours(18,30,0,0);
-  return {start,end,isLive:false};
+function seasonLabel(date?:string){
+  const value=date?new Date(`${date}T12:00:00`):new Date();
+  const start=value.getMonth()>=6?value.getFullYear():value.getFullYear()-1;
+  return `${start}/${String(start+1).slice(-2)}`;
 }
 
 function Logo({team,size=58}:{team:string,size?:number}){
@@ -145,6 +129,8 @@ export default function TeamHub(props:{
   const [statsMetric,setStatsMetric]=useState<"ga"|"goals"|"assists"|"mvp"|"matches"|"captain">("ga");
   const [compareA,setCompareA]=useState<string>("");
   const [compareB,setCompareB]=useState<string>("");
+  const [calendarView,setCalendarView]=useState<"month"|"list">("month");
+  const [calendarMonth,setCalendarMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
 
 
   useEffect(()=>{
@@ -274,18 +260,30 @@ export default function TeamHub(props:{
   },[matches,events]);
 
   const nextMatch=matches.find(m=>m.status==="scheduled");
+  const currentSeason=seasonLabel(nextMatch?.match_date||matches[0]?.match_date);
   const nextMatchAt=nextMatch?parseLocalMatchDate(nextMatch.match_date,nextMatch.match_time):null;
   const isMatchDay=nextMatch?(()=>{
     const ms=new Date(`${nextMatch.match_date}T${(nextMatch.match_time||"12:00").slice(0,5)}:00`).getTime()-Date.now();
     return ms>=-3*60*60*1000&&ms<=24*60*60*1000;
   })():false;
   const nextMatchCountdown=nextMatchAt?formatCountdown(nextMatchAt.getTime()-now.getTime()):"—";
-  const nextTraining=getNextTraining(now);
-  const trainingCountdown=nextTraining.isLive
-    ? `Trening trwa • do ${nextTraining.end.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})}`
-    : formatCountdown(nextTraining.start.getTime()-now.getTime());
-  const nextTrainingLabel=nextTraining.start.toLocaleDateString("pl-PL",{weekday:"long",day:"2-digit",month:"2-digit"})+
-    " • "+nextTraining.start.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})+"–18:30";
+  const nextTraining=trainingSessions
+    .map(session=>{
+      const start=parseLocalMatchDate(session.training_date,session.start_time||"17:00");
+      const end=session.end_time
+        ? parseLocalMatchDate(session.training_date,session.end_time)
+        : new Date(start.getTime()+90*60*1000);
+      return {session,start,end,isLive:now>=start&&now<end};
+    })
+    .filter(item=>item.end.getTime()>=now.getTime())
+    .sort((a,b)=>a.start.getTime()-b.start.getTime())[0]||null;
+  const nextTrainingLabel=nextTraining
+    ? [
+        nextTraining.start.toLocaleDateString("pl-PL",{weekday:"long",day:"2-digit",month:"2-digit"}),
+        `${nextTraining.start.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})}–${nextTraining.end.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})}`,
+        nextTraining.session.location
+      ].filter(Boolean).join(" • ")
+    : "";
 
   const futureTeamEvents=teamEvents
     .map(e=>{
@@ -302,11 +300,11 @@ export default function TeamHub(props:{
       subtitle:nextMatch?`${datePL(nextMatch.match_date)} • ${nextMatch.match_time||"godzina do ustalenia"}`:"",
       at:nextMatchAt
     }]:[]),
-    ...(!nextTraining.isLive?[{
+    ...(nextTraining?[{
       kind:"training",
-      title:"Trening drużyny",
+      title:nextTraining.isLive?`${nextTraining.session.title||"Trening"} trwa`:nextTraining.session.title||"Trening drużyny",
       subtitle:nextTrainingLabel,
-      at:nextTraining.start
+      at:nextTraining.isLive?now:nextTraining.start
     }]:[]),
     ...futureTeamEvents.map(e=>({
       kind:e.event_type,
@@ -317,9 +315,36 @@ export default function TeamHub(props:{
     }))
   ].sort((a,b)=>a.at.getTime()-b.at.getTime());
 
-  const nextTeamEvent=smartCandidates[0]||null;
+  const homeAgendaItems=smartCandidates.filter(item=>item.kind!=="match").slice(0,3);
+  const nextTeamEvent=homeAgendaItems[0]||smartCandidates[0]||null;
   const teamClockCountdown=nextTeamEvent?formatCountdown(nextTeamEvent.at.getTime()-now.getTime()):"Brak wydarzeń";
+  const isTeamLive=!!nextTeamEvent&&nextTeamEvent.at.getTime()-now.getTime()<=30*60*1000&&nextTeamEvent.at.getTime()-now.getTime()>=-2*60*60*1000;
   const importantTeamEvent=futureTeamEvents.find(e=>e.important)||futureTeamEvents.find(e=>e.event_type==="birthday")||null;
+  const calendarItems=useMemo<CalendarItem[]>(()=>[
+    ...matches.filter(m=>m.status!=="cancelled").map(m=>({
+      id:`match-${m.id}`,kind:"match",date:m.match_date,time:m.match_time?.slice(0,5)||"",title:`Mecz • ${m.home_team===CLUB?m.away_team:m.home_team}`,
+      location:m.venue||"",details:`${m.home_team} — ${m.away_team}`,important:m.status==="scheduled",match:m
+    })),
+    ...trainingSessions.map(session=>({
+      id:`training-${session.id}`,kind:"training",date:session.training_date,time:session.start_time?.slice(0,5)||"",title:session.title||"Trening",
+      location:session.location||"",details:session.notes||"",important:false,match:null
+    })),
+    ...teamEvents.map(event=>({
+      id:`event-${event.id}`,kind:event.event_type,date:event.event_date,time:event.start_time?.slice(0,5)||"",title:event.title,
+      location:event.location||"",details:event.details||"",important:event.important,match:null
+    }))
+  ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),[matches,trainingSessions,teamEvents]);
+  const calendarDays=useMemo(()=>{
+    const first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
+    const gridStart=new Date(first);
+    gridStart.setDate(first.getDate()-((first.getDay()+6)%7));
+    return Array.from({length:42},(_,index)=>{
+      const date=new Date(gridStart);
+      date.setDate(gridStart.getDate()+index);
+      const key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+      return {date,key,inMonth:date.getMonth()===calendarMonth.getMonth(),items:calendarItems.filter(item=>item.date===key)};
+    });
+  },[calendarItems,calendarMonth]);
   const nextPresent=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&(a.status==="present"||a.status==="yes")).length:0;
   const nextResponses=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&["yes","no","maybe"].includes(a.status)):[];
   const nextResponseCount=new Set(nextResponses.map(a=>a.player_id)).size;
@@ -650,6 +675,26 @@ export default function TeamHub(props:{
     return pairs.sort((x,y)=>y.score-x.score||y.games-x.games||y.combinedGA-x.combinedGA);
   },[players,trainingGames,trainingGamePlayers,trainingEvents]);
 
+  const chemistryNetwork=useMemo(()=>{
+    const linkedPlayers=new Map<string,Player>();
+    trainingChemistry.slice(0,10).forEach(pair=>{
+      if(linkedPlayers.size<6||linkedPlayers.has(pair.a.id))linkedPlayers.set(pair.a.id,pair.a);
+      if(linkedPlayers.size<6||linkedPlayers.has(pair.b.id))linkedPlayers.set(pair.b.id,pair.b);
+    });
+    const networkPlayers=Array.from(linkedPlayers.values()).slice(0,6);
+    const nodes=networkPlayers.map((player,index)=>{
+      const angle=(Math.PI*2*index/Math.max(1,networkPlayers.length))-Math.PI/2;
+      const radius=networkPlayers.length===1?0:36;
+      return {player,x:50+Math.cos(angle)*radius,y:50+Math.sin(angle)*radius};
+    });
+    const positions=new Map(nodes.map(node=>[node.player.id,node]));
+    const links=trainingChemistry
+      .filter(pair=>positions.has(pair.a.id)&&positions.has(pair.b.id))
+      .slice(0,10)
+      .map(pair=>({pair,from:positions.get(pair.a.id)!,to:positions.get(pair.b.id)!}));
+    return {nodes,links};
+  },[trainingChemistry]);
+
   const totalTrainingAttendance=trainingAttendance.filter(a=>a.status==="present").length;
   const avgTrainingAttendance=trainingSessions.length?totalTrainingAttendance/trainingSessions.length:0;
 
@@ -664,6 +709,22 @@ export default function TeamHub(props:{
       ["Kreator",s.a>=5,`${s.a}/5`],["MVP",s.mvp>=1,`${s.mvp}/1`],["Gwiazda",s.mvp>=3,`${s.mvp}/3`],
     ];
   };
+
+  const teamAchievements=[
+    {name:"Pierwszy krok",description:"Rozpoczęcie sezonu i pierwszy oficjalny mecz.",category:"MECZE",current:teamSummary.played,target:1,Icon:Flame},
+    {name:"Pierwsza wygrana",description:"Zwycięstwo, które uruchamia drużynową serię.",category:"ZWYCIĘSTWA",current:teamSummary.wins,target:1,Icon:Trophy},
+    {name:"Trzy zwycięstwa",description:"Regularność i charakter potwierdzone wynikami.",category:"ZWYCIĘSTWA",current:teamSummary.wins,target:3,Icon:Crown},
+    {name:"Dziesięć bramek",description:"Pierwszy ofensywny kamień milowy sezonu.",category:"BRAMKI",current:teamSummary.goals,target:10,Icon:Goal},
+    {name:"Dwadzieścia pięć bramek",description:"Drużyna wchodzi na wyższy poziom skuteczności.",category:"BRAMKI",current:teamSummary.goals,target:25,Icon:Target},
+    {name:"Pięćdziesiąt bramek",description:"Wielki wspólny cel całego zespołu.",category:"BRAMKI",current:teamSummary.goals,target:50,Icon:Medal},
+    {name:"Dziesięć asyst",description:"Współpraca, która zamienia akcje w gole.",category:"DRUŻYNA",current:teamSummary.assists,target:10,Icon:Star},
+    {name:"Sezon drużyny",description:"Dziesięć wspólnie rozegranych spotkań.",category:"MECZE",current:teamSummary.played,target:10,Icon:Users},
+  ];
+  const unlockedTeamAchievements=teamAchievements.filter(item=>item.current>=item.target);
+  const nextTeamAchievement=teamAchievements.find(item=>item.current<item.target)||teamAchievements[teamAchievements.length-1];
+  const chronicleMatches=matches.filter(m=>m.status==="played").slice().sort((a,b)=>b.match_date.localeCompare(a.match_date));
+  const chronicleWins=chronicleMatches.filter(m=>recentResult(m)==="W").length;
+  const chronicleGoals=chronicleMatches.reduce((sum,m)=>sum+(m.home_team===CLUB?(m.home_score||0):(m.away_score||0)),0);
 
   function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary"){
     setMatchInitialTab(initial);
@@ -693,7 +754,7 @@ export default function TeamHub(props:{
     ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
-  return <div className="hub v8-hub v101-stadium-hub">
+  return <div className="hub v8-hub v101-stadium-hub v104-hub">
     <StadiumFX intro/>
     {viewFx&&<div className="v101-cinematic-veil" aria-hidden="true"><span className="v101-cinematic-smoke"/><span className="v101-cinematic-flare"/></div>}
     <aside className="v8-side-nav">
@@ -721,6 +782,8 @@ export default function TeamHub(props:{
       {tab==="home"&&<>
         <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
+          <img className="v106-logged-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM"/>
+          <div className="v104-logged-hero-copy"><span>RAZEM DO WIELKICH RZECZY</span><h1>DELTA 2018 GM</h1><p>GÓRNY MOKOTÓW • OFICJALNY PANEL DRUŻYNY</p></div>
           <div className="v101-hero-club-identity">
             <div className="v101-hero-crest-wrap">
               <span className="v101-hero-crest-fire"/>
@@ -734,7 +797,7 @@ export default function TeamHub(props:{
           </div>
         </section>
 
-        {nextMatch&&<><section className="v82-match-rsvp-grid">
+        {nextMatch&&<><section className="v105-home-command-grid">
           <article className="v8-match-card devil-card v101-logged-match">
             <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
             <div className="v8-match-stage">
@@ -772,13 +835,11 @@ export default function TeamHub(props:{
 
             <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary")}>CENTRUM MECZU <ChevronRight size={17}/></button>
           </article>
-        </section>
-
-        <section className="v891-team-clock-row">
+          <div className="v105-command-side">
           <article className="v891-team-clock devil-card" onClick={()=>setTab("calendar")}>
             <div className="v891-clock-icon"><CalendarDays size={22}/></div>
             <div className="v891-clock-copy">
-              <span>ZEGAR DRUŻYNY</span>
+              <span>PLAN TYGODNIA</span>
               <h3>{nextTeamEvent?.title||"Brak zaplanowanych wydarzeń"}</h3>
               <p>{nextTeamEvent?.subtitle||"Dodaj wydarzenia w Kalendarzu drużyny."}</p>
             </div>
@@ -800,6 +861,7 @@ export default function TeamHub(props:{
               <span>Brak dodatkowych ważnych informacji.</span>
             </>}
           </article>
+          </div>
         </section></>}
 
         <section className="v8-stats-row">
@@ -810,20 +872,16 @@ export default function TeamHub(props:{
         </section>
 
         <section className="v8-dashboard-grid">
-          <article className="v8-panel v101-now-card devil-card" onClick={()=>setTab("calendar")}>
-            <div className="v8-panel-title"><Flame size={18}/> DZIEJE SIĘ TERAZ <span className="v101-live-dot">LIVE</span></div>
-            <div className="v101-now-main">
-              <div className="v101-now-icon"><CalendarDays size={28}/></div>
-              <div>
-                <span>NAJBLIŻSZE WYDARZENIE</span>
-                <h3>{nextTeamEvent?.title||"Spokojny dzień"}</h3>
-                <p>{nextTeamEvent?.subtitle||"Kolejne wydarzenia pojawią się automatycznie z kalendarza."}</p>
-              </div>
+          <article className={`v8-panel v101-now-card v108-week-pulse devil-card ${isTeamLive?"is-live":""}`} onClick={()=>setTab("calendar")}>
+            <div className="v8-panel-title"><Flame size={18}/> {isTeamLive?"DZIEJE SIĘ TERAZ":"RYTM TYGODNIA"} {isTeamLive&&<span className="v101-live-dot">LIVE</span>}</div>
+            <div className="v108-week-list">
+              {homeAgendaItems.length?homeAgendaItems.map((item,index)=><div className="v108-week-row" key={`${item.kind}-${item.at.toISOString()}`}>
+                <span className="v108-week-index">0{index+1}</span>
+                <div><small>{item.kind==="training"?"TRENING":item.important?"WAŻNE":"WYDARZENIE"}</small><b>{item.title}</b><p>{item.subtitle}</p></div>
+                <ChevronRight size={15}/>
+              </div>):<div className="v108-week-empty"><CalendarDays size={27}/><div><b>Spokojny tydzień</b><span>Brak dodatkowych wydarzeń poza najbliższym meczem.</span></div></div>}
             </div>
-            <div className="v101-now-footer">
-              <span><Bell size={13}/>{clubUpdates[0]?.title||"Brak nowych komunikatów"}</span>
-              <ChevronRight size={15}/>
-            </div>
+            <div className="v101-now-footer"><span><Bell size={13}/>Następny punkt planu: {teamClockCountdown}</span><ChevronRight size={15}/></div>
           </article>
 
           <article className="v8-panel v86-recent-matches devil-card">
@@ -928,7 +986,7 @@ export default function TeamHub(props:{
               <div className="v877-club-home-list">
                 {clubUpdates.slice(0,3).map(item=><button type="button" key={item.id} onClick={()=>{setTab("club");setFocusedClubKey(item.source_key);window.setTimeout(()=>document.getElementById(`club-update-${item.source_key}`)?.scrollIntoView({behavior:"smooth",block:"center"}),250)}}>
                   <span>{new Date(item.published_at).toLocaleDateString("pl-PL")}</span>
-                  <b>{item.title}</b>
+                  <b>{decodeHtmlEntities(item.title)}</b>
                   <ChevronRight size={14}/>
                 </button>)}
               </div>
@@ -999,33 +1057,50 @@ export default function TeamHub(props:{
           </div>
         </div>
 
-        <div className="v891-calendar-grid">
-          {(()=>{
-            const items=[
-              ...matches.filter(m=>m.status==="scheduled").map(m=>({
-                id:`match-${m.id}`,kind:"match",date:m.match_date,time:m.match_time||"",title:`Mecz • ${recentOpponent(m)}`,
-                location:m.venue||"",details:`${m.home_team} — ${m.away_team}`,important:true,match:m
-              })),
-              ...teamEvents.map(e=>({
-                id:e.id,kind:e.event_type,date:e.event_date,time:e.start_time?.slice(0,5)||"",title:e.title,
-                location:e.location||"",details:e.details||"",important:e.important,match:null as Match|null
-              }))
-            ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
-            return items.length?items.map(item=><article key={item.id} className={`v891-calendar-event devil-card type-${item.kind} ${item.important?"important":""}`}>
-              <div className="v891-event-date">
-                <b>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit"})}</b>
-                <span>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{month:"short"}).replace(".","").toUpperCase()}</span>
-              </div>
-              <div className="v891-event-main">
-                <span className="v891-event-type">{item.kind==="match"?"MECZ":item.kind==="training"?"TRENING":item.kind==="birthday"?"URODZINY":item.kind==="tournament"?"TURNIEJ":"WYDARZENIE"}</span>
-                <h3>{item.title}</h3>
-                <p>{[item.time,item.location].filter(Boolean).join(" • ")||"Szczegóły do ustalenia"}</p>
-                {item.details&&<small>{item.details}</small>}
-              </div>
-              {item.match?<button onClick={()=>openMatch(item.match!,"summary")}>CENTRUM MECZU <ChevronRight size={13}/></button>:null}
-            </article>):<div className="v891-calendar-empty devil-card"><CalendarDays size={34}/><h3>Kalendarz jest pusty</h3><p>Administrator może zaplanować treningi, turnieje, urodziny i inne wydarzenia.</p></div>
-          })()}
+        <div className="v103-calendar-toolbar devil-card">
+          <div className="v103-calendar-nav">
+            <button aria-label="Poprzedni miesiąc" onClick={()=>setCalendarMonth(value=>new Date(value.getFullYear(),value.getMonth()-1,1))}><ChevronLeft size={18}/></button>
+            <strong>{calendarMonth.toLocaleDateString("pl-PL",{month:"long",year:"numeric"})}</strong>
+            <button aria-label="Następny miesiąc" onClick={()=>setCalendarMonth(value=>new Date(value.getFullYear(),value.getMonth()+1,1))}><ChevronRight size={18}/></button>
+            <button className="v103-calendar-today" onClick={()=>setCalendarMonth(new Date(new Date().getFullYear(),new Date().getMonth(),1))}>DZISIAJ</button>
+          </div>
+          <div className="v103-calendar-views" role="group" aria-label="Widok kalendarza">
+            <button className={calendarView==="month"?"active":""} onClick={()=>setCalendarView("month")}><Grid3X3 size={15}/> MIESIĄC</button>
+            <button className={calendarView==="list"?"active":""} onClick={()=>setCalendarView("list")}><List size={15}/> LISTA</button>
+          </div>
         </div>
+
+        {calendarView==="month"?<div className="v104-calendar-layout"><div className="v103-calendar-month devil-card">
+          <div className="v103-calendar-weekdays">{["PN","WT","ŚR","CZ","PT","SOB","ND"].map(day=><span key={day}>{day}</span>)}</div>
+          <div className="v103-calendar-days">
+            {calendarDays.map(day=>{
+              const isToday=day.key===`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+              return <div key={day.key} className={`v103-calendar-day ${day.inMonth?"":"outside"} ${isToday?"today":""}`}>
+                <span className="v103-day-number">{day.date.getDate()}</span>
+                <div className="v103-day-events">
+                  {day.items.slice(0,3).map(item=>item.match
+                    ?<button key={item.id} className={`v103-day-event type-${item.kind}`} title={`${item.title} ${item.time}`} onClick={()=>openMatch(item.match!,"summary")}><i/>{item.time&&<time>{item.time}</time>}<b>{item.title}</b></button>
+                    :<div key={item.id} className={`v103-day-event type-${item.kind}`} title={`${item.title} ${item.time}`}><i/>{item.time&&<time>{item.time}</time>}<b>{item.title}</b></div>)}
+                  {day.items.length>3&&<small>+{day.items.length-3} więcej</small>}
+                </div>
+              </div>;
+            })}
+          </div>
+        </div><aside className="v104-calendar-agenda devil-card"><span className="eyebrow gold">NADCHODZĄCE WYDARZENIA</span><h3>Najbliższe w drużynie</h3><div>{calendarItems.filter(item=>`${item.date} ${item.time}`>=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`).slice(0,6).map(item=><article key={item.id} className={`type-${item.kind}`}><time><b>{new Date(`${item.date}T12:00:00`).getDate()}</b><span>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{month:"short"}).replace(".","").toUpperCase()}</span></time><div><small>{calendarKindLabel(item.kind)}</small><b>{item.title}</b><span>{[item.time,item.location].filter(Boolean).join(" • ")}</span></div>{item.match&&<button onClick={()=>openMatch(item.match!,"summary")}><ChevronRight size={15}/></button>}</article>)}</div></aside></div>:<div className="v891-calendar-grid v103-calendar-list">
+          {calendarItems.length?calendarItems.map(item=><article key={item.id} className={`v891-calendar-event devil-card type-${item.kind} ${item.important?"important":""}`}>
+            <div className="v891-event-date">
+              <b>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit"})}</b>
+              <span>{new Date(`${item.date}T12:00:00`).toLocaleDateString("pl-PL",{month:"short"}).replace(".","").toUpperCase()}</span>
+            </div>
+            <div className="v891-event-main">
+              <span className="v891-event-type">{calendarKindLabel(item.kind)}</span>
+              <h3>{item.title}</h3>
+              <p>{[item.time,item.location].filter(Boolean).join(" • ")||"Szczegóły do ustalenia"}</p>
+              {item.details&&<small>{item.details}</small>}
+            </div>
+            {item.match?<button onClick={()=>openMatch(item.match!,"summary")}>CENTRUM MECZU <ChevronRight size={13}/></button>:null}
+          </article>):<div className="v891-calendar-empty devil-card"><CalendarDays size={34}/><h3>Kalendarz jest pusty</h3><p>Administrator może zaplanować treningi, turnieje, urodziny i inne wydarzenia.</p></div>}
+        </div>}
       </section>}
 
       {tab==="training"&&<section className="section v8-section-page v900-training-center">
@@ -1109,6 +1184,28 @@ export default function TeamHub(props:{
             <p>Wynik oparty na wspólnych grach kontrolnych: zwycięstwach oraz wspólnym udziale przy golach. To wskaźnik zabawowy, nie ocena zawodnika.</p>
           </div>
 
+          {chemistryNetwork.nodes.length>1&&<div className="v103-chemistry-network" aria-label="Mapa połączeń między zawodnikami">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              {chemistryNetwork.links.map(({pair,from,to})=><line
+                key={`${pair.a.id}-${pair.b.id}`}
+                x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                className={pair.score>=70?"strong":pair.score>=45?"medium":"developing"}
+                style={{strokeWidth:Math.max(1.1,pair.score/28)}}
+              />)}
+            </svg>
+            {chemistryNetwork.nodes.map(node=><button
+              key={node.player.id}
+              className="v103-chemistry-node"
+              style={{left:`${node.x}%`,top:`${node.y}%`}}
+              onClick={()=>setSelectedPlayer(node.player)}
+              title={`Otwórz profil: ${node.player.display_name}`}
+            >
+              <span>{isRyszardPlayer(node.player)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={node.player.id}/>}</span>
+              <b>{node.player.display_name}</b>
+            </button>)}
+            <div className="v103-chemistry-legend"><span className="strong">silne</span><span className="medium">dobre</span><span className="developing">rozwijane</span></div>
+          </div>}
+
           <div className="v900-chemistry-grid">
             {trainingChemistry.slice(0,10).map((pair,index)=><button className="v900-pair-card" key={`${pair.a.id}-${pair.b.id}`}>
               <span className="v900-pair-rank">#{index+1}</span>
@@ -1145,13 +1242,14 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
-        <div className="v871-team-hero devil-card">
+        <div className="v871-team-hero v108-team-hero devil-card">
           <div className="v871-team-hero-overlay"/>
+          <img className="v108-team-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM"/>
           <div className="v871-team-crest"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/></div>
           <div className="v871-team-copy">
-            <span className="eyebrow gold">GÓRNY MOKOTÓW • TEAM HUB</span>
+            <span className="eyebrow gold">POZNAJ DIABEŁKI • GÓRNY MOKOTÓW</span>
             <h2>DELTA <span>2018</span> GM</h2>
-            <p>Diabełki z Mokotowa • jedna drużyna, wspólna historia.</p>
+            <p>Pasja, charakter i przyjaźń. Jedna drużyna, która rośnie z każdym treningiem.</p>
             <div className="v871-team-pills">
               <span><Users size={14}/>{players.length} zawodników</span>
               <span><Goal size={14}/>{teamSummary.goals} bramek</span>
@@ -1259,7 +1357,7 @@ export default function TeamHub(props:{
           <div className="v890-stats-copy">
             <span className="eyebrow gold">DELTA 2018 GM • DATA STUDIO</span>
             <h2>CENTRUM <span>STATYSTYK</span></h2>
-            <p>Sezon 2026/27 • liczby, liderzy, rekordy i forma drużyny w jednym miejscu.</p>
+            <p>Sezon {currentSeason} • liczby, liderzy, rekordy i forma drużyny w jednym miejscu.</p>
           </div>
           <div className="v890-stats-hero-metrics">
             <div><strong>{teamSummary.played}</strong><span>MECZE</span></div>
@@ -1479,9 +1577,19 @@ export default function TeamHub(props:{
         </div>
       </section>}
 
-      {tab==="achievements"&&<section className="section v8-section-page"><div className="section-title"><h2>Osiągnięcia</h2></div><div className="achievement-grid">{[["Start sezonu",teamSummary.played>=1,teamSummary.played,1],["3 zwycięstwa",teamSummary.wins>=3,teamSummary.wins,3],["10 bramek",teamSummary.goals>=10,teamSummary.goals,10],["25 bramek",teamSummary.goals>=25,teamSummary.goals,25],["50 bramek",teamSummary.goals>=50,teamSummary.goals,50],["10 asyst",teamSummary.assists>=10,teamSummary.assists,10]].map(([name,ok,current,target])=><div className={`achievement devil-card ${ok?"unlocked":""}`} key={name as string}><Trophy size={24}/><h3>{name}</h3><p>{ok?"ZDOBYTE":`${current}/${target}`}</p></div>)}</div></section>}
+      {tab==="achievements"&&<section className="section v8-section-page v108-achievements-page">
+        <div className="v108-achievements-hero devil-card"><div><span className="eyebrow gold">DROGA DRUŻYNY • SEZON 2026/27</span><h2>MAŁE KROKI.<br/><em>WIELKIE OSIĄGNIĘCIA.</em></h2><p>Każdy mecz, gol i wspólna akcja zapisują kolejny rozdział historii DELTA 2018 GM.</p></div><div className="v108-achievement-orbit"><Trophy size={62}/><b>{unlockedTeamAchievements.length}</b><span>ZDOBYTE TROFEA</span></div></div>
+        <div className="v108-achievement-summary">
+          <article className="v108-next-trophy devil-card"><div className="v8-panel-title"><Target size={18}/> NAJBLIŻSZY CEL</div><div><span className="v108-trophy-icon"><nextTeamAchievement.Icon size={35}/></span><div><small>{nextTeamAchievement.category}</small><h3>{nextTeamAchievement.name}</h3><p>{nextTeamAchievement.description}</p></div><strong>{Math.min(100,Math.round(nextTeamAchievement.current/nextTeamAchievement.target*100))}%</strong></div><div className="v108-progress"><i style={{width:`${Math.min(100,nextTeamAchievement.current/nextTeamAchievement.target*100)}%`}}/></div><span>{nextTeamAchievement.current} / {nextTeamAchievement.target}</span></article>
+          <article className="v108-trophy-stats devil-card"><div><b>{unlockedTeamAchievements.length}</b><span>ZDOBYTE</span></div><div><b>{teamAchievements.length-unlockedTeamAchievements.length}</b><span>PRZED NAMI</span></div><div><b>{Math.round(unlockedTeamAchievements.length/teamAchievements.length*100)}%</b><span>DROGI</span></div></article>
+        </div>
+        <div className="v108-achievement-road">{teamAchievements.map((item,index)=>{const ok=item.current>=item.target;const progress=Math.min(100,item.current/item.target*100);return <article className={`v108-road-card devil-card ${ok?"unlocked":"locked"}`} key={item.name}><span className="v108-road-number">{String(index+1).padStart(2,"0")}</span><span className="v108-road-icon"><item.Icon size={25}/></span><small>{item.category}</small><h3>{item.name}</h3><p>{item.description}</p><div className="v108-progress"><i style={{width:`${progress}%`}}/></div><b>{ok?"ZDOBYTE":`${item.current} / ${item.target}`}</b></article>})}</div>
+      </section>}
 
-      {tab==="chronicle"&&<section className="section v8-section-page"><div className="section-title"><h2>Kronika sezonu</h2></div><div className="list">{matches.filter(m=>m.status==="played").slice().reverse().map(m=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;return <article className="chronicle-card devil-card" key={m.id}><div className="chronicle-head"><span>Kolejka {m.round_no||"—"}</span><span>{datePL(m.match_date)}</span></div><div className="chronicle-score"><span>{m.home_team}</span><b>{m.home_score}:{m.away_score}</b><span>{m.away_team}</span></div><div className="chronicle-columns"><div><h4>Bramki i asysty</h4>{matchEvents.filter(e=>e.event_type==="goal").map(e=>{const scorer=players.find(p=>p.id===e.player_id)?.display_name||"?";const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;return <p key={e.id}>{scorer}{assist?` • asysta ${assist}`:""}</p>})}</div><div><h4>Kadra</h4><p>Kapitan: {captainName||"—"}</p><p>Wyjściowa 6: {starters.join(", ")||"—"}</p></div><div><h4>MVP</h4><p>{players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name||"—"}</p></div></div><MatchGallery matchId={m.id} media={matchMedia}/></article>})}</div></section>}
+      {tab==="chronicle"&&<section className="section v8-section-page v108-chronicle-page">
+        <div className="v108-chronicle-hero devil-card"><div><span className="eyebrow gold">KRONIKA SEZONU • 2026/27</span><h2>NASZA HISTORIA<br/><em>PISANA MECZAMI</em></h2><p>Wyniki są ważne. Jeszcze ważniejsze są emocje, bohaterowie i chwile, które budują drużynę.</p></div><div className="v108-season-minute"><span>SEZON W JEDNEJ MINUCIE</span><div><b>{chronicleMatches.length}<small>MECZÓW</small></b><b>{chronicleWins}<small>WYGRANYCH</small></b><b>{chronicleGoals}<small>GOLI</small></b></div></div></div>
+        <div className="v108-timeline">{chronicleMatches.length?chronicleMatches.map((m,index)=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;const mvpName=players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name;const result=recentResult(m);return <article className={`v108-story-card devil-card result-${result.toLowerCase()}`} key={m.id}><div className="v108-timeline-marker"><span>{String(chronicleMatches.length-index).padStart(2,"0")}</span></div><div className="v108-story-cover"><div className="v108-story-date"><span>KOLEJKA {m.round_no||"—"}</span><b>{datePL(m.match_date)}</b></div><div className="v108-story-score"><span>{m.home_team}</span><strong>{m.home_score}:{m.away_score}</strong><span>{m.away_team}</span></div><div className="v108-story-result">{result==="W"?"ZWYCIĘSTWO":result==="R"?"REMIS":"LEKCJA NA PRZYSZŁOŚĆ"}</div></div><div className="v108-story-content"><div><small>BOHATER SPOTKANIA</small><h3>{mvpName||captainName||"Cała drużyna"}</h3><p>{result==="W"?"Wspólna praca, odwaga i konsekwencja przyniosły drużynie kolejne zwycięstwo.":"Każdy mecz daje doświadczenie, z którego drużyna buduje kolejny krok."}</p></div><div className="v108-story-details"><span><Goal size={15}/>{matchEvents.filter(e=>e.event_type==="goal").length} akcji bramkowych</span><span><Crown size={15}/>Kapitan: {captainName||"—"}</span><span><Users size={15}/>{starters.length} w wyjściowym składzie</span></div><MatchGallery matchId={m.id} media={matchMedia}/></div></article>}):<div className="v108-chronicle-empty devil-card"><History size={42}/><h3>Pierwszy rozdział jeszcze przed nami</h3><p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p></div>}</div>
+      </section>}
 
       {tab==="club"&&<section className="section v8-section-page v876-club-page">
         <div className="v876-club-hero devil-card">
@@ -1515,9 +1623,9 @@ export default function TeamHub(props:{
               <span>K.S. DELTA WARSZAWA</span>
               <time>{new Date(item.published_at).toLocaleDateString("pl-PL")}</time>
             </div>
-            {item.title.includes("2018 Górny Mokotów")&&<div className="v878-direct-badge">2018 GÓRNY MOKOTÓW</div>}
-            <h3>{item.title}</h3>
-            {item.body&&<p>{item.body}</p>}
+            {decodeHtmlEntities(item.title).includes("2018 Górny Mokotów")&&<div className="v878-direct-badge">2018 GÓRNY MOKOTÓW</div>}
+            <h3>{decodeHtmlEntities(item.title)}</h3>
+            {item.body&&<p>{decodeHtmlEntities(item.body)}</p>}
             <a href={item.source_url} target="_blank" rel="noreferrer">ŹRÓDŁO: DELTA.WARSZAWA.PL <ChevronRight size={13}/></a>
           </article>)}
         </div>
@@ -1532,7 +1640,7 @@ export default function TeamHub(props:{
       {isRyszardPlayer(selectedPlayer)&&<div className="v874-profile-hero"><img src="/assets/players/ryszard-hero.png" alt={`Profil ${selectedPlayer.display_name}`}/><div className="v874-profile-hero-shade"/><div className="v874-profile-hero-label"><img src="/teamlogos/gm.png" alt=""/><div><span>DELTA 2018 GM</span><b>{selectedPlayer.display_name}</b></div></div></div>}
       <div className={`premium-profile ${isRyszardPlayer(selectedPlayer)?"v874-profile-stats-layout":""}`}>
         {!isRyszardPlayer(selectedPlayer)&&<div className="premium-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">PLAYER PROFILE</span><PlayerPhoto playerId={selectedPlayer.id} className="premium-photo-img"/></div>}
-        <div className="premium-info"><span className="eyebrow gold">PREMIUM PLAYER PROFILE</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div>
+        <div className="premium-info"><span className="eyebrow gold">PROFIL ZAWODNIKA</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div>
       </div><h3>Osiągnięcia zawodnika</h3><div className="achievement-grid">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={name as string} className={`achievement ${ok?"unlocked":""}`}><Star size={20}/><h3>{name}</h3><p>{ok?"ZDOBYTE":progress}</p></div>)}</div></div></div>}
 
     {selectedMatch&&<MatchCenterModal
