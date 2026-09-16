@@ -137,10 +137,18 @@ function priority(title:string){
 function parseDeltaUpdates(html:string){
   const tokens=htmlToTokens(html);
 
-  // Start exactly at the news feed of this team. This prevents roster,
-  // standings and future schedule rows from being mistaken for articles.
-  const start=tokens.findIndex(x=>x.includes("Powołania 2018 Górny Mokotów"));
-  if(start<0) throw new Error("Nie znaleziono sekcji wiadomości 2018 Górny Mokotów na stronie DELTY.");
+  // The selected team's news feed is newest-first. The former parser started
+  // at the known call-up article, so every newer article above it was skipped.
+  // Walk back to the pagination marker that directly precedes this feed.
+  const knownTeamArticle=tokens.findIndex(x=>x.includes("Powołania 2018 Górny Mokotów"));
+  if(knownTeamArticle<0) throw new Error("Nie znaleziono sekcji wiadomości 2018 Górny Mokotów na stronie DELTY.");
+  let start=knownTeamArticle;
+  for(let i=knownTeamArticle-1;i>=Math.max(0,knownTeamArticle-180);i--){
+    if(tokens[i].includes(">>>")){
+      start=i+1;
+      break;
+    }
+  }
 
   const scoped=tokens.slice(start);
   const heads:{title:string;date:string;headIndex:number;dateIndex:number}[]=[];

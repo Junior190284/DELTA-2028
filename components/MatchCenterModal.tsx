@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PlayerPhoto from "./PlayerPhoto";
 import {
   CalendarDays, Check, ChevronRight, Crown, Goal, Save, ShieldCheck,
   Star, Trophy, UserCheck, Users, X
@@ -18,6 +19,15 @@ type Tab="summary"|"attendance"|"lineup"|"events"|"mvp";
 
 function datePL(x:string){
   return new Date(`${x}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+
+function positionOrder(position:string|null){
+  const value=(position||"").toLocaleLowerCase("pl-PL");
+  if(value.includes("bram"))return 0;
+  if(value.includes("obro"))return 1;
+  if(value.includes("pom")||value.includes("środ")||value.includes("srod"))return 2;
+  if(value.includes("nap"))return 3;
+  return 4;
 }
 
 export default function MatchCenterModal(props:{
@@ -59,6 +69,8 @@ export default function MatchCenterModal(props:{
     ()=>new Set(matchLineup.filter(l=>l.is_starter).map(l=>l.player_id)),
     [matchLineup]
   );
+  const starters=useMemo(()=>matchLineup.filter(l=>l.is_starter).map(l=>players.find(p=>p.id===l.player_id)).filter(Boolean).sort((a,b)=>positionOrder(a!.position)-positionOrder(b!.position)) as Player[],[matchLineup,players]);
+  const substitutes=useMemo(()=>matchLineup.filter(l=>!l.is_starter).map(l=>players.find(p=>p.id===l.player_id)).filter(Boolean) as Player[],[matchLineup,players]);
 
   function confirmSaved(message="Zapisano"){
     setSaved(message);
@@ -145,6 +157,12 @@ export default function MatchCenterModal(props:{
       .filter(l=>!(l.match_id===match.id&&l.player_id===playerId));
     props.onDataChange({lineup:[...next,row]});
     confirmSaved("Kapitan zapisany");
+  }
+
+  async function setPlayerPosition(playerId:string,position:string){
+    const {error}=await supabase.from("players").update({position}).eq("id",playerId);
+    if(error)return alert(error.message);
+    confirmSaved("Pozycja zawodnika zapisana");
   }
 
   async function addGoal(){
@@ -254,6 +272,24 @@ export default function MatchCenterModal(props:{
             <div className="v85-summary-card"><span>WYJŚCIOWA 6</span><b>{selectedStarterIds.size}/6</b><small>{matchLineup.find(l=>l.is_captain)?"Kapitan wybrany":"Kapitan do ustalenia"}</small></div>
           </div>
 
+          <div className="v109-match-story">
+            <section className="v109-modal-pitch">
+              <div className="v109-pitch-lines"/>
+              {(starters.length?starters:players.filter(p=>matchAttendance.some(a=>a.player_id===p.id&&(a.status==="present"||a.status==="yes"))).slice(0,6)).map((p,index)=>{
+                const li=matchLineup.find(l=>l.player_id===p.id);
+                return <div className={`v109-pitch-person pos-${index+1}`} key={p.id}>
+                  <span><PlayerPhoto playerId={p.id}/>{li?.is_captain&&<Crown size={14}/>}</span>
+                  <b>{p.display_name.split(" ")[0]}</b><small>{p.position||"Pozycja"}</small>
+                </div>;
+              })}
+              {!starters.length&&<div className="v109-pitch-hint">Ustaw pierwszą 6 w zakładce „Skład”</div>}
+            </section>
+            <aside className="v109-match-narrative">
+              <div><span>ŁAWKA REZERWOWYCH</span>{substitutes.length?substitutes.map(p=><b key={p.id}>#{p.shirt_number||"—"} {p.display_name}</b>):<em>Nie wybrano rezerwowych</em>}</div>
+              <div><span>BRAMKI I ASYSTY</span>{matchEvents.filter(e=>e.event_type==="goal").length?matchEvents.filter(e=>e.event_type==="goal").map(e=><b key={e.id}>⚽ {players.find(p=>p.id===e.player_id)?.display_name||"—"}{e.assist_player_id?` • as. ${players.find(p=>p.id===e.assist_player_id)?.display_name||"—"}`:""}</b>):<em>Relacja strzelecka pojawi się tutaj</em>}</div>
+            </aside>
+          </div>
+
           {canManageMatch&&<div className="mc-basics v85-basics">
             <label>Status<select id="mc-status" defaultValue={match.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
             <label>Godzina<input id="mc-time" defaultValue={match.match_time||""}/></label>
@@ -311,6 +347,9 @@ export default function MatchCenterModal(props:{
                 <span className="v82-shirt">#{p.shirt_number||"—"}</span>
                 <b>{p.display_name}</b>
                 <small>{p.position||"Zawodnik"}</small>
+                <select className="v109-position-select" value={p.position||""} onChange={e=>setPlayerPosition(p.id,e.target.value)}>
+                  <option value="">Pozycja</option><option value="Bramkarz">Bramkarz</option><option value="Obrońca">Obrońca</option><option value="Pomocnik">Pomocnik</option><option value="Napastnik">Napastnik</option>
+                </select>
                 <div>
                   <button className={li?.is_starter?"active":""} onClick={()=>toggleStarter(p.id)}>{li?.is_starter?"W Wyjściowej 6":"Dodaj do 6"}</button>
                   <button className={li?.is_captain?"active captain":""} onClick={()=>setCaptain(p.id)}><Crown size={13}/> Kapitan</button>

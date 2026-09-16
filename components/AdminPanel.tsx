@@ -582,9 +582,9 @@ export default function AdminPanel(props:{
     }
   }
 
-  async function addTeamEvent(){
+  async function addTeamEvent(presetType?:string){
     const title=prompt("Nazwa wydarzenia"); if(!title)return;
-    const event_type=prompt("Typ: training / tournament / birthday / info / other","training")||"info";
+    const event_type=presetType||(prompt("Typ: training / tournament / birthday / info / other","training")||"info");
     const event_date=prompt("Data YYYY-MM-DD"); if(!event_date)return;
     const start_time=prompt("Godzina HH:MM","17:00")||null;
     const end_time=prompt("Koniec HH:MM","18:30")||null;
@@ -802,7 +802,7 @@ export default function AdminPanel(props:{
       </div>}
 
       {tab==="calendar" && canCalendar && <section className="admin-card">
-        <div className="admin-card-head"><h2>Kalendarz drużyny</h2><button onClick={addTeamEvent}><Plus size={15}/> Dodaj wydarzenie</button></div>
+        <div className="admin-card-head"><h2>Kalendarz drużyny</h2><div className="v109-admin-event-actions"><button onClick={()=>addTeamEvent("birthday")}><Plus size={15}/> Urodziny</button><button onClick={()=>addTeamEvent("info")}><Plus size={15}/> Ważna informacja</button><button onClick={()=>addTeamEvent()}><Plus size={15}/> Inne wydarzenie</button></div></div>
         <p className="muted">Tutaj planujesz treningi, turnieje, urodziny, zbiórki i inne ważne wydarzenia. Mecze nadal dodajesz w zakładce Mecze.</p>
         <div className="admin-news-list">
           {teamEvents.length?teamEvents.map(e=><article key={e.id}>

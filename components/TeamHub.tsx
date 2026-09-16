@@ -127,6 +127,7 @@ export default function TeamHub(props:{
   const [accountOpen,setAccountOpen]=useState(false);
   const [now,setNow]=useState(()=>new Date());
   const [statsMetric,setStatsMetric]=useState<"ga"|"goals"|"assists"|"mvp"|"matches"|"captain">("ga");
+  const [statsPlayerId,setStatsPlayerId]=useState<string>("");
   const [compareA,setCompareA]=useState<string>("");
   const [compareB,setCompareB]=useState<string>("");
   const [calendarView,setCalendarView]=useState<"month"|"list">("month");
@@ -135,6 +136,8 @@ export default function TeamHub(props:{
 
   useEffect(()=>{
     setViewFx(true);
+    setSelectedMatch(null);
+    setSelectedPlayer(null);
     const timer=window.setTimeout(()=>setViewFx(false),520);
     return ()=>window.clearTimeout(timer);
   },[tab]);
@@ -293,7 +296,7 @@ export default function TeamHub(props:{
     .filter(e=>e.at.getTime()>=now.getTime()-60000)
     .sort((a,b)=>a.at.getTime()-b.at.getTime());
 
-  const smartCandidates:{kind:string;title:string;subtitle:string;at:Date;important?:boolean}[]=[
+  const smartCandidates:{id?:string;kind:string;title:string;subtitle:string;at:Date;important?:boolean}[]=[
     ...(nextMatchAt&&nextMatchAt>now?[{
       kind:"match",
       title:`Mecz • ${nextMatch?(nextMatch.home_team===CLUB?nextMatch.away_team:nextMatch.home_team):""}`,
@@ -307,6 +310,7 @@ export default function TeamHub(props:{
       at:nextTraining.isLive?now:nextTraining.start
     }]:[]),
     ...futureTeamEvents.map(e=>({
+      id:e.id,
       kind:e.event_type,
       title:e.title,
       subtitle:[e.event_date,e.start_time?.slice(0,5),e.location].filter(Boolean).join(" • "),
@@ -315,11 +319,26 @@ export default function TeamHub(props:{
     }))
   ].sort((a,b)=>a.at.getTime()-b.at.getTime());
 
-  const homeAgendaItems=smartCandidates.filter(item=>item.kind!=="match").slice(0,3);
+  const importantTeamEvent=futureTeamEvents.find(e=>e.important)||futureTeamEvents.find(e=>e.event_type==="birthday")||null;
+  const homeAgendaItems=smartCandidates.filter(item=>item.kind!=="match"&&item.id!==importantTeamEvent?.id).slice(0,3);
   const nextTeamEvent=homeAgendaItems[0]||smartCandidates[0]||null;
   const teamClockCountdown=nextTeamEvent?formatCountdown(nextTeamEvent.at.getTime()-now.getTime()):"Brak wydarzeń";
   const isTeamLive=!!nextTeamEvent&&nextTeamEvent.at.getTime()-now.getTime()<=30*60*1000&&nextTeamEvent.at.getTime()-now.getTime()>=-2*60*60*1000;
-  const importantTeamEvent=futureTeamEvents.find(e=>e.important)||futureTeamEvents.find(e=>e.event_type==="birthday")||null;
+  const recurringTrainingItems=useMemo<CalendarItem[]>(()=>{
+    const items:CalendarItem[]=[];
+    const start=new Date(now.getFullYear(),now.getMonth()-1,1,12);
+    const end=new Date(now.getFullYear()+1,6,1,12);
+    const existing=new Set(trainingSessions.map(s=>s.training_date));
+    for(const cursor=new Date(start);cursor<=end;cursor.setDate(cursor.getDate()+1)){
+      const day=cursor.getDay();
+      if(day!==3&&day!==5)continue;
+      const date=`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`;
+      if(existing.has(date))continue;
+      const wednesday=day===3;
+      items.push({id:`routine-${date}`,kind:"training",date,time:"17:00",title:wednesday?"Trening • Warszawianka":"Trening • Wiktorska",location:wednesday?"Warszawianka, ul. Piaseczyńska 35":"Boisko, ul. Wiktorska 32",details:"17:00–18:30 • stały trening drużyny",important:false,match:null});
+    }
+    return items;
+  },[trainingSessions,now.getFullYear(),now.getMonth()]);
   const calendarItems=useMemo<CalendarItem[]>(()=>[
     ...matches.filter(m=>m.status!=="cancelled").map(m=>({
       id:`match-${m.id}`,kind:"match",date:m.match_date,time:m.match_time?.slice(0,5)||"",title:`Mecz • ${m.home_team===CLUB?m.away_team:m.home_team}`,
@@ -329,11 +348,12 @@ export default function TeamHub(props:{
       id:`training-${session.id}`,kind:"training",date:session.training_date,time:session.start_time?.slice(0,5)||"",title:session.title||"Trening",
       location:session.location||"",details:session.notes||"",important:false,match:null
     })),
+    ...recurringTrainingItems,
     ...teamEvents.map(event=>({
       id:`event-${event.id}`,kind:event.event_type,date:event.event_date,time:event.start_time?.slice(0,5)||"",title:event.title,
       location:event.location||"",details:event.details||"",important:event.important,match:null
     }))
-  ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),[matches,trainingSessions,teamEvents]);
+  ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),[matches,trainingSessions,teamEvents,recurringTrainingItems]);
   const calendarDays=useMemo(()=>{
     const first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
     const gridStart=new Date(first);
@@ -418,6 +438,7 @@ export default function TeamHub(props:{
     if(statsMetric==="captain")return s.captain;
     return s.g+s.a;
   };
+  const selectedStatsPlayer=players.find(p=>p.id===statsPlayerId)||statsRanking[0]||null;
 
   const comparePlayerA=players.find(p=>p.id===compareA) || players[0] || null;
   const comparePlayerB=players.find(p=>p.id===compareB) || players[1] || players[0] || null;
@@ -836,7 +857,7 @@ export default function TeamHub(props:{
             <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary")}>CENTRUM MECZU <ChevronRight size={17}/></button>
           </article>
           <div className="v105-command-side">
-          <article className="v891-team-clock devil-card" onClick={()=>setTab("calendar")}>
+          <article className={`v891-team-clock devil-card event-${nextTeamEvent?.kind||"other"}`} onClick={()=>setTab("calendar")}>
             <div className="v891-clock-icon"><CalendarDays size={22}/></div>
             <div className="v891-clock-copy">
               <span>PLAN TYGODNIA</span>
@@ -1424,22 +1445,18 @@ export default function TeamHub(props:{
             </div>
           </div>
 
-          <div className="v890-ranking-table">
-            {statsRanking.map((p,index)=>{
-              const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
-              const value=statsMetricValue(p);
-              const maxValue=Math.max(1,...statsRanking.map(statsMetricValue));
-              return <button key={p.id} className="v890-ranking-entry" onClick={()=>setSelectedPlayer(p)}>
-                <span className={`v890-pos p-${index+1}`}>{index+1}</span>
-                <span className="v890-entry-photo">
-                  {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
-                </span>
-                <span className="v890-entry-name"><b>{p.display_name}</b><small>{s.m} mecze • {s.starts} start</small></span>
-                <span className="v890-entry-bar"><i style={{width:`${Math.max(4,(value/maxValue)*100)}%`}}/></span>
-                <strong>{value}</strong>
-                <ChevronRight size={15}/>
-              </button>
-            })}
+          <div className="v109-player-stat-picker">
+            <label>WYBIERZ ZAWODNIKA
+              <select value={selectedStatsPlayer?.id||""} onChange={e=>setStatsPlayerId(e.target.value)}>
+                {players.slice().sort((a,b)=>a.display_name.localeCompare(b.display_name,"pl")).map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}
+              </select>
+            </label>
+            {selectedStatsPlayer&&(()=>{const p=selectedStatsPlayer;const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <button className="v109-player-stat-card" onClick={()=>setSelectedPlayer(p)}>
+              <span className="v109-stat-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span>
+              <span className="v109-stat-name"><small>INDYWIDUALNE STATYSTYKI</small><b>{p.display_name}</b><em>{p.position||"Zawodnik"} • #{p.shirt_number||"—"}</em></span>
+              <span className="v109-stat-numbers"><i><b>{s.m}</b><small>MECZE</small></i><i><b>{s.g}</b><small>GOLE</small></i><i><b>{s.a}</b><small>ASYSTY</small></i><i><b>{s.g+s.a}</b><small>G+A</small></i><i><b>{s.mvp}</b><small>MVP</small></i></span>
+              <ChevronRight size={20}/>
+            </button>})()}
           </div>
         </article>
 
@@ -1654,6 +1671,7 @@ export default function TeamHub(props:{
       canManageMatch={canManageMatches}
       canEditEvents={canEditMatchEvents}
       parentPlayerIds={props.parentPlayerIds}
+      initialTab={matchInitialTab}
       onClose={()=>setSelectedMatch(null)}
       onDataChange={(d)=>{
         if(d.match){setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));setSelectedMatch(d.match);}
