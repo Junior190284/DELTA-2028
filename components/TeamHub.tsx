@@ -322,7 +322,7 @@ export default function TeamHub(props:{
 
   const importantTeamEvent=futureTeamEvents.find(e=>e.important)||futureTeamEvents.find(e=>e.event_type==="birthday")||null;
   const homeAgendaItems=smartCandidates.filter(item=>item.kind!=="match"&&item.id!==importantTeamEvent?.id).slice(0,3);
-  const nextTeamEvent=homeAgendaItems[0]||smartCandidates[0]||null;
+  const nextTeamEvent=homeAgendaItems[0]||null;
   const teamClockCountdown=nextTeamEvent?formatCountdown(nextTeamEvent.at.getTime()-now.getTime()):"Brak wydarzeń";
   const isTeamLive=!!nextTeamEvent&&nextTeamEvent.at.getTime()-now.getTime()<=30*60*1000&&nextTeamEvent.at.getTime()-now.getTime()>=-2*60*60*1000;
   const recurringTrainingItems=useMemo<CalendarItem[]>(()=>{
@@ -859,33 +859,30 @@ export default function TeamHub(props:{
 
             <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary","home")}>CENTRUM MECZU <ChevronRight size={17}/></button>
           </article>
-          <div className="v105-command-side">
-          <article className={`v891-team-clock devil-card event-${nextTeamEvent?.kind||"other"}`} onClick={()=>setTab("calendar")}>
+          {(nextTeamEvent||importantTeamEvent)&&<div className="v105-command-side">
+          {nextTeamEvent&&<article className={`v891-team-clock devil-card event-${nextTeamEvent.kind||"other"}`} onClick={()=>setTab("calendar")}>
             <div className="v891-clock-icon"><CalendarDays size={22}/></div>
             <div className="v891-clock-copy">
               <span>PLAN TYGODNIA</span>
-              <h3>{nextTeamEvent?.title||"Brak zaplanowanych wydarzeń"}</h3>
-              <p>{nextTeamEvent?.subtitle||"Dodaj wydarzenia w Kalendarzu drużyny."}</p>
+              <h3>{nextTeamEvent.title}</h3>
+              <p>{nextTeamEvent.subtitle}</p>
             </div>
             <div className="v891-clock-time">
               <small>DO WYDARZENIA</small>
               <b>{teamClockCountdown}</b>
             </div>
             <ChevronRight size={18}/>
-          </article>
+          </article>}
 
-          <article className={`v891-important-note devil-card ${importantTeamEvent?"has-event":"is-empty"}`} onClick={()=>setTab("calendar")}>
+          {importantTeamEvent&&<article className="v891-important-note devil-card has-event" onClick={()=>setTab("calendar")}>
             <div className="v8-panel-title"><Bell size={16}/> WAŻNE</div>
-            {importantTeamEvent?<>
+            <>
               <b>{importantTeamEvent.title}</b>
               <span>{[importantTeamEvent.event_date,importantTeamEvent.start_time?.slice(0,5),importantTeamEvent.location].filter(Boolean).join(" • ")}</span>
               {importantTeamEvent.details&&<p>{importantTeamEvent.details}</p>}
-            </>:<>
-              <b>Spokojny tydzień</b>
-              <span>Brak dodatkowych ważnych informacji.</span>
-            </>}
-          </article>
-          </div>
+            </>
+          </article>}
+          </div>}
         </section>
         {selectedMatch&&matchPlacement==="home"&&<div id="home-match-center" className="v110-home-match-center"><MatchCenterModal
           embedded match={selectedMatch} players={players} attendance={attendance} lineup={lineup} events={events}
@@ -902,18 +899,18 @@ export default function TeamHub(props:{
           ].map(([label,val,Icon]:any)=><div className="v8-stat devil-tile" key={label}><Icon size={25}/><b>{val}</b><span>{label}</span></div>)}
         </section>
 
-        <section className="v8-dashboard-grid">
-          <article className={`v8-panel v101-now-card v108-week-pulse devil-card ${isTeamLive?"is-live":""}`} onClick={()=>setTab("calendar")}>
+        <section className={`v8-dashboard-grid ${homeAgendaItems.length?"has-week-pulse":"without-week-pulse"}`}>
+          {homeAgendaItems.length>0&&<article className={`v8-panel v101-now-card v108-week-pulse devil-card ${isTeamLive?"is-live":""}`} onClick={()=>setTab("calendar")}>
             <div className="v8-panel-title"><Flame size={18}/> {isTeamLive?"DZIEJE SIĘ TERAZ":"RYTM TYGODNIA"} {isTeamLive&&<span className="v101-live-dot">LIVE</span>}</div>
             <div className="v108-week-list">
-              {homeAgendaItems.length?homeAgendaItems.map((item,index)=><div className="v108-week-row" key={`${item.kind}-${item.at.toISOString()}`}>
+              {homeAgendaItems.map((item,index)=><div className="v108-week-row" key={`${item.kind}-${item.at.toISOString()}`}>
                 <span className="v108-week-index">0{index+1}</span>
                 <div><small>{item.kind==="training"?"TRENING":item.important?"WAŻNE":"WYDARZENIE"}</small><b>{item.title}</b><p>{item.subtitle}</p></div>
                 <ChevronRight size={15}/>
-              </div>):<div className="v108-week-empty"><CalendarDays size={27}/><div><b>Spokojny tydzień</b><span>Brak dodatkowych wydarzeń poza najbliższym meczem.</span></div></div>}
+              </div>)}
             </div>
             <div className="v101-now-footer"><span><Bell size={13}/>Następny punkt planu: {teamClockCountdown}</span><ChevronRight size={15}/></div>
-          </article>
+          </article>}
 
           <article className="v8-panel v86-recent-matches devil-card">
             <div className="v8-panel-title"><History size={18}/> OSTATNIE MECZE <button onClick={()=>setTab("matches")}>WSZYSTKIE</button></div>

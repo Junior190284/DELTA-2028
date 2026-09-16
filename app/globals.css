@@ -5843,3 +5843,8 @@ body > main,
 .v104-hub .v108-hof-hero.v110-hof-hero>img.v110-hof-bg{position:absolute!important;z-index:0!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;filter:none!important;transform:none!important}
 .v104-hub .v108-hof-hero.v110-hof-hero:after{z-index:2!important}.v104-hub .v108-hof-hero.v110-hof-hero:before{z-index:3!important}.v104-hub .v110-hof-hero .v108-hof-copy{position:relative!important;z-index:5!important}.v104-hub .v110-hof-honor{z-index:6!important}
 @media(max-width:760px){.v104-hub .v108-hof-hero.v110-hof-hero{height:535px!important;min-height:535px!important;max-height:535px!important;padding:28px 18px!important}.v104-hub .v108-hof-hero.v110-hof-hero>img.v110-hof-bg{object-position:64% center!important}.v104-hub .v110-hof-honor{max-width:180px}}
+
+/* V10.11 — keep the home dashboard dense: no empty status panels or repeated match. */
+.v105-home-command-grid>.v101-logged-match:only-child{grid-column:1/-1!important}
+.v104-hub .v8-dashboard-grid.without-week-pulse{grid-template-columns:1fr!important}
+.v104-hub .v8-dashboard-grid.without-week-pulse>.v86-recent-matches{grid-column:1/-1!important;min-height:190px!important}
