@@ -5837,3 +5837,9 @@ body > main,
   .v108-score-stage:before{left:5px;right:5px;top:8px;bottom:8px}.v108-side-team{padding:8px 2px}
 }
 @media(prefers-reduced-motion:reduce){.v110-hof-hero:before{animation:none!important}}
+
+/* V10.10.1 — isolate Hall of Fame hero from legacy image sizing. */
+.v104-hub .v108-hof-hero.v110-hof-hero{position:relative!important;display:block!important;width:100%!important;height:480px!important;min-height:480px!important;max-height:480px!important;padding:54px!important;overflow:hidden!important;background:#030405!important}
+.v104-hub .v108-hof-hero.v110-hof-hero>img.v110-hof-bg{position:absolute!important;z-index:0!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;filter:none!important;transform:none!important}
+.v104-hub .v108-hof-hero.v110-hof-hero:after{z-index:2!important}.v104-hub .v108-hof-hero.v110-hof-hero:before{z-index:3!important}.v104-hub .v110-hof-hero .v108-hof-copy{position:relative!important;z-index:5!important}.v104-hub .v110-hof-honor{z-index:6!important}
+@media(max-width:760px){.v104-hub .v108-hof-hero.v110-hof-hero{height:535px!important;min-height:535px!important;max-height:535px!important;padding:28px 18px!important}.v104-hub .v108-hof-hero.v110-hof-hero>img.v110-hof-bg{object-position:64% center!important}.v104-hub .v110-hof-honor{max-width:180px}}
