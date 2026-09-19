@@ -1066,7 +1066,7 @@ export default function TeamHub(props:{
         </section>
       </>}
 
-      {tab==="league"&&<LeagueCenter matches={matches}/>}
+      {tab==="league"&&<LeagueCenter matches={matches} isAdmin={props.profile.role==="admin"}/>}
       {tab==="mychild"&&<MyChildCenter
         players={players} parentPlayerIds={props.parentPlayerIds} stats={stats} trainingStats={trainingPlayerStats}
         matches={matches} attendance={attendance} events={events} trainingSessions={trainingSessions} trainingAttendance={trainingAttendance}
