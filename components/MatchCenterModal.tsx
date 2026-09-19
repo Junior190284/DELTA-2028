@@ -244,11 +244,11 @@ export default function MatchCenterModal(props:{
 
       <div className="v85-match-head">
         <div>
-          <div className="mc-kicker">CENTRUM MECZU</div>
+          <div className="mc-kicker">{match.status==="played"?"PO MECZU • PODSUMOWANIE":"PRZED MECZEM • CENTRUM MECZU"}</div>
           <h2>{match.home_team} <span>vs</span> {match.away_team}</h2>
           <p>{datePL(match.match_date)} • {match.match_time||"godzina do ustalenia"} • {match.venue||"miejsce do ustalenia"}</p>
         </div>
-        <div className="v85-match-score">
+        <div className={`v85-match-score ${match.status==="played"?"v105-score-final":"v105-score-upcoming"}`}>
           {match.status==="played"?`${match.home_score??0}:${match.away_score??0}`:"VS"}
         </div>
       </div>
@@ -266,7 +266,7 @@ export default function MatchCenterModal(props:{
 
       <div className="v85-tab-body">
         {tab==="summary"&&<>
-          <div className="v85-summary-grid">
+          <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":"NADCHODZĄCE SPOTKANIE"}</span><strong>{match.home_team}</strong><b>{match.status==="played"?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{match.away_team}</strong></div><div className="v85-summary-grid">
             <div className="v85-summary-card"><span>TERMIN</span><b>{datePL(match.match_date)}</b><small>{match.match_time||"—"}</small></div>
             <div className="v85-summary-card"><span>MIEJSCE</span><b>{match.venue||"Do ustalenia"}</b><small>Kolejka {match.round_no||"—"}</small></div>
             <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>POTWIERDZENIA</span><b>{responseCount}/{players.length}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>

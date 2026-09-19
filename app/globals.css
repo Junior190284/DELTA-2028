@@ -6092,3 +6092,102 @@ body > main,
 @media(prefers-reduced-motion:reduce){
  .v104-hub .v101-logged-hero,.v104-hub .v105-home-command-grid>.v101-logged-match,.v104-hub .v104-league-feature .league-card{animation:none!important;transition:none!important}
 }
+
+/* DELTA V10.5–V10.9 — unified stadium broadcast edition. Purely presentational.
+   Scoped to existing authenticated sections. No auth, data, RLS or mobile-nav overrides. */
+:root{--v105-red:#e22e30;--v105-gold:#e9ba66;--v105-ink:#090b10;--v105-line:rgba(233,186,102,.21)}
+.v105-section-hero{isolation:isolate;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:235px;padding:clamp(24px,4vw,46px)!important;background:linear-gradient(90deg,rgba(5,6,10,.94) 4%,rgba(12,7,12,.68) 58%,rgba(24,3,8,.35)),url('/assets/stadium-broadcast-v103.png') center/cover no-repeat!important;border:1px solid var(--v105-line)!important;box-shadow:inset 0 0 80px rgba(0,0,0,.4),0 14px 40px rgba(0,0,0,.22)}
+.v105-section-hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(0,0,0,.8),transparent 64%),radial-gradient(ellipse at 90% 98%,rgba(205,27,32,.4),transparent 47%);z-index:-1}
+.v105-section-hero-content{position:relative;z-index:1;min-width:0;max-width:750px}
+.v105-section-hero-content h2{margin:9px 0 10px!important;color:#fff;font-size:clamp(32px,5.5vw,62px)!important;line-height:.99!important;font-weight:950!important;letter-spacing:-.035em;text-shadow:0 3px 15px rgba(0,0,0,.65)}
+.v105-section-hero-content h2 em{font-style:normal;color:var(--v105-gold)}
+.v105-section-hero-content p{max-width:480px;color:#e5ddd7!important;font-size:clamp(12px,1.45vw,16px)!important;line-height:1.5}
+.v105-section-hero-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.v105-section-hero-meta span{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;background:rgba(7,8,12,.75);border:1px solid rgba(233,186,102,.23);border-radius:8px;font-size:11px;font-weight:800;color:#ffe4b3}
+.v105-section-hero-icon{flex-shrink:0;width:clamp(95px,15vw,180px);filter:drop-shadow(0 7px 32px rgba(234,34,42,.5))}
+.v105-section-hero-icon img{display:block;width:100%;height:auto;max-height:180px;object-fit:contain}
+.v105-match-archive .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.v105-match-archive .v105-broadcast-fixture{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center;min-width:0;padding:21px!important;background:radial-gradient(ellipse at 50% 0%,rgba(197,30,33,.13),transparent 72%),linear-gradient(160deg,#17151b,#090a10 70%)!important;border:1px solid rgba(233,186,102,.19)!important;border-radius:15px!important;overflow:hidden}
+.v105-match-archive .v105-broadcast-fixture::before{content:"MATCH CENTER • DELTA 2018 GM";display:block;grid-column:1/-1;color:var(--v105-gold);font-size:10px;font-weight:900;letter-spacing:.14em;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:11px}
+.v105-match-archive .v105-broadcast-fixture .teamline{display:flex;gap:8px;min-width:0;align-items:center;overflow-wrap:anywhere}
+.v105-match-archive .v105-broadcast-fixture .teamline strong{font-size:clamp(11px,1.15vw,14px);line-height:1.35}
+.v105-match-archive .v105-broadcast-fixture .score{white-space:nowrap;padding:6px 10px;background:linear-gradient(145deg,#25171b,#120d13);border:1px solid rgba(233,186,102,.4);border-radius:8px;color:#ffe3a9;font-size:clamp(22px,2.5vw,34px);font-weight:950;font-variant-numeric:tabular-nums}
+.v105-match-archive .v105-broadcast-fixture .match-meta{grid-column:1/-1;margin:0;padding:11px 0 0;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:#d2cbd2}
+.v105-match-archive .v105-broadcast-fixture .match-actions-row{grid-column:1/-1;margin:0}
+.v105-match-archive .v105-broadcast-fixture .open-match-btn{width:100%;min-height:41px;background:linear-gradient(95deg,#981f28,#d63932)!important;color:#fff!important;border:1px solid rgba(255,211,143,.28)!important;border-radius:7px!important;font-weight:900;letter-spacing:.035em}
+.v105-match-archive .v105-broadcast-fixture.is-played::after{content:"FT";position:absolute;top:13px;right:16px;font-size:10px;color:#e9ba66;letter-spacing:.1em}
+/* Match Day / interactive game center */
+.v10-matchday .v108-matchday-hero,.v85-match-center .v85-match-head{background:linear-gradient(95deg,rgba(5,7,11,.96),rgba(25,7,14,.8)),url('/assets/stadium-broadcast-v103.png') center/cover!important;box-shadow:inset 0 -45px 65px rgba(0,0,0,.48)}
+.v10-matchday .v108-matchday-hero{border:1px solid rgba(233,186,102,.29)!important}
+.v10-matchday .v108-score-core strong{font-variant-numeric:tabular-nums;text-shadow:0 0 20px rgba(236,69,54,.48)}
+.v85-match-center .v85-match-head{position:relative;isolation:isolate;padding:clamp(22px,3vw,36px)!important;border-bottom:1px solid var(--v105-line)}
+.v85-match-center .v85-match-head h2{font-weight:950;line-height:1.1;letter-spacing:-.035em;text-shadow:0 3px 12px rgba(0,0,0,.55)}
+.v85-match-center .v85-match-score{border:1px solid rgba(233,186,102,.55)!important;border-radius:12px!important;background:linear-gradient(125deg,#321519,#0d1015)!important;box-shadow:0 0 25px rgba(174,40,28,.18);font-variant-numeric:tabular-nums}
+.v105-match-headline{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:center;padding:16px 20px;margin-bottom:14px;border:1px solid var(--v105-line);border-radius:12px;background:radial-gradient(ellipse at 50% 100%,rgba(195,30,28,.24),transparent 68%),#0c0e14}
+.v105-match-headline>span{grid-column:1/-1;color:var(--v105-gold);font-size:10px;font-weight:900;letter-spacing:.15em;text-align:center}
+.v105-match-headline strong{font-size:clamp(11px,2vw,18px);line-height:1.3;overflow-wrap:anywhere;color:#f5e9dd;text-align:center}
+.v105-match-headline b{font-size:clamp(30px,5vw,53px);color:#ffe0a5;white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 0 25px rgba(207,49,34,.5)}
+.v85-match-center .v85-tabs button.active{background:linear-gradient(110deg,#a9242e,#de4a38)!important;color:#fff!important;box-shadow:0 4px 18px rgba(182,38,35,.24)}
+.v85-match-center .v85-summary-card{border:1px solid rgba(233,186,102,.16)!important;background:linear-gradient(155deg,#1c1720,#0c0d12)!important}
+.v85-match-center .v85-summary-card b{color:#ffe2ae}
+/* Season analytics — distinguish data panels from generic tiles */
+.v890-stats-center .v890-stats-hero{position:relative;isolation:isolate;border:1px solid var(--v105-line)!important;box-shadow:inset 0 -70px 90px rgba(0,0,0,.35),0 12px 38px rgba(0,0,0,.23)}
+.v890-stats-center .v890-stats-hero-bg{background:linear-gradient(90deg,rgba(5,6,9,.84),rgba(5,6,9,.2)),url('/assets/broadcast-stats-banner.jpg') center/cover!important;opacity:1!important}
+.v890-stats-center .v890-stats-hero-metrics>div{border:1px solid rgba(233,186,102,.22)!important;border-radius:10px!important;background:rgba(8,8,12,.73)!important}
+.v890-stats-center .v890-stats-hero-metrics strong{font-variant-numeric:tabular-nums;color:#ffe0a0!important}
+.v890-stats-center .v890-kpi{border:1px solid rgba(233,186,102,.16)!important;background:linear-gradient(146deg,rgba(43,17,21,.65),#101218 75%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.045)}
+.v890-stats-center .v890-podium{background:radial-gradient(ellipse at 50% 100%,rgba(180,39,27,.23),transparent 72%),linear-gradient(#18161a,#0b0c10)!important;border:1px solid var(--v105-line)!important}
+.v890-stats-center .v890-podium-player.place-1{filter:drop-shadow(0 6px 16px rgba(218,161,60,.22))}
+.v890-stats-center .v890-records,.v890-stats-center .v890-main-grid>.devil-card{border:1px solid var(--v105-line)!important}
+/* Training — pitch/score card remain live, not screenshot. */
+.v900-training-center .v900-training-hero{border:1px solid var(--v105-line)!important;overflow:hidden;box-shadow:inset 0 -50px 80px rgba(0,0,0,.35)}
+.v900-training-center .v900-training-hero-bg{background:linear-gradient(90deg,rgba(4,8,11,.84),rgba(11,10,12,.16)),url('/assets/broadcast-training-banner.jpg') center/cover!important;opacity:1!important}
+.v900-training-center .v900-training-kpis>div{background:rgba(7,9,12,.8)!important;border:1px solid rgba(233,186,102,.2)!important;border-radius:9px!important}
+.v900-training-center .v900-training-grid .v900-training-card{background:linear-gradient(145deg,#18161b,#0b0d12)!important;border:1px solid rgba(233,186,102,.18)!important}
+.v900-training-center .v900-training-ranking button{transition:background-color .15s ease,border-color .15s ease}
+.v900-training-center .v900-training-ranking button:focus-visible{outline:2px solid #f9d99c;outline-offset:2px}
+.v900-training-center .v900-training-history{border:1px solid var(--v105-line)!important}
+/* Collectible player modal: render protected player media as existing private component */
+.modal-sheet:has(.premium-profile){border:1px solid rgba(233,186,102,.37)!important;background:linear-gradient(160deg,#22141b,#090a10 72%)!important;box-shadow:0 26px 95px rgba(0,0,0,.76),inset 0 0 55px rgba(169,31,39,.1)}
+.modal-sheet:has(.premium-profile) .premium-photo{border:1px solid rgba(233,186,102,.43)!important;box-shadow:0 0 0 5px rgba(233,186,102,.04),0 18px 35px rgba(0,0,0,.3)}
+.modal-sheet:has(.premium-profile) .premium-info h2{font-weight:950;letter-spacing:-.04em;line-height:1.05}
+.modal-sheet:has(.premium-profile) .profile-stats>div{border:1px solid rgba(233,186,102,.2)!important;background:rgba(10,10,15,.63)!important}
+.modal-sheet:has(.premium-profile) .profile-stats b{font-variant-numeric:tabular-nums;color:#ffe0a6}
+.modal-sheet:has(.premium-profile) .achievement.unlocked{border-color:rgba(233,186,102,.52)!important;background:linear-gradient(140deg,rgba(130,79,22,.27),rgba(21,15,18,.65))!important}
+/* Chronicle — stadium editorial layout with clear chronology */
+.v108-chronicle-page .v108-chronicle-hero{border:1px solid var(--v105-line)!important;background:linear-gradient(100deg,rgba(7,8,12,.95),rgba(12,8,13,.66)),url('/assets/broadcast-home-banner.jpg') center/cover!important}
+.v108-chronicle-page .v108-story-card{border:1px solid rgba(233,186,102,.2)!important;box-shadow:0 10px 33px rgba(0,0,0,.2)}
+.v108-chronicle-page .v108-story-cover{background:linear-gradient(0deg,rgba(4,5,8,.95),rgba(6,5,8,.25)),url('/assets/stadium-broadcast-v103.png') center/cover!important}
+.v108-chronicle-page .v108-timeline-marker{background:#251218!important;border:1px solid rgba(233,186,102,.55)!important;color:#ffe1a6!important}
+.v108-chronicle-page .v110-story-open{min-height:42px;font-weight:900}
+/* Parent dashboard & Hall of Fame — share broadcast visual system */
+.v10-my-child .v10-page-hero,.v10-matchday .v10-page-hero,.v10-hall .v10-page-hero{background:linear-gradient(90deg,rgba(7,8,12,.92),rgba(24,5,12,.51)),url('/assets/stadium-broadcast-v103.png') center/cover!important;border:1px solid var(--v105-line)!important}
+.v10-my-child .v10-child-card,.v10-hall .devil-card{border:1px solid rgba(233,186,102,.18)!important}
+/* Interaction and mobile first: do not override the working five-item More dock. */
+@media (hover:hover) and (pointer:fine){.v105-match-archive .v105-broadcast-fixture:hover{border-color:rgba(233,186,102,.55)!important;box-shadow:0 12px 30px rgba(0,0,0,.3)}.v105-match-archive .open-match-btn:hover{filter:brightness(1.11)}}
+@media(max-width:940px){.v105-match-archive .list{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){
+ .v105-section-hero{min-height:168px;padding:18px!important;gap:8px}
+ .v105-section-hero-content h2{font-size:clamp(27px,8vw,37px)!important}
+ .v105-section-hero-content p{font-size:12px!important}
+ .v105-section-hero-icon{width:65px;align-self:center}
+ .v105-section-hero-meta{gap:5px;margin-top:10px}
+ .v105-section-hero-meta span{font-size:9px;padding:5px 7px}
+ .v105-match-archive .list{gap:9px}
+ .v105-match-archive .v105-broadcast-fixture{padding:12px!important;gap:5px}
+ .v105-match-archive .v105-broadcast-fixture .score{padding:5px 7px;font-size:23px}
+ .v105-match-archive .v105-broadcast-fixture .teamline strong{font-size:10px}
+ .v105-match-archive .v105-broadcast-fixture .teamline img{max-width:28px!important;max-height:28px!important}
+ .v105-match-archive .v105-broadcast-fixture .open-match-btn{font-size:10px}
+ .v105-match-headline{gap:7px;padding:12px 8px}
+ .v105-match-headline strong{font-size:10px}
+ .v105-match-headline b{font-size:27px}
+ .v85-match-center .v85-match-head{padding:18px!important}
+ .v890-stats-center .v890-stats-hero,.v900-training-center .v900-training-hero{min-width:0}
+ .v890-stats-center .v890-stats-hero-metrics,.v900-training-center .v900-training-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .v890-stats-center .v890-stats-hero-metrics>div,.v900-training-center .v900-training-kpis>div{min-width:0}
+ .v108-chronicle-page .v108-story-score strong{font-size:clamp(28px,8vw,43px)}
+ .modal-sheet:has(.premium-profile) .profile-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .v105-match-archive,.v890-stats-center,.v900-training-center,.v108-chronicle-page{min-width:0;max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){.v105-match-archive *,.v85-match-center *,.v890-stats-center *,.v900-training-center *,.v108-chronicle-page *{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
