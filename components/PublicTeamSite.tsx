@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import StadiumFX from "./StadiumFX";
+import { createClient } from "@/lib/supabase/client";
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Activity, ArrowUpRight, CalendarDays, ChevronRight, Clock3, Flame, Goal,
@@ -72,6 +73,14 @@ export default function PublicTeamSite(props:{
   rosterCount:number;
 }){
   const [now,setNow]=useState(()=>Date.now());
+  const [signedIn,setSignedIn]=useState(false);
+  useEffect(()=>{
+    let active=true;
+    const client=createClient();
+    client.auth.getSession().then(({data})=>{if(active)setSignedIn(Boolean(data.session));});
+    const {data:{subscription}}=client.auth.onAuthStateChange((_event,session)=>{if(active)setSignedIn(Boolean(session));});
+    return()=>{active=false;subscription.unsubscribe();};
+  },[]);
   useEffect(()=>{const t=window.setInterval(()=>setNow(Date.now()),30000);return()=>window.clearInterval(t)},[]);
 
   const scheduled=useMemo(()=>props.matches.filter(m=>m.status==="scheduled").slice().sort((a,b)=>localDate(a.match_date,a.match_time).getTime()-localDate(b.match_date,b.match_time).getTime()),[props.matches]);
@@ -127,7 +136,7 @@ export default function PublicTeamSite(props:{
       <nav className="v101-public-nav">
         <a href="#mecz">MECZ</a><a href="#statystyki">STATYSTYKI</a><a href="#kalendarz">KALENDARZ</a><a href="#klub">Z KLUBU</a>
       </nav>
-      <Link href="/login" className="public-login"><LockKeyhole size={15}/> STREFA RODZICA</Link>
+      <Link href={signedIn?"/dashboard":"/login"} className="public-login"><LockKeyhole size={15}/> {signedIn?"PANEL DRUŻYNY":"STREFA RODZICA"}</Link>
     </header>
 
     <section id="top" className="public-hero v101-public-hero v102-public-hero">
@@ -147,7 +156,7 @@ export default function PublicTeamSite(props:{
             <a href="#mecz">NAJBLIŻSZY MECZ <ChevronRight size={15}/></a>
             <a href="#kalendarz">KALENDARZ</a>
             <a href="#klub">Z KLUBU</a>
-            <Link href="/login"><LockKeyhole size={14}/> STREFA RODZICA</Link>
+            <Link href={signedIn?"/dashboard":"/login"}><LockKeyhole size={14}/> {signedIn?"PANEL DRUŻYNY":"STREFA RODZICA"}</Link>
           </div>
         </div>
 

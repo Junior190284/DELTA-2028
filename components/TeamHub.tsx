@@ -791,6 +791,7 @@ export default function TeamHub(props:{
       <button className="v8-mini-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
       <div className="v8-top-spacer"/>
       {canOpenAdmin&&<a href="/admin" className="admin-link v8-admin-chip">{staff?"ADMIN":"POMOCNIK"}</a>}
+      {canOpenAdmin&&<a href="/admin?tab=training" className="v105-mobile-training-shortcut" aria-label="Panel administratora: dodaj trening"><CalendarDays size={16}/> DODAJ TRENING</a>}
       <div className="v8-account-wrap">
         <button className="v8-account-btn" onClick={()=>setAccountOpen(v=>!v)} aria-label="Konto użytkownika"><UserRound size={17}/></button>
         {accountOpen&&<div className="v8-account-popover">
@@ -1658,7 +1659,7 @@ export default function TeamHub(props:{
       {tab==="news"&&<section className="section v8-section-page"><div className="section-title"><h2>Aktualności</h2>{(staff||props.userPermissions.can_manage_news)&&<button className="btn gold-btn" onClick={saveNewsItem}>Dodaj aktualność</button>}</div><div className="news-grid">{news.map(n=><article className="news-card devil-card" key={n.id}><span className="tag">{n.type}</span><h3>{n.title}</h3><p>{n.body}</p><small>{new Date(n.published_at).toLocaleString("pl-PL")}</small></article>)}</div></section>}
     </main>
 
-    <nav className="bottom-nav v8-bottom-nav">{navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={18}/><span>{label}</span></button>)}</nav>
+    <nav className="bottom-nav v8-bottom-nav" aria-label="Nawigacja drużyny">{navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={18}/><span>{label}</span></button>)}{canOpenAdmin&&<a className="v105-mobile-admin-nav" href="/admin?tab=training"><Shield size={18}/><span>ADMIN</span></a>}</nav>
 
     {selectedPlayer&&<div className="modal-backdrop" onClick={()=>setSelectedPlayer(null)}><div className={`modal-sheet devil-card ${isRyszardPlayer(selectedPlayer)?"v874-featured-profile-sheet":""}`} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedPlayer(null)}>×</button>
       {isRyszardPlayer(selectedPlayer)&&<div className="v874-profile-hero"><img src="/assets/players/ryszard-hero.png" alt={`Profil ${selectedPlayer.display_name}`}/><div className="v874-profile-hero-shade"/><div className="v874-profile-hero-label"><img src="/teamlogos/gm.png" alt=""/><div><span>DELTA 2018 GM</span><b>{selectedPlayer.display_name}</b></div></div></div>}

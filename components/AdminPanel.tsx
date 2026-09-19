@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserPermissions } from "@/lib/permissions";
 import { EMPTY_PERMISSIONS } from "@/lib/permissions";
@@ -59,6 +59,13 @@ export default function AdminPanel(props:{
   const canNews=coreStaff||props.currentPermissions.can_manage_news;
   const firstTab:string=canMatches?"matches":canTraining?"training":canCalendar?"calendar":canNews?"news":canPlayers?"players":"matches";
   const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"news"|"parents"|"push"|"sync">(firstTab as any);
+  useEffect(()=>{
+    const requested=new URLSearchParams(window.location.search).get("tab");
+    if(requested==="training"&&canTraining)setTab("training");
+  },[canTraining]);
+  const [mobileTrainingForm,setMobileTrainingForm]=useState(false);
+  const [trainingDraft,setTrainingDraft]=useState({date:"",title:"Trening",start:"17:00",end:"18:30",location:"",notes:""});
+  const [savingMobileTraining,setSavingMobileTraining]=useState(false);
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -372,6 +379,26 @@ export default function AdminPanel(props:{
     return false;
   }
 
+  async function saveMobileTraining(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(!canTrainingFull||savingMobileTraining)return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(trainingDraft.date))return flashTrainingFeedback("Podaj poprawną datę treningu.");
+    setSavingMobileTraining(true);
+    const {data,error}=await supabase.from("training_sessions").insert({
+      training_date:trainingDraft.date,title:trainingDraft.title.trim()||"Trening",
+      start_time:trainingDraft.start||null,end_time:trainingDraft.end||null,
+      location:trainingDraft.location.trim()||null,notes:trainingDraft.notes.trim()||null,
+      created_by:props.currentUser.id
+    }).select("*").single();
+    setSavingMobileTraining(false);
+    if(error){const message=friendlyTrainingError(error);flashTrainingFeedback(message);return;}
+    setTrainingSessions(prev=>[data,...prev].sort((a,b)=>b.training_date.localeCompare(a.training_date)));
+    setSelectedTrainingId(data.id);
+    setSelectedTrainingGameId("");
+    setMobileTrainingForm(false);
+    flashTrainingFeedback("✓ Trening dodany. Możesz teraz uzupełnić obecność.");
+  }
+
   async function quickAddTraining(){
     const now=new Date();
     const date=[
@@ -632,6 +659,8 @@ export default function AdminPanel(props:{
       <span className="admin-role">{coreStaff?props.currentUser.role:props.currentPermissions.role_label||"Pomocnik"}</span>
     </header>
 
+    {canTrainingFull&&<div className="v105-admin-mobile-quick"><button type="button" onClick={()=>{setTab("training");setMobileTrainingForm(true);setTrainingDraft(d=>({...d,date:new Date().toLocaleDateString("en-CA")}));}}><Plus size={18}/> DODAJ TRENING</button><a href="/dashboard">PANEL DRUŻYNY</a></div>}
+
     <nav className="admin-tabs">
       {canMatches&&<button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>}
       {canCalendar&&<button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>}
@@ -642,6 +671,19 @@ export default function AdminPanel(props:{
       {coreStaff&&<button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>}
       {coreStaff&&<button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>}
     </nav>
+
+    {mobileTrainingForm&&canTrainingFull&&<div className="v105-training-modal" role="presentation" onClick={()=>setMobileTrainingForm(false)}>
+      <form className="v105-training-form" aria-label="Dodaj trening" onClick={event=>event.stopPropagation()} onSubmit={saveMobileTraining}>
+        <div className="v105-training-form-head"><h2>NOWY TRENING</h2><button type="button" onClick={()=>setMobileTrainingForm(false)} aria-label="Zamknij">×</button></div>
+        <label>Data treningu<input type="date" required value={trainingDraft.date} onChange={e=>setTrainingDraft(d=>({...d,date:e.target.value}))}/></label>
+        <label>Nazwa<input required value={trainingDraft.title} onChange={e=>setTrainingDraft(d=>({...d,title:e.target.value}))}/></label>
+        <div className="v105-form-times"><label>Od<input type="time" required value={trainingDraft.start} onChange={e=>setTrainingDraft(d=>({...d,start:e.target.value}))}/></label><label>Do<input type="time" required value={trainingDraft.end} onChange={e=>setTrainingDraft(d=>({...d,end:e.target.value}))}/></label></div>
+        <label>Miejsce<input value={trainingDraft.location} onChange={e=>setTrainingDraft(d=>({...d,location:e.target.value}))} placeholder="Boisko / hala"/></label>
+        <label>Notatki<textarea rows={2} value={trainingDraft.notes} onChange={e=>setTrainingDraft(d=>({...d,notes:e.target.value}))}/></label>
+        {trainingFeedback&&<p className="v105-training-feedback" role="status">{trainingFeedback}</p>}
+        <button className="v105-training-save" type="submit" disabled={savingMobileTraining}>{savingMobileTraining?"ZAPISYWANIE…":"ZAPISZ TRENING"}</button>
+      </form>
+    </div>}
 
     <main className="admin-main">
       {tab==="matches" && canMatches && <div className="admin-two-col">

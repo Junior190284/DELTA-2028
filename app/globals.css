@@ -5848,3 +5848,25 @@ body > main,
 .v105-home-command-grid>.v101-logged-match:only-child{grid-column:1/-1!important}
 .v104-hub .v8-dashboard-grid.without-week-pulse{grid-template-columns:1fr!important}
 .v104-hub .v8-dashboard-grid.without-week-pulse>.v86-recent-matches{grid-column:1/-1!important;min-height:190px!important}
+
+/* V10.5: PUBLIC START + MOBILE ADMIN / TRAINING. Scoped additions below. */
+.v105-mobile-training-shortcut,.v105-admin-mobile-quick{display:none}
+.v105-mobile-admin-nav{display:none;align-items:center;justify-content:center;flex-direction:column;gap:4px;text-decoration:none;color:#f6d47e;font-size:10px;font-weight:900;padding:8px 10px;white-space:nowrap}
+.v105-training-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.84);display:flex;align-items:center;justify-content:center;padding:12px;overflow-y:auto}
+.v105-training-form{width:min(100%,460px);max-height:calc(100dvh - 24px);overflow-y:auto;background:#111821;color:#fff;border:1px solid #d6ad57;border-radius:16px;padding:18px;display:grid;gap:12px;box-shadow:0 24px 80px rgba(0,0,0,.7)}
+.v105-training-form-head{display:flex;align-items:center;justify-content:space-between}.v105-training-form-head h2{font-size:20px;margin:0}.v105-training-form-head button{background:transparent;color:#fff;border:1px solid #5a626b;font-size:24px;min-width:40px;min-height:40px;border-radius:8px}
+.v105-training-form label{display:grid;gap:5px;font-size:13px;font-weight:750;color:#e2e6ec}.v105-training-form input,.v105-training-form textarea{width:100%;min-width:0;box-sizing:border-box;border:1px solid #495361;border-radius:8px;background:#080e15;color:#fff;padding:11px;font:inherit;font-size:16px;color-scheme:dark}
+.v105-form-times{display:grid;grid-template-columns:1fr 1fr;gap:10px}.v105-training-feedback{color:#ffd982;margin:0;font-size:12px}.v105-training-save{min-height:48px;color:white;background:#ae1625;border:1px solid #f6454e;border-radius:8px;font-weight:900}.v105-training-save:disabled{opacity:.6}
+@media(max-width:900px){
+ .v104-hub .v105-mobile-training-shortcut{display:flex!important;align-items:center;gap:6px;position:fixed;right:10px;top:calc(9px + env(safe-area-inset-top));z-index:500;max-width:calc(100vw - 20px);padding:9px 12px!important;border:1px solid #efc663!important;border-radius:9px;color:#ffe09a!important;background:rgba(12,12,16,.96)!important;font-size:11px!important;font-weight:900!important;text-decoration:none;box-shadow:0 3px 20px rgba(0,0,0,.65)}
+ .v104-hub .v8-main{padding-top:calc(52px + env(safe-area-inset-top))!important}
+ .v105-mobile-admin-nav{display:flex!important;flex:0 0 auto;min-width:62px;min-height:48px;border-left:1px solid rgba(246,201,82,.25)}
+ .admin-top{padding:12px!important;gap:8px}.admin-top h1{font-size:clamp(19px,5vw,26px)}.admin-role{font-size:10px}
+ .v105-admin-mobile-quick{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;background:#14100d;border-bottom:1px solid rgba(246,201,82,.3)}
+ .v105-admin-mobile-quick button{border:1px solid #ffc65d;border-radius:8px;display:flex;align-items:center;gap:8px;min-height:44px;padding:9px 12px;font-weight:900;color:#100b06;background:#efc663}
+ .v105-admin-mobile-quick a{color:#f6dfac;font-size:12px;text-decoration:none;text-align:center}
+ .admin-tabs{position:sticky;top:0;z-index:30;max-width:100%;overflow-x:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+ .admin-app,.admin-main,.admin-card{min-width:0;max-width:100%;box-sizing:border-box}
+ .admin-two-col{grid-template-columns:minmax(0,1fr)!important}.admin-card-head{flex-wrap:wrap;align-items:flex-start}.v901-training-actions{flex-wrap:wrap!important}
+ .v901-training-actions button{min-height:44px}.admin-card input,.admin-card select,.admin-card textarea{max-width:100%;min-width:0}
+}

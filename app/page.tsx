@@ -1,15 +1,9 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PublicTeamSite from "@/components/PublicTeamSite";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect("/dashboard");
-
   // Server-side service client is used only to build a sanitized public view.
   // No player records, attendance, lineups, training-game data or parent links
   // are passed to the browser.
