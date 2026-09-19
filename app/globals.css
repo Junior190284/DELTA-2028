@@ -5907,3 +5907,60 @@ body > main,
   .v104-hub .v8-bottom-nav>button span{line-height:1.1!important;white-space:nowrap!important}
   .v104-hub .v8-main{padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}
 }
+
+/* DELTA V10.6: calm five-destination mobile dock and accessible More panel.
+   The panel is outside the dock because the old dock clips its descendants. */
+.v106-more-backdrop,.v106-more-menu{display:none}
+@media(max-width:900px){
+  .v104-hub .v105-mobile-training-shortcut{display:none!important}
+  .v104-hub .v8-main{padding-top:8px!important}
+  .v104-hub .v8-bottom-nav.v106-bottom-nav{
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    overflow:visible!important;gap:2px!important;justify-content:stretch!important;
+    padding:7px!important;
+  }
+  .v104-hub .v8-bottom-nav.v106-bottom-nav>button{
+    width:100%!important;min-width:0!important;max-width:none!important;
+    flex:auto!important;height:52px!important;min-height:52px!important;
+    margin:0!important;padding:3px 0!important;
+    font-size:10px!important;overflow:hidden!important;
+  }
+  .v104-hub .v8-bottom-nav.v106-bottom-nav>button span{
+    font-size:clamp(8px,2.25vw,10px)!important;line-height:1.1!important;
+  }
+  .v104-hub .v8-bottom-nav.v106-bottom-nav>button.v106-more-trigger{
+    color:#d7dce5!important;background:transparent!important;
+    border:0!important;box-shadow:none!important;transform:none!important;
+  }
+  .v104-hub .v8-bottom-nav.v106-bottom-nav>button.v106-more-trigger.active{
+    color:#f6cf79!important;background:rgba(237,190,80,.1)!important;
+  }
+  .v104-hub .v8-bottom-nav.v106-bottom-nav>button.v106-more-trigger:before{display:none!important}
+  .v106-more-backdrop{display:block;position:fixed;inset:0;z-index:898;background:rgba(0,0,0,.34)}
+  .v106-more-menu{
+    position:fixed;display:flex;flex-direction:column;z-index:899;
+    left:50%;bottom:calc(94px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);width:min(calc(100% - 24px),430px);
+    max-height:min(62dvh,520px);overflow-y:auto;overscroll-behavior:contain;
+    padding:10px;border:1px solid rgba(245,199,102,.28);border-radius:16px;
+    background:linear-gradient(160deg,#171b23,#0c1016 78%);
+    box-shadow:0 18px 55px rgba(0,0,0,.8),0 0 25px rgba(160,27,40,.1);
+  }
+  .v106-more-title{padding:6px 12px 10px;color:#d9b868;font-size:10px;font-weight:900;letter-spacing:.16em}
+  .v106-more-menu>a,.v106-more-menu>button{
+    display:flex!important;align-items:center;gap:11px;flex:0 0 auto;
+    width:100%;min-height:46px;padding:10px 12px;border:0;border-radius:9px;
+    background:transparent;color:#f1f2f5;text-decoration:none;text-align:left;
+    font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .v106-more-menu>a>span,.v106-more-menu>button>span{flex:1;min-width:0}
+  .v106-more-menu>a>svg:first-child,.v106-more-menu>button>svg:first-child{color:#e3bd64;flex-shrink:0}
+  .v106-more-menu>a>svg:last-child,.v106-more-menu>button>svg:last-child{color:#6f7985;flex-shrink:0}
+  .v106-more-menu>a:focus-visible,.v106-more-menu>button:focus-visible,
+  .v104-hub .v8-bottom-nav.v106-bottom-nav>button.v106-more-trigger:focus-visible{
+    outline:2px solid #f0ca72;outline-offset:-2px;
+  }
+  .v106-more-divider{height:1px;background:rgba(244,195,93,.18);margin:6px 4px}
+  .v104-hub .v8-main{padding-bottom:calc(122px + env(safe-area-inset-bottom))!important}
+}
+@media(min-width:901px){.v106-more-backdrop,.v106-more-menu{display:none!important}}

@@ -12,7 +12,7 @@ import { hasDelegatedAccess } from "@/lib/permissions";
 import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
 import { decodeHtmlEntities } from "@/lib/text";
 import {
-  Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star,
+  Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
   Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3
 } from "lucide-react";
 
@@ -126,6 +126,7 @@ export default function TeamHub(props:{
   const [matchInitialTab,setMatchInitialTab]=useState<"summary"|"attendance"|"lineup"|"events"|"mvp">("summary");
   const [matchPlacement,setMatchPlacement]=useState<"home"|"overlay">("overlay");
   const [accountOpen,setAccountOpen]=useState(false);
+  const [mobileMoreOpen,setMobileMoreOpen]=useState(false);
   const [now,setNow]=useState(()=>new Date());
   const [statsMetric,setStatsMetric]=useState<"ga"|"goals"|"assists"|"mvp"|"matches"|"captain">("ga");
   const [statsPlayerId,setStatsPlayerId]=useState<string>("");
@@ -769,6 +770,14 @@ export default function TeamHub(props:{
     const permission=await Notification.requestPermission();if(permission!=="granted")return;await navigator.serviceWorker.register("/sw.js");
     alert("Zgoda na powiadomienia jest aktywna.");
   }
+
+  useEffect(()=>{setMobileMoreOpen(false);},[tab]);
+  useEffect(()=>{
+    if(!mobileMoreOpen)return;
+    const onEscape=(event:KeyboardEvent)=>{if(event.key==="Escape")setMobileMoreOpen(false);};
+    window.addEventListener("keydown",onEscape);
+    return ()=>window.removeEventListener("keydown",onEscape);
+  },[mobileMoreOpen]);
 
   const navItems:[string,string,any][]=[
     ["home","Start",Home],
@@ -1659,7 +1668,21 @@ export default function TeamHub(props:{
       {tab==="news"&&<section className="section v8-section-page"><div className="section-title"><h2>Aktualności</h2>{(staff||props.userPermissions.can_manage_news)&&<button className="btn gold-btn" onClick={saveNewsItem}>Dodaj aktualność</button>}</div><div className="news-grid">{news.map(n=><article className="news-card devil-card" key={n.id}><span className="tag">{n.type}</span><h3>{n.title}</h3><p>{n.body}</p><small>{new Date(n.published_at).toLocaleString("pl-PL")}</small></article>)}</div></section>}
     </main>
 
-    <nav className="bottom-nav v8-bottom-nav" aria-label="Nawigacja drużyny">{canOpenAdmin&&<a className="v105-mobile-admin-nav" href="/admin?tab=training"><Shield size={18}/><span>ADMIN</span></a>}{navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={18}/><span>{label}</span></button>)}</nav>
+    {mobileMoreOpen&&<div className="v106-more-backdrop" onClick={()=>setMobileMoreOpen(false)} aria-hidden="true"/>}
+    {mobileMoreOpen&&<div className="v106-more-menu" id="delta-mobile-more-menu" role="menu" aria-label="Więcej opcji">
+      <div className="v106-more-title">WIĘCEJ W DELTA</div>
+      {canOpenAdmin&&<>
+        <a role="menuitem" href="/admin"><Shield size={18}/><span>Panel administratora</span><ChevronRight size={16}/></a>
+        <a role="menuitem" href="/admin?tab=training"><CalendarDays size={18}/><span>Dodaj trening</span><ChevronRight size={16}/></a>
+        <div className="v106-more-divider"/>
+      </>}
+      {navItems.filter(([id])=>!["home","matches","calendar","training"].includes(id)).map(([id,label,Icon])=><button type="button" role="menuitem" key={id} onClick={()=>{setMobileMoreOpen(false);setTab(id as typeof tab);}}><Icon size={18}/><span>{label}</span><ChevronRight size={16}/></button>)}
+      <a role="menuitem" href="/"><Home size={18}/><span>Strona publiczna</span><ChevronRight size={16}/></a>
+    </div>}
+    <nav className="bottom-nav v8-bottom-nav v106-bottom-nav" aria-label="Nawigacja drużyny">
+      {navItems.filter(([id])=>["home","matches","calendar","training"].includes(id)).map(([id,label,Icon])=><button key={id} type="button" className={tab===id?"active":""} onClick={()=>{setMobileMoreOpen(false);setTab(id as typeof tab);}}><Icon size={18}/><span>{label}</span></button>)}
+      <button type="button" className={`v106-more-trigger ${mobileMoreOpen||!["home","matches","calendar","training"].includes(tab)?"active":""}`} onClick={()=>setMobileMoreOpen(v=>!v)} aria-label="Więcej opcji" aria-expanded={mobileMoreOpen} aria-controls="delta-mobile-more-menu"><MoreHorizontal size={20}/><span>Więcej</span></button>
+    </nav>
 
     {selectedPlayer&&<div className="modal-backdrop" onClick={()=>setSelectedPlayer(null)}><div className={`modal-sheet devil-card ${isRyszardPlayer(selectedPlayer)?"v874-featured-profile-sheet":""}`} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedPlayer(null)}>×</button>
       {isRyszardPlayer(selectedPlayer)&&<div className="v874-profile-hero"><img src="/assets/players/ryszard-hero.png" alt={`Profil ${selectedPlayer.display_name}`}/><div className="v874-profile-hero-shade"/><div className="v874-profile-hero-label"><img src="/teamlogos/gm.png" alt=""/><div><span>DELTA 2018 GM</span><b>{selectedPlayer.display_name}</b></div></div></div>}
