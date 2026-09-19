@@ -5870,3 +5870,40 @@ body > main,
  .admin-two-col{grid-template-columns:minmax(0,1fr)!important}.admin-card-head{flex-wrap:wrap;align-items:flex-start}.v901-training-actions{flex-wrap:wrap!important}
  .v901-training-actions button{min-height:44px}.admin-card input,.admin-card select,.admin-card textarea{max-width:100%;min-width:0}
 }
+
+/* V10.5.1 — Mobile: admin kept inside one-row, horizontally scrollable bottom dock.
+   The previous 7-column grid wrapped additional destinations below the visible dock. */
+@media (max-width:900px){
+  .v104-hub .v8-bottom-nav{
+    display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+    justify-content:flex-start!important;gap:2px!important;
+    grid-template-columns:none!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;box-sizing:border-box!important;
+    padding-left:7px!important;padding-right:7px!important;
+  }
+  .v104-hub .v8-bottom-nav::-webkit-scrollbar{display:none}
+  .v104-hub .v8-bottom-nav>button,
+  .v104-hub .v8-bottom-nav>a.v105-mobile-admin-nav{
+    box-sizing:border-box!important;display:flex!important;flex:0 0 65px!important;
+    min-width:65px!important;max-width:65px!important;
+    height:52px!important;min-height:52px!important;
+    margin:0!important;padding:3px 1px!important;
+    flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    gap:4px!important;border-radius:11px!important;
+  }
+  .v104-hub .v8-bottom-nav>a.v105-mobile-admin-nav{
+    color:#ffe5a0!important;background:rgba(172,30,43,.3)!important;
+    border:1px solid rgba(246,201,82,.45)!important;
+    text-decoration:none!important;white-space:nowrap!important;
+  }
+  .v104-hub .v8-bottom-nav>a.v105-mobile-admin-nav span{
+    font-size:9px!important;line-height:1.15!important;letter-spacing:.03em!important;
+  }
+  .v104-hub .v8-bottom-nav>a.v105-mobile-admin-nav svg{
+    flex-shrink:0;width:19px!important;height:19px!important;
+  }
+  .v104-hub .v8-bottom-nav>button span{line-height:1.1!important;white-space:nowrap!important}
+  .v104-hub .v8-main{padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}
+}
