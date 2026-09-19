@@ -6,6 +6,7 @@ import PlayerPhoto from "./PlayerPhoto";
 import MatchGallery from "./MatchGallery";
 import MatchCenterModal from "./MatchCenterModal";
 import StadiumFX from "./StadiumFX";
+import LeagueCenter, { LeagueHome } from "./LeagueCenter";
 import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -102,7 +103,7 @@ export default function TeamHub(props:{
   userPermissions:UserPermissions;
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club">("home");
+  const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league">("home");
   const [viewFx,setViewFx]=useState(false);
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
@@ -784,7 +785,7 @@ export default function TeamHub(props:{
     ...(props.parentPlayerIds.length?[["mychild","Moje dziecko",UserRound] as [string,string,any]]:[]),
     ...(canManageMatches||canEditMatchEvents?[["matchday","Match Day",Flame] as [string,string,any]]:[]),
     ["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["training","Treningi",Zap],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],["hall","Hall of Fame",Medal],
-    ["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
+    ["league","Rozgrywki",Trophy],["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
 
   return <div className="hub v8-hub v101-stadium-hub v104-hub">
@@ -1057,6 +1058,7 @@ export default function TeamHub(props:{
           </article>
         </section>
 
+        <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
         <section className="v8-bottom-grid">
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>setTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Newspaper size={18}/> AKTUALNOŚCI {staff&&<button onClick={saveNewsItem}>DODAJ</button>}</div><div className="v8-news-list">{news.slice(0,3).map(n=><div key={n.id}><i/><div><b>{n.title}</b><span>{new Date(n.published_at).toLocaleDateString("pl-PL")}</span></div></div>)}{news.length===0&&<p className="muted">Brak aktualności.</p>}</div></article>
@@ -1064,6 +1066,7 @@ export default function TeamHub(props:{
         </section>
       </>}
 
+      {tab==="league"&&<LeagueCenter matches={matches}/>}
       {tab==="mychild"&&<MyChildCenter
         players={players} parentPlayerIds={props.parentPlayerIds} stats={stats} trainingStats={trainingPlayerStats}
         matches={matches} attendance={attendance} events={events} trainingSessions={trainingSessions} trainingAttendance={trainingAttendance}

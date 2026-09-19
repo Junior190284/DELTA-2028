@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import StadiumFX from "./StadiumFX";
+import { LeagueHome } from "./LeagueCenter";
 import { createClient } from "@/lib/supabase/client";
 import { decodeHtmlEntities } from "@/lib/text";
 import {
@@ -248,6 +249,7 @@ export default function PublicTeamSite(props:{
       <span>JEDNA DRUŻYNA</span><b>MAŁE KROKI. WIELKIE MARZENIA.</b><span>GÓRNY MOKOTÓW</span>
     </div>
 
+    <div id="rozgrywki" className="league-public-wrap"><LeagueHome matches={props.matches} onOpen={()=>{window.location.href="/login";}}/><p className="league-public-note">Pełne Centrum Rozgrywek dostępne po wejściu do panelu drużyny. Tabela: stan po I kolejce.</p></div>
     <section id="statystyki" className="v101-public-stats-zone">
       <div className="v101-zone-head"><div><span className="v101-zone-eyebrow">SEZON • {currentSeason}</span><h2>CENTRUM <em>STATYSTYK</em></h2></div><div className="v101-form-line"><span>FORMA</span>{recent.map(m=><i key={m.id} className={`r-${result(m).toLowerCase()}`}>{result(m)}</i>)}</div></div>
       <div className="v101-stat-tiles">
