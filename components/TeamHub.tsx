@@ -136,8 +136,10 @@ export default function TeamHub(props:{
   userPermissions:UserPermissions;
 }){
   const supabase=createClient();
-  const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league">("home");
+  const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league"|"teamcenter">("home");
   const [viewFx,setViewFx]=useState(false);
+  const [chronicleSeason,setChronicleSeason]=useState("all");
+  const [noticesOpen,setNoticesOpen]=useState(false);
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -829,6 +831,19 @@ export default function TeamHub(props:{
   const chronicleMatches=matches.filter(m=>m.status==="played").slice().sort((a,b)=>b.match_date.localeCompare(a.match_date));
   const chronicleWins=chronicleMatches.filter(m=>recentResult(m)==="W").length;
   const chronicleGoals=chronicleMatches.reduce((sum,m)=>sum+(m.home_team===CLUB?(m.home_score||0):(m.away_score||0)),0);
+  const seasonOptions=Array.from(new Set(chronicleMatches.map(m=>seasonLabel(m.match_date))));
+  const visibleChronicle=chronicleSeason==="all"?chronicleMatches:chronicleMatches.filter(m=>seasonLabel(m.match_date)===chronicleSeason);
+  const nextSmart=smartCandidates[0]||null;
+  const ownMatchResponses=parentPlayers.map(p=>({player:p,status:attendanceStatus(p.id)}));
+  const unanswered=nextMatch?ownMatchResponses.filter(x=>!x.status||x.status==="maybe"):[];
+  const latestPlayed=chronicleMatches[0]||null;
+  const nextOtherEvent=futureTeamEvents[0]||null;
+  const teamNotices=[
+    ...(nextMatch&&unanswered.length?[{id:`rsvp-${nextMatch.id}`,type:"action" as const,title:"Potwierdź obecność na meczu",detail:`${datePL(nextMatch.match_date)} · ${unanswered.map(x=>x.player.display_name).join(", ")}`,action:()=>openMatch(nextMatch,"attendance"),label:"POTWIERDŹ"}]:[]),
+    ...(nextOtherEvent?.important?[{id:`event-${nextOtherEvent.id}`,type:"info" as const,title:nextOtherEvent.title,detail:[datePL(nextOtherEvent.event_date),nextOtherEvent.start_time?.slice(0,5),nextOtherEvent.location].filter(Boolean).join(" · "),action:()=>setTab("calendar"),label:"KALENDARZ"}]:[]),
+    ...(nextMatch?[{id:`match-${nextMatch.id}`,type:"info" as const,title:"Najbliższy mecz",detail:`${datePL(nextMatch.match_date)} · ${nextMatch.home_team===CLUB?nextMatch.away_team:nextMatch.home_team}`,action:()=>openMatch(nextMatch,"summary"),label:"MECZ"}]:[])
+  ];
+
 
   function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary",placement:"home"|"overlay"="overlay"){
     setMatchInitialTab(initial);
@@ -861,7 +876,7 @@ export default function TeamHub(props:{
   },[mobileMoreOpen]);
 
   const navItems:[string,string,any][]=[
-    ["home","Start",Home],
+    ["home","Start",Home],["teamcenter","Centrum drużyny",UserCheck],
     ...(props.parentPlayerIds.length?[["mychild","Moje dziecko",UserRound] as [string,string,any]]:[]),
     ...(canManageMatches||canEditMatchEvents?[["matchday","Match Day",Flame] as [string,string,any]]:[]),
     ["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["training","Treningi",Zap],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],["hall","Hall of Fame",Medal],
@@ -890,10 +905,19 @@ export default function TeamHub(props:{
           <span>{props.profile.role}</span>
         </div>}
       </div>
-      <button className="icon-btn v8-bell" onClick={enablePush}><Bell size={18}/></button>
+      <button className="icon-btn v8-bell v151-notice-trigger" onClick={()=>setNoticesOpen(v=>!v)} aria-label="Komunikaty drużyny" aria-expanded={noticesOpen}><Bell size={18}/>{unanswered.length>0&&<i aria-hidden="true"/>}</button>
     </header>
 
+    {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
     <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
+      {tab==="teamcenter"&&<section className="section v151-team-center">
+        <header className="v151-team-hero devil-card"><span className="eyebrow gold">DELTA 2018 GM · STREFA RODZICA</span><h1>CENTRUM <em>DRUŻYNY</em></h1><p>Najbliższe wydarzenia, Twoje sprawy i sezon w jednym miejscu.</p></header>
+        <div className="v151-team-grid">
+          <article className="v151-team-card devil-card"><div className="v8-panel-title"><CalendarDays size={18}/> NAJBLIŻSZE WYDARZENIE</div>{nextSmart?<><small>{nextSmart.kind==="match"?"MECZ":nextSmart.kind==="training"?"TRENING":"WYDARZENIE"}</small><h2>{nextSmart.title}</h2><p>{nextSmart.subtitle}</p><strong>{formatCountdown(nextSmart.at.getTime()-now.getTime())}</strong><button onClick={()=>nextSmart.kind==="match"&&nextMatch?openMatch(nextMatch,"summary"):setTab("calendar")}>SZCZEGÓŁY <ChevronRight size={15}/></button></>:<p>Brak nadchodzących wydarzeń.</p>}</article>
+          <article className="v151-team-card devil-card"><div className="v8-panel-title"><UserCheck size={18}/> MOJE SPRAWY</div>{parentPlayers.length?nextMatch?<><small>NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>{ownMatchResponses.map(x=><div className="v151-rsvp-row" key={x.player.id}><b>{x.player.display_name}</b><span className={x.status==="yes"?"ok":x.status==="no"?"no":"pending"}>{x.status==="yes"?"Obecność potwierdzona":x.status==="no"?"Nieobecny":x.status==="maybe"?"Do potwierdzenia":"Brak odpowiedzi"}</span></div>)}<button onClick={()=>openMatch(nextMatch,"attendance")}>POTWIERDŹ OBECNOŚĆ <ChevronRight size={15}/></button></>:<p>Na razie nie ma meczu do potwierdzenia.</p>:<p>Ta sekcja pojawi się, gdy konto rodzica będzie powiązane z zawodnikiem.</p>}</article>
+          <article className="v151-team-card devil-card"><div className="v8-panel-title"><Trophy size={18}/> SEZON W SKRÓCIE</div><div className="v151-season-numbers"><span><b>{teamSummary.played}</b><small>MECZE</small></span><span><b>{teamSummary.goals}</b><small>GOLE</small></span><span><b>{teamSummary.wins}</b><small>WYGRANE</small></span></div><p>{latestPlayed?`Ostatni wynik: ${latestPlayed.home_team} ${latestPlayed.home_score}:${latestPlayed.away_score} ${latestPlayed.away_team}`:"Pierwszy wynik pojawi się po meczu."}</p><button onClick={()=>setTab("league")}>CENTRUM ROZGRYWEK <ChevronRight size={15}/></button></article>
+        </div>
+      </section>}
       {tab==="home"&&<>
         <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
@@ -990,6 +1014,7 @@ export default function TeamHub(props:{
           ].map(([label,val,Icon]:any)=><div className="v8-stat devil-tile" key={label}><Icon size={25}/><b>{val}</b><span>{label}</span></div>)}
         </section>
 
+        <button type="button" className="v151-home-entry devil-card" onClick={()=>setTab("teamcenter")}><span><UserCheck size={23}/><b>CENTRUM DRUŻYNY</b><small>Moje sprawy · najbliższe wydarzenie · sezon w skrócie</small></span><ChevronRight size={22}/></button>
         <div className="v104-league-feature">
         <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
         </div>
@@ -1677,7 +1702,9 @@ export default function TeamHub(props:{
 
       {tab==="chronicle"&&<section className="section v8-section-page v108-chronicle-page">
         <div className="v108-chronicle-hero devil-card"><div><span className="eyebrow gold">KRONIKA SEZONU • {currentSeason}</span><h2>KAŻDY MECZ.<br/><em>NOWY ROZDZIAŁ.</em></h2><p>Nie zapisujemy wyłącznie wyników. Zbieramy emocje, bohaterów, gole i chwile, do których drużyna będzie wracać.</p><span className="v110-chronicle-sign">DELTA 2018 GM • ARCHIWUM DRUŻYNY</span></div><div className="v108-season-minute"><span>SEZON W JEDNEJ MINUCIE</span><div><b>{chronicleMatches.length}<small>MECZÓW</small></b><b>{chronicleWins}<small>WYGRANYCH</small></b><b>{chronicleGoals}<small>GOLI</small></b></div></div></div>
-        <div className="v108-timeline">{chronicleMatches.length?chronicleMatches.map((m,index)=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;const mvpName=players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name;const result=recentResult(m);return <article className={`v108-story-card devil-card result-${result.toLowerCase()}`} key={m.id}><div className="v108-timeline-marker"><span>{String(chronicleMatches.length-index).padStart(2,"0")}</span></div><div className="v108-story-cover"><div className="v108-story-date"><span>ROZDZIAŁ {String(chronicleMatches.length-index).padStart(2,"0")} • KOLEJKA {m.round_no||"—"}</span><b>{datePL(m.match_date)}</b></div><div className="v108-story-score"><span><Logo team={m.home_team} size={54}/>{m.home_team}</span><strong>{m.home_score}:{m.away_score}</strong><span><Logo team={m.away_team} size={54}/>{m.away_team}</span></div><div className="v108-story-result">{result==="W"?"ZWYCIĘSTWO":result==="R"?"REMIS":"LEKCJA NA PRZYSZŁOŚĆ"}</div></div><div className="v108-story-content"><div><small>BOHATER SPOTKANIA</small><h3>{mvpName||captainName||"Cała drużyna"}</h3><p>{result==="W"?"Wspólna praca, odwaga i konsekwencja przyniosły drużynie kolejne zwycięstwo.":"Każdy mecz daje doświadczenie, z którego drużyna buduje kolejny krok."}</p></div><div className="v108-story-details"><span><Goal size={15}/>{matchEvents.filter(e=>e.event_type==="goal").length} akcji bramkowych</span><span><Crown size={15}/>Kapitan: {captainName||"—"}</span><span><Users size={15}/>{starters.length} w wyjściowym składzie</span></div><MatchGallery matchId={m.id} media={matchMedia}/><button className="v110-story-open" onClick={()=>openMatch(m,"summary")}>OTWÓRZ CENTRUM MECZU <ChevronRight size={14}/></button></div></article>}):<div className="v108-chronicle-empty devil-card"><History size={42}/><h3>Pierwszy rozdział jeszcze przed nami</h3><p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p></div>}</div>
+        <nav className="v151-chronicle-seasons" aria-label="Wybierz sezon kroniki"><button className={chronicleSeason==="all"?"active":""} onClick={()=>setChronicleSeason("all")}>CAŁA HISTORIA</button>{seasonOptions.map(label=><button key={label} className={chronicleSeason===label?"active":""} onClick={()=>setChronicleSeason(label)}>SEZON {label}</button>)}</nav>
+        <div className="v151-chronicle-gallery">{visibleChronicle.slice(0,6).map((m,index)=><button key={m.id} className="v151-chronicle-cover devil-card" onClick={()=>openMatch(m,"summary")}><span>ROZDZIAŁ {String(visibleChronicle.length-index).padStart(2,"0")}</span><b>{m.home_score}:{m.away_score}</b><strong>{m.home_team===CLUB?m.away_team:m.home_team}</strong><small>{datePL(m.match_date)} · KOLEJKA {m.round_no||"—"}</small></button>)}{visibleChronicle.length===0&&<p>Brak rozegranych spotkań w tym sezonie.</p>}</div>
+        <div className="v108-timeline">{visibleChronicle.length?visibleChronicle.map((m,index)=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;const mvpName=players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name;const result=recentResult(m);return <article className={`v108-story-card devil-card result-${result.toLowerCase()}`} key={m.id}><div className="v108-timeline-marker"><span>{String(visibleChronicle.length-index).padStart(2,"0")}</span></div><div className="v108-story-cover"><div className="v108-story-date"><span>ROZDZIAŁ {String(visibleChronicle.length-index).padStart(2,"0")} • KOLEJKA {m.round_no||"—"}</span><b>{datePL(m.match_date)}</b></div><div className="v108-story-score"><span><Logo team={m.home_team} size={54}/>{m.home_team}</span><strong>{m.home_score}:{m.away_score}</strong><span><Logo team={m.away_team} size={54}/>{m.away_team}</span></div><div className="v108-story-result">{result==="W"?"ZWYCIĘSTWO":result==="R"?"REMIS":"LEKCJA NA PRZYSZŁOŚĆ"}</div></div><div className="v108-story-content"><div><small>BOHATER SPOTKANIA</small><h3>{mvpName||captainName||"Cała drużyna"}</h3><p>{result==="W"?"Wspólna praca, odwaga i konsekwencja przyniosły drużynie kolejne zwycięstwo.":"Każdy mecz daje doświadczenie, z którego drużyna buduje kolejny krok."}</p></div><div className="v108-story-details"><span><Goal size={15}/>{matchEvents.filter(e=>e.event_type==="goal").length} akcji bramkowych</span><span><Crown size={15}/>Kapitan: {captainName||"—"}</span><span><Users size={15}/>{starters.length} w wyjściowym składzie</span></div><MatchGallery matchId={m.id} media={matchMedia}/><button className="v110-story-open" onClick={()=>openMatch(m,"summary")}>OTWÓRZ CENTRUM MECZU <ChevronRight size={14}/></button></div></article>}):<div className="v108-chronicle-empty devil-card"><History size={42}/><h3>Pierwszy rozdział jeszcze przed nami</h3><p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p></div>}</div>
       </section>}
 
       {tab==="club"&&<section className="section v8-section-page v876-club-page">
