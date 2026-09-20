@@ -6566,3 +6566,25 @@ body > main,
 @media(max-width:760px){.v121-showcase-stage .v119-offset-m3{--v119-x:-420px}.v121-showcase-stage .v119-offset-p3{--v119-x:420px}}
 @media(max-width:390px){.v121-showcase-stage .v119-offset-m3{--v119-x:-385px}.v121-showcase-stage .v119-offset-p3{--v119-x:385px}}
 @media(prefers-reduced-motion:reduce){.v121-showcase-stage .v119-showcase-card{transition:none!important}}
+
+
+/* V10.22 MOBILE SMOOTH — limit compositor work during touch gestures.
+   Desktop V10.21 3D stays unchanged. */
+@media (max-width:759px){
+  .v121-showcase-stage{perspective:none!important;transform:none!important;contain:layout paint;}
+  .v121-showcase-stage .v119-showcase-card{
+    transform-style:flat!important;backface-visibility:visible!important;
+    will-change:transform!important;filter:none!important;
+    transition:transform .28s cubic-bezier(.2,.75,.3,1),border-color .28s!important;
+  }
+  .v121-showcase-stage .v119-showcase-card.is-active{
+    box-shadow:0 12px 28px rgba(0,0,0,.72),0 0 14px rgba(235,150,62,.22)!important;
+  }
+  .v121-showcase-stage.v121-gesture-active .v119-showcase-card{
+    transition:none!important;filter:none!important;
+  }
+  .v121-showcase-stage .v119-showcase-card img{
+    transform:translateZ(0);backface-visibility:hidden;
+  }
+  .v121-showcase-stage .v119-stage-smoke{background:linear-gradient(90deg,rgba(4,5,8,.5),transparent 25% 75%,rgba(4,5,8,.5))!important;}
+}

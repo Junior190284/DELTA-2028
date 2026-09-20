@@ -161,6 +161,8 @@ export default function TeamHub(props:{
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
+  const showcaseFrame=useRef<number|null>(null);
+  const showcasePendingX=useRef(0);
   const showcaseGesture=useRef<{pointerId:number;pointerType:string;startX:number;startY:number;lastX:number;lastAt:number;dragging:boolean}|null>(null);
   const showcaseIgnoreClick=useRef(false);
   const showcaseStep=()=>showcaseStageRef.current?.clientWidth&&showcaseStageRef.current.clientWidth<600?160:205;
@@ -169,23 +171,26 @@ export default function TeamHub(props:{
     if(!stage)return;
     const step=showcaseStep();
     const fractional=dx/step;
-    const mobile=stage.clientWidth<600;
+    const mobile=stage.clientWidth<760;
     stage.style.setProperty("--v121-progress",String(fractional));
     stage.querySelectorAll<HTMLElement>(".v119-showcase-card[data-showcase-offset]").forEach(card=>{
       const offset=Number(card.dataset.showcaseOffset)||0;
       const relative=offset+fractional;
       const magnitude=Math.abs(relative);
       const x=relative*step*(mobile?.83:1);
-      const depth=-Math.min(magnitude,3)*(mobile?50:85);
+      const depth=mobile?0:-Math.min(magnitude,3)*85;
       const scale=Math.max(.51,1.07-Math.min(magnitude,3)*.16);
-      const rotate=-Math.max(-2.8,Math.min(2.8,relative))*11;
-      card.style.transform=`translate3d(${x}px,${Math.min(magnitude,3)*12}px,${depth}px) rotateY(${rotate}deg) scale(${scale})`;
-      card.style.opacity=String(Math.max(.16,1-Math.max(0,magnitude-1.6)*.44));
-      card.style.filter=`brightness(${Math.max(.43,1.08-magnitude*.16)})`;
-      card.style.zIndex=String(Math.round(100-magnitude*12));
+      const rotate=mobile?0:-Math.max(-2.8,Math.min(2.8,relative))*11;
+      card.style.transform=`translate3d(${x}px,${mobile?0:Math.min(magnitude,3)*12}px,${depth}px) rotateY(${rotate}deg) scale(${scale})`;
+      if(!mobile){
+        card.style.opacity=String(Math.max(.16,1-Math.max(0,magnitude-1.6)*.44));
+        card.style.filter=`brightness(${Math.max(.43,1.08-magnitude*.16)})`;
+        card.style.zIndex=String(Math.round(100-magnitude*12));
+      }
     });
   };
   const showcaseClearDrag=()=>{
+    if(showcaseFrame.current!==null){cancelAnimationFrame(showcaseFrame.current);showcaseFrame.current=null;}
     const stage=showcaseStageRef.current;
     stage?.classList.remove("v120-dragging","v121-gesture-active");
     stage?.style.removeProperty("--v121-progress");
@@ -216,7 +221,10 @@ export default function TeamHub(props:{
     if(g.dragging){
       if(e.cancelable)e.preventDefault();
       g.lastX=e.clientX;g.lastAt=performance.now();
-      showcaseDraw(Math.max(-showcaseStep()*2.5,Math.min(showcaseStep()*2.5,dx)));
+      showcasePendingX.current=Math.max(-showcaseStep()*2.5,Math.min(showcaseStep()*2.5,dx));
+      if(showcaseFrame.current===null){
+        showcaseFrame.current=requestAnimationFrame(()=>{showcaseFrame.current=null;showcaseDraw(showcasePendingX.current);});
+      }
     }
   };
   const showcasePointerEnd=(e:React.PointerEvent<HTMLDivElement>)=>{
