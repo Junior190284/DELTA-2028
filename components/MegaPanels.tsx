@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, ChevronRight, Crown, Flame, Goal, Medal, Star, Trophy, UserCheck, Users, Zap } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Crown, Flame, Goal, Medal, Shield, Star, Trophy, UserCheck, Users, Zap } from "lucide-react";
 import PlayerPhoto from "./PlayerPhoto";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -156,12 +156,50 @@ export function HallOfFame(props:{players:Player[];stats:Record<string,Stat>;tra
   const seasonLabels=Array.from(new Set(played.map(m=>seasonLabel(m.match_date)))).sort().reverse();
   const seasonSummaries=seasonLabels.map(label=>{const ms=played.filter(m=>seasonLabel(m.match_date)===label);return {label,matches:ms.length,wins:ms.filter(m=>ours(m)>opp(m)).length,goals:ms.reduce((n,m)=>n+ours(m),0)};});
   async function copyMonth(){const text=`DELTA 2018 GM — PODSUMOWANIE ${latestMonth}\nMecze: ${monthMatches.length} • Wygrane: ${monthWins} • Gole: ${monthGoals} • Treningi: ${monthTrainings}`;await navigator.clipboard.writeText(text);alert("Podsumowanie miesiąca skopiowane.");}
-  const podium=records.slice(0,3);
+
+  const hallScore=(p:Player)=>{
+    const s=props.stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    return (s.g+s.a)+(s.mvp*2)+s.captain;
+  };
+  const hallLeaders=props.players.filter(p=>hallScore(p)>0).slice().sort((a,b)=>hallScore(b)-hallScore(a)||a.display_name.localeCompare(b.display_name,"pl")).slice(0,3);
+  const hallBreakdown=(p:Player)=>{
+    const s=props.stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    return `${s.g}G • ${s.a}A • ${s.mvp} MVP`;
+  };
+  const latestTopChem=props.chemistry[0]||null;
+
   return <section className="section v10-hof v108-hof">
     <div className="v108-hof-hero v110-hof-hero devil-card"><img className="v110-hof-bg" src="/assets/hall-of-fame-premium-v109.png" alt="Galeria legend DELTA 2018 GM"/><span className="v110-hof-light"/><div className="v108-hof-copy"><span className="eyebrow gold">GALERIA LEGEND • DELTA 2018 GM</span><h2>HALL OF <em>FAME</em></h2><p>Najlepsi z najlepszych. Tu zapisujemy rekordy, charakter i chwile, które budują legendę drużyny.</p><div><span>{played.length} MECZÓW</span><span>{goals} GOLI</span><span>{wins} ZWYCIĘSTW</span></div></div></div>
-    <div className="v108-podium devil-card"><div className="v8-panel-title"><Crown size={18}/> PODIUM SEZONU</div><div className="v108-podium-stage">{podium.map(([title,p,value,unit],index)=><button key={title} className={`v108-podium-place place-${index+1}`} onClick={()=>p&&props.onOpenPlayer(p)}>{p?<><span className="v108-podium-crown">{index===0?"★":""}</span><Avatar p={p}/><small>{title}</small><h3>{p.display_name}</h3><b>{value(p)} <em>{unit}</em></b></>:<p>Brak danych</p>}</button>)}</div></div>
+
+    <article className="v141-hof-podium devil-card">
+      <div className="v8-panel-title"><Crown size={18}/> PODIUM HALL OF FAME <span>IMPACT SEZONU</span></div>
+      <p className="v141-hof-intro">Największy wpływ na drużynę: gole, asysty, MVP i mecze w roli kapitana tworzą stadionowe podium sezonu.</p>
+      <div className="v113-podium-stage v141-hof-stage" aria-label="Podium Hall of Fame Delta 2018 GM">
+        <div className="v113-podium-atmosphere" aria-hidden="true"/>
+        {[1,2,3].map(place=>{
+          const p=hallLeaders[place-1];
+          return <div key={place} className={`v113-podium-position v113-place-${place} ${p?"has-player":"is-empty"}`}>
+            {p?<button type="button" className="v113-podium-player v141-hof-player" onClick={()=>props.onOpenPlayer(p)}>
+              <span className="v113-podium-photo">{ryszard(p)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={p.id}/>}</span>
+              <span className="v141-hof-kicker">HALL OF FAME</span>
+              <span className="v113-podium-name">{p.display_name}</span>
+              <span className="v141-hof-subline">{hallBreakdown(p)}</span>
+              <span className="v113-podium-score"><strong>{hallScore(p)}</strong><small>IMPACT</small></span>
+              <span className="v113-podium-open">OTWÓRZ PROFIL <ChevronRight size={12}/></span>
+            </button>:<div className="v113-podium-empty"><Shield size={22}/><span>Czeka na legendę</span></div>}
+            <div className="v113-podium-step" aria-hidden="true"><b>{place}</b></div>
+          </div>;
+        })}
+      </div>
+      <div className="v141-hof-strip">
+        <div><small>KRÓL STRZELCÓW</small><b>{records[0][1]?.display_name||"—"}</b><span>{records[0][1]?records[0][2](records[0][1] as Player):0} goli</span></div>
+        <div><small>KRÓL ASYST</small><b>{records[1][1]?.display_name||"—"}</b><span>{records[1][1]?records[1][2](records[1][1] as Player):0} asyst</span></div>
+        <div><small>TOP CHEMIA</small><b>{latestTopChem?`${latestTopChem.a.display_name} + ${latestTopChem.b.display_name}`:"—"}</b><span>{latestTopChem?`${latestTopChem.score}% • ${latestTopChem.games} gier`:"Czeka na dane"}</span></div>
+      </div>
+    </article>
+
     <div className="v10-hof-team"><article><b>{played.length}</b><span>MECZE</span></article><article><b>{wins}</b><span>WYGRANE</span></article><article><b>{goals}</b><span>GOLE</span></article><article><b>{props.chemistry[0]?.score||0}%</b><span>TOP CHEMIA</span></article></div>
-    <div className="v10-hof-grid">{records.slice(3).map(([title,p,value,unit,Icon])=><button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card"><Icon size={22}/><small>{title}</small>{p?<><Avatar p={p}/><h3>{p.display_name}</h3><b>{value(p)}</b><span>{unit}</span></>:<p>Brak danych</p>}</button>)}</div>
+    <div className="v10-hof-grid">{records.map(([title,p,value,unit,Icon])=><button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card"><Icon size={22}/><small>{title}</small>{p?<><Avatar p={p}/><h3>{p.display_name}</h3><b>{value(p)}</b><span>{unit}</span></>:<p>Brak danych</p>}</button>)}</div>
     <article className="v10-seasons devil-card"><div className="v8-panel-title"><CalendarDays size={18}/> PORÓWNANIE SEZONÓW</div><div>{seasonSummaries.length?seasonSummaries.map(x=><div key={x.label}><b>{x.label}</b><span>{x.matches} meczów</span><span>{x.wins} wygranych</span><strong>{x.goals} goli</strong></div>):<p className="muted">Dane pojawią się po rozegranych meczach.</p>}</div></article>
     <article className="v10-month devil-card"><div><small>AUTOMATYCZNE PODSUMOWANIE MIESIĄCA</small><h3>{latestMonth}</h3><p>{monthMatches.length} meczów • {monthWins} wygranych • {monthGoals} goli • {monthTrainings} treningów</p></div><button onClick={copyMonth}>KOPIUJ PODSUMOWANIE</button></article>
     <article className="v10-duos devil-card"><div className="v8-panel-title"><Zap size={18}/> NAJLEPSZE DUETY — CHEMIA</div><div>{props.chemistry.slice(0,5).map((x,i)=><div key={`${x.a.id}-${x.b.id}`}><strong>#{i+1}</strong><span>{x.a.display_name} + {x.b.display_name}</span><b>{x.score}%</b><small>{x.games} gier • {x.wins} wygranych • {x.combinedGA} akcji G/A</small></div>)}</div></article>

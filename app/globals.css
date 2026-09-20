@@ -6373,3 +6373,89 @@ body > main,
 @media(max-width:520px){.v114-trophy-hero h2{font-size:36px}.v114-trophy-item{min-height:205px;padding:15px 8px 10px}.v114-trophy-cup{min-height:72px}.v114-trophy-cup svg{width:36px;height:36px}.v114-trophy-item strong{font-size:12px}.v114-trophy-item small{font-size:8px}.v114-collectible{min-height:230px;padding:10px 7px}.v114-card-portrait{min-height:100px;max-height:120px}.v114-card-kicker{font-size:8px}.v114-collectible strong{font-size:12px}.v114-collectible-detail{flex-direction:column;align-items:stretch}.v114-journey-rail{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.v114-journey-rail button{min-height:62px;padding:6px 0}.v114-journey-rail span{font-size:7px;letter-spacing:0}.v114-journey-rail b{font-size:18px}.v114-journey-highlight{grid-template-columns:1fr}.v114-journey-highlight>div{padding:15px}.v114-journey-standings>div{grid-template-columns:20px minmax(0,1fr) 45px 40px;font-size:10px}.v114-trophy-detail{padding:16px!important}.league-tabs{flex-wrap:wrap}}
 @media(hover:hover) and (pointer:fine){.v114-collectible.earned:hover{transform:translateY(-4px);filter:brightness(1.1)}.v114-trophy-item.earned:hover{transform:translateY(-3px)}}
 @media(prefers-reduced-motion:reduce){.v114-trophy-item,.v114-collectible{animation:none!important;transition:none!important}}
+
+/* V10.14.1 — PODIUM + HALL OF FAME REFRESH */
+.v113-season-podium-panel{padding:18px!important}
+.v113-season-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.v113-season-category{min-width:0;padding:14px;border:1px solid rgba(241,194,86,.18);background:linear-gradient(180deg,rgba(10,12,15,.96),rgba(18,6,10,.88));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+.v113-season-category h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12px;letter-spacing:.08em;color:#f4ca72}
+.v113-podium-stage{position:relative;isolation:isolate;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;padding:72px 14px 12px;min-height:420px;overflow:hidden;border:1px solid rgba(238,192,85,.24);background:linear-gradient(180deg,rgba(2,3,7,.18),rgba(2,3,7,.72) 66%,rgba(2,3,7,.95)),linear-gradient(180deg,rgba(95,8,16,.12),transparent 42%),url('/assets/stadium-broadcast-v103.png') center center/cover no-repeat,#07090d;border-radius:20px;box-shadow:inset 0 0 80px rgba(222,22,35,.08),0 16px 42px rgba(0,0,0,.32)}
+.v113-podium-stage:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.08;background:url('/assets/devils-crest.png') center 40%/42% auto no-repeat}
+.v113-podium-atmosphere{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 50% 14%,rgba(255,205,99,.16),transparent 24%),radial-gradient(circle at 25% 26%,rgba(227,34,32,.14),transparent 28%),radial-gradient(circle at 76% 28%,rgba(227,34,32,.14),transparent 28%),linear-gradient(180deg,transparent 0%,rgba(4,5,8,.1) 42%,rgba(4,5,8,.68) 100%)}
+.v113-podium-position{position:relative;z-index:1;display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:flex-end;align-self:end;gap:0}
+.v113-place-1{order:2}.v113-place-2{order:1}.v113-place-3{order:3}
+.v113-podium-player{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;max-width:208px;min-width:0;margin:0 auto;padding:10px 8px 12px;cursor:pointer;color:#fff;border:1px solid rgba(240,194,91,.44);border-bottom:0;background:linear-gradient(180deg,rgba(40,11,14,.94),rgba(8,10,13,.98));box-shadow:0 16px 36px rgba(0,0,0,.44),0 0 22px rgba(241,192,79,.1);border-radius:18px 18px 8px 8px;animation:v113-podium-reveal .67s cubic-bezier(.2,.8,.2,1) both;transition:border-color .2s,box-shadow .2s,transform .2s,filter .2s}
+.v113-place-1 .v113-podium-player{max-width:220px;border-color:#ffd681;background:linear-gradient(180deg,rgba(79,36,20,.95),rgba(12,10,12,.98));box-shadow:0 0 26px rgba(248,197,83,.22),0 18px 40px rgba(0,0,0,.5)}
+.v113-place-2 .v113-podium-player{animation-delay:.28s}.v113-place-1 .v113-podium-player{animation-delay:.1s}.v113-place-3 .v113-podium-player{animation-delay:.42s}
+.v113-podium-photo{position:relative;width:100%;height:142px;max-width:165px;display:block;overflow:hidden;border:1px solid rgba(255,224,149,.34);border-radius:14px;background:radial-gradient(ellipse at 50% 18%,rgba(195,36,28,.46),#06080b 74%);box-shadow:0 0 24px rgba(243,193,82,.1)}
+.v113-podium-photo:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 44%,rgba(0,0,0,.28) 100%)}
+.v113-podium-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.v113-place-1 .v113-podium-photo{height:178px;max-width:178px}
+.v113-podium-name{display:block;width:100%;min-height:33px;font-size:13px;font-weight:950;line-height:1.18;text-align:center;overflow-wrap:anywhere}
+.v113-podium-score{display:flex;align-items:baseline;gap:6px;color:#ffd474}.v113-podium-score strong{font-size:29px;line-height:1}.v113-podium-score small{font-size:9px;font-weight:900;letter-spacing:.08em}
+.v113-podium-open{display:flex;align-items:center;gap:3px;font-size:9px;font-weight:900;color:#f5cb77;letter-spacing:.07em;opacity:.95}
+.v113-podium-step{position:relative;display:flex;justify-content:center;align-items:center;flex:0 0 auto;height:66px;width:100%;max-width:208px;min-width:0;margin:0 auto;border:1px solid rgba(255,219,122,.75);border-top:3px solid #ffdc89;background:linear-gradient(180deg,#5a3918 0%,#1a1410 12%,#2a1d13 86%,#0b0d0f);box-shadow:inset 0 8px 19px rgba(255,203,78,.12),0 12px 28px rgba(0,0,0,.42);border-radius:0 0 14px 14px;overflow:hidden}
+.v113-podium-step:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0,rgba(255,232,168,.14) 46%,transparent 100%)}
+.v113-podium-step b{position:relative;z-index:1;font-size:34px;line-height:1;font-weight:1000;color:#ffd97f;text-shadow:0 0 12px rgba(255,188,73,.36)}
+.v113-place-1 .v113-podium-step{height:110px;max-width:220px;background:linear-gradient(180deg,#875521 0%,#241810 18%,#352213 86%,#0b0d0f)}
+.v113-place-2 .v113-podium-step{height:82px}.v113-place-3 .v113-podium-step{height:60px}
+.v113-podium-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;padding:22px 8px;color:#d3b980;font-size:10px;text-align:center;min-height:170px;width:100%;max-width:208px;margin:0 auto;border:1px dashed rgba(243,194,93,.32);border-radius:16px 16px 8px 8px;background:rgba(7,9,12,.78)}
+@media(hover:hover) and (pointer:fine){.v113-podium-player:hover{border-color:#ffe8a4;box-shadow:0 0 36px rgba(252,196,65,.32),0 18px 36px rgba(0,0,0,.55);transform:translateY(-6px);filter:brightness(1.06)}}
+.v113-podium-compact{min-height:350px;padding:56px 8px 10px;gap:8px}
+.v113-podium-compact:before{background-size:58% auto;opacity:.07}
+.v113-podium-compact .v113-podium-player{max-width:170px;padding:8px 4px 10px;gap:5px}
+.v113-podium-compact .v113-place-1 .v113-podium-player{max-width:184px}
+.v113-podium-compact .v113-podium-photo{height:92px;max-width:116px}
+.v113-podium-compact .v113-place-1 .v113-podium-photo{height:122px;max-width:128px}
+.v113-podium-compact .v113-podium-name{font-size:10px;min-height:28px}
+.v113-podium-compact .v113-podium-score strong{font-size:22px}
+.v113-podium-compact .v113-podium-score small{font-size:8px}
+.v113-podium-compact .v113-podium-open{font-size:8px}
+.v113-podium-compact .v113-podium-step{height:44px;max-width:170px}
+.v113-podium-compact .v113-place-1 .v113-podium-step{height:71px;max-width:184px}
+.v113-podium-compact .v113-place-2 .v113-podium-step{height:52px}.v113-podium-compact .v113-place-3 .v113-podium-step{height:40px}
+.v113-podium-compact .v113-podium-step b{font-size:26px}
+.v113-podium-compact .v113-podium-empty{min-height:112px;max-width:170px;font-size:8px}
+
+.v141-hof-podium{padding:20px;border:1px solid rgba(246,202,84,.24);background:linear-gradient(180deg,rgba(45,7,11,.86),rgba(5,8,12,.98))}
+.v141-hof-intro{max-width:760px;margin:8px 0 14px;color:#c8d0d6;font-size:11px;line-height:1.65}
+.v141-hof-stage{min-height:420px;padding-top:78px}
+.v141-hof-player .v113-podium-photo{height:150px;max-width:170px}
+.v141-hof-player .v113-place-1 .v113-podium-photo{height:180px}
+.v141-hof-kicker{display:block;font-size:8px;font-weight:900;letter-spacing:.14em;color:#f5cf76}
+.v141-hof-subline{display:block;min-height:14px;font-size:9px;color:#b8c0c6;text-align:center}
+.v141-hof-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.v141-hof-strip>div{padding:12px 14px;border:1px solid rgba(243,202,89,.15);background:linear-gradient(180deg,rgba(5,8,12,.86),rgba(23,6,10,.74))}
+.v141-hof-strip small{display:block;color:#f1c75a;font-size:8px;font-weight:900;letter-spacing:.09em}
+.v141-hof-strip b{display:block;margin-top:5px;color:#fff;font-size:14px;line-height:1.2}
+.v141-hof-strip span{display:block;margin-top:4px;color:#aeb7bf;font-size:9px;line-height:1.4}
+
+@media(max-width:1150px){
+  .v113-season-categories{grid-template-columns:1fr;gap:12px}
+  .v113-podium-compact{max-width:640px;margin:auto}
+}
+@media(max-width:760px){
+  .v113-season-podium-panel{padding:14px!important}
+  .v113-season-category{padding:10px}
+  .v113-podium-stage{min-height:355px;gap:4px;padding:52px 6px 8px;border-radius:16px}
+  .v113-podium-stage:before{background-size:72% auto;opacity:.06}
+  .v113-podium-player{max-width:112px;padding:6px 3px 8px;border-radius:14px 14px 6px 6px}
+  .v113-place-1 .v113-podium-player{max-width:120px}
+  .v113-podium-photo{height:78px;max-width:90px;border-radius:10px}
+  .v113-place-1 .v113-podium-photo{height:102px;max-width:96px}
+  .v113-podium-name{font-size:8px;min-height:20px}
+  .v113-podium-score{gap:4px}.v113-podium-score strong{font-size:18px}.v113-podium-score small{font-size:6px}
+  .v113-podium-open{font-size:6px}
+  .v113-podium-step{height:40px;max-width:112px;border-radius:0 0 11px 11px}
+  .v113-place-1 .v113-podium-step{height:62px;max-width:120px}.v113-place-2 .v113-podium-step{height:48px}.v113-place-3 .v113-podium-step{height:36px}
+  .v113-podium-step b{font-size:22px}
+  .v113-podium-empty{max-width:112px;min-height:100px;font-size:7px;border-radius:14px 14px 6px 6px}
+  .v141-hof-podium{padding:14px}
+  .v141-hof-intro{font-size:9px;margin-bottom:10px}
+  .v141-hof-stage{min-height:360px;padding-top:56px}
+  .v141-hof-strip{grid-template-columns:1fr;gap:8px}
+  .v141-hof-strip>div{padding:10px 12px}
+  .v141-hof-strip b{font-size:12px}
+  .v141-hof-strip span{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.v113-podium-player{animation:none!important;transition:none!important}}
