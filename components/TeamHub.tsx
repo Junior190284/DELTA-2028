@@ -161,6 +161,7 @@ export default function TeamHub(props:{
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
+  const showcaseMobileRef=useRef<HTMLDivElement|null>(null);
   const showcaseFrame=useRef<number|null>(null);
   const showcasePendingX=useRef(0);
   const showcaseGesture=useRef<{pointerId:number;pointerType:string;startX:number;startY:number;lastX:number;lastAt:number;dragging:boolean}|null>(null);
@@ -1498,6 +1499,35 @@ export default function TeamHub(props:{
                     <span className="v119-showcase-card-overlay" aria-hidden="true"/>
                     <span className="v119-showcase-card-top"><img src="/teamlogos/gm.png" alt=""/><b>{player.shirt_number?`#${player.shirt_number}`:"GM"}</b></span>
                     <span className="v119-showcase-card-bottom"><small>DELTA 2018 GM</small><strong>{player.display_name}</strong><span>{player.position||"Zawodnik"}</span>{center&&<em>{s.m} MECZE · {s.g} GOLE · {s.a} ASYSTY</em>}</span>
+                  </button>;
+                })}
+              </div>
+              {/* V10.23: native scroll-snap on mobile. Keep all cards mounted and let the
+                  browser handle touch movement instead of rewriting 3D transforms. */}
+              <div ref={showcaseMobileRef} className="v123-mobile-showcase" aria-label="Zawodnicy — przesuń palcem, aby wybrać kartę" onScroll={e=>{
+                const el=e.currentTarget;
+                const first=el.querySelector<HTMLElement>(".v123-mobile-card");
+                if(!first)return;
+                const gap=12;
+                const index=Math.max(0,Math.min(players.length-1,Math.round(el.scrollLeft/(first.offsetWidth+gap))));
+                setShowcaseIndex(old=>old===index?old:index);
+              }}>
+                {players.map((player,index)=>{
+                  const s=stats[player.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+                  return <button key={player.id} type="button" className={`v123-mobile-card ${showcaseIndex===index?"is-active":""}`} onClick={()=>{
+                    const el=showcaseMobileRef.current;
+                    if(!el)return;
+                    const item=el.querySelector<HTMLElement>(`[data-mobile-player-index="${index}"]`);
+                    if(!item)return;
+                    const center=el.scrollLeft+el.clientWidth/2;
+                    const cardCenter=item.offsetLeft+item.offsetWidth/2;
+                    if(Math.abs(cardCenter-center)>16){el.scrollTo({left:item.offsetLeft+item.offsetWidth/2-el.clientWidth/2,behavior:"smooth"});return;}
+                    openPlayerProfile(player);
+                  }} data-mobile-player-index={index} aria-label={`Karta zawodnika ${player.display_name}`}>
+                    <span className="v123-mobile-art">{isRyszardPlayer(player)?<img src="/assets/ryszard-player-card.png" alt="" draggable={false}/>:<PlayerPhoto playerId={player.id}/>}</span>
+                    <span className="v123-mobile-shade" aria-hidden="true"/>
+                    <span className="v123-mobile-top"><img src="/teamlogos/gm.png" alt="" draggable={false}/><b>{player.shirt_number?`#${player.shirt_number}`:"GM"}</b></span>
+                    <span className="v123-mobile-bottom"><small>DELTA 2018 GM</small><strong>{player.display_name}</strong><span>{player.position||"Zawodnik"}</span><em>{s.m} MECZE · {s.g} GOLE · {s.a} ASYSTY</em></span>
                   </button>;
                 })}
               </div>
