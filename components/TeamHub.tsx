@@ -105,11 +105,11 @@ function PremiumPodium({players,stats,metric,onOpen,compact=false}:{players:Play
       const p=leaders[place-1];
       return <div key={place} className={`v113-podium-position v113-place-${place} ${p?"has-player":"is-empty"}`}>
         {p?<button type="button" className="v113-podium-player" onClick={()=>onOpen(p)} aria-label={`Otwórz profil zawodnika ${p.display_name}, miejsce ${place}`}>
-          <span className="v113-podium-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={p.id}/>}</span>
+          <span className="v142-card-crown" aria-hidden="true">{place===1?"✦":"◆"}</span><span className="v113-podium-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={p.id}/>}</span>
           <span className="v113-podium-name">{p.display_name}</span>
           <span className="v113-podium-score"><strong>{value(p)}</strong><small>{label}</small></span>
           <span className="v113-podium-open">PROFIL <ChevronRight size={12}/></span>
-        </button>:<div className="v113-podium-empty"><Shield size={22}/><span>Czeka na zawodnika</span></div>}
+        </button>:<div className="v113-podium-empty"><Shield size={22}/><span>Miejsce do zdobycia</span></div>}
         <div className="v113-podium-step" aria-hidden="true"><b>{place}</b></div>
       </div>;
     })}
@@ -156,6 +156,7 @@ export default function TeamHub(props:{
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
+  const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [playerSection,setPlayerSection]=useState<"overview"|"cards"|"achievements"|"history"|"training">("overview");
   const [selectedCollectible,setSelectedCollectible]=useState<string|null>(null);
   const [selectedTrophy,setSelectedTrophy]=useState<string|null>(null);
@@ -1077,20 +1078,12 @@ export default function TeamHub(props:{
         <section className="v87-season-grid">
           <article className="v87-leaders devil-card v885-season-best v113-season-podium-panel">
             <div className="v8-panel-title"><Medal size={18}/> PODIUM SEZONU <span>DELTA 2018 GM</span></div>
-            <div className="v113-season-categories">
-              <section className="v113-season-category" aria-label="Podium strzelców">
-                <h3><Goal size={17}/> STRZELCY BRAMEK</h3>
-                <PremiumPodium compact players={players} stats={stats} metric="goals" onOpen={openPlayerProfile}/>
-              </section>
-              <section className="v113-season-category" aria-label="Podium asystentów">
-                <h3><Star size={17}/> ASYSTY</h3>
-                <PremiumPodium compact players={players} stats={stats} metric="assists" onOpen={openPlayerProfile}/>
-              </section>
-              <section className="v113-season-category" aria-label="Podium MVP">
-                <h3><Trophy size={17}/> MVP</h3>
-                <PremiumPodium compact players={players} stats={stats} metric="mvp" onOpen={openPlayerProfile}/>
-              </section>
+            <div className="v142-gala-tabs" role="group" aria-label="Wybierz kategorię podium sezonu">
+              {([['goals','Strzelcy bramek',Goal],['assists','Asysty',Star],['mvp','MVP',Trophy]] as const).map(([metric,label,Icon])=><button key={metric} type="button" className={homePodiumMetric===metric?'active':''} aria-pressed={homePodiumMetric===metric} onClick={()=>setHomePodiumMetric(metric)}><Icon size={17}/>{label}</button>)}
             </div>
+            <div className="v142-gala-caption"><span>{homePodiumMetric==='goals'?'STRZELCY BRAMEK':homePodiumMetric==='assists'?'ASYSTY':'MVP'}</span><small>Wybierz kartę zawodnika, aby otworzyć jego profil</small></div>
+            <PremiumPodium players={players} stats={stats} metric={homePodiumMetric} onOpen={openPlayerProfile}/>
+            <button type="button" className="v142-hall-link" onClick={()=>setTab('hall')}>PRZEJDŹ DO HALL OF FAME <ChevronRight size={16}/></button>
           </article>
 
           <article className="v877-club-home devil-card">
