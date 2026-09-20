@@ -66,6 +66,7 @@ export default function AdminPanel(props:{
   const [attendance,setAttendance]=useState(props.initialAttendance);
   const [lineup,setLineup]=useState(props.initialLineup);
   const [events,setEvents]=useState(props.initialEvents);
+  const [goalBusy,setGoalBusy]=useState(false);
   const [news,setNews]=useState(props.initialNews);
   const [teamEvents,setTeamEvents]=useState(props.initialTeamEvents);
   const [trainingSessions,setTrainingSessions]=useState(props.initialTrainingSessions);
@@ -178,15 +179,28 @@ export default function AdminPanel(props:{
   }
 
   async function addGoal(){
-    if(!selectedMatch)return;
+    if(!selectedMatch||goalBusy)return;
     const scorerId=(document.getElementById("goalScorer") as HTMLSelectElement).value;
     const assistId=(document.getElementById("goalAssist") as HTMLSelectElement).value||null;
-    if(!scorerId)return;
-    const {data,error}=await supabase.from("match_events").insert({
-      match_id:selectedMatch.id,event_type:"goal",player_id:scorerId,assist_player_id:assistId
-    }).select("*").single();
-    if(error)return alert(error.message);
-    setEvents(prev=>[...prev,data]);
+    if(!scorerId)return alert("Wybierz strzelca bramki DELTY.");
+    if(assistId===scorerId)return alert("Strzelec nie może być swoim asystentem.");
+    setGoalBusy(true);
+    try {
+      const {data,error}=await supabase.from("match_events").insert({match_id:selectedMatch.id,event_type:"goal",player_id:scorerId,assist_player_id:assistId}).select("*").single();
+      if(error)return alert(error.message);
+      const key=selectedMatch.home_team===CLUB?"home_score":"away_score";
+      const newScore=(selectedMatch[key]??0)+1;
+      const result=await supabase.from("matches").update({[key]:newScore}).eq("id",selectedMatch.id);
+      if(result.error){
+        const rollback=await supabase.from("match_events").delete().eq("id",data.id);
+        if(rollback.error){setEvents(prev=>[...prev,data]);alert("Bramka została zapisana, ale wynik nie. Sprawdź i popraw ręcznie wynik meczu.");}
+        else alert("Nie zapisano wyniku; bramka nie została dodana: "+result.error.message);
+        return;
+      }
+      setEvents(prev=>[...prev,data]);
+      setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,[key]:newScore}:m));
+      alert("Bramka DELTY i wynik zostały zapisane.");
+    } finally {setGoalBusy(false);}
   }
 
   async function setMvp(){
@@ -203,9 +217,23 @@ export default function AdminPanel(props:{
   }
 
   async function deleteEvent(id:string){
-    const {error}=await supabase.from("match_events").delete().eq("id",id);
-    if(error)return alert(error.message);
-    setEvents(prev=>prev.filter(e=>e.id!==id));
+    if(goalBusy)return;
+    const event=events.find(e=>e.id===id);
+    if(!event)return;
+    if(event.event_type==="goal"&&!window.confirm("Usunąć tę bramkę? Wynik DELTY zostanie pomniejszony o 1."))return;
+    setGoalBusy(true);
+    try {
+      const {error}=await supabase.from("match_events").delete().eq("id",id);
+      if(error)return alert(error.message);
+      setEvents(prev=>prev.filter(e=>e.id!==id));
+      const current=matches.find(m=>m.id===event.match_id);
+      if(event.event_type!=="goal"||!current)return;
+      const key=current.home_team===CLUB?"home_score":"away_score";
+      const score=Math.max(0,(current[key]??0)-1);
+      const result=await supabase.from("matches").update({[key]:score}).eq("id",current.id);
+      if(result.error)return alert("Bramkę usunięto, ale wynik nie został skorygowany. Popraw go ręcznie: "+result.error.message);
+      setMatches(prev=>prev.map(m=>m.id===current.id?{...m,[key]:score}:m));
+    } finally {setGoalBusy(false);}
   }
 
   async function editMatchEvent(id:string){
@@ -711,7 +739,7 @@ export default function AdminPanel(props:{
                 <h3><Goal size={17}/> Dodaj gola</h3>
                 <select id="goalScorer"><option value="">Strzelec</option>{activePlayers.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select>
                 <select id="goalAssist"><option value="">Bez asysty</option>{activePlayers.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select>
-                <button onClick={addGoal}>Dodaj bramkę</button>
+                <button disabled={goalBusy} onClick={addGoal}>{goalBusy?"Zapisywanie…":"Dodaj bramkę DELTY +1"}</button>
               </div>
 
               <div className="admin-subcard">
@@ -726,7 +754,7 @@ export default function AdminPanel(props:{
               {matchEvents.map(e=>{
                 const player=players.find(p=>p.id===e.player_id)?.display_name||"?";
                 const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
-                return <div key={e.id}><span>{e.event_type==="goal"?`⚽ ${player}${assist?` • asysta ${assist}`:""}`:`⭐ MVP: ${player}`}</span><div className="v902-event-actions"><button onClick={()=>editMatchEvent(e.id)}>Edytuj</button><button onClick={()=>deleteEvent(e.id)}><Trash2 size={14}/></button></div></div>
+                return <div key={e.id}><span>{e.event_type==="goal"?`⚽ ${player}${assist?` • asysta ${assist}`:""}`:`⭐ MVP: ${player}`}</span><div className="v902-event-actions"><button onClick={()=>editMatchEvent(e.id)}>Edytuj</button><button disabled={goalBusy} onClick={()=>deleteEvent(e.id)}><Trash2 size={14}/></button></div></div>
               })}
             </div></>}
             {canMatchBasics&&<div className="v10-admin-gallery"><h3>Foto-kronika meczu</h3><div className="v10-upload-row"><input id="matchPhotoInput" type="file" accept="image/*"/><button onClick={uploadMatchPhoto}><Plus size={14}/> Dodaj zdjęcie</button></div><div className="event-list">{matchMedia.filter(x=>x.match_id===selectedMatch.id).map(row=><div key={row.id}><span>📷 {row.caption||row.storage_path.split("/").pop()}</span><button onClick={()=>deleteMatchPhoto(row)}><Trash2 size={14}/></button></div>)}</div></div>}

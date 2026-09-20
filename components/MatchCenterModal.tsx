@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
@@ -57,6 +57,14 @@ export default function MatchCenterModal(props:{
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState("");
   const [celebration,setCelebration]=useState<"goal"|"hattrick"|"mvp"|null>(null);
+  const [scorerId,setScorerId]=useState("");
+  const [assistId,setAssistId]=useState("");
+  const [editingGoalId,setEditingGoalId]=useState<string|null>(null);
+  const [eventBusy,setEventBusy]=useState(false);
+  const [eventError,setEventError]=useState("");
+  const [matchBusy,setMatchBusy]=useState(false);
+  const [refreshing,setRefreshing]=useState(false);
+  const [lastSync,setLastSync]=useState<string>("");
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -65,6 +73,12 @@ export default function MatchCenterModal(props:{
   const responseRows=matchAttendance.filter(a=>["yes","no","maybe"].includes(a.status));
   const responseCount=new Set(responseRows.map(a=>a.player_id)).size;
   const presentCount=matchAttendance.filter(a=>a.status==="present"||a.status==="yes").length;
+  const deltaIsHome=match.home_team.toLocaleLowerCase("pl-PL").includes("delta");
+  const deltaGoals=matchEvents.filter(e=>e.event_type==="goal");
+  const matchStarted=match.status==="scheduled"&&(match.home_score!==null||match.away_score!==null);
+  const displayStatus=match.status==="played"?"ZAKOŃCZONY":match.status==="cancelled"?"ODWOŁANY":matchStarted?"TRWA":"PRZED MECZEM";
+  const deltaScore=deltaIsHome?match.home_score:match.away_score;
+  const opponentScore=deltaIsHome?match.away_score:match.home_score;
 
   const selectedStarterIds=useMemo(
     ()=>new Set(matchLineup.filter(l=>l.is_starter).map(l=>l.player_id)),
@@ -72,6 +86,26 @@ export default function MatchCenterModal(props:{
   );
   const starters=useMemo(()=>matchLineup.filter(l=>l.is_starter).map(l=>players.find(p=>p.id===l.player_id)).filter(Boolean).sort((a,b)=>positionOrder(a!.position)-positionOrder(b!.position)) as Player[],[matchLineup,players]);
   const substitutes=useMemo(()=>matchLineup.filter(l=>!l.is_starter).map(l=>players.find(p=>p.id===l.player_id)).filter(Boolean) as Player[],[matchLineup,players]);
+
+  // Podgląd rodzica odświeża wynik i listę strzelców automatycznie co 15 s
+  // w trakcie meczu; przycisk „Odśwież” działa także po zakończeniu spotkania.
+  useEffect(()=>{
+    if(match.status!=="scheduled"||!matchStarted)return;
+    let active=true;
+    const timer=window.setInterval(async()=>{
+      const [m,e]=await Promise.all([
+        supabase.from("matches").select("*").eq("id",match.id).single(),
+        supabase.from("match_events").select("*").eq("match_id",match.id).order("created_at",{ascending:true})
+      ]);
+      if(!active||m.error||e.error)return;
+      const currentEvents=(e.data||[]) as Event[];
+      const localGoals=props.events.filter(row=>row.match_id===match.id);
+      const changed=m.data.status!==match.status||m.data.home_score!==match.home_score||m.data.away_score!==match.away_score||
+        currentEvents.length!==localGoals.length||currentEvents.some((row,index)=>row.id!==localGoals[index]?.id||row.player_id!==localGoals[index]?.player_id||row.assist_player_id!==localGoals[index]?.assist_player_id);
+      if(changed)props.onDataChange({match:m.data,events:[...props.events.filter(row=>row.match_id!==match.id),...currentEvents]});
+    },15000);
+    return ()=>{active=false;window.clearInterval(timer);};
+  },[match.id,match.status,match.home_score,match.away_score,matchStarted,props.events,props.onDataChange,supabase]);
 
   function confirmSaved(message="Zapisano"){
     setSaved(message);
@@ -94,23 +128,63 @@ export default function MatchCenterModal(props:{
   }
 
   async function saveMatchBasics(){
+    if(saving||!canManageMatch)return;
     setSaving(true);
-    let status=(document.getElementById("mc-status") as HTMLSelectElement)?.value||match.status;
-    const hs=(document.getElementById("mc-hs") as HTMLInputElement)?.value??"";
-    const as=(document.getElementById("mc-as") as HTMLInputElement)?.value??"";
-    const venue=(document.getElementById("mc-venue") as HTMLInputElement)?.value??"";
-    const time=(document.getElementById("mc-time") as HTMLInputElement)?.value??"";
-    if(status!=="cancelled"&&hs!==""&&as!=="")status="played";
+    try {
+      const status=(document.getElementById("mc-status") as HTMLSelectElement)?.value||match.status;
+      const hs=(document.getElementById("mc-hs") as HTMLInputElement)?.value??"";
+      const as=(document.getElementById("mc-as") as HTMLInputElement)?.value??"";
+      const venue=(document.getElementById("mc-venue") as HTMLInputElement)?.value??"";
+      const time=(document.getElementById("mc-time") as HTMLInputElement)?.value??"";
+      if((hs!==""&&(!Number.isInteger(Number(hs))||Number(hs)<0))||(as!==""&&(!Number.isInteger(Number(as))||Number(as)<0)))return setEventError("Wynik musi być nieujemną liczbą całkowitą.");
+      const next={...match,status,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null};
+      const {error}=await supabase.from("matches").update({status:next.status,home_score:next.home_score,away_score:next.away_score,venue:next.venue,match_time:next.match_time}).eq("id",match.id);
+      if(error)return setEventError(error.message);
+      setEventError("");props.onDataChange({match:next});confirmSaved("Mecz zapisany");
+    } finally {setSaving(false);}
+  }
 
-    const next={...match,status,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null};
-    const {error}=await supabase.from("matches").update({
-      status:next.status,home_score:next.home_score,away_score:next.away_score,
-      venue:next.venue,match_time:next.match_time
-    }).eq("id",match.id);
-    setSaving(false);
-    if(error)return alert(error.message);
-    props.onDataChange({match:next});
-    confirmSaved("Mecz zapisany");
+  async function refreshMatch(){
+    if(refreshing)return;
+    setRefreshing(true);
+    try {
+      const [m,e]=await Promise.all([
+        supabase.from("matches").select("*").eq("id",match.id).single(),
+        supabase.from("match_events").select("*").eq("match_id",match.id).order("created_at",{ascending:true})
+      ]);
+      if(m.error||e.error)return setEventError(m.error?.message||e.error?.message||"Nie udało się odświeżyć meczu.");
+      props.onDataChange({match:m.data,events:[...props.events.filter(row=>row.match_id!==match.id),...(e.data||[])]});
+      setLastSync(new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+    } finally {setRefreshing(false);}
+  }
+
+  async function changeMatchStatus(status:"scheduled"|"played"){
+    if(matchBusy||!canManageMatch)return;
+    setMatchBusy(true);setEventError("");
+    try {
+      const next={...match,status,home_score:match.home_score??0,away_score:match.away_score??0};
+      const {error}=await supabase.from("matches").update({status:next.status,home_score:next.home_score,away_score:next.away_score}).eq("id",match.id);
+      if(error)return setEventError(error.message);
+      props.onDataChange({match:next});confirmSaved(status==="played"?"Mecz zakończony — można dalej poprawiać wynik i strzelców":"Mecz rozpoczęty");
+    } finally {setMatchBusy(false);}
+  }
+
+  // Wynik jest aktualizowany wraz ze zdarzeniem. Przy awarii drugiego zapisu
+  // próbujemy przywrócić poprzedni stan; przy równoczesnej edycji dwóch urządzeń
+  // administrator powinien sprawdzić wynik i listę zdarzeń.
+  async function updateTeamScore(team:"delta"|"opponent",difference:number){
+    if(eventBusy||!canEditEvents||match.status==="cancelled")return;
+    setEventBusy(true);setEventError("");
+    try {
+      const key=(team==="delta"?deltaIsHome:!deltaIsHome)?"home_score":"away_score";
+      const previous=match[key]??0;
+      const nextScore=previous+difference;
+      if(nextScore<0)return setEventError("Wynik nie może być ujemny.");
+      const next={...match,[key]:nextScore};
+      const {error}=await supabase.from("matches").update({[key]:nextScore}).eq("id",match.id);
+      if(error)return setEventError(error.message);
+      props.onDataChange({match:next});confirmSaved(team==="opponent"?"Wynik przeciwnika zapisany":"Wynik DELTY zapisany");
+    } finally {setEventBusy(false);}
   }
 
   async function setAttendance(playerId:string,status:string){
@@ -167,18 +241,51 @@ export default function MatchCenterModal(props:{
   }
 
   async function addGoal(){
-    const scorer=(document.getElementById("mc-scorer") as HTMLSelectElement)?.value;
-    const assist=(document.getElementById("mc-assist") as HTMLSelectElement)?.value||null;
-    if(!scorer)return;
-    const {data,error}=await supabase.from("match_events").insert({
-      match_id:match.id,event_type:"goal",player_id:scorer,assist_player_id:assist
-    }).select("*").single();
-    if(error)return alert(error.message);
-    props.onDataChange({events:[...props.events,data]});
-    const scorerGoals=matchEvents.filter(e=>e.event_type==="goal"&&e.player_id===scorer).length+1;
-    triggerCelebration(scorerGoals>=3?"hattrick":"goal");
-    confirmSaved("Gol zapisany");
+    if(eventBusy||!canEditEvents||match.status==="cancelled")return;
+    if(!scorerId)return setEventError("Wybierz strzelca bramki DELTY.");
+    if(assistId&&assistId===scorerId)return setEventError("Strzelec nie może być jednocześnie asystentem tej bramki.");
+    setEventBusy(true);setEventError("");
+    try {
+      if(editingGoalId){
+        const {error}=await supabase.from("match_events").update({player_id:scorerId,assist_player_id:assistId||null}).eq("id",editingGoalId);
+        if(error)return setEventError(error.message);
+        props.onDataChange({events:props.events.map(e=>e.id===editingGoalId?{...e,player_id:scorerId,assist_player_id:assistId||null}:e)});
+        setEditingGoalId(null);setScorerId("");setAssistId("");confirmSaved("Strzelec i asysta poprawieni");return;
+      }
+      const {data,error}=await supabase.from("match_events").insert({match_id:match.id,event_type:"goal",player_id:scorerId,assist_player_id:assistId||null}).select("*").single();
+      if(error)return setEventError(error.message);
+      const key=deltaIsHome?"home_score":"away_score";
+      const next={...match,[key]:(match[key]??0)+1};
+      const result=await supabase.from("matches").update({[key]:next[key]}).eq("id",match.id);
+      if(result.error){
+        const rollback=await supabase.from("match_events").delete().eq("id",data.id);
+        setEventError(rollback.error?"Bramka zapisana, ale wynik nie został zaktualizowany. Sprawdź wynik i skoryguj go ręcznie.":`Nie zapisano wyniku: ${result.error.message}`);
+        if(rollback.error)props.onDataChange({events:[...props.events,data]});
+        return;
+      }
+      props.onDataChange({events:[...props.events,data],match:next});
+      const scorerGoals=deltaGoals.filter(e=>e.player_id===scorerId).length+1;
+      setScorerId("");setAssistId("");triggerCelebration(scorerGoals>=3?"hattrick":"goal");confirmSaved("Bramka DELTY i wynik zapisane");
+    } finally {setEventBusy(false);}
   }
+
+  async function removeGoal(id:string){
+    if(eventBusy||!canEditEvents)return;
+    if(!window.confirm("Usunąć tę bramkę DELTY? Wynik zostanie pomniejszony o 1."))return;
+    setEventBusy(true);setEventError("");
+    try {
+      const key=deltaIsHome?"home_score":"away_score";
+      const {error}=await supabase.from("match_events").delete().eq("id",id);
+      if(error)return setEventError(error.message);
+      const next={...match,[key]:Math.max(0,(match[key]??0)-1)};
+      const result=await supabase.from("matches").update({[key]:next[key]}).eq("id",match.id);
+      props.onDataChange({events:props.events.filter(e=>e.id!==id),...(result.error?{}:{match:next})});
+      if(result.error)return setEventError("Bramkę usunięto, ale nie udało się poprawić wyniku. Skoryguj wynik ręcznie: "+result.error.message);
+      confirmSaved("Bramka usunięta — wynik i statystyki skorygowane");
+    } finally {setEventBusy(false);}
+  }
+
+  function beginGoalEdit(e:Event){setEditingGoalId(e.id);setScorerId(e.player_id||"");setAssistId(e.assist_player_id||"");setTab("events");setEventError("");}
 
   async function setMvp(){
     const playerId=(document.getElementById("mc-mvp") as HTMLSelectElement)?.value;
@@ -204,27 +311,6 @@ export default function MatchCenterModal(props:{
     confirmSaved("Zdarzenie usunięte");
   }
 
-  async function editGoal(id:string){
-    const e=props.events.find(x=>x.id===id);
-    if(!e)return;
-    const currentScorer=players.find(p=>p.id===e.player_id)?.display_name||"";
-    const currentAssist=players.find(p=>p.id===e.assist_player_id)?.display_name||"";
-    const scorerName=prompt("Strzelec gola",currentScorer); if(scorerName===null)return;
-    const scorer=players.find(p=>p.display_name.toLowerCase()===scorerName.trim().toLowerCase());
-    if(!scorer)return alert("Nie znaleziono zawodnika.");
-    const assistName=prompt("Asysta (puste = brak)",currentAssist); if(assistName===null)return;
-    let assistId:string|null=null;
-    if(assistName.trim()){
-      const assist=players.find(p=>p.display_name.toLowerCase()===assistName.trim().toLowerCase());
-      if(!assist)return alert("Nie znaleziono zawodnika dla asysty.");
-      assistId=assist.id;
-    }
-    const {error}=await supabase.from("match_events").update({player_id:scorer.id,assist_player_id:assistId}).eq("id",id);
-    if(error)return alert(error.message);
-    props.onDataChange({events:props.events.map(x=>x.id===id?{...x,player_id:scorer.id,assist_player_id:assistId}:x)});
-    confirmSaved("Gol poprawiony");
-  }
-
   const tabs:{id:Tab;label:string;icon:any;allowed?:boolean}[]=[
     {id:"summary",label:"Podsumowanie",icon:CalendarDays,allowed:true},
     {id:"attendance",label:"Obecność",icon:UserCheck,allowed:true},
@@ -244,16 +330,25 @@ export default function MatchCenterModal(props:{
 
       <div className="v85-match-head">
         <div>
-          <div className="mc-kicker">{match.status==="played"?"PO MECZU • PODSUMOWANIE":"PRZED MECZEM • CENTRUM MECZU"}</div>
+          <div className="mc-kicker">{`${displayStatus} • CENTRUM MECZU`}</div>
           <h2>{match.home_team} <span>vs</span> {match.away_team}</h2>
           <p>{datePL(match.match_date)} • {match.match_time||"godzina do ustalenia"} • {match.venue||"miejsce do ustalenia"}</p>
         </div>
         <div className={`v85-match-score ${match.status==="played"?"v105-score-final":"v105-score-upcoming"}`}>
-          {match.status==="played"?`${match.home_score??0}:${match.away_score??0}`:"VS"}
+          {match.status==="played"||matchStarted?`${match.home_score??0}:${match.away_score??0}`:"VS"}
         </div>
       </div>
 
-      {saved&&<div className="mc-saved">✓ {saved}</div>}
+      <div className="v125-refresh-line"><button type="button" disabled={refreshing} onClick={refreshMatch}>{refreshing?"Odświeżanie…":"↻ Odśwież wynik i zdarzenia"}</button><small>{matchStarted?"Podgląd meczu odświeża się automatycznie co 15 sekund.":""}{lastSync?` Ostatnie sprawdzenie: ${lastSync}`:""}</small></div>
+      {saved&&<div className="mc-saved" role="status">✓ {saved}</div>}
+      {eventError&&<div className="v125-error" role="alert">{eventError}</div>}
+      {canManageMatch&&match.status!=="cancelled"&&<div className="v125-match-control">
+        <span className={`v125-status ${match.status==="played"?"finished":matchStarted?"live":"scheduled"}`}>{displayStatus}</span>
+        {match.status==="scheduled"&&!matchStarted&&<button disabled={matchBusy} onClick={()=>changeMatchStatus("scheduled")}>▶ Rozpocznij mecz (0:0)</button>}
+        {match.status==="scheduled"&&matchStarted&&<button disabled={matchBusy} onClick={()=>changeMatchStatus("played")}>■ Zakończ mecz</button>}
+        {match.status==="played"&&<button disabled={matchBusy} onClick={()=>changeMatchStatus("scheduled")}>↻ Wznów mecz</button>}
+        <small>Po zakończeniu możesz nadal poprawiać wynik, strzelców i asysty.</small>
+      </div>}
 
       <nav className="v85-tabs">
         {tabs.filter(t=>t.allowed!==false).map(({id,label,icon:Icon})=>
@@ -266,7 +361,7 @@ export default function MatchCenterModal(props:{
 
       <div className="v85-tab-body">
         {tab==="summary"&&<>
-          <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":"NADCHODZĄCE SPOTKANIE"}</span><strong>{match.home_team}</strong><b>{match.status==="played"?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{match.away_team}</strong></div><div className="v85-summary-grid">
+          <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":matchStarted?"WYNIK NA ŻYWO":"NADCHODZĄCE SPOTKANIE"}</span><strong>{match.home_team}</strong><b>{match.status==="played"||matchStarted?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{match.away_team}</strong></div><div className="v85-summary-grid">
             <div className="v85-summary-card"><span>TERMIN</span><b>{datePL(match.match_date)}</b><small>{match.match_time||"—"}</small></div>
             <div className="v85-summary-card"><span>MIEJSCE</span><b>{match.venue||"Do ustalenia"}</b><small>Kolejka {match.round_no||"—"}</small></div>
             <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>POTWIERDZENIA</span><b>{responseCount}/{players.length}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>
@@ -292,12 +387,12 @@ export default function MatchCenterModal(props:{
           </div>
 
           {canManageMatch&&<div className="mc-basics v85-basics">
-            <label>Status<select id="mc-status" defaultValue={match.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
+            <label>Status<select id="mc-status" defaultValue={match.status}><option value="scheduled">Zaplanowany / trwa</option><option value="played">Zakończony</option><option value="cancelled">Odwołany</option></select></label>
             <label>Godzina<input id="mc-time" defaultValue={match.match_time||""}/></label>
             <label>Miejsce<input id="mc-venue" defaultValue={match.venue||""}/></label>
             <label>Gospodarz<input id="mc-hs" type="number" defaultValue={match.home_score??""}/></label>
             <label>Gość<input id="mc-as" type="number" defaultValue={match.away_score??""}/></label>
-            <button className="mc-save" onClick={saveMatchBasics}><Save size={16}/> {saving?"Zapisywanie…":"Zapisz mecz"}</button>
+            <button className="mc-save" disabled={saving} onClick={saveMatchBasics}><Save size={16}/> {saving?"Zapisywanie…":"Zapisz mecz"}</button>
           </div>}
 
           {!canManageMatch&&!canEditEvents&&<button className="v85-parent-cta" onClick={()=>setTab("attendance")}><UserCheck size={18}/> POTWIERDŹ OBECNOŚĆ ZAWODNIKA <ChevronRight size={16}/></button>}
@@ -362,21 +457,35 @@ export default function MatchCenterModal(props:{
         </>}
 
         {canEditEvents&&tab==="events"&&<>
-          <div className="v85-events-layout">
-            <div className="mc-box v85-event-form">
-              <div className="mc-title"><Goal size={18}/> Dodaj bramkę</div>
-              <select id="mc-scorer"><option value="">Strzelec</option>{players.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select>
-              <select id="mc-assist"><option value="">Bez asysty</option>{players.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select>
-              <button onClick={addGoal}>Dodaj gola</button>
+          <div className="v125-match-board">
+            <div className="v125-score-team"><small>DELTA 2018 GM</small><strong>{deltaScore??0}</strong><span>{match.status==="played"?"Wynik końcowy":matchStarted?"Na żywo":"Przed meczem"}</span></div>
+            <span className="v125-score-colon">:</span>
+            <div className="v125-score-team"><small>{deltaIsHome?match.away_team:match.home_team}</small><strong>{opponentScore??0}</strong><span>Przeciwnik</span></div>
+          </div>
+          <div className="v85-events-layout v125-events-layout">
+            <div className="mc-box v85-event-form v125-goal-form">
+              <div className="mc-title"><Goal size={18}/> {editingGoalId?"Popraw bramkę DELTY":"+ Bramka DELTY"}</div>
+              <label>Strzelec — wymagany<select id="mc-scorer" value={scorerId} disabled={eventBusy} onChange={e=>setScorerId(e.target.value)}><option value="">Wybierz strzelca</option>{players.map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></label>
+              <label>Asysta — opcjonalna<select id="mc-assist" value={assistId} disabled={eventBusy} onChange={e=>setAssistId(e.target.value)}><option value="">Bez asysty / uzupełnię później</option>{players.filter(p=>p.id!==scorerId).map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}</select></label>
+              <button type="button" disabled={eventBusy||!scorerId} onClick={addGoal}>{eventBusy?"Zapisywanie…":editingGoalId?"Zapisz poprawkę":"Zatwierdź bramkę +1"}</button>
+              {editingGoalId&&<button type="button" disabled={eventBusy} className="v125-secondary" onClick={()=>{setEditingGoalId(null);setScorerId("");setAssistId("");}}>Anuluj edycję</button>}
+              <small>Każda nowa bramka DELTY wymaga wyboru strzelca i aktualizuje wynik. Poprawa strzelca lub asysty nie dodaje kolejnej bramki.</small>
             </div>
-            <div className="v85-event-list">
-              <div className="mc-title"><Trophy size={18}/> Zdarzenia meczu</div>
-              {matchEvents.filter(e=>e.event_type==="goal").length===0&&<div className="muted">Brak zapisanych bramek.</div>}
-              {matchEvents.filter(e=>e.event_type==="goal").map(e=>{
-                const scorer=players.find(p=>p.id===e.player_id)?.display_name||"?";
+            <div className="mc-box v125-opponent-form">
+              <div className="mc-title"><Goal size={18}/> Bramka przeciwnika</div>
+              <p>Bez wybierania zawodnika. Wynik można później skorygować.</p>
+              <button type="button" disabled={eventBusy} onClick={()=>updateTeamScore("opponent",1)}>+1 dla przeciwnika</button>
+              <button type="button" disabled={eventBusy||(opponentScore??0)<=0} className="v125-secondary" onClick={()=>updateTeamScore("opponent",-1)}>−1 Cofnij bramkę przeciwnika</button>
+            </div>
+            <div className="v85-event-list v125-event-list">
+              <div className="mc-title"><Trophy size={18}/> Bramki DELTY ({deltaGoals.length})</div>
+              {deltaGoals.length===0&&<div className="muted">Brak zapisanych bramek DELTY.</div>}
+              {deltaGoals.map(e=>{
+                const scorer=players.find(p=>p.id===e.player_id)?.display_name||"Nieznany zawodnik";
                 const assist=players.find(p=>p.id===e.assist_player_id)?.display_name;
-                return <div className="v85-event-row" key={e.id}><span>⚽ <b>{scorer}</b>{assist?` • asysta ${assist}`:""}</span><div className="v10-event-tools"><button onClick={()=>editGoal(e.id)}>Edytuj</button><button onClick={()=>deleteEvent(e.id)}>Usuń</button></div></div>
+                return <div className="v85-event-row" key={e.id}><span>⚽ <b>{scorer}</b>{assist?` • asysta: ${assist}`:" • bez asysty"}</span><div className="v10-event-tools"><button type="button" disabled={eventBusy} onClick={()=>beginGoalEdit(e)}>Edytuj</button><button type="button" disabled={eventBusy} onClick={()=>removeGoal(e.id)}>Usuń −1</button></div></div>;
               })}
+              {deltaScore!==null&&deltaScore!==deltaGoals.length&&<div className="v125-warning">Wynik DELTY ({deltaScore}) różni się od liczby wpisanych strzelców ({deltaGoals.length}). Sprawdź historię spotkania i w razie potrzeby popraw wynik w „Podsumowaniu”.</div>}
             </div>
           </div>
         </>}
