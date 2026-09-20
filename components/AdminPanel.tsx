@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserPermissions } from "@/lib/permissions";
 import { EMPTY_PERMISSIONS } from "@/lib/permissions";
@@ -59,13 +59,6 @@ export default function AdminPanel(props:{
   const canNews=coreStaff||props.currentPermissions.can_manage_news;
   const firstTab:string=canMatches?"matches":canTraining?"training":canCalendar?"calendar":canNews?"news":canPlayers?"players":"matches";
   const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"news"|"parents"|"push"|"sync">(firstTab as any);
-  useEffect(()=>{
-    const requested=new URLSearchParams(window.location.search).get("tab");
-    if(requested==="training"&&canTraining)setTab("training");
-  },[canTraining]);
-  const [mobileTrainingForm,setMobileTrainingForm]=useState(false);
-  const [trainingDraft,setTrainingDraft]=useState({date:"",title:"Trening",start:"17:00",end:"18:30",location:"",notes:""});
-  const [savingMobileTraining,setSavingMobileTraining]=useState(false);
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -92,7 +85,9 @@ export default function AdminPanel(props:{
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
   const selectedMatch=matches.find(m=>m.id===selectedMatchId)||null;
   const activePlayers=players.filter(p=>p.active!==false);
-  const parents=props.allProfiles.filter(p=>p.role==="parent");
+  // Zawodnika można przypisać do dowolnego zalogowanego konta, także administratora.
+  // Funkcja rodzica to powiązanie z zawodnikiem, nie zamiana uprawnień admina.
+  const parentCandidates=props.allProfiles.filter(p=>["parent","admin","coach"].includes(p.role));
   const selectedTraining=trainingSessions.find(s=>s.id===selectedTrainingId)||null;
   const trainingGamesForSelected=trainingGames.filter(g=>g.training_id===selectedTrainingId);
   const selectedTrainingGame=trainingGamesForSelected.find(g=>g.id===selectedTrainingGameId)||trainingGamesForSelected[0]||null;
@@ -328,6 +323,25 @@ export default function AdminPanel(props:{
     return permissions.find(x=>x.user_id===userId)||{user_id:userId,...EMPTY_PERMISSIONS};
   }
 
+  async function setAssistantPreset(userId:string,enable:boolean){
+    if(!isAdmin)return alert("Tylko administrator może nadawać dodatkowe uprawnienia.");
+    const account=props.allProfiles.find(p=>p.id===userId);
+    if(!account||account.role!=="parent")return alert("Pakiet pomocnika można nadać tylko kontu rodzica.");
+    if(!window.confirm(enable
+      ?"Nadać temu rodzicowi rolę Pomocnik strony i prawa do kalendarza oraz aktualności?"
+      :"Cofnąć WSZYSTKIE delegowane uprawnienia temu rodzicowi i ustawić rolę Rodzic?"))return;
+    const current=permissionFor(userId);
+    const next:PermissionRow={...current,user_id:userId,
+      role_label:enable?"Pomocnik strony":"Rodzic",
+      can_manage_matches:false,can_edit_match_events:false,
+      can_manage_training:false,can_manage_training_attendance:false,
+      can_manage_calendar:enable,can_manage_news:enable,can_manage_players:false,
+      updated_by:props.currentUser.id,updated_at:new Date().toISOString()};
+    const {error}=await supabase.from("user_permissions").upsert(next,{onConflict:"user_id"});
+    if(error)return alert(`Nie zapisano uprawnień: ${error.message}`);
+    setPermissions(prev=>[...prev.filter(x=>x.user_id!==userId),next]);
+  }
+
   async function updatePermission(userId:string,key:keyof UserPermissions,value:boolean|string){
     if(!isAdmin)return alert("Tylko administrator może nadawać uprawnienia.");
     const current=permissionFor(userId);
@@ -377,26 +391,6 @@ export default function AdminPanel(props:{
       return true;
     }
     return false;
-  }
-
-  async function saveMobileTraining(event:React.FormEvent<HTMLFormElement>){
-    event.preventDefault();
-    if(!canTrainingFull||savingMobileTraining)return;
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(trainingDraft.date))return flashTrainingFeedback("Podaj poprawną datę treningu.");
-    setSavingMobileTraining(true);
-    const {data,error}=await supabase.from("training_sessions").insert({
-      training_date:trainingDraft.date,title:trainingDraft.title.trim()||"Trening",
-      start_time:trainingDraft.start||null,end_time:trainingDraft.end||null,
-      location:trainingDraft.location.trim()||null,notes:trainingDraft.notes.trim()||null,
-      created_by:props.currentUser.id
-    }).select("*").single();
-    setSavingMobileTraining(false);
-    if(error){const message=friendlyTrainingError(error);flashTrainingFeedback(message);return;}
-    setTrainingSessions(prev=>[data,...prev].sort((a,b)=>b.training_date.localeCompare(a.training_date)));
-    setSelectedTrainingId(data.id);
-    setSelectedTrainingGameId("");
-    setMobileTrainingForm(false);
-    flashTrainingFeedback("✓ Trening dodany. Możesz teraz uzupełnić obecność.");
   }
 
   async function quickAddTraining(){
@@ -659,8 +653,6 @@ export default function AdminPanel(props:{
       <span className="admin-role">{coreStaff?props.currentUser.role:props.currentPermissions.role_label||"Pomocnik"}</span>
     </header>
 
-    {canTrainingFull&&<div className="v105-admin-mobile-quick"><button type="button" onClick={()=>{setTab("training");setMobileTrainingForm(true);setTrainingDraft(d=>({...d,date:new Date().toLocaleDateString("en-CA")}));}}><Plus size={18}/> DODAJ TRENING</button><a href="/dashboard">PANEL DRUŻYNY</a></div>}
-
     <nav className="admin-tabs">
       {canMatches&&<button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>}
       {canCalendar&&<button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>}
@@ -671,19 +663,6 @@ export default function AdminPanel(props:{
       {coreStaff&&<button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>}
       {coreStaff&&<button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>}
     </nav>
-
-    {mobileTrainingForm&&canTrainingFull&&<div className="v105-training-modal" role="presentation" onClick={()=>setMobileTrainingForm(false)}>
-      <form className="v105-training-form" aria-label="Dodaj trening" onClick={event=>event.stopPropagation()} onSubmit={saveMobileTraining}>
-        <div className="v105-training-form-head"><h2>NOWY TRENING</h2><button type="button" onClick={()=>setMobileTrainingForm(false)} aria-label="Zamknij">×</button></div>
-        <label>Data treningu<input type="date" required value={trainingDraft.date} onChange={e=>setTrainingDraft(d=>({...d,date:e.target.value}))}/></label>
-        <label>Nazwa<input required value={trainingDraft.title} onChange={e=>setTrainingDraft(d=>({...d,title:e.target.value}))}/></label>
-        <div className="v105-form-times"><label>Od<input type="time" required value={trainingDraft.start} onChange={e=>setTrainingDraft(d=>({...d,start:e.target.value}))}/></label><label>Do<input type="time" required value={trainingDraft.end} onChange={e=>setTrainingDraft(d=>({...d,end:e.target.value}))}/></label></div>
-        <label>Miejsce<input value={trainingDraft.location} onChange={e=>setTrainingDraft(d=>({...d,location:e.target.value}))} placeholder="Boisko / hala"/></label>
-        <label>Notatki<textarea rows={2} value={trainingDraft.notes} onChange={e=>setTrainingDraft(d=>({...d,notes:e.target.value}))}/></label>
-        {trainingFeedback&&<p className="v105-training-feedback" role="status">{trainingFeedback}</p>}
-        <button className="v105-training-save" type="submit" disabled={savingMobileTraining}>{savingMobileTraining?"ZAPISYWANIE…":"ZAPISZ TRENING"}</button>
-      </form>
-    </div>}
 
     <main className="admin-main">
       {tab==="matches" && canMatches && <div className="admin-two-col">
@@ -876,13 +855,23 @@ export default function AdminPanel(props:{
       </section>}
 
       {tab==="parents" && coreStaff && <section className="admin-card">
-        <div className="admin-card-head"><h2>Rodzic → dziecko</h2></div>
-        <p className="muted">Przypisz rodzica do dziecka i — jako administrator — nadaj wybrane dodatkowe uprawnienia. Rodzic bez dodatkowych praw może tylko korzystać ze swojej strefy i potwierdzać obecność dziecka.</p>
+        <div className="admin-card-head"><h2>Rodzice, opiekunowie i pomocnicy</h2></div>
+        <p className="muted">Najpierw osoba loguje się do DELTA własnym kontem Google. Wtedy pojawia się na tej liście. Przypisz jej zawodnika; możesz przypisać dwie lub więcej osób do tego samego dziecka. Administrator może być jednocześnie rodzicem — bez zmiany roli admin.</p>
+        <p className="muted">Rola „Pomocnik strony” daje wybranym rodzicom prawo do edycji kalendarza i aktualności. Możesz osobno zaznaczyć inne uprawnienia. Sama nazwa roli nie daje dostępu — decydują zaznaczone uprawnienia.</p>
         <div className="parent-grid">
-          {parents.map(parent=><div className="admin-subcard" key={parent.id}>
-            <h3>{parent.display_name||"Rodzic"}</h3>
-            <div className="v10-parent-role">
-              <label>Rola / opis<select value={permissionFor(parent.id).role_label} disabled={!isAdmin} onChange={e=>updatePermission(parent.id,"role_label",e.target.value)}><option>Rodzic</option><option>Pomocnik trenera</option><option>Statystyk</option><option>Koordynator</option></select></label>
+          {parentCandidates.map(account=><div className="admin-subcard" key={account.id}>
+            <h3>{account.display_name||"Użytkownik"} {account.id===props.currentUser.id?"(Twoje konto)":""}</h3>
+            <p className="muted">Rola systemowa: <strong>{account.role==="admin"?"Administrator":account.role==="coach"?"Trener":"Rodzic"}</strong> • Powiązanych zawodników: {parentLinks.filter(x=>x.parent_id===account.id).length}</p>
+            {account.role==="parent"&&<div className="v10-parent-role">
+              <label>Rola dodatkowa / opis
+                <select value={permissionFor(account.id).role_label} disabled={!isAdmin} onChange={e=>updatePermission(account.id,"role_label",e.target.value)}>
+                  <option>Rodzic</option><option>Pomocnik strony</option><option>Pomocnik trenera</option><option>Statystyk</option><option>Koordynator</option>
+                </select>
+              </label>
+              {isAdmin&&<div style={{display:"flex",flexWrap:"wrap",gap:8,margin:"10px 0"}}>
+                <button type="button" onClick={()=>setAssistantPreset(account.id,true)}>Nadaj pakiet: Pomocnik strony</button>
+                <button type="button" onClick={()=>setAssistantPreset(account.id,false)}>Cofnij uprawnienia</button>
+              </div>}
               <div className="v10-permission-grid">
                 {([
                   ["can_manage_matches","Mecze i składy"],
@@ -892,18 +881,20 @@ export default function AdminPanel(props:{
                   ["can_manage_calendar","Kalendarz"],
                   ["can_manage_news","Aktualności"],
                   ["can_manage_players","Zawodnicy"]
-                ] as [keyof UserPermissions,string][]).map(([key,label])=><label key={key} className="v10-permission-check"><input type="checkbox" disabled={!isAdmin} checked={Boolean(permissionFor(parent.id)[key])} onChange={e=>updatePermission(parent.id,key,e.target.checked)}/><span>{label}</span></label>)}
+                ] as [keyof UserPermissions,string][]).map(([key,label])=><label key={key} className="v10-permission-check"><input type="checkbox" disabled={!isAdmin} checked={Boolean(permissionFor(account.id)[key])} onChange={e=>updatePermission(account.id,key,e.target.checked)}/><span>{label}</span></label>)}
               </div>
-            </div>
+            </div>}
+            {account.role!=="parent"&&<p className="muted">To konto zachowuje uprawnienia {account.role==="admin"?"administratora":"trenera"}. Poniżej możesz niezależnie przypisać mu zawodnika.</p>}
             <h4>Powiązanie z zawodnikiem</h4>
-            {activePlayers.map(p=>{
-              const linked=parentLinks.some(x=>x.parent_id===parent.id&&x.player_id===p.id);
-              return <label className="parent-check" key={p.id}>
-                <input type="checkbox" checked={linked} onChange={e=>e.target.checked?addParentLink(parent.id,p.id):removeParentLink(parent.id,p.id)}/>
-                <span>{p.display_name}</span>
-              </label>
+            {activePlayers.map(player=>{
+              const linked=parentLinks.some(x=>x.parent_id===account.id&&x.player_id===player.id);
+              return <label className="parent-check" key={player.id}>
+                <input type="checkbox" disabled={!isAdmin} checked={linked} onChange={e=>e.target.checked?addParentLink(account.id,player.id):removeParentLink(account.id,player.id)}/>
+                <span>{player.display_name}</span>
+              </label>;
             })}
           </div>)}
+          {!parentCandidates.length&&<p>Brak zalogowanych użytkowników do przypisania.</p>}
         </div>
       </section>}
 
