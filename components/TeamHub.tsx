@@ -93,6 +93,29 @@ function Logo({team,size=58}:{team:string,size?:number}){
   return <div className="fallback-logo" style={{width:size,height:size}}>{short}</div>;
 }
 
+type PodiumMetric="ga"|"goals"|"assists"|"mvp";
+type PodiumStat={m:number;starts:number;captain:number;g:number;a:number;mvp:number};
+function PremiumPodium({players,stats,metric,onOpen,compact=false}:{players:Player[];stats:Record<string,PodiumStat>;metric:PodiumMetric;onOpen:(p:Player)=>void;compact?:boolean}){
+  const value=(p:Player)=>{const s=stats[p.id];if(!s)return 0;return metric==="ga"?s.g+s.a:metric==="goals"?s.g:metric==="assists"?s.a:s.mvp;};
+  const leaders=players.filter(p=>value(p)>0).slice().sort((a,b)=>value(b)-value(a)||a.display_name.localeCompare(b.display_name,"pl")).slice(0,3);
+  const label=metric==="goals"?"GOLE":metric==="assists"?"ASYSTY":metric==="mvp"?"MVP":"G + A";
+  return <div className={`v113-podium-stage ${compact?"v113-podium-compact":""}`} aria-label={`Podium zawodników – ${label}`}>
+    <div className="v113-podium-atmosphere" aria-hidden="true"/>
+    {[1,2,3].map(place=>{
+      const p=leaders[place-1];
+      return <div key={place} className={`v113-podium-position v113-place-${place} ${p?"has-player":"is-empty"}`}>
+        {p?<button type="button" className="v113-podium-player" onClick={()=>onOpen(p)} aria-label={`Otwórz profil zawodnika ${p.display_name}, miejsce ${place}`}>
+          <span className="v113-podium-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={p.id}/>}</span>
+          <span className="v113-podium-name">{p.display_name}</span>
+          <span className="v113-podium-score"><strong>{value(p)}</strong><small>{label}</small></span>
+          <span className="v113-podium-open">PROFIL <ChevronRight size={12}/></span>
+        </button>:<div className="v113-podium-empty"><Shield size={22}/><span>Czeka na zawodnika</span></div>}
+        <div className="v113-podium-step" aria-hidden="true"><b>{place}</b></div>
+      </div>;
+    })}
+  </div>;
+}
+
 export default function TeamHub(props:{
   profile:Profile;
   initialPlayers:Player[];
@@ -1049,30 +1072,21 @@ export default function TeamHub(props:{
 
 
         <section className="v87-season-grid">
-          <article className="v87-leaders devil-card v885-season-best">
-            <div className="v8-panel-title"><Medal size={18}/> NAJLEPSI W SEZONIE</div>
-            <div className="v885-season-podium">
-              <div className="v885-season-category">
-                <span className="v885-season-icon"><Goal size={17}/></span>
-                <small>GOLE</small>
-                <div className="v885-season-winners">
-                  {seasonTopScorers.length>0?seasonTopScorers.map(p=><button key={p.id} onClick={()=>openPlayerProfile(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.g||0}</span></button>):<em>—</em>}
-                </div>
-              </div>
-              <div className="v885-season-category">
-                <span className="v885-season-icon"><Star size={17}/></span>
-                <small>ASYSTY</small>
-                <div className="v885-season-winners">
-                  {seasonTopAssisters.length>0?seasonTopAssisters.map(p=><button key={p.id} onClick={()=>openPlayerProfile(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.a||0}</span></button>):<em>—</em>}
-                </div>
-              </div>
-              <div className="v885-season-category">
-                <span className="v885-season-icon"><Trophy size={17}/></span>
-                <small>MVP</small>
-                <div className="v885-season-winners">
-                  {seasonTopMvp.length>0?seasonTopMvp.map(p=><button key={p.id} onClick={()=>openPlayerProfile(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.mvp||0}</span></button>):<em>—</em>}
-                </div>
-              </div>
+          <article className="v87-leaders devil-card v885-season-best v113-season-podium-panel">
+            <div className="v8-panel-title"><Medal size={18}/> PODIUM SEZONU <span>DELTA 2018 GM</span></div>
+            <div className="v113-season-categories">
+              <section className="v113-season-category" aria-label="Podium strzelców">
+                <h3><Goal size={17}/> STRZELCY BRAMEK</h3>
+                <PremiumPodium compact players={players} stats={stats} metric="goals" onOpen={openPlayerProfile}/>
+              </section>
+              <section className="v113-season-category" aria-label="Podium asystentów">
+                <h3><Star size={17}/> ASYSTY</h3>
+                <PremiumPodium compact players={players} stats={stats} metric="assists" onOpen={openPlayerProfile}/>
+              </section>
+              <section className="v113-season-category" aria-label="Podium MVP">
+                <h3><Trophy size={17}/> MVP</h3>
+                <PremiumPodium compact players={players} stats={stats} metric="mvp" onOpen={openPlayerProfile}/>
+              </section>
             </div>
           </article>
 
@@ -1476,23 +1490,9 @@ export default function TeamHub(props:{
         </div>
 
         <div className="v890-main-grid">
-          <article className="v890-podium devil-card">
-            <div className="v8-panel-title"><Trophy size={18}/> PODIUM SEZONU <span>G+A</span></div>
-            <div className="v890-podium-stage">
-              {statsRanking.slice(0,3).map((p,index)=>{
-                const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
-                const order=index===0?1:index===1?2:3;
-                return <button key={p.id} className={`v890-podium-player place-${order}`} onClick={()=>openPlayerProfile(p)}>
-                  <span className="v890-podium-rank">{order}</span>
-                  <div className="v890-podium-photo">
-                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
-                  </div>
-                  <b>{p.display_name}</b>
-                  <strong>{s.g+s.a}</strong>
-                  <small>{s.g}G • {s.a}A</small>
-                </button>
-              })}
-            </div>
+          <article className="v890-podium devil-card v113-stats-podium-panel">
+            <div className="v8-panel-title"><Trophy size={18}/> PODIUM SEZONU <span>GOLE + ASYSTY</span></div>
+            <PremiumPodium players={players} stats={stats} metric="ga" onOpen={openPlayerProfile}/>
           </article>
 
           <article className="v890-records devil-card">
