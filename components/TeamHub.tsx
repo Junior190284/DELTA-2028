@@ -66,6 +66,15 @@ function formatCountdown(ms:number){
   return `${Math.max(1,minutes)} min`;
 }
 
+function playerArchetype(matchStats:{m:number;starts:number;captain:number;g:number;a:number;mvp:number},trainingStats:{sessions:number;goals:number;assists:number;ga:number;attendanceStreak:number;games:number;wins:number}){
+  if(matchStats.captain>0)return "Lider drużyny";
+  if((matchStats.g+matchStats.a)>=6)return "Motor ofensywy";
+  if(matchStats.mvp>0)return "Zawodnik meczowy";
+  if(trainingStats.sessions>=6)return "Treningowy wojownik";
+  if(matchStats.starts>=3)return "Pewny punkt składu";
+  return "Rozwój zawodnika";
+}
+
 function parseLocalMatchDate(date:string,time?:string|null){
   const safeTime=(time&&time.length>=5)?time.slice(0,5):"00:00";
   return new Date(`${date}T${safeTime}:00`);
@@ -131,15 +140,41 @@ export default function TeamHub(props:{
     setPlayerIntro(true);
     setSelectedPlayer(player);
   };
-  // Oddzielny, pełnoekranowy widok profilu. Bez przewijania strony do karty.
+  // Oddzielny, pełnoekranowy widok profilu. Szczególnie na mobile blokuje scroll tła i zawsze otwiera pełny ekran.
   useEffect(()=>{
     if(!selectedPlayer)return;
     const introTimer=window.setTimeout(()=>setPlayerIntro(false),1100);
-    const oldOverflow=document.body.style.overflow;
-    document.body.style.overflow="hidden";
+    const scrollY=window.scrollY;
+    const html=document.documentElement;
+    const body=document.body;
+    const prevHtmlOverflow=html.style.overflow;
+    const prevBodyOverflow=body.style.overflow;
+    const prevBodyPosition=body.style.position;
+    const prevBodyTop=body.style.top;
+    const prevBodyLeft=body.style.left;
+    const prevBodyRight=body.style.right;
+    const prevBodyWidth=body.style.width;
+    html.style.overflow="hidden";
+    body.style.overflow="hidden";
+    body.style.position="fixed";
+    body.style.top=`-${scrollY}px`;
+    body.style.left="0";
+    body.style.right="0";
+    body.style.width="100%";
     const onEscape=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedPlayer(null);};
     window.addEventListener("keydown",onEscape);
-    return ()=>{window.clearTimeout(introTimer);document.body.style.overflow=oldOverflow;window.removeEventListener("keydown",onEscape);};
+    return ()=>{
+      window.clearTimeout(introTimer);
+      html.style.overflow=prevHtmlOverflow;
+      body.style.overflow=prevBodyOverflow;
+      body.style.position=prevBodyPosition;
+      body.style.top=prevBodyTop;
+      body.style.left=prevBodyLeft;
+      body.style.right=prevBodyRight;
+      body.style.width=prevBodyWidth;
+      window.scrollTo({top:scrollY,left:0,behavior:"auto"});
+      window.removeEventListener("keydown",onEscape);
+    };
   },[selectedPlayer]);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [matchInitialTab,setMatchInitialTab]=useState<"summary"|"attendance"|"lineup"|"events"|"mvp">("summary");
@@ -1091,7 +1126,7 @@ export default function TeamHub(props:{
       {tab==="mychild"&&<MyChildCenter
         players={players} parentPlayerIds={props.parentPlayerIds} stats={stats} trainingStats={trainingPlayerStats}
         matches={matches} attendance={attendance} events={events} trainingSessions={trainingSessions} trainingAttendance={trainingAttendance}
-        chemistry={trainingChemistry} onOpenMatch={(m,t)=>openMatch(m,t)} onOpenPlayer={setSelectedPlayer}
+        chemistry={trainingChemistry} onOpenMatch={(m,t)=>openMatch(m,t)} onOpenPlayer={openPlayerProfile}
       />}
 
       {tab==="matchday"&&<MatchDayMode
@@ -1100,7 +1135,7 @@ export default function TeamHub(props:{
       />}
 
       {tab==="hall"&&<HallOfFame
-        players={players} stats={stats} trainingStats={trainingPlayerStats} chemistry={trainingChemistry} matches={matches} trainingSessions={trainingSessions} onOpenPlayer={setSelectedPlayer}
+        players={players} stats={stats} trainingStats={trainingPlayerStats} chemistry={trainingChemistry} matches={matches} trainingSessions={trainingSessions} onOpenPlayer={openPlayerProfile}
       />}
 
       {tab==="matches"&&<section className="section v8-section-page v105-match-archive"><header className="v105-section-hero devil-card"><div className="v105-section-hero-content"><span className="eyebrow gold">DELTA 2018 GM • MATCH CENTER</span><h2>WSZYSTKIE <em>MECZE</em></h2><p>Każda kolejka. Każdy wynik. Jedna drużyna.</p><div className="v105-section-hero-meta"><span><Trophy size={15}/>{teamSummary.played} rozegranych</span><span><Goal size={15}/>{teamSummary.goals} bramek</span><span><CalendarDays size={15}/>{matches.filter(m=>m.status==="scheduled").length} zaplanowanych</span></div></div><div className="v105-section-hero-icon" aria-hidden="true"><img src="/teamlogos/gm.png" alt=""/></div></header><div className="list">{matches.map(m=><article className={`match-row devil-card v105-broadcast-fixture ${m.status==="played"?"is-played":"is-upcoming"}`} key={m.id}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">{datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>openMatch(m,"summary")}>{canManageMatches||canEditMatchEvents?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>)}</div></section>}
@@ -1324,7 +1359,7 @@ export default function TeamHub(props:{
         <div className="v871-team-dashboard">
           <article className="v871-team-leader devil-card">
             <div className="v8-panel-title"><Crown size={18}/> LIDER KAPITAŃSKI</div>
-            {captainLeader?<button onClick={()=>setSelectedPlayer(captainLeader)}>
+            {captainLeader?<button onClick={()=>openPlayerProfile(captainLeader)}>
               <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">CAPTAIN</span>{isRyszardPlayer(captainLeader)?
       <img src="/assets/ryszard-player-card.png" alt={captainLeader.display_name} className="v884-leader-featured-img"/>:
       <PlayerPhoto playerId={captainLeader.id}/>
@@ -1335,10 +1370,10 @@ export default function TeamHub(props:{
           </article>
 
           <article className="v871-team-leader devil-card v876-clickable-leader" role="button" tabIndex={0}
-            onClick={()=>topScorer&&stats[topScorer.id]?.g>0&&setSelectedPlayer(topScorer)}
-            onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topScorer&&stats[topScorer.id]?.g>0)setSelectedPlayer(topScorer)}}>
+            onClick={()=>topScorer&&stats[topScorer.id]?.g>0&&openPlayerProfile(topScorer)}
+            onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topScorer&&stats[topScorer.id]?.g>0)openPlayerProfile(topScorer)}}>
             <div className="v8-panel-title"><Goal size={18}/> NAJLEPSZY STRZELEC</div>
-            {topScorer&&stats[topScorer.id]?.g>0?<button type="button" onClick={e=>{e.stopPropagation();setSelectedPlayer(topScorer)}}>
+            {topScorer&&stats[topScorer.id]?.g>0?<button type="button" onClick={e=>{e.stopPropagation();openPlayerProfile(topScorer)}}>
               <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP SCORER</span>{isRyszardPlayer(topScorer)?
       <img src="/assets/ryszard-player-card.png" alt={topScorer.display_name} className="v884-leader-featured-img"/>:
       <PlayerPhoto playerId={topScorer.id}/>
@@ -1349,10 +1384,10 @@ export default function TeamHub(props:{
           </article>
 
           <article className="v871-team-leader devil-card v876-clickable-leader" role="button" tabIndex={0}
-            onClick={()=>topAssister&&stats[topAssister.id]?.a>0&&setSelectedPlayer(topAssister)}
-            onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topAssister&&stats[topAssister.id]?.a>0)setSelectedPlayer(topAssister)}}>
+            onClick={()=>topAssister&&stats[topAssister.id]?.a>0&&openPlayerProfile(topAssister)}
+            onKeyDown={e=>{if((e.key==="Enter"||e.key===" ")&&topAssister&&stats[topAssister.id]?.a>0)openPlayerProfile(topAssister)}}>
             <div className="v8-panel-title"><Star size={18}/> LIDER ASYST</div>
-            {topAssister&&stats[topAssister.id]?.a>0?<button type="button" onClick={e=>{e.stopPropagation();setSelectedPlayer(topAssister)}}>
+            {topAssister&&stats[topAssister.id]?.a>0?<button type="button" onClick={e=>{e.stopPropagation();openPlayerProfile(topAssister)}}>
               <div className="v871-team-leader-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-plate">TOP ASSIST</span>{isRyszardPlayer(topAssister)?
       <img src="/assets/ryszard-player-card.png" alt={topAssister.display_name} className="v884-leader-featured-img"/>:
       <PlayerPhoto playerId={topAssister.id}/>
@@ -1607,8 +1642,8 @@ export default function TeamHub(props:{
             </div>}
 
             <div className="v890-compare-names">
-              <button onClick={()=>comparePlayerA&&setSelectedPlayer(comparePlayerA)}>{comparePlayerA?.display_name||"—"}</button>
-              <button onClick={()=>comparePlayerB&&setSelectedPlayer(comparePlayerB)}>{comparePlayerB?.display_name||"—"}</button>
+              <button onClick={()=>comparePlayerA&&openPlayerProfile(comparePlayerA)}>{comparePlayerA?.display_name||"—"}</button>
+              <button onClick={()=>comparePlayerB&&openPlayerProfile(comparePlayerB)}>{comparePlayerB?.display_name||"—"}</button>
             </div>
           </article>
 
@@ -1717,6 +1752,14 @@ export default function TeamHub(props:{
             <span><img src="/teamlogos/gm.png" alt=""/> DELTA 2018 GM <span className="v111-toolbar-accent">/ PLAYER EXPERIENCE</span></span>
           </header>
           <div className="v112-player-banner"><span>DELTA PLAYER EXPERIENCE · {seasonLabel()}</span><h1>{selectedPlayer.display_name}</h1><p>Każdy zawodnik. Własna historia. Jedna drużyna.</p></div>
+          <div className="v113-mobile-command" aria-hidden="true">
+            <div className="v113-mobile-command-main">
+              <span className="v113-mobile-kicker">PLAYER DOSSIER</span>
+              <strong>{selectedPlayer.display_name}</strong>
+              <small>{selectedPlayer.position||"Zawodnik"} · {selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA GM"}</small>
+            </div>
+            <img src="/teamlogos/gm.png" alt=""/>
+          </div>
           <div className="v111-profile-grid v112-profile-grid">
             <div className="v112-character-side">
               <div className="v111-player-character v112-player-character">
@@ -1727,6 +1770,11 @@ export default function TeamHub(props:{
                 <div className="v111-character-bottom"><span className="v111-character-number">{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</span><div><span>GÓRNY MOKOTÓW · 2018</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p></div></div>
               </div>
               <div className="v112-card-footer"><Flame size={16}/> RAZEM DO WIELKICH RZECZY <span>◆</span> DELTA GM</div>
+              <div className="v113-character-meta">
+                <div><span>ARCHETYP</span><b>{playerArchetype(stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0},trainingPlayerStats[selectedPlayer.id]||{sessions:0,goals:0,assists:0,ga:0,attendanceStreak:0,games:0,wins:0})}</b></div>
+                <div><span>ODZNAKI</span><b>{unlockedCount(selectedPlayer)}</b></div>
+                <div><span>WYSTĘPY</span><b>{stats[selectedPlayer.id]?.m||0}</b></div>
+              </div>
             </div>
             <div className="v111-player-content v112-player-content">
               <nav className="v112-profile-tabs" aria-label="Sekcje profilu zawodnika">
@@ -1745,10 +1793,21 @@ export default function TeamHub(props:{
                   {name:"Pierwszy mecz jako kapitan",match:involved.slice().reverse().find(m=>lineup.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.is_captain))},
                 ].filter((x):x is {name:string;match:Match}=>Boolean(x.match));
                 const achieved=playerAchievements(p);
+                const archetype=playerArchetype(s,t);
+                const unlocked=unlockedCount(p);
                 return <>
-                <div className="v112-intro-summary"><span>SEZON {seasonLabel()}</span><h2>{p.display_name}</h2><p><img src="/teamlogos/gm.png" alt=""/> {p.position||"Zawodnik"} <span>·</span> {p.shirt_number?`Numer ${p.shirt_number}`:"DELTA GM"}</p></div>
+                <div className="v112-intro-summary">
+                  <span>SEZON {seasonLabel()}</span>
+                  <h2>{p.display_name}</h2>
+                  <p><img src="/teamlogos/gm.png" alt=""/> {p.position||"Zawodnik"} <span>·</span> {p.shirt_number?`Numer ${p.shirt_number}`:"DELTA GM"}</p>
+                  <div className="v113-profile-ribbon">
+                    <span><b>{archetype}</b><small>profil zawodnika</small></span>
+                    <span><b>{unlocked}</b><small>odblokowane odznaki</small></span>
+                    <span><b>{s.g+s.a}</b><small>akcje G+A</small></span>
+                  </div>
+                </div>
                 {playerSection==="overview"&&<>
-                  <div className="v111-profile-section-heading"><Trophy size={18}/> LICZBY Z BOISKA <span>OFICJALNE MECZE</span></div>
+                  <div className="v111-profile-section-heading"><Trophy size={18}/> LICZBY Z BOISKA <span>OFICJALNE MECZE · TRYB PREMIUM</span></div>
                   <div className="v111-player-kpis v112-player-kpis">
                     <div><span>MECZE</span><b>{s.m}</b><small>Występy</small></div><div><span>GOLE</span><b>{s.g}</b><small>Strzelone</small></div>
                     <div><span>ASYSTY</span><b>{s.a}</b><small>Podania do bramki</small></div><div><span>G + A</span><b>{s.g+s.a}</b><small>Razem</small></div>
