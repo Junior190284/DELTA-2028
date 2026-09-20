@@ -159,6 +159,7 @@ export default function TeamHub(props:{
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
+  const [showcaseIndex,setShowcaseIndex]=useState(0);
   const [playerSection,setPlayerSection]=useState<"overview"|"cards"|"achievements"|"history"|"training">("overview");
   const [selectedCollectible,setSelectedCollectible]=useState<string|null>(null);
   const [selectedTrophy,setSelectedTrophy]=useState<string|null>(null);
@@ -1390,6 +1391,40 @@ export default function TeamHub(props:{
             </div>
           </div>
         </div>
+
+        <section className="v119-showcase devil-card" aria-label="Karuzela zawodników DELTA 2018 GM">
+          <div className="v119-showcase-heading">
+            <div><span>DELTA PLAYER SHOWCASE · SEZON {seasonLabel()}</span><h3>POZNAJ <em>DIABEŁKI</em></h3><p>Wybierz zawodnika i otwórz jego kartę postaci.</p></div>
+            <div className="v119-showcase-count"><b>{players.length?String((showcaseIndex%players.length)+1).padStart(2,"0"):"00"}</b><span>/ {String(players.length).padStart(2,"0")}</span></div>
+          </div>
+          {players.length>0?(()=>{
+            const active=((showcaseIndex%players.length)+players.length)%players.length;
+            const move=(direction:number)=>setShowcaseIndex(old=>(old+direction+players.length)%players.length);
+            const visibleOffsets=players.length===1?[0]:players.length===2?[-1,0]:players.length===3?[-1,0,1]:players.length===4?[-2,-1,0,1]:[-2,-1,0,1,2];
+            return <>
+              <div className="v119-showcase-stage" tabIndex={0} aria-label="Wybór zawodnika. Użyj strzałek lub przesuń palcem." onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();move(-1);}if(e.key==="ArrowRight"){e.preventDefault();move(1);}}} onTouchStart={e=>{e.currentTarget.dataset.startX=String(e.touches[0]?.clientX??0);}} onTouchEnd={e=>{const start=Number(e.currentTarget.dataset.startX);const end=e.changedTouches[0]?.clientX??start;if(Math.abs(end-start)>42)move(end<start?1:-1);}}>
+                <span className="v119-stage-smoke" aria-hidden="true"/>
+                {visibleOffsets.map(offset=>{
+                  const player=players[(active+offset+players.length)%players.length];
+                  const center=offset===0;
+                  const s=stats[player.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+                  return <button type="button" key={`${player.id}-${offset}`} className={`v119-showcase-card ${center?"is-active":""} v119-offset-${offset<0?`m${Math.abs(offset)}`:`p${offset}`}`} onClick={()=>center?openPlayerProfile(player):move(offset)} aria-label={center?`Otwórz profil: ${player.display_name}`:`Wybierz zawodnika: ${player.display_name}`} aria-current={center?"true":undefined}>
+                    <span className="v119-showcase-art">{isRyszardPlayer(player)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={player.id}/>}</span>
+                    <span className="v119-showcase-card-overlay" aria-hidden="true"/>
+                    <span className="v119-showcase-card-top"><img src="/teamlogos/gm.png" alt=""/><b>{player.shirt_number?`#${player.shirt_number}`:"GM"}</b></span>
+                    <span className="v119-showcase-card-bottom"><small>DELTA 2018 GM</small><strong>{player.display_name}</strong><span>{player.position||"Zawodnik"}</span>{center&&<em>{s.m} MECZE · {s.g} GOLE · {s.a} ASYSTY</em>}</span>
+                  </button>;
+                })}
+              </div>
+              <div className="v119-showcase-controls">
+                <button type="button" onClick={()=>move(-1)} aria-label="Poprzedni zawodnik"><ChevronLeft size={22}/></button>
+                <div className="v119-showcase-progress"><span>{players[active].display_name}</span><small>PRZESUŃ KARTY LUB UŻYJ STRZAŁEK</small></div>
+                <button type="button" onClick={()=>move(1)} aria-label="Następny zawodnik"><ChevronRight size={22}/></button>
+              </div>
+              <button type="button" className="v119-showcase-open" onClick={()=>openPlayerProfile(players[active])}>OTWÓRZ KARTĘ ZAWODNIKA <ChevronRight size={16}/></button>
+            </>;
+          })():<p className="v119-showcase-empty">Karty zawodników pojawią się po dodaniu składu.</p>}
+        </section>
 
         <div className="v871-team-dashboard">
           <article className="v871-team-leader devil-card">
