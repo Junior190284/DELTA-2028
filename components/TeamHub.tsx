@@ -124,14 +124,22 @@ export default function TeamHub(props:{
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
+  const [playerSection,setPlayerSection]=useState<"overview"|"achievements"|"history"|"training">("overview");
+  const [playerIntro,setPlayerIntro]=useState(false);
+  const openPlayerProfile=(player:Player)=>{
+    setPlayerSection("overview");
+    setPlayerIntro(true);
+    setSelectedPlayer(player);
+  };
   // Oddzielny, pełnoekranowy widok profilu. Bez przewijania strony do karty.
   useEffect(()=>{
     if(!selectedPlayer)return;
+    const introTimer=window.setTimeout(()=>setPlayerIntro(false),1100);
     const oldOverflow=document.body.style.overflow;
     document.body.style.overflow="hidden";
     const onEscape=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedPlayer(null);};
     window.addEventListener("keydown",onEscape);
-    return ()=>{document.body.style.overflow=oldOverflow;window.removeEventListener("keydown",onEscape);};
+    return ()=>{window.clearTimeout(introTimer);document.body.style.overflow=oldOverflow;window.removeEventListener("keydown",onEscape);};
   },[selectedPlayer]);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [matchInitialTab,setMatchInitialTab]=useState<"summary"|"attendance"|"lineup"|"events"|"mvp">("summary");
@@ -969,7 +977,7 @@ export default function TeamHub(props:{
             <div className="v885-ranking-list">
               {scorersRanking.length>0?scorersRanking.map((p,index)=>{
                 const s=stats[p.id];
-                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>openPlayerProfile(p)}>
                   <span className="v885-rank-number">{index+1}</span>
                   <span className="v885-rank-photo">
                     {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
@@ -987,7 +995,7 @@ export default function TeamHub(props:{
             <div className="v885-ranking-list">
               {assistsRanking.length>0?assistsRanking.map((p,index)=>{
                 const s=stats[p.id];
-                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>openPlayerProfile(p)}>
                   <span className="v885-rank-number">{index+1}</span>
                   <span className="v885-rank-photo">
                     {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
@@ -1013,21 +1021,21 @@ export default function TeamHub(props:{
                 <span className="v885-season-icon"><Goal size={17}/></span>
                 <small>GOLE</small>
                 <div className="v885-season-winners">
-                  {seasonTopScorers.length>0?seasonTopScorers.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.g||0}</span></button>):<em>—</em>}
+                  {seasonTopScorers.length>0?seasonTopScorers.map(p=><button key={p.id} onClick={()=>openPlayerProfile(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.g||0}</span></button>):<em>—</em>}
                 </div>
               </div>
               <div className="v885-season-category">
                 <span className="v885-season-icon"><Star size={17}/></span>
                 <small>ASYSTY</small>
                 <div className="v885-season-winners">
-                  {seasonTopAssisters.length>0?seasonTopAssisters.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.a||0}</span></button>):<em>—</em>}
+                  {seasonTopAssisters.length>0?seasonTopAssisters.map(p=><button key={p.id} onClick={()=>openPlayerProfile(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.a||0}</span></button>):<em>—</em>}
                 </div>
               </div>
               <div className="v885-season-category">
                 <span className="v885-season-icon"><Trophy size={17}/></span>
                 <small>MVP</small>
                 <div className="v885-season-winners">
-                  {seasonTopMvp.length>0?seasonTopMvp.map(p=><button key={p.id} onClick={()=>setSelectedPlayer(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.mvp||0}</span></button>):<em>—</em>}
+                  {seasonTopMvp.length>0?seasonTopMvp.map(p=><button key={p.id} onClick={()=>openPlayerProfile(p)}><span className="v110-best-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span><b>{p.display_name}</b><span>{stats[p.id]?.mvp||0}</span></button>):<em>—</em>}
                 </div>
               </div>
             </div>
@@ -1179,7 +1187,7 @@ export default function TeamHub(props:{
             <div className="v900-training-ranking">
               {trainingAttendanceRank.map((p,index)=>{
                 const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
                   <span className="rank">{index+1}</span>
                   <span className="photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span>
                   <span className="name"><b>{p.display_name}</b><small>seria: {s?.attendanceStreak||0}</small></span>
@@ -1194,7 +1202,7 @@ export default function TeamHub(props:{
             <div className="v900-training-ranking compact">
               {trainingScorers.slice(0,8).map((p,index)=>{
                 const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
                   <span className="rank">{index+1}</span>
                   <span className="name"><b>{p.display_name}</b><small>{s?.games||0} gier</small></span>
                   <strong>{s?.goals||0}</strong>
@@ -1208,7 +1216,7 @@ export default function TeamHub(props:{
             <div className="v900-training-ranking compact">
               {trainingAssisters.slice(0,8).map((p,index)=>{
                 const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
                   <span className="rank">{index+1}</span>
                   <span className="name"><b>{p.display_name}</b><small>{s?.ga||0} G+A</small></span>
                   <strong>{s?.assists||0}</strong>
@@ -1222,7 +1230,7 @@ export default function TeamHub(props:{
             <div className="v900-training-ranking compact">
               {trainingGA.slice(0,8).map((p,index)=>{
                 const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>setSelectedPlayer(p)}>
+                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
                   <span className="rank">{index+1}</span>
                   <span className="name"><b>{p.display_name}</b><small>{s?.goals||0}G • {s?.assists||0}A</small></span>
                   <strong>{s?.ga||0}</strong>
@@ -1251,7 +1259,7 @@ export default function TeamHub(props:{
               key={node.player.id}
               className="v103-chemistry-node"
               style={{left:`${node.x}%`,top:`${node.y}%`}}
-              onClick={()=>setSelectedPlayer(node.player)}
+              onClick={()=>openPlayerProfile(node.player)}
               title={`Otwórz profil: ${node.player.display_name}`}
             >
               <span>{isRyszardPlayer(node.player)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={node.player.id}/>}</span>
@@ -1372,7 +1380,7 @@ export default function TeamHub(props:{
         <div className="v87-player-grid">{players.map(p=>{
           const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
           const achievements=unlockedCount(p);
-          return <article className="v87-player-card" key={p.id} onClick={()=>setSelectedPlayer(p)}>
+          return <article className="v87-player-card" key={p.id} onClick={()=>openPlayerProfile(p)}>
             <div className="v87-player-card-bg"/>
             <div className="v87-player-top">
               <span className="v874-club-mark"><img src="/teamlogos/gm.png" alt=""/></span>
@@ -1439,7 +1447,7 @@ export default function TeamHub(props:{
               {statsRanking.slice(0,3).map((p,index)=>{
                 const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
                 const order=index===0?1:index===1?2:3;
-                return <button key={p.id} className={`v890-podium-player place-${order}`} onClick={()=>setSelectedPlayer(p)}>
+                return <button key={p.id} className={`v890-podium-player place-${order}`} onClick={()=>openPlayerProfile(p)}>
                   <span className="v890-podium-rank">{order}</span>
                   <div className="v890-podium-photo">
                     {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
@@ -1484,7 +1492,7 @@ export default function TeamHub(props:{
                 {players.slice().sort((a,b)=>a.display_name.localeCompare(b.display_name,"pl")).map(p=><option key={p.id} value={p.id}>{p.display_name}</option>)}
               </select>
             </label>
-            {selectedStatsPlayer&&(()=>{const p=selectedStatsPlayer;const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <button className="v109-player-stat-card" onClick={()=>setSelectedPlayer(p)}>
+            {selectedStatsPlayer&&(()=>{const p=selectedStatsPlayer;const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <button className="v109-player-stat-card" onClick={()=>openPlayerProfile(p)}>
               <span className="v109-stat-photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span>
               <span className="v109-stat-name"><small>INDYWIDUALNE STATYSTYKI</small><b>{p.display_name}</b><em>{p.position||"Zawodnik"} • #{p.shirt_number||"—"}</em></span>
               <span className="v109-stat-numbers"><i><b>{s.m}</b><small>MECZE</small></i><i><b>{s.g}</b><small>GOLE</small></i><i><b>{s.a}</b><small>ASYSTY</small></i><i><b>{s.g+s.a}</b><small>G+A</small></i><i><b>{s.mvp}</b><small>MVP</small></i></span>
@@ -1531,7 +1539,7 @@ export default function TeamHub(props:{
               const a=advancedPlayerStats[p.id];
               const badges=automaticMilestones(p);
               return <article className="v893-player-advanced devil-card" key={p.id}>
-                <button className="v893-player-head" onClick={()=>setSelectedPlayer(p)}>
+                <button className="v893-player-head" onClick={()=>openPlayerProfile(p)}>
                   <span className="v893-mini-photo">
                     {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
                   </span>
@@ -1700,41 +1708,78 @@ export default function TeamHub(props:{
       <button type="button" className={`v106-more-trigger ${mobileMoreOpen||!["home","matches","calendar","training"].includes(tab)?"active":""}`} onClick={()=>setMobileMoreOpen(v=>!v)} aria-label="Więcej opcji" aria-expanded={mobileMoreOpen} aria-controls="delta-mobile-more-menu"><MoreHorizontal size={20}/><span>Więcej</span></button>
     </nav>
 
-    {selectedPlayer&&createPortal(<section className="v111-player-screen" role="dialog" aria-modal="true" aria-label={`Profil zawodnika: ${selectedPlayer.display_name}`}>
-      <div className="v111-player-scroll">
-        <div className="v111-profile-container">
-          <header className="v111-profile-toolbar">
+    {selectedPlayer&&createPortal(<section className="v111-player-screen v112-player-screen" role="dialog" aria-modal="true" aria-label={`Profil zawodnika: ${selectedPlayer.display_name}`}>
+      {playerIntro&&<div className="v112-intro" aria-hidden="true"><span className="v112-intro-glow"/><img src="/teamlogos/gm.png" alt=""/><strong>{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</strong><span>{selectedPlayer.display_name}</span><small>DELTA PLAYER EXPERIENCE</small></div>}
+      <div className="v111-player-scroll v112-player-scroll" key={selectedPlayer.id}>
+        <div className="v111-profile-container v112-profile-container">
+          <header className="v111-profile-toolbar v112-toolbar">
             <button type="button" className="v111-profile-back" onClick={()=>setSelectedPlayer(null)}><ChevronLeft size={19}/> Wróć do drużyny</button>
-            <span><img src="/teamlogos/gm.png" alt=""/> DELTA 2018 GM <span className="v111-toolbar-accent">/ KARTA ZAWODNIKA</span></span>
+            <span><img src="/teamlogos/gm.png" alt=""/> DELTA 2018 GM <span className="v111-toolbar-accent">/ PLAYER EXPERIENCE</span></span>
           </header>
-          <div className="v111-profile-heading"><span className="v111-kicker"><Flame size={16}/> POZNAJ NASZĄ DRUŻYNĘ</span><h1>BOHATEROWIE <em>DELTA GM</em></h1><p>Każdy zawodnik ma swoją historię. To jedna z nich.</p></div>
-          <div className="v111-profile-grid">
-            <div className="v111-player-character">
-              <div className="v111-character-top"><span>PLAYER CARD <b>2018 GM</b></span><img src="/teamlogos/gm.png" alt=""/></div>
-              <div className="v111-character-art">
-                {isRyszardPlayer(selectedPlayer)?<img src="/assets/players/ryszard-card.png" alt={`Karta zawodnika: ${selectedPlayer.display_name}`} className="v111-ryszard-art"/>:<PlayerPhoto playerId={selectedPlayer.id} className="v111-character-photo"/>}
+          <div className="v112-player-banner"><span>DELTA PLAYER EXPERIENCE · {seasonLabel()}</span><h1>{selectedPlayer.display_name}</h1><p>Każdy zawodnik. Własna historia. Jedna drużyna.</p></div>
+          <div className="v111-profile-grid v112-profile-grid">
+            <div className="v112-character-side">
+              <div className="v111-player-character v112-player-character">
+                <div className="v111-character-top"><span>PLAYER CARD <b>2018 GM</b></span><img src="/teamlogos/gm.png" alt=""/></div>
+                <div className="v111-character-art">
+                  {isRyszardPlayer(selectedPlayer)?<img src="/assets/players/ryszard-card.png" alt={`Karta zawodnika: ${selectedPlayer.display_name}`} className="v111-ryszard-art"/>:<PlayerPhoto playerId={selectedPlayer.id} className="v111-character-photo"/>}
+                </div>
+                <div className="v111-character-bottom"><span className="v111-character-number">{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</span><div><span>GÓRNY MOKOTÓW · 2018</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p></div></div>
               </div>
-              <div className="v111-character-bottom"><span className="v111-character-number">{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</span><div><span>GÓRNY MOKOTÓW · 2018</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p></div></div>
+              <div className="v112-card-footer"><Flame size={16}/> RAZEM DO WIELKICH RZECZY <span>◆</span> DELTA GM</div>
             </div>
-            <div className="v111-player-content">
-              <div className="v111-profile-title"><span>PROFIL ZAWODNIKA <b>◆</b> SEZON {seasonLabel()}</span><h2>{selectedPlayer.display_name}</h2><p><img src="/teamlogos/gm.png" alt=""/> K.S. Delta Warszawa GM <span>·</span> {selectedPlayer.position||"Zawodnik"}</p></div>
-              {(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <>
-                <div className="v111-profile-section-heading"><Trophy size={18}/> MOJE LICZBY <span>OFICJALNE MECZE</span></div>
-                <div className="v111-player-kpis">
-                  <div><span>MECZE</span><b>{s.m}</b><small>Występy</small></div>
-                  <div><span>GOLE</span><b>{s.g}</b><small>Strzelone</small></div>
-                  <div><span>ASYSTY</span><b>{s.a}</b><small>Podania do bramki</small></div>
-                  <div><span>G + A</span><b>{s.g+s.a}</b><small>Razem</small></div>
-                </div>
-                <div className="v111-player-milestones">
-                  <div><Crown size={22}/><span><b>{s.captain}</b> razy kapitan</span></div>
-                  <div><Users size={22}/><span><b>{s.starts}</b> razy w pierwszej szóstce</span></div>
-                  <div><Star size={22}/><span><b>{s.mvp}</b> wyróżnień MVP</span></div>
-                </div>
-              </>})()}
-              <div className="v111-profile-section-heading"><Award size={18}/> ODKRYTE OSIĄGNIĘCIA <span>{unlockedCount(selectedPlayer)} / {playerAchievements(selectedPlayer).length}</span></div>
-              <div className="v111-achievements">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={String(name)} className={ok?"earned":"locked"}><Star size={20}/><strong>{name}</strong><small>{ok?"ODKRYTE":progress}</small></div>)}</div>
-              <div className="v111-profile-footnote">Każdy mecz to nowa historia. Statystyki aktualizują się na podstawie danych zapisanych w aplikacji.</div>
+            <div className="v111-player-content v112-player-content">
+              <nav className="v112-profile-tabs" aria-label="Sekcje profilu zawodnika">
+                {([["overview","Karta","shield"],["achievements","Odznaki","award"],["history","Historia","history"],["training","Trening","training"]] as const).map(([id,label])=><button type="button" key={id} className={playerSection===id?"active":""} onClick={()=>setPlayerSection(id)} aria-current={playerSection===id?"page":undefined}>{label}</button>)}
+              </nav>
+              {(()=>{
+                const p=selectedPlayer;
+                const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+                const t=trainingPlayerStats[p.id]||{sessions:0,goals:0,assists:0,ga:0,attendanceStreak:0,games:0,wins:0};
+                const involved=matches.filter(m=>m.status==="played"&&(attendance.some(a=>a.match_id===m.id&&a.player_id===p.id&&(a.status==="present"||a.status==="yes"))||lineup.some(l=>l.match_id===m.id&&l.player_id===p.id)||events.some(e=>e.match_id===m.id&&(e.player_id===p.id||e.assist_player_id===p.id)))).slice().sort((a,b)=>b.match_date.localeCompare(a.match_date));
+                const milestones=[
+                  {name:"Pierwszy występ",match:involved[involved.length-1]},
+                  {name:"Pierwszy gol",match:involved.slice().reverse().find(m=>events.some(e=>e.match_id===m.id&&e.event_type==="goal"&&e.player_id===p.id))},
+                  {name:"Pierwsza asysta",match:involved.slice().reverse().find(m=>events.some(e=>e.match_id===m.id&&e.event_type==="goal"&&e.assist_player_id===p.id))},
+                  {name:"Pierwsza szóstka",match:involved.slice().reverse().find(m=>lineup.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.is_starter))},
+                  {name:"Pierwszy mecz jako kapitan",match:involved.slice().reverse().find(m=>lineup.some(l=>l.match_id===m.id&&l.player_id===p.id&&l.is_captain))},
+                ].filter((x):x is {name:string;match:Match}=>Boolean(x.match));
+                const achieved=playerAchievements(p);
+                return <>
+                <div className="v112-intro-summary"><span>SEZON {seasonLabel()}</span><h2>{p.display_name}</h2><p><img src="/teamlogos/gm.png" alt=""/> {p.position||"Zawodnik"} <span>·</span> {p.shirt_number?`Numer ${p.shirt_number}`:"DELTA GM"}</p></div>
+                {playerSection==="overview"&&<>
+                  <div className="v111-profile-section-heading"><Trophy size={18}/> LICZBY Z BOISKA <span>OFICJALNE MECZE</span></div>
+                  <div className="v111-player-kpis v112-player-kpis">
+                    <div><span>MECZE</span><b>{s.m}</b><small>Występy</small></div><div><span>GOLE</span><b>{s.g}</b><small>Strzelone</small></div>
+                    <div><span>ASYSTY</span><b>{s.a}</b><small>Podania do bramki</small></div><div><span>G + A</span><b>{s.g+s.a}</b><small>Razem</small></div>
+                  </div>
+                  <div className="v111-player-milestones v112-milestones"><div><Crown size={22}/><span><b>{s.captain}</b> razy kapitan</span></div><div><Users size={22}/><span><b>{s.starts}</b> razy w pierwszej szóstce</span></div><div><Star size={22}/><span><b>{s.mvp}</b> wyróżnień MVP</span></div></div>
+                  <div className="v112-highlight-card"><div><span>MOJA DROGA W DELCIE</span><strong>{milestones.length?`${milestones.length} pierwszych kroków w historii` :"Pierwsze piłkarskie historie przed nami"}</strong><p>Każde osiągnięcie ma swój mecz i swoją datę.</p></div><button onClick={()=>setPlayerSection("history")}>Zobacz historię <ChevronRight size={15}/></button></div>
+                  <div className="v111-profile-section-heading"><Award size={18}/> MOJA GABLOTKA <span>{unlockedCount(p)} / {achieved.length} ODKRYTYCH</span></div>
+                  <div className="v112-quick-badges">{achieved.filter(([,ok])=>ok).slice(0,4).map(([name])=><span key={String(name)}><Medal size={17}/>{name}</span>)}{unlockedCount(p)===0&&<p>Pierwsza odznaka czeka na odkrycie.</p>}</div>
+                  <button className="v112-wide-action" onClick={()=>setPlayerSection("achievements")}>Otwórz gablotkę odznak <ChevronRight size={16}/></button>
+                </>}
+                {playerSection==="achievements"&&<>
+                  <div className="v111-profile-section-heading"><Award size={18}/> GABLOTKA OSIĄGNIĘĆ <span>{unlockedCount(p)} / {achieved.length}</span></div>
+                  <p className="v112-section-note">Każda odznaka oznacza zapisane osiągnięcie. Te jeszcze nieodkryte pokazują, do jakiego progu brakuje.</p>
+                  <div className="v111-achievements v112-achievements">{achieved.map(([name,ok,progress])=><div key={String(name)} className={ok?"earned":"locked"}><Star size={25}/><strong>{name}</strong><small>{ok?"ODKRYTE":progress}</small></div>)}</div>
+                </>}
+                {playerSection==="history"&&<>
+                  <div className="v111-profile-section-heading"><History size={18}/> MOJA HISTORIA <span>WYDARZENIA Z ZAPISANYCH MECZÓW</span></div>
+                  <p className="v112-section-note">Pierwsze kroki oraz ostatnie spotkania. Bez dopisywania fikcyjnych osiągnięć.</p>
+                  <div className="v112-timeline">{milestones.length?milestones.map(x=><div className="v112-timeline-event" key={x.name}><span className="v112-timeline-dot"/><small>{datePL(x.match.match_date)}</small><strong>{x.name}</strong><span>{recentOpponent(x.match)}</span><button type="button" onClick={()=>{setSelectedPlayer(null);openMatch(x.match);}}>Otwórz mecz <ChevronRight size={14}/></button></div>):<p>Historia pojawi się po zapisaniu pierwszych występów w aplikacji.</p>}</div>
+                  <div className="v111-profile-section-heading"><Goal size={18}/> MOJE OSTATNIE MECZE</div>
+                  <div className="v112-match-list">{involved.slice(0,5).map(m=>{const me=events.filter(e=>e.match_id===m.id);const g=me.filter(e=>e.event_type==="goal"&&e.player_id===p.id).length;const a=me.filter(e=>e.event_type==="goal"&&e.assist_player_id===p.id).length;return <button type="button" key={m.id} onClick={()=>{setSelectedPlayer(null);openMatch(m);}}><span>{datePL(m.match_date)}</span><strong>{recentOpponent(m)}</strong><small>{m.home_score??"–"} : {m.away_score??"–"}</small><em>{g} G · {a} A</em><ChevronRight size={15}/></button>;})}{involved.length===0&&<p>Brak zapisanych występów.</p>}</div>
+                </>}
+                {playerSection==="training"&&<>
+                  <div className="v111-profile-section-heading"><Zap size={18}/> TRENING I ROZWÓJ <span>OSOBNE STATYSTYKI TRENINGOWE</span></div>
+                  <p className="v112-section-note">Gole i asysty z gier treningowych nie są doliczane do oficjalnych meczów.</p>
+                  <div className="v111-player-kpis v112-player-kpis"><div><span>TRENINGI</span><b>{t.sessions}</b><small>Obecności</small></div><div><span>GRY</span><b>{t.games}</b><small>Udział w grach</small></div><div><span>GOLE</span><b>{t.goals}</b><small>Treningowe</small></div><div><span>ASYSTY</span><b>{t.assists}</b><small>Treningowe</small></div></div>
+                  <div className="v112-highlight-card"><div><span>RAZEM NA BOISKU</span><strong>Piłkarskie duety</strong><p>Wspólne występy w tych samych drużynach podczas gier treningowych.</p></div></div>
+                  <div className="v112-duo-list">{trainingChemistry.filter(x=>x.a.id===p.id||x.b.id===p.id).sort((a,b)=>b.games-a.games).slice(0,5).map(x=>{const mate=x.a.id===p.id?x.b:x.a;return <button key={mate.id} type="button" onClick={()=>openPlayerProfile(mate)}><span className="v112-mate-photo"><PlayerPhoto playerId={mate.id}/></span><strong>{mate.display_name}</strong><small>{x.games} wspólnych gier</small><ChevronRight size={15}/></button>;})}{!trainingChemistry.some(x=>x.a.id===p.id||x.b.id===p.id)&&<p>Duety pojawią się po zapisaniu składów gier treningowych.</p>}</div>
+                </>}
+                </>;
+              })()}
             </div>
           </div>
         </div>
