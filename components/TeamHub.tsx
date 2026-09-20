@@ -162,10 +162,38 @@ export default function TeamHub(props:{
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
   const showcaseMobileRef=useRef<HTMLDivElement|null>(null);
+  const showcaseMobileReady=useRef(false);
+  const showcaseMobileRebasing=useRef(false);
+  const showcaseIndexRef=useRef(0);
+  const showcaseMobileStep=()=>{
+    const el=showcaseMobileRef.current;
+    const card=el?.querySelector<HTMLElement>(".v123-mobile-card");
+    return card?card.offsetWidth+12:0;
+  };
+  const centerMobileCard=(index:number,behavior:ScrollBehavior="smooth")=>{
+    const el=showcaseMobileRef.current;const step=showcaseMobileStep();
+    if(!el||!step||!players.length)return;
+    const normalized=((index%players.length)+players.length)%players.length;
+    const logical=(players.length+normalized)*step;
+    if(behavior==="instant"){
+      el.style.scrollBehavior="auto";
+      el.scrollLeft=logical;
+      el.style.removeProperty("scroll-behavior");
+    }else el.scrollTo({left:logical,behavior});
+  };
   const showcaseFrame=useRef<number|null>(null);
   const showcasePendingX=useRef(0);
   const showcaseGesture=useRef<{pointerId:number;pointerType:string;startX:number;startY:number;lastX:number;lastAt:number;dragging:boolean}|null>(null);
   const showcaseIgnoreClick=useRef(false);
+  useEffect(()=>{
+    if(tab!=="players"||!players.length)return;
+    showcaseMobileReady.current=false;
+    const frame=requestAnimationFrame(()=>{
+      centerMobileCard(showcaseIndexRef.current,"instant");
+      showcaseMobileReady.current=true;
+    });
+    return ()=>cancelAnimationFrame(frame);
+  },[tab,players.length]);
   const showcaseStep=()=>showcaseStageRef.current?.clientWidth&&showcaseStageRef.current.clientWidth<600?160:205;
   const showcaseDraw=(dx:number)=>{
     const stage=showcaseStageRef.current;
@@ -1485,7 +1513,12 @@ export default function TeamHub(props:{
           </div>
           {players.length>0?(()=>{
             const active=((showcaseIndex%players.length)+players.length)%players.length;
-            const move=(direction:number)=>setShowcaseIndex(old=>(old+direction+players.length)%players.length);
+            const move=(direction:number)=>{
+              const next=(showcaseIndexRef.current+direction+players.length)%players.length;
+              showcaseIndexRef.current=next;
+              setShowcaseIndex(next);
+              centerMobileCard(next);
+            };
             const visibleOffsets=players.length===1?[0]:players.length===2?[-1,0]:players.length===3?[-1,0,1]:players.length===4?[-2,-1,0,1]:players.length===5?[-2,-1,0,1,2]:players.length===6?[-3,-2,-1,0,1,2]:[-3,-2,-1,0,1,2,3];
             return <>
               <div ref={showcaseStageRef} className="v119-showcase-stage v120-showcase-stage v121-showcase-stage" tabIndex={0} onDragStart={e=>e.preventDefault()} aria-label="Karuzela zawodników. Przeciągnij myszką lub przesuń palcem w lewo albo w prawo. Klawisze strzałek także działają." onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();move(-1);}if(e.key==="ArrowRight"){e.preventDefault();move(1);}}} onPointerDown={showcasePointerDown} onPointerMove={showcasePointerMove} onPointerUp={showcasePointerEnd} onPointerCancel={showcasePointerCancel} onClickCapture={e=>{if(showcaseIgnoreClick.current){e.stopPropagation();e.preventDefault();showcaseIgnoreClick.current=false;}}}>
@@ -1502,34 +1535,44 @@ export default function TeamHub(props:{
                   </button>;
                 })}
               </div>
-              {/* V10.23: native scroll-snap on mobile. Keep all cards mounted and let the
-                  browser handle touch movement instead of rewriting 3D transforms. */}
-              <div ref={showcaseMobileRef} className="v123-mobile-showcase" aria-label="Zawodnicy — przesuń palcem, aby wybrać kartę" onScroll={e=>{
-                const el=e.currentTarget;
-                const first=el.querySelector<HTMLElement>(".v123-mobile-card");
-                if(!first)return;
-                const gap=12;
-                const index=Math.max(0,Math.min(players.length-1,Math.round(el.scrollLeft/(first.offsetWidth+gap))));
+              {/* V10.24: three repeated runs. Native swipe remains browser-managed;
+                  when a duplicate is selected we silently return to the middle run. */}
+              <div ref={showcaseMobileRef} className="v123-mobile-showcase" aria-label="Zawodnicy — zapętlona karuzela, przesuń palcem" onScroll={e=>{
+                if(!showcaseMobileReady.current||showcaseMobileRebasing.current||!players.length)return;
+                const el=e.currentTarget;const step=showcaseMobileStep();if(!step)return;
+                let raw=Math.round(el.scrollLeft/step);
+                if(raw<players.length||raw>=players.length*2){
+                  showcaseMobileRebasing.current=true;
+                  const before=el.scrollLeft;
+                  el.style.scrollBehavior="auto";
+                  el.scrollLeft=before+(raw<players.length?players.length:-players.length)*step;
+                  el.style.removeProperty("scroll-behavior");
+                  raw=Math.round(el.scrollLeft/step);
+                  requestAnimationFrame(()=>{showcaseMobileRebasing.current=false;});
+                }
+                const index=((raw%players.length)+players.length)%players.length;
+                showcaseIndexRef.current=index;
                 setShowcaseIndex(old=>old===index?old:index);
               }}>
-                {players.map((player,index)=>{
+                {Array.from({length:3},(_,cycle)=>players.map((player,index)=>{
                   const s=stats[player.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
-                  return <button key={player.id} type="button" className={`v123-mobile-card ${showcaseIndex===index?"is-active":""}`} onClick={()=>{
-                    const el=showcaseMobileRef.current;
-                    if(!el)return;
-                    const item=el.querySelector<HTMLElement>(`[data-mobile-player-index="${index}"]`);
-                    if(!item)return;
+                  const ordinal=cycle*players.length+index;
+                  return <button key={`${cycle}-${player.id}`} type="button" className={`v123-mobile-card ${showcaseIndex===index?"is-active":""}`} onClick={()=>{
+                    const el=showcaseMobileRef.current;const step=showcaseMobileStep();
+                    if(!el||!step)return;
                     const center=el.scrollLeft+el.clientWidth/2;
-                    const cardCenter=item.offsetLeft+item.offsetWidth/2;
-                    if(Math.abs(cardCenter-center)>16){el.scrollTo({left:item.offsetLeft+item.offsetWidth/2-el.clientWidth/2,behavior:"smooth"});return;}
+                    const item=el.querySelector<HTMLElement>(`[data-mobile-player-index="${ordinal}"]`);
+                    if(!item)return;
+                    const target=item.offsetLeft+item.offsetWidth/2-el.clientWidth/2;
+                    if(Math.abs(target-el.scrollLeft)>16){el.scrollTo({left:target,behavior:"smooth"});return;}
                     openPlayerProfile(player);
-                  }} data-mobile-player-index={index} aria-label={`Karta zawodnika ${player.display_name}`}>
+                  }} data-mobile-player-index={ordinal} aria-label={`Karta zawodnika ${player.display_name}`}>
                     <span className="v123-mobile-art">{isRyszardPlayer(player)?<img src="/assets/ryszard-player-card.png" alt="" draggable={false}/>:<PlayerPhoto playerId={player.id}/>}</span>
                     <span className="v123-mobile-shade" aria-hidden="true"/>
                     <span className="v123-mobile-top"><img src="/teamlogos/gm.png" alt="" draggable={false}/><b>{player.shirt_number?`#${player.shirt_number}`:"GM"}</b></span>
                     <span className="v123-mobile-bottom"><small>DELTA 2018 GM</small><strong>{player.display_name}</strong><span>{player.position||"Zawodnik"}</span><em>{s.m} MECZE · {s.g} GOLE · {s.a} ASYSTY</em></span>
                   </button>;
-                })}
+                }))}
               </div>
               <div className="v119-showcase-controls">
                 <button type="button" onClick={()=>move(-1)} aria-label="Poprzedni zawodnik"><ChevronLeft size={22}/></button>

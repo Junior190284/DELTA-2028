@@ -151,7 +151,7 @@ export default function AdminPanel(props:{
     const starters=lineup.filter(l=>l.match_id===selectedMatch.id&&l.is_starter);
     if(!current?.is_starter && starters.length>=6)return alert("Wyjściowa 6 może mieć maksymalnie 6 zawodników.");
     const isStarter=!current?.is_starter;
-    const row={match_id:selectedMatch.id,player_id:playerId,is_starter:isStarter,is_captain:current?.is_captain||false};
+    const row={match_id:selectedMatch.id,player_id:playerId,is_starter:isStarter,is_captain:isStarter&&(current?.is_captain||false)};
     const {error}=await supabase.from("match_lineup").upsert(row,{onConflict:"match_id,player_id"});
     if(error)return alert(error.message);
     setLineup(prev=>[...prev.filter(l=>!(l.match_id===selectedMatch.id&&l.player_id===playerId)),row]);
@@ -697,8 +697,9 @@ export default function AdminPanel(props:{
                   <strong>{p.display_name}</strong>
                   <div className="row-actions">
                     <button className={att==="present"?"on":""} onClick={()=>setAttendanceStatus(p.id,"present")}>Obecny</button>
-                    <button className={att==="no"?"on danger":""} onClick={()=>setAttendanceStatus(p.id,"no")}>Nie</button>
-                    <button className={li?.is_starter?"on gold":""} onClick={()=>toggleStarter(p.id)}>Wyjściowa 6</button>
+                    <button className={att==="no"?"on danger":""} onClick={()=>setAttendanceStatus(p.id,"no")}>Nieobecny</button>
+                    <button className={!["present","yes","no"].includes(att)?"on":""} onClick={()=>setAttendanceStatus(p.id,"maybe")}>Brak decyzji</button>
+                    <button className={li?.is_starter?"on gold":""} onClick={()=>toggleStarter(p.id)}>{li?.is_starter?"Usuń z 6":"Dodaj do 6"}</button>
                     <button className={li?.is_captain?"on gold":""} onClick={()=>setCaptain(p.id)}><Crown size={14}/> Kapitan</button>
                   </div>
                 </div>

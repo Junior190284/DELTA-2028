@@ -83,7 +83,7 @@ export function MatchDayMode(props:{match:Match|null;players:Player[];attendance
   const captain=props.players.find(p=>p.id===props.lineup.find(x=>x.match_id===match.id&&x.is_captain)?.player_id);
   const mvp=props.players.find(p=>p.id===props.events.find(e=>e.match_id===match.id&&e.event_type==="mvp")?.player_id);
   const confirmed=props.players.filter(p=>props.attendance.some(a=>a.match_id===match.id&&a.player_id===p.id&&(a.status==="yes"||a.status==="present")));
-  const startersList=props.players.filter(p=>props.lineup.some(x=>x.match_id===match.id&&x.player_id===p.id&&x.is_starter));
+  const startersList=props.players.filter(p=>props.lineup.some(x=>x.match_id===match.id&&x.player_id===p.id&&x.is_starter)).sort((a,b)=>Number(/bram/i.test(b.position||""))-Number(/bram/i.test(a.position||"")));
   const phase=match.status==="played"?"PO MECZU":goals.length?"NA ŻYWO":"PRZED MECZEM";
   async function copySummary(){
     const goalLines=goals.map(e=>{const g=props.players.find(p=>p.id===e.player_id)?.display_name||"?";const a=props.players.find(p=>p.id===e.assist_player_id)?.display_name;return `⚽ ${g}${a?` (asysta: ${a})`:""}`;}).join("\n");
@@ -121,9 +121,9 @@ export function MatchDayMode(props:{match:Match|null;players:Player[];attendance
       <article className="v108-matchday-primary devil-card">
         <div className="v8-panel-title"><Users size={18}/> KADRA MECZOWA <button onClick={()=>props.onOpen(match,"lineup")}>ZARZĄDZAJ</button></div>
         <div className="v108-squad-pitch">
-          <div className="v108-pitch-lines"/>
-          {(startersList.length?startersList:confirmed.slice(0,6)).map((p,index)=><button key={p.id} className={`v108-pitch-player p${index+1}`} onClick={()=>props.onOpen(match,"lineup")}><Avatar p={p}/><span>{p.shirt_number||index+1}</span><b>{p.display_name.split(" ")[0]}</b></button>)}
-          {!startersList.length&&!confirmed.length&&<div className="v108-pitch-empty"><Users size={34}/><b>Ustaw wyjściową szóstkę</b><span>Skład pojawi się bezpośrednio na boisku.</span></div>}
+          <div className="v108-pitch-lines"/><span className="v124-pitch-end v124-pitch-end-top" aria-hidden="true"/><span className="v124-pitch-end v124-pitch-end-bottom" aria-hidden="true"/>
+          {startersList.map((p,index)=><button key={p.id} className={`v108-pitch-player p${index+1}`} onClick={()=>props.onOpen(match,"lineup")}><Avatar p={p}/><span>{p.shirt_number||index+1}</span><b>{p.display_name.split(" ")[0]}</b></button>)}
+          {!startersList.length&&<div className="v108-pitch-empty"><Users size={34}/><b>Ustaw wyjściową szóstkę</b><span>Skład pojawi się bezpośrednio na boisku.</span></div>}
         </div>
       </article>
       <div className="v108-matchday-side">

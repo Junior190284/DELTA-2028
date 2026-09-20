@@ -90,7 +90,7 @@ export default function MatchCenterModal(props:{
 
   function actualAttendance(playerId:string){
     const row=matchAttendance.find(a=>a.player_id===playerId);
-    return row?.status==="present"?"present":row?.status==="no"?"no":"";
+    return row?.status==="present"||row?.status==="yes"?"present":row?.status==="no"?"no":"maybe";
   }
 
   async function saveMatchBasics(){
@@ -121,7 +121,7 @@ export default function MatchCenterModal(props:{
       ...props.attendance.filter(a=>!(a.match_id===match.id&&a.player_id===playerId)),
       {match_id:match.id,player_id:playerId,status}
     ]});
-    confirmSaved(status==="present"?"Obecność zapisana":status==="no"?"Nieobecność zapisana":"Odpowiedź zapisana");
+    confirmSaved(status==="present"?"Obecność zapisana":status==="no"?"Nieobecność zapisana":status==="maybe"?"Zapisano: brak decyzji":"Odpowiedź zapisana");
   }
 
   async function toggleStarter(playerId:string){
@@ -129,7 +129,7 @@ export default function MatchCenterModal(props:{
     const starters=matchLineup.filter(l=>l.is_starter);
     if(!current?.is_starter&&starters.length>=6)return alert("Wyjściowa 6 może mieć maksymalnie 6 zawodników.");
 
-    const row={match_id:match.id,player_id:playerId,is_starter:!current?.is_starter,is_captain:current?.is_captain||false};
+    const row={match_id:match.id,player_id:playerId,is_starter:!current?.is_starter,is_captain:current?.is_starter?false:(current?.is_captain||false)};
     const {error}=await supabase.from("match_lineup").upsert(row,{onConflict:"match_id,player_id"});
     if(error)return alert(error.message);
     props.onDataChange({lineup:[
@@ -275,8 +275,8 @@ export default function MatchCenterModal(props:{
 
           <div className="v109-match-story">
             <section className="v109-modal-pitch">
-              <div className="v109-pitch-lines"/>
-              {(starters.length?starters:players.filter(p=>matchAttendance.some(a=>a.player_id===p.id&&(a.status==="present"||a.status==="yes"))).slice(0,6)).map((p,index)=>{
+              <div className="v109-pitch-lines"/><span className="v124-pitch-end v124-pitch-end-top" aria-hidden="true"/><span className="v124-pitch-end v124-pitch-end-bottom" aria-hidden="true"/>
+              {starters.map((p,index)=>{
                 const li=matchLineup.find(l=>l.player_id===p.id);
                 return <div className={`v109-pitch-person pos-${index+1}`} key={p.id}>
                   <span><PlayerPhoto playerId={p.id}/>{li?.is_captain&&<Crown size={14}/>}</span>
@@ -320,6 +320,7 @@ export default function MatchCenterModal(props:{
                 <div className="v85-actual-actions">
                   <button className={actual==="present"?"active yes":""} onClick={()=>setAttendance(p.id,"present")}><Check size={13}/> Obecny</button>
                   <button className={actual==="no"?"active no":""} onClick={()=>setAttendance(p.id,"no")}><X size={13}/> Nieobecny</button>
+                  <button className={actual==="maybe"?"active maybe":""} onClick={()=>setAttendance(p.id,"maybe")}>Brak decyzji</button>
                 </div>
               </div>
             })}
@@ -340,7 +341,7 @@ export default function MatchCenterModal(props:{
         </>}
 
         {canManageMatch&&tab==="lineup"&&<>
-          <div className="v85-section-intro"><Users size={19}/><div><b>Wyjściowa 6 i kapitan</b><span>Wybierz maksymalnie sześciu starterów.</span></div><strong>{selectedStarterIds.size}/6</strong></div>
+          <div className="v85-section-intro"><Users size={19}/><div><b>Wyjściowa 6 i kapitan</b><span>Wybierz do sześciu zawodników. „Usuń z 6” zwalnia miejsce bez zmiany obecności.</span></div><strong>{selectedStarterIds.size}/6</strong></div>
           <div className="v85-lineup-grid">
             {players.map(p=>{
               const li=matchLineup.find(l=>l.player_id===p.id);
@@ -352,7 +353,7 @@ export default function MatchCenterModal(props:{
                   <option value="">Pozycja</option><option value="Bramkarz">Bramkarz</option><option value="Obrońca">Obrońca</option><option value="Pomocnik">Pomocnik</option><option value="Napastnik">Napastnik</option>
                 </select>
                 <div>
-                  <button className={li?.is_starter?"active":""} onClick={()=>toggleStarter(p.id)}>{li?.is_starter?"W Wyjściowej 6":"Dodaj do 6"}</button>
+                  <button className={li?.is_starter?"active":""} onClick={()=>toggleStarter(p.id)}>{li?.is_starter?"Usuń z 6":"Dodaj do 6"}</button>
                   <button className={li?.is_captain?"active captain":""} onClick={()=>setCaptain(p.id)}><Crown size={13}/> Kapitan</button>
                 </div>
               </div>
