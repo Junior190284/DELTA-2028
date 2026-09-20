@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
@@ -160,6 +160,53 @@ export default function TeamHub(props:{
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
+  const showcaseStageRef=useRef<HTMLDivElement|null>(null);
+  const showcaseGesture=useRef<{pointerId:number;startX:number;startY:number;currentX:number;dragging:boolean;startAt:number}|null>(null);
+  const showcaseIgnoreClick=useRef(false);
+  const showcaseClearDrag=()=>{
+    showcaseGesture.current=null;
+    showcaseStageRef.current?.style.removeProperty("--v120-drag-x");
+    showcaseStageRef.current?.classList.remove("v120-dragging");
+  };
+  const showcasePointerDown=(e:React.PointerEvent<HTMLDivElement>)=>{
+    if(e.pointerType==="mouse"&&e.button!==0)return;
+    showcaseIgnoreClick.current=false;
+    if(players.length<2)return;
+    showcaseGesture.current={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,currentX:e.clientX,dragging:false,startAt:Date.now()};
+  };
+  const showcasePointerMove=(e:React.PointerEvent<HTMLDivElement>)=>{
+    const gesture=showcaseGesture.current;
+    if(!gesture||gesture.pointerId!==e.pointerId)return;
+    const dx=e.clientX-gesture.startX;
+    const dy=e.clientY-gesture.startY;
+    // A vertical touch gesture scrolls the page as usual; horizontal gestures rotate the carousel.
+    if(!gesture.dragging&&Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>10){showcaseClearDrag();return;}
+    if(!gesture.dragging&&Math.abs(dx)>9&&Math.abs(dx)>Math.abs(dy)){
+      gesture.dragging=true;
+      showcaseIgnoreClick.current=true;
+      e.currentTarget.classList.add("v120-dragging");
+      try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}
+    }
+    if(gesture.dragging){
+      gesture.currentX=e.clientX;
+      e.currentTarget.style.setProperty("--v120-drag-x",`${Math.max(-155,Math.min(155,dx))}px`);
+    }
+  };
+  const showcasePointerEnd=(e:React.PointerEvent<HTMLDivElement>)=>{
+    const gesture=showcaseGesture.current;
+    if(!gesture||gesture.pointerId!==e.pointerId)return;
+    const delta=e.clientX-gesture.startX;
+    const dragged=gesture.dragging;
+    showcaseClearDrag();
+    if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);
+    if(dragged&&Math.abs(delta)>40){
+      setShowcaseIndex(current=>(current+(delta<0?1:-1)+players.length)%players.length);
+    }
+    // A drag must never open a profile through a synthesized click.
+    if(dragged){showcaseIgnoreClick.current=true;}
+  };
+  const showcasePointerCancel=()=>{showcaseIgnoreClick.current=false;showcaseClearDrag();};
+
   const [playerSection,setPlayerSection]=useState<"overview"|"cards"|"achievements"|"history"|"training">("overview");
   const [selectedCollectible,setSelectedCollectible]=useState<string|null>(null);
   const [selectedTrophy,setSelectedTrophy]=useState<string|null>(null);
@@ -221,6 +268,8 @@ export default function TeamHub(props:{
 
 
   useEffect(()=>{
+    showcaseIgnoreClick.current=false;
+    showcaseClearDrag();
     setViewFx(true);
     setSelectedMatch(null);
     setSelectedPlayer(null);
@@ -1402,7 +1451,7 @@ export default function TeamHub(props:{
             const move=(direction:number)=>setShowcaseIndex(old=>(old+direction+players.length)%players.length);
             const visibleOffsets=players.length===1?[0]:players.length===2?[-1,0]:players.length===3?[-1,0,1]:players.length===4?[-2,-1,0,1]:[-2,-1,0,1,2];
             return <>
-              <div className="v119-showcase-stage" tabIndex={0} aria-label="Wybór zawodnika. Użyj strzałek lub przesuń palcem." onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();move(-1);}if(e.key==="ArrowRight"){e.preventDefault();move(1);}}} onTouchStart={e=>{e.currentTarget.dataset.startX=String(e.touches[0]?.clientX??0);}} onTouchEnd={e=>{const start=Number(e.currentTarget.dataset.startX);const end=e.changedTouches[0]?.clientX??start;if(Math.abs(end-start)>42)move(end<start?1:-1);}}>
+              <div ref={showcaseStageRef} className="v119-showcase-stage v120-showcase-stage" tabIndex={0} aria-label="Karuzela zawodników. Przeciągnij myszką lub przesuń palcem w lewo albo w prawo. Klawisze strzałek także działają." onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();move(-1);}if(e.key==="ArrowRight"){e.preventDefault();move(1);}}} onPointerDown={showcasePointerDown} onPointerMove={showcasePointerMove} onPointerUp={showcasePointerEnd} onPointerCancel={showcasePointerCancel} onClickCapture={e=>{if(showcaseIgnoreClick.current){e.stopPropagation();e.preventDefault();showcaseIgnoreClick.current=false;}}}>
                 <span className="v119-stage-smoke" aria-hidden="true"/>
                 {visibleOffsets.map(offset=>{
                   const player=players[(active+offset+players.length)%players.length];
@@ -1418,7 +1467,7 @@ export default function TeamHub(props:{
               </div>
               <div className="v119-showcase-controls">
                 <button type="button" onClick={()=>move(-1)} aria-label="Poprzedni zawodnik"><ChevronLeft size={22}/></button>
-                <div className="v119-showcase-progress"><span>{players[active].display_name}</span><small>PRZESUŃ KARTY LUB UŻYJ STRZAŁEK</small></div>
+                <div className="v119-showcase-progress"><span>{players[active].display_name}</span><small>PRZECIĄGNIJ MYSZKĄ LUB PRZESUŃ PALCEM</small></div>
                 <button type="button" onClick={()=>move(1)} aria-label="Następny zawodnik"><ChevronRight size={22}/></button>
               </div>
               <button type="button" className="v119-showcase-open" onClick={()=>openPlayerProfile(players[active])}>OTWÓRZ KARTĘ ZAWODNIKA <ChevronRight size={16}/></button>
