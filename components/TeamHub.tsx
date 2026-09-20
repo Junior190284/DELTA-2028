@@ -161,49 +161,77 @@ export default function TeamHub(props:{
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
-  const showcaseGesture=useRef<{pointerId:number;startX:number;startY:number;currentX:number;dragging:boolean;startAt:number}|null>(null);
+  const showcaseGesture=useRef<{pointerId:number;pointerType:string;startX:number;startY:number;lastX:number;lastAt:number;dragging:boolean}|null>(null);
   const showcaseIgnoreClick=useRef(false);
+  const showcaseStep=()=>showcaseStageRef.current?.clientWidth&&showcaseStageRef.current.clientWidth<600?160:205;
+  const showcaseDraw=(dx:number)=>{
+    const stage=showcaseStageRef.current;
+    if(!stage)return;
+    const step=showcaseStep();
+    const fractional=dx/step;
+    const mobile=stage.clientWidth<600;
+    stage.style.setProperty("--v121-progress",String(fractional));
+    stage.querySelectorAll<HTMLElement>(".v119-showcase-card[data-showcase-offset]").forEach(card=>{
+      const offset=Number(card.dataset.showcaseOffset)||0;
+      const relative=offset+fractional;
+      const magnitude=Math.abs(relative);
+      const x=relative*step*(mobile?.83:1);
+      const depth=-Math.min(magnitude,3)*(mobile?50:85);
+      const scale=Math.max(.51,1.07-Math.min(magnitude,3)*.16);
+      const rotate=-Math.max(-2.8,Math.min(2.8,relative))*11;
+      card.style.transform=`translate3d(${x}px,${Math.min(magnitude,3)*12}px,${depth}px) rotateY(${rotate}deg) scale(${scale})`;
+      card.style.opacity=String(Math.max(.16,1-Math.max(0,magnitude-1.6)*.44));
+      card.style.filter=`brightness(${Math.max(.43,1.08-magnitude*.16)})`;
+      card.style.zIndex=String(Math.round(100-magnitude*12));
+    });
+  };
   const showcaseClearDrag=()=>{
+    const stage=showcaseStageRef.current;
+    stage?.classList.remove("v120-dragging","v121-gesture-active");
+    stage?.style.removeProperty("--v121-progress");
+    stage?.querySelectorAll<HTMLElement>(".v119-showcase-card[data-showcase-offset]").forEach(card=>{
+      card.style.removeProperty("transform");
+      card.style.removeProperty("opacity");
+      card.style.removeProperty("filter");
+      card.style.removeProperty("z-index");
+    });
     showcaseGesture.current=null;
-    showcaseStageRef.current?.style.removeProperty("--v120-drag-x");
-    showcaseStageRef.current?.classList.remove("v120-dragging");
   };
   const showcasePointerDown=(e:React.PointerEvent<HTMLDivElement>)=>{
     if(e.pointerType==="mouse"&&e.button!==0)return;
-    showcaseIgnoreClick.current=false;
     if(players.length<2)return;
-    showcaseGesture.current={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,currentX:e.clientX,dragging:false,startAt:Date.now()};
+    showcaseIgnoreClick.current=false;
+    showcaseGesture.current={pointerId:e.pointerId,pointerType:e.pointerType,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastAt:performance.now(),dragging:false};
   };
   const showcasePointerMove=(e:React.PointerEvent<HTMLDivElement>)=>{
-    const gesture=showcaseGesture.current;
-    if(!gesture||gesture.pointerId!==e.pointerId)return;
-    const dx=e.clientX-gesture.startX;
-    const dy=e.clientY-gesture.startY;
-    // A vertical touch gesture scrolls the page as usual; horizontal gestures rotate the carousel.
-    if(!gesture.dragging&&Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>10){showcaseClearDrag();return;}
-    if(!gesture.dragging&&Math.abs(dx)>9&&Math.abs(dx)>Math.abs(dy)){
-      gesture.dragging=true;
-      showcaseIgnoreClick.current=true;
-      e.currentTarget.classList.add("v120-dragging");
+    const g=showcaseGesture.current;
+    if(!g||g.pointerId!==e.pointerId)return;
+    const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
+    if(!g.dragging&&Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>12){showcaseClearDrag();return;}
+    if(!g.dragging&&Math.abs(dx)>5&&Math.abs(dx)>Math.abs(dy)){
+      g.dragging=true;showcaseIgnoreClick.current=true;
+      e.currentTarget.classList.add("v120-dragging","v121-gesture-active");
       try{e.currentTarget.setPointerCapture(e.pointerId);}catch{}
     }
-    if(gesture.dragging){
-      gesture.currentX=e.clientX;
-      e.currentTarget.style.setProperty("--v120-drag-x",`${Math.max(-155,Math.min(155,dx))}px`);
+    if(g.dragging){
+      if(e.cancelable)e.preventDefault();
+      g.lastX=e.clientX;g.lastAt=performance.now();
+      showcaseDraw(Math.max(-showcaseStep()*2.5,Math.min(showcaseStep()*2.5,dx)));
     }
   };
   const showcasePointerEnd=(e:React.PointerEvent<HTMLDivElement>)=>{
-    const gesture=showcaseGesture.current;
-    if(!gesture||gesture.pointerId!==e.pointerId)return;
-    const delta=e.clientX-gesture.startX;
-    const dragged=gesture.dragging;
-    showcaseClearDrag();
+    const g=showcaseGesture.current;
+    if(!g||g.pointerId!==e.pointerId)return;
+    const dx=e.clientX-g.startX;
     if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);
-    if(dragged&&Math.abs(delta)>40){
-      setShowcaseIndex(current=>(current+(delta<0?1:-1)+players.length)%players.length);
+    if(g.dragging){
+      const steps=Math.min(players.length-1,Math.max(0,Math.min(3,Math.round(Math.abs(dx)/showcaseStep()+.18))));
+      if(steps>0)setShowcaseIndex(old=>(old+(dx<0?steps:-steps)+players.length*4)%players.length);
+      showcaseIgnoreClick.current=true;
+      // Keep the guard during the browser's synthesized click after a pointer gesture.
+      window.setTimeout(()=>{showcaseIgnoreClick.current=false;},120);
     }
-    // A drag must never open a profile through a synthesized click.
-    if(dragged){showcaseIgnoreClick.current=true;}
+    showcaseClearDrag();
   };
   const showcasePointerCancel=()=>{showcaseIgnoreClick.current=false;showcaseClearDrag();};
 
@@ -1449,15 +1477,15 @@ export default function TeamHub(props:{
           {players.length>0?(()=>{
             const active=((showcaseIndex%players.length)+players.length)%players.length;
             const move=(direction:number)=>setShowcaseIndex(old=>(old+direction+players.length)%players.length);
-            const visibleOffsets=players.length===1?[0]:players.length===2?[-1,0]:players.length===3?[-1,0,1]:players.length===4?[-2,-1,0,1]:[-2,-1,0,1,2];
+            const visibleOffsets=players.length===1?[0]:players.length===2?[-1,0]:players.length===3?[-1,0,1]:players.length===4?[-2,-1,0,1]:players.length===5?[-2,-1,0,1,2]:players.length===6?[-3,-2,-1,0,1,2]:[-3,-2,-1,0,1,2,3];
             return <>
-              <div ref={showcaseStageRef} className="v119-showcase-stage v120-showcase-stage" tabIndex={0} aria-label="Karuzela zawodników. Przeciągnij myszką lub przesuń palcem w lewo albo w prawo. Klawisze strzałek także działają." onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();move(-1);}if(e.key==="ArrowRight"){e.preventDefault();move(1);}}} onPointerDown={showcasePointerDown} onPointerMove={showcasePointerMove} onPointerUp={showcasePointerEnd} onPointerCancel={showcasePointerCancel} onClickCapture={e=>{if(showcaseIgnoreClick.current){e.stopPropagation();e.preventDefault();showcaseIgnoreClick.current=false;}}}>
+              <div ref={showcaseStageRef} className="v119-showcase-stage v120-showcase-stage v121-showcase-stage" tabIndex={0} onDragStart={e=>e.preventDefault()} aria-label="Karuzela zawodników. Przeciągnij myszką lub przesuń palcem w lewo albo w prawo. Klawisze strzałek także działają." onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();move(-1);}if(e.key==="ArrowRight"){e.preventDefault();move(1);}}} onPointerDown={showcasePointerDown} onPointerMove={showcasePointerMove} onPointerUp={showcasePointerEnd} onPointerCancel={showcasePointerCancel} onClickCapture={e=>{if(showcaseIgnoreClick.current){e.stopPropagation();e.preventDefault();showcaseIgnoreClick.current=false;}}}>
                 <span className="v119-stage-smoke" aria-hidden="true"/>
                 {visibleOffsets.map(offset=>{
                   const player=players[(active+offset+players.length)%players.length];
                   const center=offset===0;
                   const s=stats[player.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
-                  return <button type="button" key={`${player.id}-${offset}`} className={`v119-showcase-card ${center?"is-active":""} v119-offset-${offset<0?`m${Math.abs(offset)}`:`p${offset}`}`} onClick={()=>center?openPlayerProfile(player):move(offset)} aria-label={center?`Otwórz profil: ${player.display_name}`:`Wybierz zawodnika: ${player.display_name}`} aria-current={center?"true":undefined}>
+                  return <button type="button" key={player.id} data-showcase-offset={offset} draggable={false} onDragStart={e=>e.preventDefault()} className={`v119-showcase-card ${center?"is-active":""} v119-offset-${offset<0?`m${Math.abs(offset)}`:`p${offset}`}`} onClick={()=>center?openPlayerProfile(player):move(offset)} aria-label={center?`Otwórz profil: ${player.display_name}`:`Wybierz zawodnika: ${player.display_name}`} aria-current={center?"true":undefined}>
                     <span className="v119-showcase-art">{isRyszardPlayer(player)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={player.id}/>}</span>
                     <span className="v119-showcase-card-overlay" aria-hidden="true"/>
                     <span className="v119-showcase-card-top"><img src="/teamlogos/gm.png" alt=""/><b>{player.shirt_number?`#${player.shirt_number}`:"GM"}</b></span>

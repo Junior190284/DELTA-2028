@@ -6551,3 +6551,18 @@ body > main,
 .v120-showcase-stage .v119-showcase-card:focus-visible{outline:2px solid #ffdc86;outline-offset:3px}
 @media(hover:none){.v119-showcase-controls>button{display:none}.v119-showcase-progress{min-width:0}.v119-showcase-controls{margin-top:-3px}}
 @media(prefers-reduced-motion:reduce){.v120-showcase-stage .v119-showcase-card{transition:none!important}}
+
+/* V10.21 — continuous physical 3D rotation; prevent native photo ghost drag. */
+.v121-showcase-stage{perspective:1000px;perspective-origin:center 44%;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.v121-showcase-stage,.v121-showcase-stage *{-webkit-user-drag:none;user-drag:none}
+.v121-showcase-stage .v119-showcase-card{backface-visibility:hidden;transform-style:preserve-3d;will-change:transform,filter;transition:transform .52s cubic-bezier(.22,.72,.18,1),opacity .45s,filter .45s,box-shadow .3s}
+.v121-showcase-stage.v121-gesture-active,.v121-showcase-stage.v121-gesture-active .v119-showcase-card{cursor:grabbing!important}
+.v121-showcase-stage.v121-gesture-active .v119-showcase-card{transition:none!important;pointer-events:none!important}
+.v121-showcase-stage .v119-showcase-art,.v121-showcase-stage img{pointer-events:none;-webkit-user-drag:none;user-drag:none}
+.v121-showcase-stage .v119-offset-m3{--v119-x:-565px;--v119-scale:.59;--v119-rotate:25deg;z-index:1;filter:brightness(.4)}
+.v121-showcase-stage .v119-offset-p3{--v119-x:565px;--v119-scale:.59;--v119-rotate:-25deg;z-index:1;filter:brightness(.4)}
+.v121-showcase-stage .v119-offset-m2{--v119-rotate:19deg}.v121-showcase-stage .v119-offset-p2{--v119-rotate:-19deg}
+.v121-showcase-stage .v119-offset-m1{--v119-rotate:11deg}.v121-showcase-stage .v119-offset-p1{--v119-rotate:-11deg}
+@media(max-width:760px){.v121-showcase-stage .v119-offset-m3{--v119-x:-420px}.v121-showcase-stage .v119-offset-p3{--v119-x:420px}}
+@media(max-width:390px){.v121-showcase-stage .v119-offset-m3{--v119-x:-385px}.v121-showcase-stage .v119-offset-p3{--v119-x:385px}}
+@media(prefers-reduced-motion:reduce){.v121-showcase-stage .v119-showcase-card{transition:none!important}}
