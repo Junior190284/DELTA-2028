@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchGallery from "./MatchGallery";
@@ -123,6 +124,15 @@ export default function TeamHub(props:{
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
+  // Oddzielny, pełnoekranowy widok profilu. Bez przewijania strony do karty.
+  useEffect(()=>{
+    if(!selectedPlayer)return;
+    const oldOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    const onEscape=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedPlayer(null);};
+    window.addEventListener("keydown",onEscape);
+    return ()=>{document.body.style.overflow=oldOverflow;window.removeEventListener("keydown",onEscape);};
+  },[selectedPlayer]);
   const [selectedMatch,setSelectedMatch]=useState<Match|null>(null);
   const [matchInitialTab,setMatchInitialTab]=useState<"summary"|"attendance"|"lineup"|"events"|"mvp">("summary");
   const [matchPlacement,setMatchPlacement]=useState<"home"|"overlay">("overlay");
@@ -1690,12 +1700,46 @@ export default function TeamHub(props:{
       <button type="button" className={`v106-more-trigger ${mobileMoreOpen||!["home","matches","calendar","training"].includes(tab)?"active":""}`} onClick={()=>setMobileMoreOpen(v=>!v)} aria-label="Więcej opcji" aria-expanded={mobileMoreOpen} aria-controls="delta-mobile-more-menu"><MoreHorizontal size={20}/><span>Więcej</span></button>
     </nav>
 
-    {selectedPlayer&&<div className="modal-backdrop" onClick={()=>setSelectedPlayer(null)}><div className={`modal-sheet devil-card ${isRyszardPlayer(selectedPlayer)?"v874-featured-profile-sheet":""}`} onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedPlayer(null)}>×</button>
-      {isRyszardPlayer(selectedPlayer)&&<div className="v874-profile-hero"><img src="/assets/players/ryszard-hero.png" alt={`Profil ${selectedPlayer.display_name}`}/><div className="v874-profile-hero-shade"/><div className="v874-profile-hero-label"><img src="/teamlogos/gm.png" alt=""/><div><span>DELTA 2018 GM</span><b>{selectedPlayer.display_name}</b></div></div></div>}
-      <div className={`premium-profile ${isRyszardPlayer(selectedPlayer)?"v874-profile-stats-layout":""}`}>
-        {!isRyszardPlayer(selectedPlayer)&&<div className="premium-photo"><span className="v873-flares"/><span className="v873-embers"/><span className="v873-corner tl"/><span className="v873-corner tr"/><span className="v873-corner bl"/><span className="v873-corner br"/><span className="v873-plate">PLAYER PROFILE</span><PlayerPhoto playerId={selectedPlayer.id} className="premium-photo-img"/></div>}
-        <div className="premium-info"><span className="eyebrow gold">PROFIL ZAWODNIKA</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p>{(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <div className="profile-stats"><div><b>{s.m}</b><span>Mecze</span></div><div><b>{s.starts}</b><span>Wyjściowa 6</span></div><div><b>{s.captain}</b><span>Kapitan</span></div><div><b>{s.g}</b><span>Gole</span></div><div><b>{s.a}</b><span>Asysty</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div></div>})()}</div>
-      </div><h3>Osiągnięcia zawodnika</h3><div className="achievement-grid">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={name as string} className={`achievement ${ok?"unlocked":""}`}><Star size={20}/><h3>{name}</h3><p>{ok?"ZDOBYTE":progress}</p></div>)}</div></div></div>}
+    {selectedPlayer&&createPortal(<section className="v111-player-screen" role="dialog" aria-modal="true" aria-label={`Profil zawodnika: ${selectedPlayer.display_name}`}>
+      <div className="v111-player-scroll">
+        <div className="v111-profile-container">
+          <header className="v111-profile-toolbar">
+            <button type="button" className="v111-profile-back" onClick={()=>setSelectedPlayer(null)}><ChevronLeft size={19}/> Wróć do drużyny</button>
+            <span><img src="/teamlogos/gm.png" alt=""/> DELTA 2018 GM <span className="v111-toolbar-accent">/ KARTA ZAWODNIKA</span></span>
+          </header>
+          <div className="v111-profile-heading"><span className="v111-kicker"><Flame size={16}/> POZNAJ NASZĄ DRUŻYNĘ</span><h1>BOHATEROWIE <em>DELTA GM</em></h1><p>Każdy zawodnik ma swoją historię. To jedna z nich.</p></div>
+          <div className="v111-profile-grid">
+            <div className="v111-player-character">
+              <div className="v111-character-top"><span>PLAYER CARD <b>2018 GM</b></span><img src="/teamlogos/gm.png" alt=""/></div>
+              <div className="v111-character-art">
+                {isRyszardPlayer(selectedPlayer)?<img src="/assets/players/ryszard-card.png" alt={`Karta zawodnika: ${selectedPlayer.display_name}`} className="v111-ryszard-art"/>:<PlayerPhoto playerId={selectedPlayer.id} className="v111-character-photo"/>}
+              </div>
+              <div className="v111-character-bottom"><span className="v111-character-number">{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</span><div><span>GÓRNY MOKOTÓW · 2018</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p></div></div>
+            </div>
+            <div className="v111-player-content">
+              <div className="v111-profile-title"><span>PROFIL ZAWODNIKA <b>◆</b> SEZON {seasonLabel()}</span><h2>{selectedPlayer.display_name}</h2><p><img src="/teamlogos/gm.png" alt=""/> K.S. Delta Warszawa GM <span>·</span> {selectedPlayer.position||"Zawodnik"}</p></div>
+              {(()=>{const s=stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};return <>
+                <div className="v111-profile-section-heading"><Trophy size={18}/> MOJE LICZBY <span>OFICJALNE MECZE</span></div>
+                <div className="v111-player-kpis">
+                  <div><span>MECZE</span><b>{s.m}</b><small>Występy</small></div>
+                  <div><span>GOLE</span><b>{s.g}</b><small>Strzelone</small></div>
+                  <div><span>ASYSTY</span><b>{s.a}</b><small>Podania do bramki</small></div>
+                  <div><span>G + A</span><b>{s.g+s.a}</b><small>Razem</small></div>
+                </div>
+                <div className="v111-player-milestones">
+                  <div><Crown size={22}/><span><b>{s.captain}</b> razy kapitan</span></div>
+                  <div><Users size={22}/><span><b>{s.starts}</b> razy w pierwszej szóstce</span></div>
+                  <div><Star size={22}/><span><b>{s.mvp}</b> wyróżnień MVP</span></div>
+                </div>
+              </>})()}
+              <div className="v111-profile-section-heading"><Award size={18}/> ODKRYTE OSIĄGNIĘCIA <span>{unlockedCount(selectedPlayer)} / {playerAchievements(selectedPlayer).length}</span></div>
+              <div className="v111-achievements">{playerAchievements(selectedPlayer).map(([name,ok,progress])=><div key={String(name)} className={ok?"earned":"locked"}><Star size={20}/><strong>{name}</strong><small>{ok?"ODKRYTE":progress}</small></div>)}</div>
+              <div className="v111-profile-footnote">Każdy mecz to nowa historia. Statystyki aktualizują się na podstawie danych zapisanych w aplikacji.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>,document.body)}
 
     {selectedMatch&&matchPlacement==="overlay"&&<MatchCenterModal
       match={selectedMatch}
