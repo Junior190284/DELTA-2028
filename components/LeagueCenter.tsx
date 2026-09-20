@@ -125,13 +125,20 @@ export function LeagueHome({matches,onOpen}:{matches:LeagueMatch[];onOpen:()=>vo
  </section>;
 }
 export default function LeagueCenter({matches,isAdmin=false}:{matches:LeagueMatch[];isAdmin?:boolean}){
- const [view,setView]=useState<"table"|"fixtures"|"results"|"ours">("table");
+ const [view,setView]=useState<"table"|"fixtures"|"results"|"ours"|"journey">("table");
  const [round,setRound]=useState<number>(2);
  const {rows,setRows,ready,dbError}=useLeagueEdits();
  const [editing,setEditing]=useState<string|null>(null),[date,setDate]=useState(""),[home,setHome]=useState(""),[away,setAway]=useState(""),[status,setStatus]=useState<LeagueEdit["status"]>("scheduled"),[saving,setSaving]=useState(false),[message,setMessage]=useState("");
  const schedule=useMemo(()=>SCHEDULE.map(f=>resolveFixture(f,rows,matches)),[rows,matches]);
  const data=useMemo(()=>standings(schedule),[schedule]);
  const fixtures=schedule.filter(f=>view==="ours"?(f.home===OUR||f.away===OUR):view==="results"?!!f.result:f.round===round);
+ const [journeyRound,setJourneyRound]=useState(1);
+ const journeyFixtures=schedule.filter(f=>f.round===journeyRound);
+ const journeyTable=useMemo(()=>standings(schedule.filter(f=>f.round<=journeyRound&&f.status==="played"&&!!f.result)),[schedule,journeyRound]);
+ const ourJourneyPosition=journeyTable.findIndex(row=>row.team===OUR);
+ const ourJourney=journeyTable[ourJourneyPosition];
+ const journeyOurFixture=journeyFixtures.find(f=>f.home===OUR||f.away===OUR);
+ const allJourneyRounds=[1,2,3,4,5,6,7];
  function startEdit(f:LeagueFixture){if(f.home===OUR||f.away===OUR)return;
   const edit=rows.find(r=>r.fixture_id===f.id);setEditing(f.id);setDate(edit?.match_date||f.date);
   setHome(f.result?String(f.result[0]):"");setAway(f.result?String(f.result[1]):"");setStatus(edit?.status||((f.result)?"played":"scheduled"));setMessage("");}
@@ -149,14 +156,22 @@ export default function LeagueCenter({matches,isAdmin=false}:{matches:LeagueMatc
   {isAdmin&&dbError&&<p className="league-admin-message" role="alert">Brak połączenia z tabelą ligi: {dbError}. Uruchom plik SQL z paczki w Supabase → SQL Editor.</p>}
   {isAdmin&&message&&<p className="league-admin-message" role="status">{message}</p>}
   <div className="league-tabs" role="tablist" aria-label="Widoki ligi">
-   {([['table','Tabela'],['fixtures','Terminarz'],['results','Wyniki'],['ours','Nasze mecze']] as const).map(([id,label])=><button key={id} role="tab" aria-selected={view===id} className={view===id?"active":""} onClick={()=>setView(id)}>{label}</button>)}
+   {([['table','Tabela'],['fixtures','Terminarz'],['results','Wyniki'],['ours','Nasze mecze'],['journey','Nasza droga']] as const).map(([id,label])=><button key={id} role="tab" aria-selected={view===id} className={view===id?"active":""} onClick={()=>setView(id)}>{label}</button>)}
   </div>
+  {view==="journey"&&<article className="league-card v114-season-journey" aria-label="Nasza droga przez sezon">
+    <div className="league-head"><div><small>SEZON 2026/2027 · JESIEŃ · 7 KOLEJEK</small><h2><Trophy size={22}/> NASZA DROGA PRZEZ LIGĘ</h2></div></div>
+    <p className="league-source-note">Wybierz kolejkę. Poniżej zobaczysz wyniki tej rundy i tabelę obliczoną wyłącznie z wyników zapisanych do jej zakończenia. Jeśli kolejka nie jest kompletna, tabela jest tymczasowa.</p>
+    <nav className="v114-journey-rail" aria-label="Wybór kolejki sezonu">{allJourneyRounds.map(n=><button type="button" className={`${journeyRound===n?"active":""} ${schedule.some(f=>f.round===n&&!!f.result)?"has-result":""}`} key={n} onClick={()=>setJourneyRound(n)} aria-current={journeyRound===n?"step":undefined}><span>KOLEJKA</span><b>{n}</b><small>{schedule.some(f=>f.round===n&&!!f.result)?"WYNIKI":"W PLANIE"}</small></button>)}</nav>
+    <div className="v114-journey-highlight"><div><small>NASZ MECZ · KOLEJKA {journeyRound}</small><h3>{journeyOurFixture?TEAM_SHORT[journeyOurFixture.home]:"DELTA GM"} <em>{journeyOurFixture?.result?`${journeyOurFixture.result[0]} : ${journeyOurFixture.result[1]}`:"VS"}</em> {journeyOurFixture?TEAM_SHORT[journeyOurFixture.away]:"–"}</h3><p>{journeyOurFixture?`${dateLabel(journeyOurFixture.date)} · ${journeyOurFixture.result?"Rozegrany":"Przed meczem"}`:"W tej kolejce nie ma meczu DELTA GM."}</p></div><div><span>PO KOLEJCE</span><b>{ourJourneyPosition+1}<small>. miejsce*</small></b><span>{ourJourney.p} PKT · {ourJourney.gf}:{ourJourney.ga} BRAMKI</span></div></div>
+    <div className="v114-journey-layout"><div><h3>WYNIKI KOLEJKI {journeyRound}</h3>{journeyFixtures.map(f=><FixtureRow key={f.id} f={f}/>)}{journeyFixtures.some(f=>!f.result)&&<small className="league-source-note">Nie wszystkie wyniki tej kolejki zostały jeszcze zapisane.</small>}</div><div><h3>TABELA PO KOLEJCE {journeyRound}</h3><div className="v114-journey-standings">{journeyTable.map((r,i)=><div key={r.team} className={r.team===OUR?"ours":""}><b>{i+1}.</b><span>{TEAM_SHORT[r.team]}</span><strong>{r.p} pkt</strong><small>{r.gf}:{r.ga}</small></div>)}</div></div></div>
+    <p className="league-source-note">* Pozycja i kolejność przy remisie punktów są orientacyjne: stosowana jest kolejność bazowa z tabeli źródłowej. Regulaminowe kryteria rozstrzygania remisów punktowych wymagają potwierdzenia. Wyniki DELTA GM pobierane są z Centrum Meczu, pozostałe z aktualizacji ligi.</p>
+  </article>}
   {view==="table"?<article className="league-card"><div className="league-head"><div><small>KLASYFIKACJA NA PODSTAWIE ZAPISANYCH WYNIKÓW</small><h2><Medal size={22}/> TABELA LIGOWA</h2></div></div><div className="league-table-scroll"><table className="league-full-table"><thead><tr><th>LP.</th><th>DRUŻYNA</th><th>PKT</th><th>M</th><th>Z</th><th>R</th><th>P</th><th>BRAMKI</th><th>BIL.</th></tr></thead><tbody>{data.map((r,i)=><tr key={r.team} className={r.team===OUR?"ours":""}><td>{i+1}</td><th scope="row">{r.team}</th><td><strong>{r.p}</strong></td><td>{r.m||"–"}</td><td>{r.w}</td><td>{r.d}</td><td>{r.l}</td><td>{r.m?`${r.gf}:${r.ga}`:"–"}</td><td>{r.m?(r.gf-r.ga>0?`+${r.gf-r.ga}`:r.gf-r.ga):"–"}</td></tr>)}</tbody></table></div><p className="league-source-note">Punktacja: 3 punkty za zwycięstwo, 1 za remis. Przy równej liczbie punktów zachowujemy kolejność z tabeli po pierwszej kolejce; kryteria regulaminowe wymagają potwierdzenia.</p></article>
-  :<article className="league-card"><div className="league-head"><div><small>{view==="ours"?"DROGA DELTA GM":view==="results"?"ROZEGRANE SPOTKANIA":"TERMINARZ WSZYSTKICH DRUŻYN"}</small><h2><CircleDot size={22}/>{view==="ours"?" NASZE MECZE":view==="results"?" WYNIKI":" KOLEJKI"}</h2></div></div>
+  :view!=="journey"?<article className="league-card"><div className="league-head"><div><small>{view==="ours"?"DROGA DELTA GM":view==="results"?"ROZEGRANE SPOTKANIA":"TERMINARZ WSZYSTKICH DRUŻYN"}</small><h2><CircleDot size={22}/>{view==="ours"?" NASZE MECZE":view==="results"?" WYNIKI":" KOLEJKI"}</h2></div></div>
    {view==="fixtures"&&<div className="league-rounds" aria-label="Wybór kolejki">{[1,2,3,4,5,6,7].map(n=><button className={round===n?"active":""} key={n} onClick={()=>setRound(n)}>KOLEJKA {n}</button>)}</div>}
    {view==="ours"||view==="results"? [1,2,3,4,5,6,7].filter(n=>fixtures.some(f=>f.round===n)).map(n=><div key={n}><h3 className="league-round-label">KOLEJKA {n}</h3>{fixtures.filter(f=>f.round===n).map(f=><FixtureRow key={f.id} f={f}/>)}</div>):fixtures.map(f=><div className="league-edit-item" key={f.id}><FixtureRow f={f}/>{isAdmin&&f.home!==OUR&&f.away!==OUR&&<><button type="button" className="league-edit-toggle" onClick={()=>editing===f.id?setEditing(null):startEdit(f)}><Pencil size={15}/> {editing===f.id?"Zamknij":"Edytuj wynik / termin"}</button>{editing===f.id&&<form className="league-edit-form" onSubmit={e=>{e.preventDefault();void save(f)}}><label>Data meczu<input type="date" required value={date} onChange={e=>setDate(e.target.value)}/></label><label>Status<select value={status} onChange={e=>setStatus(e.target.value as LeagueEdit["status"])}><option value="scheduled">Przed meczem</option><option value="played">Rozegrany</option><option value="postponed">Przełożony</option><option value="cancelled">Odwołany</option></select></label><label>Gospodarze<input type="number" min="0" max="99" inputMode="numeric" disabled={status!=="played"} value={home} onChange={e=>setHome(e.target.value)}/></label><label>Goście<input type="number" min="0" max="99" inputMode="numeric" disabled={status!=="played"} value={away} onChange={e=>setAway(e.target.value)}/></label><button type="submit" className="league-cta" disabled={saving||!ready||!!dbError}><Save size={15}/>{saving?"Zapisuję...":"Zapisz wynik"}</button><button type="button" className="league-edit-toggle" onClick={()=>setEditing(null)}><X size={15}/> Anuluj</button></form>}</>}</div>)}
    {!fixtures.length&&<p className="league-source-note">Brak wyników do wyświetlenia.</p>}
    <p className="league-source-note">Mecze DELTA GM edytuj w istniejącym Centrum Meczu. W tabeli uwzględniamy zapisane wyniki tych spotkań, jeśli pasują do kolejki i pary drużyn.</p>
-  </article>}
+  </article>:null}
  </section>;
 }

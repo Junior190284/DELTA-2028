@@ -156,10 +156,13 @@ export default function TeamHub(props:{
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
-  const [playerSection,setPlayerSection]=useState<"overview"|"achievements"|"history"|"training">("overview");
+  const [playerSection,setPlayerSection]=useState<"overview"|"cards"|"achievements"|"history"|"training">("overview");
+  const [selectedCollectible,setSelectedCollectible]=useState<string|null>(null);
+  const [selectedTrophy,setSelectedTrophy]=useState<string|null>(null);
   const [playerIntro,setPlayerIntro]=useState(false);
   const openPlayerProfile=(player:Player)=>{
     setPlayerSection("overview");
+    setSelectedCollectible(null);
     setPlayerIntro(true);
     setSelectedPlayer(player);
   };
@@ -1670,13 +1673,13 @@ export default function TeamHub(props:{
         </div>
       </section>}
 
-      {tab==="achievements"&&<section className="section v8-section-page v108-achievements-page">
-        <div className="v108-achievements-hero devil-card"><div><span className="eyebrow gold">DROGA DRUŻYNY • SEZON 2026/27</span><h2>MAŁE KROKI.<br/><em>WIELKIE OSIĄGNIĘCIA.</em></h2><p>Każdy mecz, gol i wspólna akcja zapisują kolejny rozdział historii DELTA 2018 GM.</p></div><div className="v108-achievement-orbit"><Trophy size={62}/><b>{unlockedTeamAchievements.length}</b><span>ZDOBYTE TROFEA</span></div></div>
-        <div className="v108-achievement-summary">
-          <article className="v108-next-trophy devil-card"><div className="v8-panel-title"><Target size={18}/> NAJBLIŻSZY CEL</div><div><span className="v108-trophy-icon"><nextTeamAchievement.Icon size={35}/></span><div><small>{nextTeamAchievement.category}</small><h3>{nextTeamAchievement.name}</h3><p>{nextTeamAchievement.description}</p></div><strong>{Math.min(100,Math.round(nextTeamAchievement.current/nextTeamAchievement.target*100))}%</strong></div><div className="v108-progress"><i style={{width:`${Math.min(100,nextTeamAchievement.current/nextTeamAchievement.target*100)}%`}}/></div><span>{nextTeamAchievement.current} / {nextTeamAchievement.target}</span></article>
-          <article className="v108-trophy-stats devil-card"><div><b>{unlockedTeamAchievements.length}</b><span>ZDOBYTE</span></div><div><b>{teamAchievements.length-unlockedTeamAchievements.length}</b><span>PRZED NAMI</span></div><div><b>{Math.round(unlockedTeamAchievements.length/teamAchievements.length*100)}%</b><span>DROGI</span></div></article>
-        </div>
-        <div className="v108-achievement-road">{teamAchievements.map((item,index)=>{const ok=item.current>=item.target;const progress=Math.min(100,item.current/item.target*100);return <article className={`v108-road-card devil-card ${ok?"unlocked":"locked"}`} key={item.name}><span className="v108-road-number">{String(index+1).padStart(2,"0")}</span><span className="v108-road-icon"><item.Icon size={25}/></span><small>{item.category}</small><h3>{item.name}</h3><p>{item.description}</p><div className="v108-progress"><i style={{width:`${progress}%`}}/></div><b>{ok?"ZDOBYTE":`${item.current} / ${item.target}`}</b></article>})}</div>
+      {tab==="achievements"&&<section className="section v8-section-page v108-achievements-page v114-trophy-room">
+        <div className="v114-trophy-hero devil-card"><span className="eyebrow gold">DELTA 2018 GM · GALERIA DRUŻYNY</span><Trophy size={52}/><h2>SALA <em>TROFEÓW</em></h2><p>Wszystkie nasze małe kroki. Jeden wielki sezon.</p><div><b>{unlockedTeamAchievements.length}</b> z {teamAchievements.length} drużynowych osiągnięć</div></div>
+        <div className="v114-trophy-shelf">{teamAchievements.map((item,index)=>{const ok=item.current>=item.target;const progress=Math.min(100,item.current/item.target*100);const playedLink=item.category==="MECZE"||item.category==="ZWYCIĘSTWA"||item.category==="BRAMKI";return <button type="button" className={`v114-trophy-item ${ok?"earned":"waiting"} ${selectedTrophy===item.name?"selected":""}`} key={item.name} onClick={()=>setSelectedTrophy(item.name===selectedTrophy?null:item.name)} aria-expanded={selectedTrophy===item.name}>
+          <span className="v114-shelf-spotlight"/><span className="v114-trophy-number">{String(index+1).padStart(2,"0")}</span><span className="v114-trophy-cup"><item.Icon size={49}/></span><strong>{item.name}</strong><small>{ok?"ODKRYTE":"PRZED NAMI"} · {item.category}</small><span className="v114-trophy-plinth">{ok?"★":"◇"}</span>
+        </button>})}</div>
+        {selectedTrophy&&(()=>{const item=teamAchievements.find(x=>x.name===selectedTrophy);if(!item)return null;const ok=item.current>=item.target;return <article className="v114-trophy-detail devil-card" role="region" aria-label={`Szczegóły: ${item.name}`}><div><span className="eyebrow gold">{ok?"ZDOBYTE TROFEUM":"CEL DRUŻYNY"}</span><h3>{item.name}</h3><p>{item.description}</p><div className="v108-progress"><i style={{width:`${Math.min(100,item.current/item.target*100)}%`}}/></div><small>{item.current} / {item.target} · {ok?"osiągnięcie odblokowane":"w drodze do celu"}</small></div><button type="button" onClick={()=>setSelectedTrophy(null)} aria-label="Zamknij szczegóły trofeum"><X size={20}/></button></article>;})()}
+        <p className="v114-trophy-note">Trofea wynikają z zapisanych meczów i statystyk drużyny. Nie są przyznawane ręcznie ani na podstawie zdjęć.</p>
       </section>}
 
       {tab==="chronicle"&&<section className="section v8-section-page v108-chronicle-page">
@@ -1778,7 +1781,7 @@ export default function TeamHub(props:{
             </div>
             <div className="v111-player-content v112-player-content">
               <nav className="v112-profile-tabs" aria-label="Sekcje profilu zawodnika">
-                {([["overview","Karta","shield"],["achievements","Odznaki","award"],["history","Historia","history"],["training","Trening","training"]] as const).map(([id,label])=><button type="button" key={id} className={playerSection===id?"active":""} onClick={()=>setPlayerSection(id)} aria-current={playerSection===id?"page":undefined}>{label}</button>)}
+                {([["overview","Profil","shield"],["cards","Moje karty","layers"],["achievements","Odznaki","award"],["history","Historia","history"],["training","Trening","training"]] as const).map(([id,label])=><button type="button" key={id} className={playerSection===id?"active":""} onClick={()=>setPlayerSection(id)} aria-current={playerSection===id?"page":undefined}>{label}</button>)}
               </nav>
               {(()=>{
                 const p=selectedPlayer;
@@ -1816,7 +1819,27 @@ export default function TeamHub(props:{
                   <div className="v112-highlight-card"><div><span>MOJA DROGA W DELCIE</span><strong>{milestones.length?`${milestones.length} pierwszych kroków w historii` :"Pierwsze piłkarskie historie przed nami"}</strong><p>Każde osiągnięcie ma swój mecz i swoją datę.</p></div><button onClick={()=>setPlayerSection("history")}>Zobacz historię <ChevronRight size={15}/></button></div>
                   <div className="v111-profile-section-heading"><Award size={18}/> MOJA GABLOTKA <span>{unlockedCount(p)} / {achieved.length} ODKRYTYCH</span></div>
                   <div className="v112-quick-badges">{achieved.filter(([,ok])=>ok).slice(0,4).map(([name])=><span key={String(name)}><Medal size={17}/>{name}</span>)}{unlockedCount(p)===0&&<p>Pierwsza odznaka czeka na odkrycie.</p>}</div>
-                  <button className="v112-wide-action" onClick={()=>setPlayerSection("achievements")}>Otwórz gablotkę odznak <ChevronRight size={16}/></button>
+                  <button className="v112-wide-action" onClick={()=>setPlayerSection("cards")}>Otwórz kolekcję kart zawodnika <ChevronRight size={16}/></button><button className="v112-wide-action" onClick={()=>setPlayerSection("achievements")}>Otwórz gablotkę odznak <ChevronRight size={16}/></button>
+                </>}
+                {playerSection==="cards"&&<>
+                  <div className="v111-profile-section-heading"><Medal size={18}/> MOJA KOLEKCJA <span>PIŁKARSKIE MOMENTY</span></div>
+                  <p className="v112-section-note">Każda karta przedstawia prawdziwe wydarzenie z historii zawodnika. Wszystkie karty są wyjątkowe — bez ocen umiejętności i rywalizacji między dziećmi.</p>
+                  <div className="v114-collection-grid">{([
+                    {id:"debut",name:"Pierwszy mecz",icon:Shield,match:milestones.find(x=>x.name==="Pierwszy występ")?.match,theme:"rookie"},
+                    {id:"goal",name:"Pierwszy gol",icon:Goal,match:milestones.find(x=>x.name==="Pierwszy gol")?.match,theme:"fire"},
+                    {id:"assist",name:"Pierwsza asysta",icon:Star,match:milestones.find(x=>x.name==="Pierwsza asysta")?.match,theme:"gold"},
+                    {id:"six",name:"Pierwsza szóstka",icon:Users,match:milestones.find(x=>x.name==="Pierwsza szóstka")?.match,theme:"squad"},
+                    {id:"captain",name:"Pierwszy raz kapitan",icon:Crown,match:milestones.find(x=>x.name==="Pierwszy mecz jako kapitan")?.match,theme:"captain"},
+                  ] as const).map(card=><button type="button" key={card.id} className={`v114-collectible ${card.theme} ${card.match?"earned":"locked"} ${selectedCollectible===card.id?"selected":""}`} onClick={()=>setSelectedCollectible(selectedCollectible===card.id?null:card.id)} aria-expanded={selectedCollectible===card.id}>
+                    <span className="v114-card-kicker">DELTA 2018 GM · {card.match?"ODKRYTA":"DO ODKRYCIA"}</span><span className="v114-card-portrait"><PlayerPhoto playerId={p.id}/></span><span className="v114-card-symbol"><card.icon size={26}/></span><strong>{card.name}</strong><span>{p.display_name}</span><small>{card.match?datePL(card.match.match_date):"Przed nami"}</small>
+                  </button>)}</div>
+                  {selectedCollectible&&(()=>{const card=([
+                    {id:"debut",name:"Pierwszy mecz",match:milestones.find(x=>x.name==="Pierwszy występ")?.match},
+                    {id:"goal",name:"Pierwszy gol",match:milestones.find(x=>x.name==="Pierwszy gol")?.match},
+                    {id:"assist",name:"Pierwsza asysta",match:milestones.find(x=>x.name==="Pierwsza asysta")?.match},
+                    {id:"six",name:"Pierwsza szóstka",match:milestones.find(x=>x.name==="Pierwsza szóstka")?.match},
+                    {id:"captain",name:"Pierwszy raz kapitan",match:milestones.find(x=>x.name==="Pierwszy mecz jako kapitan")?.match},
+                  ]).find(x=>x.id===selectedCollectible);if(!card)return null;return <div className="v114-collectible-detail"><div><span className="eyebrow gold">HISTORIA KARTY</span><h3>{card.name}</h3><p>{card.match?`${datePL(card.match.match_date)} · ${recentOpponent(card.match)} · osiągnięcie zapisane w aplikacji.`:"Ta karta pojawi się po zapisaniu odpowiedniego wydarzenia meczowego."}</p></div>{card.match&&<button type="button" onClick={()=>{setSelectedPlayer(null);openMatch(card.match!,"summary")}}>Otwórz mecz <ChevronRight size={17}/></button>}</div>;})()}
                 </>}
                 {playerSection==="achievements"&&<>
                   <div className="v111-profile-section-heading"><Award size={18}/> GABLOTKA OSIĄGNIĘĆ <span>{unlockedCount(p)} / {achieved.length}</span></div>
