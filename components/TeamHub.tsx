@@ -7,7 +7,7 @@ import PlayerPhoto from "./PlayerPhoto";
 import MatchGallery from "./MatchGallery";
 import MatchCenterModal from "./MatchCenterModal";
 import StadiumFX from "./StadiumFX";
-import LeagueCenter, { LeagueHome } from "./LeagueCenter";
+import LeagueCenter, { LEAGUE_ROUNDS, LeagueHome, leagueByeTeam, leagueRoundDate } from "./LeagueCenter";
 import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -34,6 +34,7 @@ type TrainingGamePlayer={game_id:string;player_id:string;team:"A"|"B"|string};
 type TrainingEvent={id:string;game_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;created_at:string};
 type MatchMedia={id:string;match_id:string;storage_path:string;caption:string|null;created_at:string};
 type CalendarItem={id:string;kind:string;date:string;time:string;title:string;location:string;details:string;important:boolean;match:Match|null};
+type LeagueBye={round:number;date:string;team:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 const isRyszardPlayer=(p:{display_name:string})=>{const n=(p.display_name||"").toLocaleLowerCase("pl-PL");return n.includes("ryszard")&&n.includes("rybacki");};
@@ -50,7 +51,7 @@ function datePL(x:string){return new Date(`${x}T12:00:00`).toLocaleDateString("p
 function calendarKindLabel(kind:string){
   return ({
     match:"MECZ",training:"TRENING",meeting:"ZBIÓRKA",gathering:"ZBIÓRKA",
-    tournament:"TURNIEJ",birthday:"URODZINY",info:"WAŻNE",club:"KLUBOWE"
+    tournament:"TURNIEJ",birthday:"URODZINY",info:"WAŻNE",club:"KLUBOWE",bye:"PAUZA"
   } as Record<string,string>)[kind]||"WYDARZENIE";
 }
 
@@ -463,6 +464,15 @@ export default function TeamHub(props:{
   },[matches,events]);
 
   const nextMatch=matches.find(m=>m.status==="scheduled");
+  const ourLeagueByes=useMemo<LeagueBye[]>(()=>LEAGUE_ROUNDS.flatMap(round=>{
+    const date=leagueRoundDate(round);
+    const team=leagueByeTeam(round);
+    return team===CLUB&&date?[{round,date,team}]:[];
+  }),[]);
+  const matchArchiveItems=useMemo(()=>[
+    ...matches.map(match=>({key:`match-${match.id}`,date:match.match_date,match,bye:null as LeagueBye|null})),
+    ...ourLeagueByes.map(bye=>({key:`bye-${bye.round}`,date:bye.date,match:null as Match|null,bye}))
+  ].sort((a,b)=>a.date.localeCompare(b.date)),[matches,ourLeagueByes]);
   const currentSeason=seasonLabel(nextMatch?.match_date||matches[0]?.match_date);
   const nextMatchAt=nextMatch?parseLocalMatchDate(nextMatch.match_date,nextMatch.match_time):null;
   const isMatchDay=nextMatch?(()=>{
@@ -544,6 +554,10 @@ export default function TeamHub(props:{
       id:`match-${m.id}`,kind:"match",date:m.match_date,time:m.match_time?.slice(0,5)||"",title:`Mecz • ${m.home_team===CLUB?m.away_team:m.home_team}`,
       location:m.venue||"",details:`${m.home_team} — ${m.away_team}`,important:m.status==="scheduled",match:m
     })),
+    ...ourLeagueByes.map(bye=>({
+      id:`league-bye-${bye.round}`,kind:"bye",date:bye.date,time:"",title:`Pauza ligowa • kolejka ${bye.round}`,
+      location:"",details:`${bye.team} nie rozgrywa meczu w tej kolejce.`,important:false,match:null
+    })),
     ...trainingSessions.map(session=>({
       id:`training-${session.id}`,kind:"training",date:session.training_date,time:session.start_time?.slice(0,5)||"",title:session.title||"Trening",
       location:session.location||"",details:session.notes||"",important:false,match:null
@@ -553,7 +567,7 @@ export default function TeamHub(props:{
       id:`event-${event.id}`,kind:event.event_type,date:event.event_date,time:event.start_time?.slice(0,5)||"",title:event.title,
       location:event.location||"",details:event.details||"",important:event.important,match:null
     }))
-  ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),[matches,trainingSessions,teamEvents,recurringTrainingItems]);
+  ].sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),[matches,ourLeagueByes,trainingSessions,teamEvents,recurringTrainingItems]);
   const calendarDays=useMemo(()=>{
     const first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);
     const gridStart=new Date(first);
@@ -1288,7 +1302,7 @@ export default function TeamHub(props:{
         players={players} stats={stats} trainingStats={trainingPlayerStats} chemistry={trainingChemistry} matches={matches} trainingSessions={trainingSessions} onOpenPlayer={openPlayerProfile}
       />}
 
-      {tab==="matches"&&<section className="section v8-section-page v105-match-archive"><header className="v105-section-hero devil-card"><div className="v105-section-hero-content"><span className="eyebrow gold">DELTA 2018 GM • MATCH CENTER</span><h2>WSZYSTKIE <em>MECZE</em></h2><p>Każda kolejka. Każdy wynik. Jedna drużyna.</p><div className="v105-section-hero-meta"><span><Trophy size={15}/>{teamSummary.played} rozegranych</span><span><Goal size={15}/>{teamSummary.goals} bramek</span><span><CalendarDays size={15}/>{matches.filter(m=>m.status==="scheduled").length} zaplanowanych</span></div></div><div className="v105-section-hero-icon" aria-hidden="true"><img src="/teamlogos/gm.png" alt=""/></div></header><div className="list">{matches.map(m=><article className={`match-row devil-card v105-broadcast-fixture ${m.status==="played"?"is-played":"is-upcoming"}`} key={m.id}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">{datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>openMatch(m,"summary")}>{canManageMatches||canEditMatchEvents?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>)}</div></section>}
+      {tab==="matches"&&<section className="section v8-section-page v105-match-archive"><header className="v105-section-hero devil-card"><div className="v105-section-hero-content"><span className="eyebrow gold">DELTA 2018 GM • MATCH CENTER</span><h2>WSZYSTKIE <em>MECZE</em></h2><p>Każda kolejka. Każdy wynik. Jedna drużyna.</p><div className="v105-section-hero-meta"><span><Trophy size={15}/>{teamSummary.played} rozegranych</span><span><Goal size={15}/>{teamSummary.goals} bramek</span><span><CalendarDays size={15}/>{matches.filter(m=>m.status==="scheduled").length} zaplanowanych</span></div></div><div className="v105-section-hero-icon" aria-hidden="true"><img src="/teamlogos/gm.png" alt=""/></div></header><div className="list">{matchArchiveItems.map(item=>item.match?(()=>{const m=item.match;return <article className={`match-row devil-card v105-broadcast-fixture ${m.status==="played"?"is-played":"is-upcoming"}`} key={item.key}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">Kolejka {m.round_no||"—"} • {datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>openMatch(m,"summary")}>{canManageMatches||canEditMatchEvents?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>})():<article className="devil-card v105-bye-card" key={item.key}><CalendarDays size={30}/><div><span>KOLEJKA {item.bye!.round} • {datePL(item.bye!.date)}</span><h3>DELTA GM PAUZUJE</h3><p>W tej kolejce drużyna nie rozgrywa meczu.</p></div></article>)}</div></section>}
 
       {tab==="calendar"&&<section className="section v8-section-page v891-calendar-page">
         <div className="v891-calendar-hero devil-card">
