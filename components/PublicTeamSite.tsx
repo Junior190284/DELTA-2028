@@ -84,10 +84,7 @@ export default function PublicTeamSite(props:{
   },[]);
   const [cinematicActive, setCinematicActive] = useState(false);
   useEffect(() => {
-    const reduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduced) {
-      setCinematicActive(true);
-    }
+    setCinematicActive(true);
   }, []);
   useEffect(()=>{const t=window.setInterval(()=>setNow(Date.now()),30000);return()=>window.clearInterval(t)},[]);
 
