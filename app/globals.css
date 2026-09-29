@@ -6881,9 +6881,48 @@ body > main,
   }
 }
 
+.v101-hub-intro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fce4c5;
+  border: 1px solid rgba(243, 202, 89, 0.4);
+  background: linear-gradient(135deg, rgba(169, 32, 41, 0.35), rgba(20, 22, 28, 0.85));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+}
+.v101-hub-intro-btn svg {
+  color: #ff4d5a;
+  filter: drop-shadow(0 0 5px rgba(255, 77, 90, 0.8));
+}
+.v101-hub-intro-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(241, 201, 92, 0.85);
+  background: linear-gradient(135deg, rgba(200, 35, 45, 0.55), rgba(30, 32, 40, 0.95));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
+}
+@media (max-width: 600px) {
+  .v101-hub-intro-btn span {
+    display: none;
+  }
+  .v101-hub-intro-btn {
+    padding: 7px;
+    border-radius: 50%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .v101-cinematic-overlay {
     transition: none !important;
   }
 }
+
 

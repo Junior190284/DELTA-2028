@@ -139,6 +139,10 @@ export default function TeamHub(props:{
   const supabase=createClient();
   const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league"|"teamcenter">("home");
   const [viewFx,setViewFx]=useState(false);
+  const [cinematicActive, setCinematicActive] = useState(false);
+  useEffect(() => {
+    setCinematicActive(true);
+  }, []);
   const [chronicleSeason,setChronicleSeason]=useState("all");
   const [noticesOpen,setNoticesOpen]=useState(false);
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -1013,17 +1017,30 @@ export default function TeamHub(props:{
   ];
 
   return <div className="hub v8-hub v101-stadium-hub v104-hub">
-    <StadiumFX intro/>
+    <StadiumFX
+      intro
+      cinematicIntro={cinematicActive}
+      onCloseCinematic={() => setCinematicActive(false)}
+    />
     {viewFx&&<div className="v101-cinematic-veil" aria-hidden="true"><span className="v101-cinematic-smoke"/><span className="v101-cinematic-flare"/></div>}
     <aside className="v8-side-nav">
       <button className="v8-side-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><span>GM</span></button>
       {navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={21}/><span>{label}</span></button>)}
-      <div className="v8-side-devil"><Flame size={22}/><span>DIABEŁKI</span></div>
+      <div className="v8-side-devil" onClick={() => setCinematicActive(true)} role="button" title="Odtwórz filmowe intro stadionowe" style={{ cursor: "pointer" }}><Flame size={22}/><span>DIABEŁKI</span></div>
     </aside>
 
     <header className="hub-top v8-topbar">
       <button className="v8-mini-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
       <div className="v8-top-spacer"/>
+      <button
+        type="button"
+        className="v101-hub-intro-btn"
+        onClick={() => setCinematicActive(true)}
+        title="Odtwórz filmowe intro stadionowe"
+        aria-label="Odtwórz filmowe intro stadionowe"
+      >
+        <Flame size={15}/> <span>ZOBACZ INTRO</span>
+      </button>
       {canOpenAdmin&&<a href="/admin" className="admin-link v8-admin-chip">{staff?"ADMIN":"POMOCNIK"}</a>}
       {canOpenAdmin&&<a href="/admin?tab=training" className="v105-mobile-training-shortcut" aria-label="Panel administratora: dodaj trening"><CalendarDays size={16}/> DODAJ TRENING</a>}
       <div className="v8-account-wrap">
@@ -1051,8 +1068,22 @@ export default function TeamHub(props:{
         <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
           <div className="v82-hero-vignette"/>
           <img className="v106-logged-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM"/>
-          <div className="v104-logged-hero-copy"><span>RAZEM DO WIELKICH RZECZY</span><h1>DELTA 2018 GM</h1><p>GÓRNY MOKOTÓW • OFICJALNY PANEL DRUŻYNY</p></div>
-          <div className="v101-hero-club-identity">
+          <div className="v104-logged-hero-copy">
+            <span>RAZEM DO WIELKICH RZECZY</span>
+            <h1>DELTA 2018 GM</h1>
+            <p>GÓRNY MOKOTÓW • OFICJALNY PANEL DRUŻYNY</p>
+            <div style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="v101-hero-intro-btn"
+                onClick={() => setCinematicActive(true)}
+                title="Odtwórz filmowe intro stadionowe"
+              >
+                <Flame size={14}/> ZOBACZ INTRO
+              </button>
+            </div>
+          </div>
+          <div className="v101-hero-club-identity" onClick={() => setCinematicActive(true)} role="button" title="Odtwórz filmowe intro stadionowe" style={{ cursor: "pointer" }}>
             <div className="v101-hero-crest-wrap">
               <span className="v101-hero-crest-fire"/>
               <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
