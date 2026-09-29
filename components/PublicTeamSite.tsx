@@ -82,6 +82,13 @@ export default function PublicTeamSite(props:{
     const {data:{subscription}}=client.auth.onAuthStateChange((_event,session)=>{if(active)setSignedIn(Boolean(session));});
     return()=>{active=false;subscription.unsubscribe();};
   },[]);
+  const [cinematicActive, setCinematicActive] = useState(false);
+  useEffect(() => {
+    const reduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduced) {
+      setCinematicActive(true);
+    }
+  }, []);
   useEffect(()=>{const t=window.setInterval(()=>setNow(Date.now()),30000);return()=>window.clearInterval(t)},[]);
 
   const scheduled=useMemo(()=>props.matches.filter(m=>m.status==="scheduled").slice().sort((a,b)=>localDate(a.match_date,a.match_time).getTime()-localDate(b.match_date,b.match_time).getTime()),[props.matches]);
@@ -127,7 +134,11 @@ export default function PublicTeamSite(props:{
   ].sort((a,b)=>`${a.date} ${a.time||""}`.localeCompare(`${b.date} ${b.time||""}`)).slice(0,6);
 
   return <main className="public-team-site v101-public-home v102-public-home v104-public">
-    <StadiumFX intro/>
+    <StadiumFX
+      intro
+      cinematicIntro={cinematicActive}
+      onCloseCinematic={() => setCinematicActive(false)}
+    />
 
     <header className="public-topbar v101-public-topbar">
       <a href="/" className="public-brand" aria-label="Strona główna DELTA 2018 GM">
@@ -157,6 +168,14 @@ export default function PublicTeamSite(props:{
             <a href="#mecz">NAJBLIŻSZY MECZ <ChevronRight size={15}/></a>
             <a href="#kalendarz">KALENDARZ</a>
             <a href="#klub">Z KLUBU</a>
+            <button
+              type="button"
+              className="v101-hero-intro-btn"
+              onClick={() => setCinematicActive(true)}
+              title="Odtwórz filmowe intro stadionowe"
+            >
+              <Flame size={14}/> ZOBACZ INTRO
+            </button>
             <Link href={signedIn?"/dashboard":"/login"}><LockKeyhole size={14}/> {signedIn?"PANEL DRUŻYNY":"STREFA RODZICA"}</Link>
           </div>
         </div>

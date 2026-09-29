@@ -6674,3 +6674,210 @@ body > main,
 .v125-error,.v125-warning{border:1px solid #b84d4d;background:rgba(125,18,20,.22);color:#fff0e6;border-radius:12px;padding:12px;margin:10px 0;font-size:14px}.v125-warning{border-color:#bc953f;background:rgba(149,105,12,.19)}
 .v125-match-control{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:12px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(0,0,0,.28)}.v125-match-control small{flex-basis:100%;opacity:.78}.v125-match-control button,.v125-goal-form button,.v125-opponent-form button{border:1px solid #d7ad4d;background:linear-gradient(135deg,#a92029,#640d15);color:#fff;padding:11px 14px;border-radius:10px;font-weight:800;cursor:pointer}.v125-match-control button:disabled,.v125-events-layout button:disabled{opacity:.48;cursor:not-allowed}.v125-status{border-radius:30px;background:#34323a;padding:7px 11px;font-size:12px;font-weight:900;letter-spacing:.06em}.v125-status.live{background:#a21c26;color:white}.v125-status.finished{background:#294d39;color:white}.v125-match-board{display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 10px;margin-bottom:15px;border:1px solid rgba(218,177,87,.36);border-radius:18px;background:linear-gradient(120deg,rgba(107,13,18,.48),rgba(15,15,20,.85),rgba(107,13,18,.36))}.v125-score-team{display:flex;flex:1;min-width:0;flex-direction:column;align-items:center;text-align:center;gap:5px}.v125-score-team small{overflow-wrap:anywhere;font-weight:800;font-size:12px}.v125-score-team strong{font-size:clamp(37px,8vw,70px);line-height:1;font-variant-numeric:tabular-nums}.v125-score-team span{font-size:11px;opacity:.7}.v125-score-colon{font-size:36px;font-weight:800;opacity:.7}.v125-events-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.v125-goal-form,.v125-opponent-form{display:flex;flex-direction:column;gap:12px}.v125-goal-form label{display:flex;flex-direction:column;gap:5px;font-weight:700}.v125-goal-form select{width:100%;min-width:0}.v125-goal-form small,.v125-opponent-form p{font-size:12px;opacity:.8}.v125-events-layout button.v125-secondary{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)}.v125-event-list{grid-column:1/-1}.v125-event-list .v85-event-row{gap:10px;flex-wrap:wrap}.v125-event-list .v10-event-tools{display:flex;gap:8px}@media(max-width:680px){.v125-events-layout{grid-template-columns:minmax(0,1fr)}.v125-match-board{gap:6px}.v125-score-team strong{font-size:44px}}
 .v125-refresh-line{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:8px 0 10px}.v125-refresh-line button{border:1px solid rgba(232,190,87,.5);border-radius:10px;background:rgba(18,17,19,.72);color:#f5dc9b;padding:7px 12px;font-weight:700;cursor:pointer}.v125-refresh-line button:disabled{opacity:.45;cursor:default}.v125-refresh-line small{font-size:11px;opacity:.75}
+
+/* =========================================================
+   INFERNO CINEMATIC INTRO (DELTA 2018 GM)
+   ========================================================= */
+.v101-cinematic-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #020304;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.35s ease, visibility 0.35s ease;
+}
+
+.v101-cinematic-overlay.fading {
+  opacity: 0;
+  filter: blur(10px);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.v101-cinematic-video-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020304;
+}
+
+.v101-cinematic-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+}
+
+.v101-cinematic-skip-btn {
+  position: absolute;
+  top: max(20px, env(safe-area-inset-top, 20px));
+  right: max(20px, env(safe-area-inset-right, 20px));
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(8, 12, 16, 0.78);
+  border: 1px solid rgba(241, 201, 92, 0.45);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.65), 0 0 12px rgba(227, 29, 47, 0.2);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.v101-cinematic-skip-btn:hover {
+  transform: translateY(-2px);
+  border-color: #f1c95c;
+  background: rgba(184, 17, 32, 0.5);
+  box-shadow: 0 8px 30px rgba(227, 29, 47, 0.45), 0 0 18px rgba(241, 201, 92, 0.35);
+}
+
+.v101-cinematic-skip-btn:active {
+  transform: translateY(0);
+}
+
+.v101-cinematic-skip-btn kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #f1c95c;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(241, 201, 92, 0.35);
+  border-radius: 4px;
+}
+
+.v101-cinematic-brand-accent {
+  position: absolute;
+  bottom: max(22px, env(safe-area-inset-bottom, 22px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  opacity: 0.85;
+  background: rgba(6, 9, 13, 0.65);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(241, 201, 92, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.v101-cinematic-brand-accent img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(227, 29, 47, 0.6));
+}
+
+.v101-cinematic-brand-accent div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.v101-cinematic-brand-accent span {
+  font-size: 8px;
+  font-weight: 900;
+  color: #f1c95c;
+  letter-spacing: 0.14em;
+}
+
+.v101-cinematic-brand-accent b {
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.08em;
+}
+
+/* Przycisk ponownego odtworzenia intro w sekcji Hero */
+.v101-hero-intro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  min-height: 42px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px !important;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #f3f5f7 !important;
+  border: 1px solid rgba(243, 202, 89, 0.45) !important;
+  background: linear-gradient(145deg, rgba(16, 22, 30, 0.95), rgba(6, 9, 14, 0.95)) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.v101-hero-intro-btn svg {
+  color: #e31d2f;
+  filter: drop-shadow(0 0 6px rgba(227, 29, 47, 0.8));
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.v101-hero-intro-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(241, 201, 92, 0.9) !important;
+  color: #f1c95c !important;
+  box-shadow: 0 10px 28px rgba(227, 29, 47, 0.3);
+}
+
+.v101-hero-intro-btn:hover svg {
+  transform: scale(1.15);
+  color: #ff3a4c;
+}
+
+@media (max-width: 760px) {
+  .v101-cinematic-skip-btn {
+    top: max(14px, env(safe-area-inset-top, 14px));
+    right: max(14px, env(safe-area-inset-right, 14px));
+    padding: 8px 14px;
+    font-size: 10px;
+  }
+  .v101-cinematic-skip-btn kbd {
+    display: none;
+  }
+  .v101-cinematic-brand-accent {
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    padding: 5px 11px;
+  }
+  .v101-cinematic-brand-accent img {
+    width: 22px;
+    height: 22px;
+  }
+  .v101-cinematic-brand-accent span {
+    font-size: 7px;
+  }
+  .v101-cinematic-brand-accent b {
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v101-cinematic-overlay {
+    transition: none !important;
+  }
+}
+
