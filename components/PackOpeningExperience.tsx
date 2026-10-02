@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
+import { MEDIA, getCardTierBackgroundVideo } from "@/lib/media";
 import CollectibleCard3D from "./CollectibleCard3D";
 import CanvasParticles from "./CanvasParticles";
 
@@ -211,31 +212,31 @@ export default function PackOpeningExperience({
   // Determine active video background across all stages
   const activeVideoSrc = 
     (stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3")
-      ? "/videos/tunnel.mp4"
+      ? MEDIA.packOpening.tunnel
       : stage === "walkout_slam"
       ? (walkoutItem?.card?.rarity === "inferno"
-          ? "/videos/bg_inferno.mp4"
+          ? MEDIA.packOpening.bgInferno
           : walkoutItem?.card?.rarity === "legendary"
-          ? "/videos/bg_legend.mp4"
+          ? MEDIA.packOpening.bgLegend
           : pack.id === "matchday_booster"
-          ? "/videos/bg_matchday.mp4"
-          : "/videos/bg_gold.mp4")
+          ? MEDIA.packOpening.bgMatchday
+          : MEDIA.packOpening.bgGold)
       : stage === "revealing"
       ? (currentCardRarity === "inferno"
-          ? "/videos/bg_inferno.mp4"
+          ? MEDIA.packOpening.bgInferno
           : currentCardRarity === "legendary"
-          ? "/videos/bg_legend.mp4"
+          ? MEDIA.packOpening.bgLegend
           : (pack.id === "matchday_booster" || currentCard?.card_type === "matchday")
-          ? "/videos/bg_matchday.mp4"
-          : "/videos/bg_gold.mp4")
+          ? MEDIA.packOpening.bgMatchday
+          : MEDIA.packOpening.bgGold)
       : stage === "summary"
       ? (pack.theme === "inferno"
-          ? "/videos/bg_inferno.mp4"
+          ? MEDIA.packOpening.bgInferno
           : pack.theme === "legend"
-          ? "/videos/bg_legend.mp4"
+          ? MEDIA.packOpening.bgLegend
           : pack.id === "matchday_booster"
-          ? "/videos/bg_matchday.mp4"
-          : "/videos/bg_gold.mp4")
+          ? MEDIA.packOpening.bgMatchday
+          : MEDIA.packOpening.bgGold)
       : undefined;
 
   return (

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { MEDIA } from "@/lib/media";
 
 type Props = {
   intro?: boolean;
@@ -15,7 +16,7 @@ export default function StadiumFX({
   intro = true,
   compact = false,
   cinematicIntro = false,
-  videoSrc = "/assets/intro/inferno.mp4",
+  videoSrc = MEDIA.intro.inferno,
   onCloseCinematic
 }: Props) {
   const [mounted, setMounted] = useState(false);
