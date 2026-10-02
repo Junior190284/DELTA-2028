@@ -8,7 +8,7 @@ import PlayerPhoto from "./PlayerPhoto";
 import { 
   ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, 
   Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice, Edit3, 
-  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle 
+  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame 
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -63,7 +63,7 @@ export default function AdminPanel(props:{
   const canPlayers=coreStaff||props.currentPermissions.can_manage_players;
   const canNews=coreStaff||props.currentPermissions.can_manage_news;
   const firstTab:string=canMatches?"matches":canTraining?"training":canCalendar?"calendar":canNews?"news":canPlayers?"players":"matches";
-  const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"news"|"parents"|"push"|"sync">(firstTab as any);
+  const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"cards"|"news"|"parents"|"push"|"sync">(firstTab as any);
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [players,setPlayers]=useState(props.initialPlayers);
@@ -104,6 +104,25 @@ export default function AdminPanel(props:{
   const [playerFormSaving, setPlayerFormSaving] = useState(false);
   const [playerSearchQuery, setPlayerSearchQuery] = useState("");
   const [playerFilterTab, setPlayerFilterTab] = useState<"all" | "active" | "archived">("active");
+
+  // Stan zarządzania kartami i paczkami DELTA CARDS
+  const [grantUserTarget, setGrantUserTarget] = useState<string>("all");
+  const [grantPackType, setGrantPackType] = useState<string>("standard_pack");
+  const [grantQuantity, setGrantQuantity] = useState<number>(1);
+  const [grantReason, setGrantReason] = useState<string>("Nagroda specjalna od trenera");
+  const [grantingPack, setGrantingPack] = useState(false);
+
+  const [newCardPlayerId, setNewCardPlayerId] = useState<string>(props.initialPlayers[0]?.id || "");
+  const [newCardTitle, setNewCardTitle] = useState<string>("");
+  const [newCardType, setNewCardType] = useState<string>("matchday");
+  const [newCardRarity, setNewCardRarity] = useState<string>("rare");
+  const [newCardLore, setNewCardLore] = useState<string>("");
+  const [savingCardDef, setSavingCardDef] = useState(false);
+
+  const [grantPointsUserId, setGrantPointsUserId] = useState<string>(props.allProfiles[0]?.id || "");
+  const [grantPointsAmount, setGrantPointsAmount] = useState<number>(50);
+  const [grantPointsReason, setGrantPointsReason] = useState<string>("Bonus za zaangażowanie");
+  const [grantingPoints, setGrantingPoints] = useState(false);
 
   const filteredAdminPlayers = useMemo(() => {
     return players.filter(p => {
@@ -822,6 +841,108 @@ export default function AdminPanel(props:{
     }
   }
 
+  async function handleGrantPacks() {
+    if (grantingPack) return;
+    setGrantingPack(true);
+    try {
+      let targetUserIds: string[] = [];
+      if (grantUserTarget === "all") {
+        targetUserIds = props.allProfiles.map(p => p.id);
+      } else {
+        targetUserIds = [grantUserTarget];
+      }
+
+      if (targetUserIds.length === 0) {
+        return alert("Brak wybranych użytkowników.");
+      }
+
+      const rows: any[] = [];
+      targetUserIds.forEach(uid => {
+        for (let i = 0; i < grantQuantity; i++) {
+          rows.push({
+            user_id: uid,
+            pack_type_id: grantPackType,
+            source_reason: grantReason,
+            is_opened: false
+          });
+        }
+      });
+
+      const { error } = await supabase.from("user_unopened_packs").insert(rows);
+      if (error) {
+        return alert("Błąd przyznawania paczek: " + error.message);
+      }
+
+      alert(`🎉 Pomyślnie przyznano ${rows.length} paczek dla ${targetUserIds.length} użytkowników!`);
+    } catch (e: any) {
+      alert(e.message || "Wystąpił błąd");
+    } finally {
+      setGrantingPack(false);
+    }
+  }
+
+  async function handleCreateCardDef() {
+    if (!newCardPlayerId || !newCardTitle.trim()) {
+      return alert("Wybierz zawodnika i wpisz tytuł karty.");
+    }
+    setSavingCardDef(true);
+    try {
+      const { error } = await supabase.from("card_definitions").insert({
+        player_id: newCardPlayerId,
+        season: "2026/27",
+        card_name: newCardTitle.trim(),
+        title: newCardTitle.trim(),
+        card_type: newCardType,
+        rarity: newCardRarity,
+        description: newCardLore.trim() || null,
+        lore: newCardLore.trim() || null,
+        is_active: true
+      });
+
+      if (error) {
+        return alert("Błąd tworzenia karty: " + error.message);
+      }
+
+      alert("✦ Karta została pomyślnie dodana do oficjalnego katalogu kolekcji DELTA!");
+      setNewCardTitle("");
+      setNewCardLore("");
+    } catch (e: any) {
+      alert(e.message || "Wystąpił błąd");
+    } finally {
+      setSavingCardDef(false);
+    }
+  }
+
+  async function handleGrantPoints() {
+    if (!grantPointsUserId || grantPointsAmount <= 0) return;
+    setGrantingPoints(true);
+    try {
+      const { data: existing } = await supabase
+        .from("user_delta_points")
+        .select("points_balance")
+        .eq("user_id", grantPointsUserId)
+        .maybeSingle();
+
+      const newBalance = (existing?.points_balance || 0) + grantPointsAmount;
+
+      const { error } = await supabase.from("user_delta_points").upsert({
+        user_id: grantPointsUserId,
+        points_balance: newBalance,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+
+      if (error) {
+        return alert("Błąd przyznawania punktów: " + error.message);
+      }
+
+      alert(`🪙 Przyznano +${grantPointsAmount} Delta Points! Nowy stan konta: ${newBalance} DP`);
+    } catch (e: any) {
+      alert(e.message || "Wystąpił błąd");
+    } finally {
+      setGrantingPoints(false);
+    }
+  }
+
   const matchEvents=selectedMatch?events.filter(e=>e.match_id===selectedMatch.id):[];
 
   return <div className="admin-app">
@@ -839,6 +960,7 @@ export default function AdminPanel(props:{
       {canCalendar&&<button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>}
       {canTraining&&<button className={tab==="training"?"active":""} onClick={()=>setTab("training")}><Goal size={17}/> Treningi</button>}
       {canPlayers&&<button className={tab==="players"?"active":""} onClick={()=>setTab("players")}><Users size={17}/> Zawodnicy</button>}
+      {coreStaff&&<button className={tab==="cards"?"active":""} onClick={()=>setTab("cards")}><Sparkles size={17}/> Karty i paczki</button>}
       {canNews&&<button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>}
       {coreStaff&&<button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice i role</button>}
       {coreStaff&&<button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>}
@@ -1213,6 +1335,238 @@ export default function AdminPanel(props:{
           <h3>Źródło</h3>
           <p>https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108</p>
           <p className="muted">Dane klubowe są trzymane oddzielnie od naszych prywatnych statystyk, obecności i profili zawodników.</p>
+        </div>
+      </section>}
+
+      {tab==="cards" && coreStaff && <section className="admin-card space-y-6">
+        <div className="admin-card-head">
+          <div>
+            <h2><Sparkles size={20} className="inline mr-1 text-amber-400" /> DELTA CARDS & COLLECTION — ZARZĄDZANIE</h2>
+            <p className="muted">Przyznawaj paczki kart rodzicom i zawodnikom, dodawaj karty specjalne oraz zarządzaj punktami Delta Points.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* PRZYZNAWANIE PACZEK KART */}
+          <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
+            <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase">
+              <Gift size={18} /> Przyznaj paczkę kart
+            </div>
+            <p className="text-xs text-slate-400">
+              Wyślij paczki z kartami do otwarcia dla konkretnego rodzica lub wszystkich użytkowników w klubie.
+            </p>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-300">
+                Odbiorca paczki
+                <select 
+                  value={grantUserTarget} 
+                  onChange={e => setGrantUserTarget(e.target.value)}
+                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                >
+                  <option value="all">★ Wszyscy użytkownicy ({props.allProfiles.length})</option>
+                  {props.allProfiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.display_name || "Użytkownik"} ({p.role})</option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs font-bold text-slate-300">
+                  Typ paczki
+                  <select 
+                    value={grantPackType} 
+                    onChange={e => setGrantPackType(e.target.value)}
+                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                  >
+                    <option value="standard_pack">Paczka Standardowa (3 karty)</option>
+                    <option value="matchday_booster">Matchday Booster (4 karty)</option>
+                    <option value="gold_booster">Gold Booster (5 kart, min. Rare)</option>
+                    <option value="inferno_booster">🔥 Inferno Booster (5 kart, min. Epic)</option>
+                    <option value="legend_booster">👑 Legend Pack (6 kart, min. Legendary)</option>
+                  </select>
+                </label>
+
+                <label className="block text-xs font-bold text-slate-300">
+                  Ilość paczek
+                  <input 
+                    type="number" 
+                    min={1} 
+                    max={20} 
+                    value={grantQuantity} 
+                    onChange={e => setGrantQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                  />
+                </label>
+              </div>
+
+              <label className="block text-xs font-bold text-slate-300">
+                Powód / Okazja
+                <input 
+                  type="text" 
+                  value={grantReason} 
+                  onChange={e => setGrantReason(e.target.value)}
+                  placeholder="np. Nagroda specjalna od trenera"
+                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                />
+              </label>
+
+              <button 
+                type="button"
+                onClick={handleGrantPacks}
+                disabled={grantingPack}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
+              >
+                <Gift size={15} /> {grantingPack ? "Przyznawanie..." : "Przyznaj paczkę(i)"}
+              </button>
+            </div>
+          </div>
+
+          {/* PRZYZNAWANIE DELTA POINTS */}
+          <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
+            <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase">
+              <Coins size={18} /> Przyznaj Delta Points (DP)
+            </div>
+            <p className="text-xs text-slate-400">
+              Dodaj punkty DP do konta rodzica/zawodnika za wyjątkowe zaangażowanie lub quizy.
+            </p>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-300">
+                Użytkownik
+                <select 
+                  value={grantPointsUserId} 
+                  onChange={e => setGrantPointsUserId(e.target.value)}
+                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                >
+                  {props.allProfiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.display_name || "Użytkownik"} ({p.role})</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-xs font-bold text-slate-300">
+                Ilość Delta Points (DP)
+                <input 
+                  type="number" 
+                  min={10} 
+                  step={10} 
+                  value={grantPointsAmount} 
+                  onChange={e => setGrantPointsAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                />
+              </label>
+
+              <label className="block text-xs font-bold text-slate-300">
+                Powód
+                <input 
+                  type="text" 
+                  value={grantPointsReason} 
+                  onChange={e => setGrantPointsReason(e.target.value)}
+                  className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+                />
+              </label>
+
+              <button 
+                type="button"
+                onClick={handleGrantPoints}
+                disabled={grantingPoints}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
+              >
+                <Coins size={15} /> {grantingPoints ? "Zapisywanie..." : "Dodaj punkty DP"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* TWORZENIE KARTY SPECJALNEJ */}
+        <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
+          <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase">
+            <Sparkles size={18} /> Utwórz nową kartę specjalną w katalogu
+          </div>
+          <p className="text-xs text-slate-400">
+            Stwórz pamiątkową kartę dla zawodnika (np. Hat-Trick Hero, MVP Derbów, Waleczny Diabełek), która będzie mogła wypaść w paczkach.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <label className="block text-xs font-bold text-slate-300">
+              Zawodnik
+              <select 
+                value={newCardPlayerId} 
+                onChange={e => setNewCardPlayerId(e.target.value)}
+                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+              >
+                {activePlayers.map(p => (
+                  <option key={p.id} value={p.id}>{p.display_name} (#{p.shirt_number || "—"})</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-xs font-bold text-slate-300">
+              Tytuł karty
+              <input 
+                type="text" 
+                placeholder="np. HAT-TRICK HERO" 
+                value={newCardTitle} 
+                onChange={e => setNewCardTitle(e.target.value)}
+                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+              />
+            </label>
+
+            <label className="block text-xs font-bold text-slate-300">
+              Typ karty
+              <select 
+                value={newCardType} 
+                onChange={e => setNewCardType(e.target.value)}
+                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+              >
+                <option value="matchday">MATCHDAY</option>
+                <option value="training_warrior">TRAINING WARRIOR</option>
+                <option value="goal_hunter">GOAL HUNTER</option>
+                <option value="mvp">MVP</option>
+                <option value="inferno">🔥 INFERNO</option>
+                <option value="hat_trick_hero">HAT-TRICK HERO</option>
+                <option value="captain">CAPTAIN</option>
+                <option value="legend">LEGEND</option>
+                <option value="special_event">SPECIAL EVENT</option>
+              </select>
+            </label>
+
+            <label className="block text-xs font-bold text-slate-300">
+              Rzadkość
+              <select 
+                value={newCardRarity} 
+                onChange={e => setNewCardRarity(e.target.value)}
+                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+              >
+                <option value="common">Common (Zwykła)</option>
+                <option value="rare">Rare (Rzadka)</option>
+                <option value="epic">Epic (Epicka)</option>
+                <option value="legendary">Legendary (Legendarna)</option>
+                <option value="inferno">🔥 Inferno (Piekielna)</option>
+              </select>
+            </label>
+
+            <label className="block text-xs font-bold text-slate-300 sm:col-span-2">
+              Opis / Lore (Historia karty na rewersie)
+              <input 
+                type="text" 
+                placeholder="np. Niezapomniany występ i 3 bramki w meczu z Ursusem." 
+                value={newCardLore} 
+                onChange={e => setNewCardLore(e.target.value)}
+                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white"
+              />
+            </label>
+          </div>
+
+          <button 
+            type="button"
+            onClick={handleCreateCardDef}
+            disabled={savingCardDef}
+            className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
+          >
+            <Plus size={15} /> {savingCardDef ? "Tworzenie..." : "Utwórz kartę w katalogu"}
+          </button>
         </div>
       </section>}
     </main>

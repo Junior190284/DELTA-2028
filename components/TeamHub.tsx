@@ -12,13 +12,14 @@ import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
 import PlayerCard3D, { CardTheme } from "./PlayerCard3D";
 import BadgeCelebrationModal, { BadgeDetail } from "./BadgeCelebrationModal";
 import PackOpeningModal from "./PackOpeningModal";
+import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
 import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -140,7 +141,7 @@ export default function TeamHub(props:{
   userPermissions:UserPermissions;
 }){
   const supabase=useMemo(()=>createClient(),[]);
-  const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league"|"teamcenter">("home");
+  const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"collection"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league"|"teamcenter">("home");
   const [viewFx,setViewFx]=useState(false);
   const [cinematicActive, setCinematicActive] = useState(false);
   useEffect(() => {
@@ -1070,6 +1071,7 @@ export default function TeamHub(props:{
     ["home","Start",Home],["teamcenter","Centrum drużyny",UserCheck],
     ...(props.parentPlayerIds.length?[["mychild","Moje dziecko",UserRound] as [string,string,any]]:[]),
     ...(canManageMatches||canEditMatchEvents?[["matchday","Match Day",Flame] as [string,string,any]]:[]),
+    ["collection","Kolekcja",Sparkles],
     ["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["training","Treningi",Zap],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],["hall","Hall of Fame",Medal],
     ["league","Rozgrywki",Trophy],["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
   ];
@@ -1375,6 +1377,14 @@ export default function TeamHub(props:{
         </section>
       </>}
 
+      {tab==="collection"&&<DeltaCollectionAlbum
+        currentUserId={props.profile.id}
+        players={players}
+        onOpenPlayerProfile={(pid)=>{
+          const p=players.find(x=>x.id===pid);
+          if(p)openPlayerProfile(p);
+        }}
+      />}
       {tab==="league"&&<LeagueCenter matches={matches} isAdmin={props.profile.role==="admin"}/>}
       {tab==="mychild"&&<MyChildCenter
         players={players} parentPlayerIds={props.parentPlayerIds} stats={stats} trainingStats={trainingPlayerStats}
