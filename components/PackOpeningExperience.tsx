@@ -134,30 +134,31 @@ export default function PackOpeningExperience({
         : "from-amber-600 via-stone-900 to-black";
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-between p-4 sm:p-6 overflow-hidden select-none animate-fadeIn">
+    <div className="v104-open-modal">
       {/* BACKGROUND STADIUM LIGHTS / AMBIENT GLOW */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={`absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b ${packBg} opacity-30 blur-[120px] rounded-full`} />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/60 to-black" />
-      </div>
+      <div className={`v104-open-ambient ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : ""}`} />
 
       {/* TOP HEADER CONTROLS */}
-      <div className="relative z-50 w-full max-w-5xl flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <img src="/teamlogos/gm.png" alt="DELTA GM" className="w-8 h-8 object-contain drop-shadow" />
+      <div className="v104-open-topbar">
+        <div className="v104-open-top-brand">
+          <img 
+            src="/teamlogos/gm.png" 
+            alt="DELTA GM" 
+            width={34}
+            height={34}
+            className="v104-open-top-logo" 
+          />
           <div>
-            <span className="text-[10px] sm:text-xs font-black tracking-widest text-amber-400 uppercase block">
-              DELTA CARDS & COLLECTION
-            </span>
-            <h2 className="text-sm sm:text-lg font-black text-white">{pack.name}</h2>
+            <span className="v104-open-eyebrow">DELTA CARDS & COLLECTION</span>
+            <h2 className="v104-open-top-title">{pack.name}</h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="v104-open-actions">
           {stage === "revealing" && (
             <button
               onClick={handleRevealAll}
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-300 transition-colors"
+              className="v104-open-skip-btn"
             >
               Pomiń animację
             </button>
@@ -165,7 +166,7 @@ export default function PackOpeningExperience({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="v104-open-close-btn"
             aria-label="Zamknij"
           >
             <X size={20} />
@@ -175,16 +176,15 @@ export default function PackOpeningExperience({
 
       {/* ================= INFERNO CINEMATIC OVERLAY ================= */}
       {infernoCinematic && (
-        <div className="fixed inset-0 z-[10000] pointer-events-none flex flex-col items-center justify-center bg-black/90 animate-pulse">
-          <div className="absolute inset-0 bg-radial from-red-600/40 via-orange-950/60 to-black blur-xl" />
-          <div className="relative z-10 flex flex-col items-center gap-4 text-center px-4 animate-bounce">
-            <div className="p-4 rounded-full bg-red-600/30 border-2 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.8)]">
-              <Flame size={64} className="text-red-500 animate-spin" />
+        <div style={{ position: "fixed", inset: 0, zIndex: 100000, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.9)" }}>
+          <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", textAlign: "center" }}>
+            <div style={{ padding: "16px", borderRadius: "50%", background: "rgba(239,68,68,0.3)", border: "2px solid #ef4444", boxShadow: "0 0 50px rgba(239,68,68,0.8)" }}>
+              <Flame size={64} style={{ color: "#ef4444" }} />
             </div>
-            <h1 className="text-4xl sm:text-6xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-400 to-yellow-300 drop-shadow-[0_0_35px_rgba(255,100,0,0.9)]">
+            <h1 style={{ fontSize: "48px", fontWeight: 900, fontStyle: "italic", color: "#f87171", textShadow: "0 0 35px rgba(255,100,0,0.9)", margin: 0 }}>
               🔥 INFERNO DROP! 🔥
             </h1>
-            <p className="text-sm sm:text-lg font-bold tracking-widest text-red-200 uppercase">
+            <p style={{ fontSize: "16px", fontWeight: 900, letterSpacing: "0.15em", color: "#fecaca", textTransform: "uppercase", margin: 0 }}>
               NAJRZADSZA KARTA W GRZE!
             </p>
           </div>
@@ -193,68 +193,51 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 1: SEALED FOIL PACK ================= */}
       {stage === "sealed" && (
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 my-auto text-center">
+        <div className="v104-open-stage">
           {/* 3D PACK FOIL */}
           <div 
             onClick={handleTearPack}
-            className="relative w-[260px] sm:w-[300px] h-[390px] sm:h-[450px] rounded-2xl cursor-pointer group transition-all duration-500 hover:scale-105 shadow-2xl overflow-hidden border-2 flex flex-col justify-between p-6"
-            style={{
-              background: packTheme === "inferno"
-                ? "linear-gradient(145deg, #7f1d1d, #450a0a, #1c0303)"
-                : packTheme === "legend"
-                  ? "linear-gradient(145deg, #a16207, #713f12, #241403)"
-                  : "linear-gradient(145deg, #ca8a04, #854d0e, #1c1917)",
-              borderColor: packTheme === "inferno" ? "#ef4444" : "#eab308",
-              boxShadow: packTheme === "inferno"
-                ? "0 0 45px rgba(239, 68, 68, 0.4), inset 0 0 30px rgba(239, 68, 68, 0.3)"
-                : "0 0 45px rgba(234, 179, 8, 0.4), inset 0 0 30px rgba(234, 179, 8, 0.3)"
-            }}
+            className={`v104-open-foil-pack ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : "gold"}`}
           >
-            {/* Metallic Foil Sheen */}
-            <div 
-              className="absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay"
-              style={{
-                backgroundImage: "linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.8) 45%, rgba(255,255,255,1) 50%, transparent 60%)",
-                backgroundSize: "200% 200%",
-                animation: "cardShimmer 3s infinite linear"
-              }}
-            />
-
             {/* Tear Line Indicator at Top */}
-            <div className="relative z-10 flex items-center justify-between border-b-2 border-dashed border-white/40 pb-2">
-              <span className="text-[10px] font-black tracking-widest text-white/80 uppercase">
-                ROZERWIJ PACZKĘ
-              </span>
-              <Sparkles size={16} className="text-amber-300 animate-spin" />
+            <div className="v104-open-tear-header">
+              <span>ROZERWIJ PACZKĘ</span>
+              <Sparkles size={16} style={{ color: "#fde047" }} />
             </div>
 
             {/* Pack Center Branding */}
-            <div className="relative z-10 flex flex-col items-center gap-3 my-auto">
-              <img src="/teamlogos/gm.png" alt="DELTA" className="w-20 h-20 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" />
-              <div className="flex flex-col items-center">
-                <span className="text-xs font-black tracking-widest text-amber-300 uppercase">
+            <div className="v104-open-pack-center">
+              <img 
+                src="/teamlogos/gm.png" 
+                alt="DELTA" 
+                width={76}
+                height={76}
+                className="v104-open-pack-center-logo" 
+              />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", fontWeight: 900, letterSpacing: "0.12em", color: "#f1c95c", textTransform: "uppercase" }}>
                   OFICJALNA PACZKA
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white italic tracking-wide uppercase drop-shadow-md">
+                <h3 className="v104-open-pack-title">
                   {pack.name}
                 </h3>
               </div>
-              <span className="px-3 py-1 rounded-full bg-black/50 border border-white/20 text-xs font-bold text-white/90">
+              <span className="v104-open-pack-badge">
                 {pack.cards_count} {pack.cards_count === 1 ? "KARTA" : pack.cards_count < 5 ? "KARTY" : "KART"}
               </span>
             </div>
 
             {/* Pack Footer */}
-            <div className="relative z-10 pt-2 border-t border-white/20 flex items-center justify-between text-[10px] text-white/70 font-bold">
+            <div className="v104-open-pack-footer">
               <span>MIN. RZADKOŚĆ:</span>
-              <span className="uppercase text-amber-300">{pack.min_rarity}</span>
+              <b>{pack.min_rarity}</b>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleTearPack}
-            className="mt-6 px-8 py-3.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-sm tracking-wider uppercase shadow-xl hover:shadow-amber-500/50 transform transition hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+            className="v104-open-tear-btn"
           >
             <Sparkles size={18} /> KLIKNIJ, ABY OTWORZYĆ
           </button>
@@ -263,11 +246,10 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 2: TEARING & BURST ================= */}
       {(stage === "tearing" || stage === "burst") && (
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 my-auto">
-          <div className="relative w-[280px] h-[420px] flex items-center justify-center">
-            <div className="w-24 h-24 rounded-full bg-amber-400 animate-ping opacity-75 blur-xl" />
-            <Sparkles size={64} className="text-amber-300 animate-spin" />
-            <span className="absolute bottom-6 font-black text-lg text-white tracking-widest uppercase animate-pulse">
+        <div className="v104-open-stage">
+          <div style={{ width: "280px", height: "400px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+            <Sparkles size={64} style={{ color: "#f1c95c" }} />
+            <span style={{ fontWeight: 900, fontSize: "20px", color: "#ffffff", letterSpacing: "0.1em", textTransform: "uppercase" }}>
               OTWIERANIE...
             </span>
           </div>
@@ -276,19 +258,18 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 3: REVEALING CARDS ONE BY ONE ================= */}
       {stage === "revealing" && openingResult && (
-        <div className="relative z-10 flex flex-col items-center justify-center flex-1 my-auto max-w-lg w-full">
+        <div className="v104-open-stage">
           {/* Progress Indicator */}
-          <div className="mb-4 flex items-center gap-2">
+          <div className="v104-open-progress">
             {openingResult.cards.map((_, idx) => (
               <div
                 key={idx}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentCardIndex
-                    ? "w-8 bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]"
-                    : idx < currentCardIndex || revealedCards[idx]
-                      ? "w-4 bg-emerald-400"
-                      : "w-4 bg-slate-700"
-                }`}
+                className="v104-open-progress-pill"
+                style={{
+                  width: idx === currentCardIndex ? "32px" : "16px",
+                  background: idx === currentCardIndex ? "#f1c95c" : idx < currentCardIndex || revealedCards[idx] ? "#34d399" : "#334155",
+                  boxShadow: idx === currentCardIndex ? "0 0 10px rgba(241, 201, 92, 0.8)" : "none"
+                }}
               />
             ))}
           </div>
@@ -300,35 +281,41 @@ export default function PackOpeningExperience({
             const isRevealed = revealedCards[currentCardIndex];
 
             return (
-              <div className="flex flex-col items-center gap-6">
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
                 {!isRevealed ? (
                   /* Card Back (Click to reveal) */
                   <div 
                     onClick={handleRevealCurrentCard}
-                    className="relative w-[260px] sm:w-[290px] h-[380px] sm:h-[420px] rounded-2xl cursor-pointer group shadow-2xl border-2 border-amber-400/60 bg-gradient-to-br from-slate-900 via-neutral-900 to-black flex flex-col items-center justify-between p-6 transform transition-all duration-300 hover:scale-105"
+                    className="v104-open-reveal-card-back"
                   >
-                    <div className="flex items-center gap-2">
-                      <img src="/teamlogos/gm.png" alt="DELTA" className="w-6 h-6 object-contain" />
-                      <span className="text-xs font-black text-slate-300 tracking-wider">DELTA GM</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <img 
+                        src="/teamlogos/gm.png" 
+                        alt="DELTA" 
+                        width={20}
+                        height={20}
+                        style={{ width: "20px", height: "20px", objectFit: "contain" }} 
+                      />
+                      <span style={{ fontSize: "11px", fontWeight: 900, color: "#cbd5e1", letterSpacing: "0.08em" }}>DELTA GM</span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                        <Sparkles size={36} className="animate-pulse" />
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div className="v104-open-reveal-icon-circle">
+                        <Sparkles size={36} />
                       </div>
-                      <span className="text-base font-black text-white tracking-widest uppercase">
+                      <span style={{ fontSize: "15px", fontWeight: 900, color: "#ffffff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                         KARTA #{currentCardIndex + 1} Z {openingResult.cards.length}
                       </span>
-                      <span className="text-xs text-amber-400 font-bold animate-bounce">
+                      <span style={{ fontSize: "12px", color: "#f1c95c", fontWeight: 900, marginTop: "6px" }}>
                         KLIKNIJ, ABY ODKRYĆ!
                       </span>
                     </div>
 
-                    <span className="text-[10px] text-slate-500 font-mono">SEZON 2026/27</span>
+                    <span style={{ fontSize: "9px", color: "#64748b", fontFamily: "monospace" }}>SEZON 2026/27</span>
                   </div>
                 ) : (
                   /* Card Front (Revealed) */
-                  <div className="flex flex-col items-center gap-4 animate-scaleUp">
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <CollectibleCard3D
                       card={currentItem.card}
                       size="lg"
@@ -338,7 +325,7 @@ export default function PackOpeningExperience({
 
                     {/* Duplicate Indicator */}
                     {currentItem.is_duplicate && (
-                      <div className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black tracking-wider uppercase flex items-center gap-2 shadow-lg animate-fadeIn">
+                      <div className="v104-open-dup-banner">
                         <Coins size={16} /> DUPLIKAT! +{currentItem.duplicate_points} DELTA POINTS
                       </div>
                     )}
@@ -347,7 +334,7 @@ export default function PackOpeningExperience({
                     <button
                       type="button"
                       onClick={handleNextCard}
-                      className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-sm tracking-wider uppercase shadow-xl hover:shadow-amber-500/50 flex items-center gap-2 transform transition hover:-translate-y-0.5"
+                      className="v104-open-next-btn"
                     >
                       {currentCardIndex + 1 < openingResult.cards.length ? (
                         <>KOLEJNA KARTA <ChevronRight size={18} /></>
@@ -365,25 +352,25 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 4: SUMMARY SHOWCASE ================= */}
       {stage === "summary" && openingResult && (
-        <div className="relative z-10 flex flex-col items-center justify-between flex-1 my-auto max-w-5xl w-full py-4 overflow-y-auto">
-          <div className="text-center mb-6">
-            <span className="text-xs font-black tracking-widest text-amber-400 uppercase">
+        <div className="v104-open-stage">
+          <div style={{ textAlign: "center", marginBottom: "16px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 900, letterSpacing: "0.12em", color: "#f1c95c", textTransform: "uppercase" }}>
               GRATULACJE!
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white">
+            <h2 style={{ fontSize: "26px", fontWeight: 900, color: "#ffffff", margin: "4px 0" }}>
               OTRZYMANE KARTY
             </h2>
             {openingResult.total_delta_points_earned > 0 && (
-              <div className="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-black">
+              <div className="v104-open-dup-banner" style={{ display: "inline-flex" }}>
                 <Coins size={16} /> Łącznie zdobyto +{openingResult.total_delta_points_earned} Delta Points za duplikaty
               </div>
             )}
           </div>
 
           {/* Cards Grid Showcase */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 my-auto max-w-4xl">
+          <div className="v104-open-summary-grid">
             {openingResult.cards.map((item, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-2">
+              <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
                 <CollectibleCard3D
                   card={item.card}
                   size="md"
@@ -391,7 +378,7 @@ export default function PackOpeningExperience({
                   showFlip={true}
                 />
                 {item.is_duplicate && (
-                  <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: "#f1c95c", background: "rgba(0,0,0,0.6)", padding: "2px 8px", borderRadius: "999px", border: "1px solid rgba(241,201,92,0.4)" }}>
                     +{item.duplicate_points} DP (Duplikat)
                   </span>
                 )}
@@ -400,11 +387,11 @@ export default function PackOpeningExperience({
           </div>
 
           {/* Bottom Summary Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <div className="v104-open-btn-row">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm tracking-wider uppercase transition-colors"
+              className="v104-open-secondary-btn"
             >
               Przejdź do kolekcji
             </button>
@@ -418,7 +405,8 @@ export default function PackOpeningExperience({
                   setRevealedCards([]);
                   onOpenAnother();
                 }}
-                className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-sm tracking-wider uppercase shadow-xl hover:shadow-amber-500/50 flex items-center gap-2"
+                className="v104-open-tear-btn"
+                style={{ marginTop: 0 }}
               >
                 <Gift size={18} /> Otwórz następną ({unopenedCount})
               </button>
@@ -428,7 +416,7 @@ export default function PackOpeningExperience({
       )}
 
       {/* FOOTER NOTE */}
-      <div className="relative z-10 text-center py-2 text-[10px] text-slate-500">
+      <div style={{ position: "relative", zIndex: 10, textAlign: "center", paddingTop: "8px", fontSize: "10px", color: "#64748b" }}>
         Karty zostają trwale przypisane do Twojego profilu klubowego w DELTA Warszawa 2018 GM.
       </div>
     </div>
