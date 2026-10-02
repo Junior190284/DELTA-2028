@@ -10,9 +10,7 @@ import {
   Coins, 
   RefreshCw,
   Gift,
-  Crown,
-  Volume2,
-  VolumeX
+  Crown
 } from "lucide-react";
 import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -50,7 +48,6 @@ export default function PackOpeningExperience({
   const [walkoutItem, setWalkoutItem] = useState<{ card: CardDefinition; is_duplicate: boolean; duplicate_points: number } | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
-  const [soundMuted, setSoundMuted] = useState(false);
   const [screenShake, setScreenShake] = useState(false);
 
   // 3D Hover tilt for sealed pack
@@ -62,7 +59,7 @@ export default function PackOpeningExperience({
     const rect = packRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setPackTilt({ x: x * 22, y: -y * 22 });
+    setPackTilt({ x: x * 18, y: -y * 18 });
   };
 
   const handlePackMouseLeave = () => {
@@ -75,7 +72,7 @@ export default function PackOpeningExperience({
     setLoading(true);
     setStage("charging");
     setScreenShake(true);
-    if (!soundMuted) cardSound.playPackTear();
+    cardSound.playPackTear();
 
     try {
       const res = await fetch("/api/cards/open-pack", {
@@ -118,39 +115,37 @@ export default function PackOpeningExperience({
           // If top card is Epic, Legendary, Inferno (or 50% chance for Rare) -> Run EA FC Walkout
           if (topRank >= 3 || (topRank === 2 && Math.random() > 0.4)) {
             setWalkoutItem(topCard);
-            if (!soundMuted) cardSound.playCinematicBoom();
+            cardSound.playCinematicBoom();
             setStage("walkout_teaser_1");
-            if (!soundMuted) cardSound.playTeaserHit(1);
+            cardSound.playTeaserHit(1);
 
             setTimeout(() => {
               setStage("walkout_teaser_2");
-              if (!soundMuted) cardSound.playTeaserHit(2);
+              cardSound.playTeaserHit(2);
 
               setTimeout(() => {
                 setStage("walkout_teaser_3");
-                if (!soundMuted) cardSound.playTeaserHit(3);
+                cardSound.playTeaserHit(3);
 
                 setTimeout(() => {
                   setStage("walkout_slam");
                   setScreenShake(true);
-                  setTimeout(() => setScreenShake(false), 800);
-                  if (!soundMuted) {
-                    if (topCard.card.rarity === "inferno") {
-                      cardSound.playReveal("inferno");
-                    } else {
-                      cardSound.playWalkoutFanfare();
-                    }
+                  setTimeout(() => setScreenShake(false), 700);
+                  if (topCard.card.rarity === "inferno") {
+                    cardSound.playReveal("inferno");
+                  } else {
+                    cardSound.playWalkoutFanfare();
                   }
-                }, 1300);
-              }, 1200);
-            }, 1200);
+                }, 1200);
+              }, 1100);
+            }, 1100);
           } else {
             // Standard Direct Reveal
             setStage("revealing");
             setCurrentCardIndex(0);
           }
-        }, 300);
-      }, 700);
+        }, 280);
+      }, 600);
     } catch (e: any) {
       alert(e.message || "Nie udało się otworzyć paczki.");
       setStage("sealed");
@@ -172,11 +167,7 @@ export default function PackOpeningExperience({
     if (!currentItem) return;
 
     const rarity = (currentItem.card.rarity || "common") as any;
-
-    // Play sound
-    if (!soundMuted) {
-      cardSound.playReveal(rarity);
-    }
+    cardSound.playReveal(rarity);
 
     setRevealedCards(prev => {
       const updated = [...prev];
@@ -216,7 +207,7 @@ export default function PackOpeningExperience({
             background: "#ffffff",
             zIndex: 999,
             pointerEvents: "none",
-            animation: "fadeOutFlash 0.35s ease-out forwards"
+            animation: "fadeOutFlash 0.3s ease-out forwards"
           }} 
         />
       )}
@@ -224,18 +215,29 @@ export default function PackOpeningExperience({
       {/* BACKGROUND STADIUM LIGHTS / AMBIENT GLOW */}
       <div className={`v104-open-ambient ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : ""}`} />
 
-      {/* TUNNEL & STADIUM VIDEO BACKGROUND */}
-      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam" || stage === "revealing" || stage === "summary") && (
+      {/* CINEMATIC TUNNEL VIDEO DURING TEASERS */}
+      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
         <ProceduralTunnel 
           theme={particleTheme} 
-          speed={stage === "walkout_slam" || stage === "revealing" || stage === "summary" ? 0.3 : 1.3} 
+          speed={1.2} 
+          videoSrc="/videos/tunnel.mp4" 
+        />
+      )}
+
+      {/* DEDICATED CARD BG VIDEO DURING WALKOUT SLAM */}
+      {stage === "walkout_slam" && (
+        <ProceduralTunnel 
+          theme={particleTheme} 
+          speed={0.3} 
           videoSrc={
-            stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3"
-              ? "/videos/tunnel.mp4"
-              : stage === "walkout_slam"
-              ? (walkoutItem?.card?.rarity === "inferno" ? "/videos/bg_inferno.mp4" : walkoutItem?.card?.rarity === "legendary" ? "/videos/bg_legend.mp4" : pack.id === "matchday_booster" ? "/videos/bg_matchday.mp4" : "/videos/bg_gold.mp4")
-              : (pack.theme === "inferno" ? "/videos/bg_inferno.mp4" : pack.theme === "legend" ? "/videos/bg_legend.mp4" : pack.id === "matchday_booster" ? "/videos/bg_matchday.mp4" : "/videos/bg_gold.mp4")
-          }
+            walkoutItem?.card?.rarity === "inferno"
+              ? "/videos/bg_inferno.mp4"
+              : walkoutItem?.card?.rarity === "legendary"
+              ? "/videos/bg_legend.mp4"
+              : pack.id === "matchday_booster"
+              ? "/videos/bg_matchday.mp4"
+              : "/videos/bg_gold.mp4"
+          } 
         />
       )}
 
@@ -338,7 +340,7 @@ export default function PackOpeningExperience({
             <div className="v104-walkout-slam-container animate-slamZoom">
               <div className="v104-walkout-pyro" />
 
-              <div style={{ transform: "scale(1.15)", transformOrigin: "center center" }}>
+              <div style={{ transform: "scale(1.12)", transformOrigin: "center center" }}>
                 <CollectibleCard3D
                   card={walkoutItem.card}
                   userCard={undefined}
@@ -386,13 +388,14 @@ export default function PackOpeningExperience({
             onClick={handleTearPack}
             style={{
               transform: `perspective(1000px) rotateY(${packTilt.x}deg) rotateX(${packTilt.y}deg) scale(${stage === "charging" ? 1.05 : 1})`,
-              transition: stage === "charging" ? "transform 0.1s ease" : "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)"
+              transition: stage === "charging" ? "transform 0.1s ease" : "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
+              cursor: "pointer"
             }}
             className={`v104-open-foil-pack ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : "gold"} ${stage === "charging" ? "charging-glow" : ""}`}
           >
             {/* Tear Line Indicator at Top */}
             <div className="v104-open-tear-header">
-              <span>{stage === "charging" ? "ŁADOWANIE PACZKI..." : "ROZERWIJ PACZKĘ"}</span>
+              <span>{stage === "charging" ? "ŁADOWANIE..." : "ROZERWIJ PACZKĘ"}</span>
               <Sparkles size={16} style={{ color: "#fde047" }} />
             </div>
 
@@ -420,19 +423,10 @@ export default function PackOpeningExperience({
 
             {/* Pack Footer */}
             <div className="v104-open-pack-footer">
-              <span>MIN. RZADKOŚĆ:</span>
-              <b>{pack.min_rarity}</b>
+              <span>KLIKNIJ, ABY OTWORZYĆ</span>
+              <b>{pack.min_rarity.toUpperCase()}</b>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleTearPack}
-            disabled={stage === "charging"}
-            className="v104-open-tear-btn"
-          >
-            <Sparkles size={18} /> {stage === "charging" ? "OTWIERANIE..." : "KLIKNIJ, ABY OTWORZYĆ"}
-          </button>
         </div>
       )}
 
@@ -470,7 +464,7 @@ export default function PackOpeningExperience({
                   interactive={true}
                   showFlip={isRevealed}
                   onFlipChange={(flipped) => {
-                    if (flipped && !soundMuted) {
+                    if (flipped) {
                       cardSound.playFlip();
                     }
                   }}
