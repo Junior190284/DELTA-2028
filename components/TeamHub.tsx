@@ -9,6 +9,9 @@ import MatchCenterModal from "./MatchCenterModal";
 import StadiumFX from "./StadiumFX";
 import LeagueCenter, { LEAGUE_ROUNDS, LeagueHome, leagueByeTeam, leagueRoundDate } from "./LeagueCenter";
 import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
+import PlayerCard3D, { CardTheme } from "./PlayerCard3D";
+import BadgeCelebrationModal, { BadgeDetail } from "./BadgeCelebrationModal";
+import PackOpeningModal from "./PackOpeningModal";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
 import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
@@ -163,6 +166,7 @@ export default function TeamHub(props:{
   const [pushState,setPushState]=useState<"idle"|"working"|"enabled"|"error">("idle");
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
+  const [selectedBadgeDetail, setSelectedBadgeDetail] = useState<BadgeDetail | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
@@ -281,10 +285,30 @@ export default function TeamHub(props:{
   const [selectedCollectible,setSelectedCollectible]=useState<string|null>(null);
   const [selectedTrophy,setSelectedTrophy]=useState<string|null>(null);
   const [playerIntro,setPlayerIntro]=useState(false);
+  const [packModalOpen,setPackModalOpen]=useState(false);
+  const [unlockedPacksMap, setUnlockedPacksMap] = useState<Record<string, Record<CardTheme, boolean>>>({});
+
+  const handleUnlockTheme = (playerId: string, theme: CardTheme) => {
+    setUnlockedPacksMap(prev => {
+      const current = prev[playerId] || { gold: false, inferno: false, legend: false };
+      const updated = { ...current, [theme]: true };
+      try {
+        localStorage.setItem(`delta_packs_${playerId}`, JSON.stringify(updated));
+      } catch {}
+      return { ...prev, [playerId]: updated };
+    });
+  };
+
   const openPlayerProfile=(player:Player)=>{
     setPlayerSection("overview");
     setSelectedCollectible(null);
     setPlayerIntro(true);
+    try {
+      const saved = localStorage.getItem(`delta_packs_${player.id}`);
+      if (saved) {
+        setUnlockedPacksMap(prev => ({ ...prev, [player.id]: JSON.parse(saved) }));
+      }
+    } catch {}
     setSelectedPlayer(player);
   };
   // Oddzielny, pełnoekranowy widok profilu. Szczególnie na mobile blokuje scroll tła i zawsze otwiera pełny ekran.
@@ -941,11 +965,14 @@ export default function TeamHub(props:{
 
   const playerAchievements=(p:Player)=>{
     const s=stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
+    const t=trainingPlayerStats[p.id]||{sessions:0,goals:0,assists:0,ga:0,attendanceStreak:0,games:0,wins:0};
     return [
       ["Debiut",s.m>=1,`${s.m}/1`],["5 meczów",s.m>=5,`${s.m}/5`],["Wyjściowa 6",s.starts>=1,`${s.starts}/1`],
       ["Stały starter",s.starts>=5,`${s.starts}/5`],["Kapitan",s.captain>=1,`${s.captain}/1`],["Lider zespołu",s.captain>=5,`${s.captain}/5`],
       ["Pierwszy gol",s.g>=1,`${s.g}/1`],["5 goli",s.g>=5,`${s.g}/5`],["Pierwsza asysta",s.a>=1,`${s.a}/1`],
       ["Kreator",s.a>=5,`${s.a}/5`],["MVP",s.mvp>=1,`${s.mvp}/1`],["Gwiazda",s.mvp>=3,`${s.mvp}/3`],
+      ["Mistrz treningu",t.sessions>=5,`${t.sessions}/5`],["Żelazna seria",t.attendanceStreak>=3,`${t.attendanceStreak}/3`],
+      ["Snajper treningu",t.goals>=5,`${t.goals}/5`],["Asysta treningu",t.assists>=5,`${t.assists}/5`]
     ];
   };
 
@@ -2023,19 +2050,23 @@ export default function TeamHub(props:{
           </div>
           <div className="v111-profile-grid v112-profile-grid">
             <div className="v112-character-side">
-              <div className="v111-player-character v112-player-character">
-                <div className="v111-character-top"><span>PLAYER CARD <b>2018 GM</b></span><img src="/teamlogos/gm.png" alt=""/></div>
-                <div className="v111-character-art">
-                  {isRyszardPlayer(selectedPlayer)?<img src="/assets/players/ryszard-card.png" alt={`Karta zawodnika: ${selectedPlayer.display_name}`} className="v111-ryszard-art"/>:<PlayerPhoto playerId={selectedPlayer.id} className="v111-character-photo"/>}
-                </div>
-                <div className="v111-character-bottom"><span className="v111-character-number">{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</span><div><span>GÓRNY MOKOTÓW · 2018</span><h2>{selectedPlayer.display_name}</h2><p>{selectedPlayer.position||"Zawodnik"}</p></div></div>
-              </div>
-              <div className="v112-card-footer"><Flame size={16}/> RAZEM DO WIELKICH RZECZY <span>◆</span> DELTA GM</div>
-              <div className="v113-character-meta">
-                <div><span>ARCHETYP</span><b>{playerArchetype(stats[selectedPlayer.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0},trainingPlayerStats[selectedPlayer.id]||{sessions:0,goals:0,assists:0,ga:0,attendanceStreak:0,games:0,wins:0})}</b></div>
-                <div><span>ODZNAKI</span><b>{unlockedCount(selectedPlayer)}</b></div>
-                <div><span>WYSTĘPY</span><b>{stats[selectedPlayer.id]?.m||0}</b></div>
-              </div>
+              <PlayerCard3D
+                player={selectedPlayer}
+                stats={{
+                  matches: stats[selectedPlayer.id]?.m || 0,
+                  goals: stats[selectedPlayer.id]?.g || 0,
+                  assists: stats[selectedPlayer.id]?.a || 0,
+                  trainings: trainingPlayerStats[selectedPlayer.id]?.sessions || 0,
+                  mvp: stats[selectedPlayer.id]?.mvp || 0,
+                  captain: stats[selectedPlayer.id]?.captain || 0,
+                  streak: trainingPlayerStats[selectedPlayer.id]?.attendanceStreak || 0
+                }}
+                unlockedBadgesCount={unlockedCount(selectedPlayer)}
+                theme="gold"
+                unlockedThemes={unlockedPacksMap[selectedPlayer.id] || { gold: false, inferno: false, legend: false }}
+                onUnlockTheme={(theme) => handleUnlockTheme(selectedPlayer.id, theme)}
+                onOpenPackModal={()=>setPackModalOpen(true)}
+              />
             </div>
             <div className="v111-player-content v112-player-content">
               <nav className="v112-profile-tabs" aria-label="Sekcje profilu zawodnika">
@@ -2080,29 +2111,44 @@ export default function TeamHub(props:{
                   <button className="v112-wide-action" onClick={()=>setPlayerSection("cards")}>Otwórz kolekcję kart zawodnika <ChevronRight size={16}/></button><button className="v112-wide-action" onClick={()=>setPlayerSection("achievements")}>Otwórz gablotkę odznak <ChevronRight size={16}/></button>
                 </>}
                 {playerSection==="cards"&&<>
-                  <div className="v111-profile-section-heading"><Medal size={18}/> MOJA KOLEKCJA <span>PIŁKARSKIE MOMENTY</span></div>
+                  <div className="v111-profile-section-heading"><Medal size={18}/> MOJA KOLEKCJA <span>PIŁKARSKIE MOMENTY (KLIKNIJ ABY OTWORZYĆ)</span></div>
                   <p className="v112-section-note">Każda karta przedstawia prawdziwe wydarzenie z historii zawodnika. Wszystkie karty są wyjątkowe — bez ocen umiejętności i rywalizacji między dziećmi.</p>
                   <div className="v114-collection-grid">{([
-                    {id:"debut",name:"Pierwszy mecz",icon:Shield,match:milestones.find(x=>x.name==="Pierwszy występ")?.match,theme:"rookie"},
-                    {id:"goal",name:"Pierwszy gol",icon:Goal,match:milestones.find(x=>x.name==="Pierwszy gol")?.match,theme:"fire"},
-                    {id:"assist",name:"Pierwsza asysta",icon:Star,match:milestones.find(x=>x.name==="Pierwsza asysta")?.match,theme:"gold"},
-                    {id:"six",name:"Pierwsza szóstka",icon:Users,match:milestones.find(x=>x.name==="Pierwsza szóstka")?.match,theme:"squad"},
-                    {id:"captain",name:"Pierwszy raz kapitan",icon:Crown,match:milestones.find(x=>x.name==="Pierwszy mecz jako kapitan")?.match,theme:"captain"},
-                  ] as const).map(card=><button type="button" key={card.id} className={`v114-collectible ${card.theme} ${card.match?"earned":"locked"} ${selectedCollectible===card.id?"selected":""}`} onClick={()=>setSelectedCollectible(selectedCollectible===card.id?null:card.id)} aria-expanded={selectedCollectible===card.id}>
+                    {id:"debut",name:"Pierwszy mecz",icon:Shield,match:milestones.find(x=>x.name==="Pierwszy występ")?.match,theme:"rookie",rarity:"rare" as const,desc:"Pierwszy oficjalny występ w barwach DELTA GM."},
+                    {id:"goal",name:"Pierwszy gol",icon:Goal,match:milestones.find(x=>x.name==="Pierwszy gol")?.match,theme:"fire",rarity:"epic" as const,desc:"Pierwsza zdobyta bramka dla drużyny w oficjalnym spotkaniu."},
+                    {id:"assist",name:"Pierwsza asysta",icon:Star,match:milestones.find(x=>x.name==="Pierwsza asysta")?.match,theme:"gold",rarity:"rare" as const,desc:"Kluczowe podanie, które otworzyło drogę do bramki."},
+                    {id:"six",name:"Pierwsza szóstka",icon:Users,match:milestones.find(x=>x.name==="Pierwsza szóstka")?.match,theme:"squad",rarity:"rare" as const,desc:"Wyjściowy skład i rozpoczęcie meczu od pierwszej minuty."},
+                    {id:"captain",name:"Pierwszy raz kapitan",icon:Crown,match:milestones.find(x=>x.name==="Pierwszy mecz jako kapitan")?.match,theme:"captain",rarity:"legendary" as const,desc:"Wyprowadzenie zespołu na murawę z opaską kapitańską."},
+                  ] as const).map(card=><button type="button" key={card.id} className={`v114-collectible ${card.theme} ${card.match?"earned":"locked"} ${selectedCollectible===card.id?"selected":""}`} onClick={()=>{
+                    setSelectedCollectible(selectedCollectible===card.id?null:card.id);
+                    setSelectedBadgeDetail({
+                      id: card.id,
+                      name: card.name,
+                      category: "KARTA ZAWODNIKA",
+                      description: card.match ? `${card.desc} Zapisano w meczu z ${recentOpponent(card.match)}.` : "Ta karta zostanie odblokowana automatycznie po odpowiednim występie w meczu.",
+                      date: card.match ? datePL(card.match.match_date) : undefined,
+                      opponent: card.match ? recentOpponent(card.match) : undefined,
+                      unlocked: Boolean(card.match),
+                      rarity: card.rarity
+                    });
+                  }} aria-expanded={selectedCollectible===card.id}>
                     <span className="v114-card-kicker">DELTA 2018 GM · {card.match?"ODKRYTA":"DO ODKRYCIA"}</span><span className="v114-card-portrait"><PlayerPhoto playerId={p.id}/></span><span className="v114-card-symbol"><card.icon size={26}/></span><strong>{card.name}</strong><span>{p.display_name}</span><small>{card.match?datePL(card.match.match_date):"Przed nami"}</small>
                   </button>)}</div>
-                  {selectedCollectible&&(()=>{const card=([
-                    {id:"debut",name:"Pierwszy mecz",match:milestones.find(x=>x.name==="Pierwszy występ")?.match},
-                    {id:"goal",name:"Pierwszy gol",match:milestones.find(x=>x.name==="Pierwszy gol")?.match},
-                    {id:"assist",name:"Pierwsza asysta",match:milestones.find(x=>x.name==="Pierwsza asysta")?.match},
-                    {id:"six",name:"Pierwsza szóstka",match:milestones.find(x=>x.name==="Pierwsza szóstka")?.match},
-                    {id:"captain",name:"Pierwszy raz kapitan",match:milestones.find(x=>x.name==="Pierwszy mecz jako kapitan")?.match},
-                  ]).find(x=>x.id===selectedCollectible);if(!card)return null;return <div className="v114-collectible-detail"><div><span className="eyebrow gold">HISTORIA KARTY</span><h3>{card.name}</h3><p>{card.match?`${datePL(card.match.match_date)} · ${recentOpponent(card.match)} · osiągnięcie zapisane w aplikacji.`:"Ta karta pojawi się po zapisaniu odpowiedniego wydarzenia meczowego."}</p></div>{card.match&&<button type="button" onClick={()=>{setSelectedPlayer(null);openMatch(card.match!,"summary")}}>Otwórz mecz <ChevronRight size={17}/></button>}</div>;})()}
                 </>}
                 {playerSection==="achievements"&&<>
-                  <div className="v111-profile-section-heading"><Award size={18}/> GABLOTKA OSIĄGNIĘĆ <span>{unlockedCount(p)} / {achieved.length}</span></div>
-                  <p className="v112-section-note">Każda odznaka oznacza zapisane osiągnięcie. Te jeszcze nieodkryte pokazują, do jakiego progu brakuje.</p>
-                  <div className="v111-achievements v112-achievements">{achieved.map(([name,ok,progress])=><div key={String(name)} className={ok?"earned":"locked"}><Star size={25}/><strong>{name}</strong><small>{ok?"ODKRYTE":progress}</small></div>)}</div>
+                  <div className="v111-profile-section-heading"><Award size={18}/> GABLOTKA OSIĄGNIĘĆ <span>{unlockedCount(p)} / {achieved.length} (KLIKNIJ ABY OTWORZYĆ)</span></div>
+                  <p className="v112-section-note">Każda odznaka oznacza zapisane osiągnięcie. Kliknij na odznakę, aby zobaczyć szczegóły i celebrację.</p>
+                  <div className="v111-achievements v112-achievements">{achieved.map(([name,ok,progress])=><div key={String(name)} className={ok?"earned":"locked"} style={{cursor:"pointer"}} onClick={()=>{
+                    setSelectedBadgeDetail({
+                      id: String(name),
+                      name: String(name),
+                      category: "ODZNAKA DRUŻYNY",
+                      description: ok ? `Wyróżnienie zdobyte dzięki zaangażowaniu i świetnej postawie na boisku.` : `Postęp: ${progress}. Graj, trenuj i rozwijaj umiejętności, aby odblokować to osiągnięcie!`,
+                      unlocked: Boolean(ok),
+                      progress: String(progress),
+                      rarity: String(name).includes("Gwiazda") || String(name).includes("Lider") ? "legendary" : String(name).includes("5") || String(name).includes("Snajper") ? "epic" : "rare"
+                    });
+                  }}><Star size={25}/><strong>{name}</strong><small>{ok?"ODKRYTE ✦":progress}</small></div>)}</div>
                 </>}
                 {playerSection==="history"&&<>
                   <div className="v111-profile-section-heading"><History size={18}/> MOJA HISTORIA <span>WYDARZENIA Z ZAPISANYCH MECZÓW</span></div>
@@ -2124,6 +2170,15 @@ export default function TeamHub(props:{
           </div>
         </div>
       </div>
+      {selectedBadgeDetail&&<BadgeCelebrationModal
+        badge={selectedBadgeDetail}
+        player={selectedPlayer}
+        onClose={()=>setSelectedBadgeDetail(null)}
+        onOpenMatch={selectedBadgeDetail.date?(()=>{
+          const m=matches.find(x=>datePL(x.match_date)===selectedBadgeDetail.date);
+          return m?()=>{setSelectedBadgeDetail(null);setSelectedPlayer(null);openMatch(m,"summary");}:undefined;
+        })():undefined}
+      />}
     </section>,document.body)}
 
     {selectedMatch&&matchPlacement==="overlay"&&<MatchCenterModal
@@ -2146,5 +2201,27 @@ export default function TeamHub(props:{
         if(d.events)setEvents(d.events);
       }}
     />}
+
+    {packModalOpen && selectedPlayer && (
+      <PackOpeningModal
+        isOpen={packModalOpen}
+        onClose={()=>setPackModalOpen(false)}
+        player={selectedPlayer}
+        stats={{
+          matches: stats[selectedPlayer.id]?.m || 0,
+          goals: stats[selectedPlayer.id]?.g || 0,
+          assists: stats[selectedPlayer.id]?.a || 0,
+          trainings: trainingPlayerStats[selectedPlayer.id]?.sessions || 0,
+          mvp: stats[selectedPlayer.id]?.mvp || 0,
+          captain: stats[selectedPlayer.id]?.captain || 0,
+          streak: trainingPlayerStats[selectedPlayer.id]?.attendanceStreak || 0
+        }}
+        unlockedBadgesCount={unlockedCount(selectedPlayer)}
+        theme="gold"
+        onUnlockCard={(unlockedTheme) => {
+          handleUnlockTheme(selectedPlayer.id, unlockedTheme);
+        }}
+      />
+    )}
   </div>;
 }

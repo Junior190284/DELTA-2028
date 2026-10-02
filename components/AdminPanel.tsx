@@ -4,7 +4,12 @@ import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserPermissions } from "@/lib/permissions";
 import { EMPTY_PERMISSIONS } from "@/lib/permissions";
-import { ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice } from "lucide-react";
+import PlayerPhoto from "./PlayerPhoto";
+import { 
+  ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, 
+  Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice, Edit3, 
+  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle 
+} from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
 type Match={id:string;round_no:number|null;match_date:string;match_time:string|null;venue:string|null;home_team:string;away_team:string;home_score:number|null;away_score:number|null;status:string};
@@ -86,6 +91,34 @@ export default function AdminPanel(props:{
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
   const selectedMatch=matches.find(m=>m.id===selectedMatchId)||null;
   const activePlayers=players.filter(p=>p.active!==false);
+
+  // Stan edycji i zarządzania zawodnikami
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false);
+  const [playerFormName, setPlayerFormName] = useState("");
+  const [playerFormNumber, setPlayerFormNumber] = useState("");
+  const [playerFormPosition, setPlayerFormPosition] = useState("Zawodnik");
+  const [playerFormActive, setPlayerFormActive] = useState(true);
+  const [playerFormPhotoFile, setPlayerFormPhotoFile] = useState<File | null>(null);
+  const [playerFormPhotoPreview, setPlayerFormPhotoPreview] = useState<string | null>(null);
+  const [playerFormSaving, setPlayerFormSaving] = useState(false);
+  const [playerSearchQuery, setPlayerSearchQuery] = useState("");
+  const [playerFilterTab, setPlayerFilterTab] = useState<"all" | "active" | "archived">("active");
+
+  const filteredAdminPlayers = useMemo(() => {
+    return players.filter(p => {
+      if (playerFilterTab === "active" && p.active === false) return false;
+      if (playerFilterTab === "archived" && p.active !== false) return false;
+      if (playerSearchQuery.trim()) {
+        const q = playerSearchQuery.trim().toLowerCase();
+        const name = (p.display_name || "").toLowerCase();
+        const num = (p.shirt_number || "").toLowerCase();
+        const pos = (p.position || "").toLowerCase();
+        return name.includes(q) || num.includes(q) || pos.includes(q);
+      }
+      return true;
+    });
+  }, [players, playerFilterTab, playerSearchQuery]);
   // Zawodnika można przypisać do dowolnego zalogowanego konta, także administratora.
   // Funkcja rodzica to powiązanie z zawodnikiem, nie zamiana uprawnień admina.
   const parentCandidates=props.allProfiles.filter(p=>["parent","admin","coach"].includes(p.role));
@@ -303,20 +336,140 @@ export default function AdminPanel(props:{
     setMatchMedia(prev=>prev.filter(x=>x.id!==row.id));
   }
 
-  async function addPlayer(){
-    const name=prompt("Imię i nazwisko zawodnika"); if(!name)return;
-    const number=prompt("Numer koszulki")||null;
-    const position=prompt("Pozycja","Zawodnik")||"Zawodnik";
-    const {data,error}=await supabase.from("players").insert({display_name:name,shirt_number:number,position,active:true}).select("*").single();
-    if(error)return alert(error.message);
-    setPlayers(prev=>[...prev,data].sort((a,b)=>a.display_name.localeCompare(b.display_name)));
+  function openAddPlayerModal(){
+    setEditingPlayer(null);
+    setPlayerFormName("");
+    setPlayerFormNumber("");
+    setPlayerFormPosition("Zawodnik");
+    setPlayerFormActive(true);
+    setPlayerFormPhotoFile(null);
+    setPlayerFormPhotoPreview(null);
+    setIsAddingPlayer(true);
+  }
+
+  function openEditPlayerModal(p:Player){
+    setEditingPlayer(p);
+    setPlayerFormName(p.display_name||"");
+    setPlayerFormNumber(p.shirt_number||"");
+    setPlayerFormPosition(p.position||"Zawodnik");
+    setPlayerFormActive(p.active!==false);
+    setPlayerFormPhotoFile(null);
+    setPlayerFormPhotoPreview(null);
+    setIsAddingPlayer(false);
+  }
+
+  function closePlayerModal(){
+    setEditingPlayer(null);
+    setIsAddingPlayer(false);
+    setPlayerFormPhotoFile(null);
+    setPlayerFormPhotoPreview(null);
+  }
+
+  function handlePlayerPhotoChange(e:React.ChangeEvent<HTMLInputElement>){
+    const file=e.target.files?.[0];
+    if(!file)return;
+    setPlayerFormPhotoFile(file);
+    try{
+      const url=URL.createObjectURL(file);
+      setPlayerFormPhotoPreview(url);
+    }catch{}
+  }
+
+  async function savePlayerData(){
+    const cleanName=playerFormName.trim();
+    if(!cleanName)return alert("Proszę podać imię i nazwisko zawodnika.");
+    
+    setPlayerFormSaving(true);
+    try{
+      let photoPath=editingPlayer?.photo_path||null;
+
+      if(playerFormPhotoFile){
+        const ext=(playerFormPhotoFile.name.split(".").pop()||"jpg").replace(/[^a-z0-9]/gi,"").toLowerCase();
+        const idForPath=editingPlayer?editingPlayer.id:crypto.randomUUID();
+        const uploadPath=`${idForPath}/${crypto.randomUUID()}.${ext}`;
+
+        const {error:uploadError}=await supabase.storage
+          .from("player-photos")
+          .upload(uploadPath,playerFormPhotoFile,{upsert:true,contentType:playerFormPhotoFile.type||undefined});
+
+        if(uploadError){
+          console.error("Błąd przesyłania zdjęcia:",uploadError);
+          alert("Nie udało się przesłać zdjęcia: "+uploadError.message);
+        }else{
+          photoPath=uploadPath;
+        }
+      }
+
+      if(editingPlayer){
+        const {data,error}=await supabase
+          .from("players")
+          .update({
+            display_name:cleanName,
+            shirt_number:playerFormNumber.trim()||null,
+            position:playerFormPosition.trim()||"Zawodnik",
+            active:playerFormActive,
+            photo_path:photoPath
+          })
+          .eq("id",editingPlayer.id)
+          .select("*")
+          .single();
+
+        if(error)throw error;
+
+        setPlayers(prev=>prev.map(p=>p.id===editingPlayer.id?data:p).sort((a,b)=>a.display_name.localeCompare(b.display_name,"pl")));
+        alert(`Pomyślnie zaktualizowano dane: ${cleanName}`);
+      }else{
+        const {data,error}=await supabase
+          .from("players")
+          .insert({
+            display_name:cleanName,
+            shirt_number:playerFormNumber.trim()||null,
+            position:playerFormPosition.trim()||"Zawodnik",
+            active:playerFormActive,
+            photo_path:photoPath
+          })
+          .select("*")
+          .single();
+
+        if(error)throw error;
+
+        setPlayers(prev=>[...prev,data].sort((a,b)=>a.display_name.localeCompare(b.display_name,"pl")));
+        alert(`Pomyślnie dodano zawodnika: ${cleanName}`);
+      }
+
+      closePlayerModal();
+    }catch(e:any){
+      alert("Błąd podczas zapisywania: "+(e?.message||e));
+    }finally{
+      setPlayerFormSaving(false);
+    }
   }
 
   async function archivePlayer(id:string){
-    if(!confirm("Zarchiwizować zawodnika?"))return;
+    const player=players.find(p=>p.id===id);
+    if(!confirm(`Zarchiwizować zawodnika ${player?.display_name||""}?`))return;
     const {error}=await supabase.from("players").update({active:false}).eq("id",id);
     if(error)return alert(error.message);
     setPlayers(prev=>prev.map(p=>p.id===id?{...p,active:false}:p));
+  }
+
+  async function restorePlayer(id:string){
+    const {error}=await supabase.from("players").update({active:true}).eq("id",id);
+    if(error)return alert(error.message);
+    setPlayers(prev=>prev.map(p=>p.id===id?{...p,active:true}:p));
+  }
+
+  async function deletePlayerPermanently(id:string,name:string){
+    if(!confirm(`Czy na pewno chcesz CAŁKOWICIE USUNĄĆ zawodnika ${name} z bazy danych?\n\nUWAGA: Tej operacji nie można cofnąć. Jeśli zawodnik grał w meczach, zalecana jest archiwizacja.`))return;
+    try{
+      const {error}=await supabase.from("players").delete().eq("id",id);
+      if(error)throw error;
+      setPlayers(prev=>prev.filter(p=>p.id!==id));
+      if(editingPlayer?.id===id)closePlayerModal();
+      alert(`Usunięto zawodnika: ${name}`);
+    }catch(e:any){
+      alert("Błąd usuwania: "+(e?.message||e));
+    }
   }
 
   async function addNewsItem(){
@@ -866,13 +1019,131 @@ export default function AdminPanel(props:{
         </div>
       </section>}
 
-{tab==="players" && canPlayers && <section className="admin-card">
-        <div className="admin-card-head"><h2>Zawodnicy</h2><button onClick={addPlayer}><Plus size={15}/> Dodaj zawodnika</button></div>
-        <div className="admin-roster">
-          {players.map(p=><div className="admin-player-row" key={p.id}>
-            <div><strong>{p.display_name}</strong><span>{p.position||"Zawodnik"} {p.shirt_number?`#${p.shirt_number}`:""} {p.active===false?"• ARCHIWUM":""}</span></div>
-            {p.active!==false&&<button className="danger-btn" onClick={()=>archivePlayer(p.id)}><Trash2 size={14}/> Archiwizuj</button>}
-          </div>)}
+      {tab==="players" && canPlayers && <section className="admin-card v101-admin-players-section">
+        <div className="admin-card-head">
+          <div>
+            <h2>Katalog i edycja zawodników</h2>
+            <p className="muted" style={{margin:"4px 0 0", fontSize:12}}>
+              Możesz w każdej chwili poprawić imię, nazwisko (np. zmienić z „Franek nowy” na właściwe nazwisko), numer na koszulce, pozycję lub wgrać oficjalne zdjęcie.
+            </p>
+          </div>
+          <button type="button" onClick={openAddPlayerModal} className="gold-btn">
+            <Plus size={16}/> Dodaj nowego zawodnika
+          </button>
+        </div>
+
+        {/* Pasek wyszukiwania i filtrów */}
+        <div className="v101-admin-player-toolbar">
+          <div className="v101-admin-search-box">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Szukaj zawodnika (np. Franek, #7, Bramkarz)..."
+              value={playerSearchQuery}
+              onChange={e => setPlayerSearchQuery(e.target.value)}
+            />
+            {playerSearchQuery && (
+              <button type="button" onClick={() => setPlayerSearchQuery("")} className="clear-search">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="v101-admin-filter-tabs">
+            <button
+              type="button"
+              className={playerFilterTab === "active" ? "active" : ""}
+              onClick={() => setPlayerFilterTab("active")}
+            >
+              Aktywni ({players.filter(p => p.active !== false).length})
+            </button>
+            <button
+              type="button"
+              className={playerFilterTab === "all" ? "active" : ""}
+              onClick={() => setPlayerFilterTab("all")}
+            >
+              Wszyscy ({players.length})
+            </button>
+            <button
+              type="button"
+              className={playerFilterTab === "archived" ? "active" : ""}
+              onClick={() => setPlayerFilterTab("archived")}
+            >
+              Archiwum ({players.filter(p => p.active === false).length})
+            </button>
+          </div>
+        </div>
+
+        {/* Lista zawodników w stylu kart informacyjnych */}
+        <div className="v101-admin-players-grid">
+          {filteredAdminPlayers.map(p => (
+            <div key={p.id} className={`v101-admin-player-card ${p.active === false ? "is-archived" : ""}`}>
+              <div className="v101-player-card-head">
+                <div className="v101-player-avatar-wrap">
+                  <PlayerPhoto playerId={p.id} className="v101-player-thumb" />
+                </div>
+                <div className="v101-player-main-meta">
+                  <div className="v101-player-name-row">
+                    <strong>{p.display_name}</strong>
+                    {p.shirt_number && <span className="v101-shirt-pill">#{p.shirt_number}</span>}
+                  </div>
+                  <div className="v101-player-sub-row">
+                    <span className="v101-pos-tag">{p.position || "Zawodnik"}</span>
+                    {p.active === false ? (
+                      <span className="v101-status-pill archived">Archiwum</span>
+                    ) : (
+                      <span className="v101-status-pill active">Aktywny</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="v101-player-card-actions">
+                <button
+                  type="button"
+                  className="v101-edit-btn"
+                  onClick={() => openEditPlayerModal(p)}
+                  title="Edytuj imię, nazwisko, numer, pozycję i zdjęcie"
+                >
+                  <Edit3 size={14} />
+                  <span>Edytuj dane</span>
+                </button>
+                {p.active !== false ? (
+                  <button
+                    type="button"
+                    className="v101-archive-btn"
+                    onClick={() => archivePlayer(p.id)}
+                    title="Przenieś do archiwum"
+                  >
+                    <Trash2 size={14} />
+                    <span>Archiwizuj</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="v101-restore-btn"
+                    onClick={() => restorePlayer(p.id)}
+                    title="Przywróć do aktywnych zawodników"
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>Przywróć</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {filteredAdminPlayers.length === 0 && (
+            <div className="v101-empty-players">
+              <Users size={32} />
+              <p>Nie znaleziono zawodników spełniających kryteria wyszukiwania.</p>
+              {playerSearchQuery && (
+                <button type="button" onClick={() => setPlayerSearchQuery("")}>
+                  Wyczyść filtr wyszukiwania
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>}
 
@@ -945,5 +1216,151 @@ export default function AdminPanel(props:{
         </div>
       </section>}
     </main>
+
+    {/* MODAL EDYCJI / DODAWANIA ZAWODNIKA */}
+    {(editingPlayer || isAddingPlayer) && (
+      <div className="v101-player-modal-backdrop" onClick={closePlayerModal}>
+        <div className="v101-player-modal" onClick={e => e.stopPropagation()}>
+          <div className="v101-player-modal-header">
+            <div className="v101-modal-title-group">
+              <Users size={22} className="v101-modal-icon" />
+              <div>
+                <h3>{editingPlayer ? `Edycja zawodnika` : "Nowy zawodnik"}</h3>
+                <small>{editingPlayer ? `Popraw dane zawodnika: ${editingPlayer.display_name}` : "Wprowadź dane nowego zawodnika w drużynie"}</small>
+              </div>
+            </div>
+            <button type="button" className="v101-modal-close" onClick={closePlayerModal}>
+              <X size={20} />
+            </button>
+          </div>
+
+          <form onSubmit={e => { e.preventDefault(); savePlayerData(); }} className="v101-player-modal-body">
+            <div className="v101-modal-field">
+              <label>
+                Imię i nazwisko zawodnika <span className="req">*</span>
+                <input
+                  type="text"
+                  required
+                  placeholder="np. Franciszek Kowalski (lub Franek Nowy)"
+                  value={playerFormName}
+                  onChange={e => setPlayerFormName(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <small className="field-hint">Możesz w każdej chwili wpisać pełne nazwisko lub zmienić pisownię.</small>
+            </div>
+
+            <div className="v101-modal-row-two">
+              <div className="v101-modal-field">
+                <label>
+                  Numer na koszulce
+                  <input
+                    type="text"
+                    placeholder="np. 7, 10, 23"
+                    value={playerFormNumber}
+                    onChange={e => setPlayerFormNumber(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="v101-modal-field">
+                <label>
+                  Pozycja na boisku
+                  <select
+                    value={playerFormPosition}
+                    onChange={e => setPlayerFormPosition(e.target.value)}
+                  >
+                    <option value="Zawodnik">Zawodnik (Domyślna)</option>
+                    <option value="Napastnik">Napastnik (NAP)</option>
+                    <option value="Pomocnik">Pomocnik (POM)</option>
+                    <option value="Obrońca">Obrońca (OBR)</option>
+                    <option value="Bramkarz">Bramkarz (BR)</option>
+                    <option value="Skrzydłowy">Skrzydłowy (SKR)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            {/* Zdjęcie zawodnika */}
+            <div className="v101-modal-field">
+              <label>Zdjęcie zawodnika do profilu i karty FIFA</label>
+              <div className="v101-photo-upload-zone">
+                <div className="v101-photo-preview-box">
+                  {playerFormPhotoPreview ? (
+                    <img src={playerFormPhotoPreview} alt="Podgląd" className="preview-img" />
+                  ) : editingPlayer?.id ? (
+                    <PlayerPhoto playerId={editingPlayer.id} className="preview-img" />
+                  ) : (
+                    <Camera size={28} className="camera-placeholder" />
+                  )}
+                </div>
+                <div className="v101-photo-upload-controls">
+                  <input
+                    type="file"
+                    id="playerPhotoFileInput"
+                    accept="image/png,image/jpeg,image/webp"
+                    style={{ display: "none" }}
+                    onChange={handlePlayerPhotoChange}
+                  />
+                  <button
+                    type="button"
+                    className="v101-upload-trigger-btn"
+                    onClick={() => document.getElementById("playerPhotoFileInput")?.click()}
+                  >
+                    <Upload size={15} />
+                    <span>{playerFormPhotoFile ? "Zmień wybrane zdjęcie" : "Wgraj zdjęcie zawodnika"}</span>
+                  </button>
+                  <small className="field-hint">Zalecane: zdjęcie portretowe PNG/JPG w dobrej jakości.</small>
+                </div>
+              </div>
+            </div>
+
+            {/* Status aktywności */}
+            <div className="v101-modal-field checkbox-field">
+              <label className="v101-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={playerFormActive}
+                  onChange={e => setPlayerFormActive(e.target.checked)}
+                />
+                <span><strong>Zawodnik aktywny w kadrze DELTY GM</strong> (odznacz, aby przenieść do archiwum)</span>
+              </label>
+            </div>
+
+            <div className="v101-player-modal-actions">
+              {editingPlayer && (
+                <button
+                  type="button"
+                  className="v101-btn-delete-perm"
+                  onClick={() => deletePlayerPermanently(editingPlayer.id, editingPlayer.display_name)}
+                >
+                  <Trash2 size={15} />
+                  <span>Usuń całkowicie</span>
+                </button>
+              )}
+              
+              <div className="v101-actions-right">
+                <button
+                  type="button"
+                  className="v101-btn-cancel"
+                  onClick={closePlayerModal}
+                  disabled={playerFormSaving}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="submit"
+                  className="v101-btn-save"
+                  disabled={playerFormSaving}
+                >
+                  <Save size={15} />
+                  <span>{playerFormSaving ? "Zapisywanie..." : "Zapisz dane zawodnika"}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
   </div>;
 }
