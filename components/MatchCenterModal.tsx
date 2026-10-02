@@ -169,21 +169,34 @@ export default function MatchCenterModal(props:{
     } finally {setMatchBusy(false);}
   }
 
-  // Wynik jest aktualizowany wraz ze zdarzeniem. Przy awarii drugiego zapisu
-  // próbujemy przywrócić poprzedni stan; przy równoczesnej edycji dwóch urządzeń
-  // administrator powinien sprawdzić wynik i listę zdarzeń.
+  type ScoreKey="home_score"|"away_score";
+  async function updateScoreIfCurrent(key:ScoreKey,expected:number|null,nextScore:number){
+    let query=supabase.from("matches").update({[key]:nextScore}).eq("id",match.id);
+    query=expected===null?query.is(key,null):query.eq(key,expected);
+    const {data,error}=await query
+      .select("id,round_no,match_date,match_time,venue,home_team,away_team,home_score,away_score,status")
+      .maybeSingle();
+    return {data:data as Match|null,error};
+  }
+
+  // Warunkowy zapis nie pozwala starszej kopii meczu nadpisać wyniku,
+  // który w międzyczasie zmieniła inna osoba lub inne urządzenie.
   async function updateTeamScore(team:"delta"|"opponent",difference:number){
     if(eventBusy||!canEditEvents||match.status==="cancelled")return;
     setEventBusy(true);setEventError("");
     try {
       const key=(team==="delta"?deltaIsHome:!deltaIsHome)?"home_score":"away_score";
-      const previous=match[key]??0;
+      const previousRaw=match[key];
+      const previous=previousRaw??0;
       const nextScore=previous+difference;
       if(nextScore<0)return setEventError("Wynik nie może być ujemny.");
-      const next={...match,[key]:nextScore};
-      const {error}=await supabase.from("matches").update({[key]:nextScore}).eq("id",match.id);
-      if(error)return setEventError(error.message);
-      props.onDataChange({match:next});confirmSaved(team==="opponent"?"Wynik przeciwnika zapisany":"Wynik DELTY zapisany");
+      const result=await updateScoreIfCurrent(key,previousRaw,nextScore);
+      if(result.error)return setEventError(result.error.message);
+      if(!result.data){
+        await refreshMatch();
+        return setEventError("Wynik zmienił się na innym urządzeniu. Dane zostały odświeżone — sprawdź wynik i spróbuj ponownie.");
+      }
+      props.onDataChange({match:result.data});confirmSaved(team==="opponent"?"Wynik przeciwnika zapisany":"Wynik DELTY zapisany");
     } finally {setEventBusy(false);}
   }
 
@@ -255,15 +268,19 @@ export default function MatchCenterModal(props:{
       const {data,error}=await supabase.from("match_events").insert({match_id:match.id,event_type:"goal",player_id:scorerId,assist_player_id:assistId||null}).select("*").single();
       if(error)return setEventError(error.message);
       const key=deltaIsHome?"home_score":"away_score";
-      const next={...match,[key]:(match[key]??0)+1};
-      const result=await supabase.from("matches").update({[key]:next[key]}).eq("id",match.id);
-      if(result.error){
+      const previousRaw=match[key];
+      const result=await updateScoreIfCurrent(key,previousRaw,(previousRaw??0)+1);
+      if(result.error||!result.data){
         const rollback=await supabase.from("match_events").delete().eq("id",data.id);
-        setEventError(rollback.error?"Bramka zapisana, ale wynik nie został zaktualizowany. Sprawdź wynik i skoryguj go ręcznie.":`Nie zapisano wyniku: ${result.error.message}`);
+        if(!result.error)await refreshMatch();
+        setEventError(rollback.error
+          ?"Bramka została zapisana, ale wynik nie został zaktualizowany. Sprawdź wynik i skoryguj go ręcznie."
+          :result.error?`Nie zapisano wyniku: ${result.error.message}`
+          :"Wynik zmienił się na innym urządzeniu. Cofnięto dodanie bramki i odświeżono dane — spróbuj ponownie.");
         if(rollback.error)props.onDataChange({events:[...props.events,data]});
         return;
       }
-      props.onDataChange({events:[...props.events,data],match:next});
+      props.onDataChange({events:[...props.events,data],match:result.data});
       const scorerGoals=deltaGoals.filter(e=>e.player_id===scorerId).length+1;
       setScorerId("");setAssistId("");triggerCelebration(scorerGoals>=3?"hattrick":"goal");confirmSaved("Bramka DELTY i wynik zapisane");
     } finally {setEventBusy(false);}
@@ -275,12 +292,22 @@ export default function MatchCenterModal(props:{
     setEventBusy(true);setEventError("");
     try {
       const key=deltaIsHome?"home_score":"away_score";
+      const previousRaw=match[key];
+      const previous=previousRaw??0;
+      if(previous<=0)return setEventError("Nie można odjąć bramki, gdy wynik DELTY wynosi 0.");
+      const scoreResult=await updateScoreIfCurrent(key,previousRaw,previous-1);
+      if(scoreResult.error)return setEventError(scoreResult.error.message);
+      if(!scoreResult.data){
+        await refreshMatch();
+        return setEventError("Wynik zmienił się na innym urządzeniu. Niczego nie usunięto; dane zostały odświeżone.");
+      }
       const {error}=await supabase.from("match_events").delete().eq("id",id);
-      if(error)return setEventError(error.message);
-      const next={...match,[key]:Math.max(0,(match[key]??0)-1)};
-      const result=await supabase.from("matches").update({[key]:next[key]}).eq("id",match.id);
-      props.onDataChange({events:props.events.filter(e=>e.id!==id),...(result.error?{}:{match:next})});
-      if(result.error)return setEventError("Bramkę usunięto, ale nie udało się poprawić wyniku. Skoryguj wynik ręcznie: "+result.error.message);
+      if(error){
+        await updateScoreIfCurrent(key,previous-1,previous);
+        await refreshMatch();
+        return setEventError("Nie udało się usunąć bramki. Wynik został przywrócony: "+error.message);
+      }
+      props.onDataChange({events:props.events.filter(e=>e.id!==id),match:scoreResult.data});
       confirmSaved("Bramka usunięta — wynik i statystyki skorygowane");
     } finally {setEventBusy(false);}
   }
