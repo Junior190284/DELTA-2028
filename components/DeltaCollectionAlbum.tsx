@@ -437,7 +437,9 @@ export default function DeltaCollectionAlbum({
               <div className="v104-player-album-head">
                 <div className="v104-player-info-group">
                   <div className="v104-player-avatar-ring">
-                    <PlayerPhoto playerId={album.player.id} className="player-photo" />
+                    <span className="v104-avatar-initials">
+                      {album.player.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                    </span>
                   </div>
                   <div>
                     <h3>{album.player.display_name}</h3>

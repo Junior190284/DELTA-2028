@@ -270,11 +270,11 @@ export default function CollectibleCard3D({
                 className="w-16 h-16 rounded-full overflow-hidden border-2 shadow-xl relative flex items-center justify-center bg-slate-900"
                 style={{ borderColor: config.color }}
               >
-                {card.player?.id ? (
-                  <PlayerPhoto playerId={card.player.id} className="w-full h-full object-cover" />
-                ) : (
-                  <img src="/teamlogos/gm.png" alt="" className="w-10 h-10 object-contain" />
-                )}
+                <div className="w-full h-full flex items-center justify-center bg-black/60">
+                  <span className="font-black text-sm text-amber-400">
+                    {(card.player?.display_name || "D").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
               </div>
             )}
           </div>

@@ -10105,6 +10105,19 @@ body > main,
   display: block;
 }
 
+.v104-avatar-initials {
+  font-size: 15px;
+  font-weight: 900;
+  color: #f1c95c;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(241, 201, 92, 0.2), #090c12);
+}
+
 .v104-player-info-group h3 {
   font-size: 17px;
   font-weight: 900;
