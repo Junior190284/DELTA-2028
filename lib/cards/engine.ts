@@ -150,7 +150,64 @@ export async function openPackServerSide(
     `)
     .eq("is_active", true);
 
-  if (cardsErr || !allCards || !allCards.length) {
+  let availableCards: CardDefinition[] = allCards || [];
+
+  if (!availableCards.length) {
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, display_name, shirt_number, position, photo_path, active")
+      .order("display_name");
+
+    const activePlayers = (players || []).filter(p => p.active !== false);
+    const starterTypes = ["base", "matchday", "training_warrior", "goal_hunter", "mvp", "inferno"] as const;
+
+    for (const p of activePlayers) {
+      const isRyszard = (p.display_name || "").toLowerCase().includes("ryszard") &&
+                        (p.display_name || "").toLowerCase().includes("rybacki");
+
+      for (const type of starterTypes) {
+        const cfg = CARD_TYPES_CONFIG[type];
+        let artworkUrl: string | null = null;
+        let artworkPose = "standard";
+
+        if (isRyszard) {
+          if (type === "inferno") artworkUrl = "/assets/players/ryszard-inferno.png";
+          else if (type === "mvp" || type === "goal_hunter" || type === "training_warrior") artworkUrl = "/assets/players/ryszard-legend.png";
+          else artworkUrl = "/assets/players/ryszard-gold.png";
+        }
+
+        availableCards.push({
+          id: `card_${p.id}_${type}`,
+          player_id: p.id,
+          season: "2026/27",
+          card_type: type,
+          card_name: `${p.display_name} — ${cfg.name}`,
+          title: cfg.name,
+          rarity: cfg.defaultRarity,
+          artwork_url: artworkUrl,
+          artwork_pose: artworkPose,
+          frame_theme: type === "inferno" ? "inferno" : type === "mvp" ? "legend" : "gold",
+          card_number: availableCards.length + 1,
+          is_active: true,
+          is_limited: false,
+          edition_size: null,
+          description: cfg.description,
+          lore: `Oficjalna karta DELTA Warszawa 2018 GM.`,
+          match_id: null,
+          special_event_id: null,
+          player: {
+            id: p.id,
+            display_name: p.display_name,
+            shirt_number: p.shirt_number,
+            position: p.position,
+            photo_path: p.photo_path
+          }
+        });
+      }
+    }
+  }
+
+  if (!availableCards.length) {
     throw new Error("Brak dostępnych kart w puli losowania.");
   }
 
@@ -183,9 +240,9 @@ export async function openPackServerSide(
     const rolledRarity = rollRarity(dropRates, guaranteed);
 
     // Wybieramy losową kartę z puli o wylosowanej rzadkości
-    let matchingCards = allCards.filter(c => c.rarity === rolledRarity);
+    let matchingCards = availableCards.filter(c => c.rarity === rolledRarity);
     if (!matchingCards.length) {
-      matchingCards = allCards; // fallback
+      matchingCards = availableCards; // fallback
     }
 
     const selectedCard = matchingCards[Math.floor(Math.random() * matchingCards.length)] as CardDefinition;
