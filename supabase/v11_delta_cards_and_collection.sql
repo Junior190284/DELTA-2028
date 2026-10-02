@@ -99,49 +99,49 @@ alter table public.user_unopened_packs enable row level security;
 alter table public.user_cards enable row level security;
 alter table public.pack_opening_logs enable row level security;
 
--- 8. Polityki RLS (Czyste instrukcje DDL)
+-- 8. Polityki RLS
 
 -- pack_definitions
-drop policy if exists "pack_definitions_read_all" on public.pack_definitions;
-create policy "pack_definitions_read_all" on public.pack_definitions for select to authenticated using (true);
+drop policy if exists pack_definitions_read_all on public.pack_definitions;
+create policy pack_definitions_read_all on public.pack_definitions for select to authenticated using (true);
 
-drop policy if exists "pack_definitions_staff_all" on public.pack_definitions;
-create policy "pack_definitions_staff_all" on public.pack_definitions for all to authenticated using (public.is_staff()) with check (public.is_staff());
+drop policy if exists pack_definitions_staff_all on public.pack_definitions;
+create policy pack_definitions_staff_all on public.pack_definitions for all to authenticated using (public.is_staff()) with check (public.is_staff());
 
 -- card_definitions
-drop policy if exists "card_definitions_read_all" on public.card_definitions;
-create policy "card_definitions_read_all" on public.card_definitions for select to authenticated using (true);
+drop policy if exists card_definitions_read_all on public.card_definitions;
+create policy card_definitions_read_all on public.card_definitions for select to authenticated using (true);
 
-drop policy if exists "card_definitions_staff_all" on public.card_definitions;
-create policy "card_definitions_staff_all" on public.card_definitions for all to authenticated using (public.is_staff()) with check (public.is_staff());
+drop policy if exists card_definitions_staff_all on public.card_definitions;
+create policy card_definitions_staff_all on public.card_definitions for all to authenticated using (public.is_staff()) with check (public.is_staff());
 
 -- user_delta_points
-drop policy if exists "user_delta_points_read_own" on public.user_delta_points;
-create policy "user_delta_points_read_own" on public.user_delta_points for select to authenticated using (user_id = auth.uid() or public.is_staff());
+drop policy if exists user_delta_points_read_own on public.user_delta_points;
+create policy user_delta_points_read_own on public.user_delta_points for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_delta_points_upsert_own" on public.user_delta_points;
-create policy "user_delta_points_upsert_own" on public.user_delta_points for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
+drop policy if exists user_delta_points_upsert_own on public.user_delta_points;
+create policy user_delta_points_upsert_own on public.user_delta_points for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
 
 -- user_unopened_packs
-drop policy if exists "user_unopened_packs_read_own" on public.user_unopened_packs;
-create policy "user_unopened_packs_read_own" on public.user_unopened_packs for select to authenticated using (user_id = auth.uid() or public.is_staff());
+drop policy if exists user_unopened_packs_read_own on public.user_unopened_packs;
+create policy user_unopened_packs_read_own on public.user_unopened_packs for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_unopened_packs_modify_own" on public.user_unopened_packs;
-create policy "user_unopened_packs_modify_own" on public.user_unopened_packs for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
+drop policy if exists user_unopened_packs_modify_own on public.user_unopened_packs;
+create policy user_unopened_packs_modify_own on public.user_unopened_packs for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
 
 -- user_cards
-drop policy if exists "user_cards_read_own" on public.user_cards;
-create policy "user_cards_read_own" on public.user_cards for select to authenticated using (user_id = auth.uid() or public.is_staff());
+drop policy if exists user_cards_read_own on public.user_cards;
+create policy user_cards_read_own on public.user_cards for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_cards_modify_own" on public.user_cards;
-create policy "user_cards_modify_own" on public.user_cards for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
+drop policy if exists user_cards_modify_own on public.user_cards;
+create policy user_cards_modify_own on public.user_cards for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
 
 -- pack_opening_logs
-drop policy if exists "pack_opening_logs_read_own" on public.pack_opening_logs;
-create policy "pack_opening_logs_read_own" on public.pack_opening_logs for select to authenticated using (user_id = auth.uid() or public.is_staff());
+drop policy if exists pack_opening_logs_read_own on public.pack_opening_logs;
+create policy pack_opening_logs_read_own on public.pack_opening_logs for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "pack_opening_logs_insert_own" on public.pack_opening_logs;
-create policy "pack_opening_logs_insert_own" on public.pack_opening_logs for insert to authenticated with check (user_id = auth.uid() or public.is_staff());
+drop policy if exists pack_opening_logs_insert_own on public.pack_opening_logs;
+create policy pack_opening_logs_insert_own on public.pack_opening_logs for insert to authenticated with check (user_id = auth.uid() or public.is_staff());
 
 -- 9. Seed domyślnych typów paczek
 insert into public.pack_definitions (id, name, description, cards_count, drop_rates, min_rarity, theme)
