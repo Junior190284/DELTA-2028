@@ -2,35 +2,31 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { 
-  Flame, 
   Sparkles, 
-  Search, 
-  Filter, 
   Gift, 
   Coins, 
-  Lock, 
-  CheckCircle2, 
-  RotateCw, 
-  ChevronRight, 
   Layers, 
-  Trophy, 
+  Search, 
+  Filter, 
+  Flame, 
   Crown, 
-  Award,
   RefreshCw,
-  X
+  Trophy,
+  Award,
+  Lock,
+  Eye,
+  CheckCircle2,
+  ChevronRight,
+  ChevronLeft,
+  X,
+  ArrowLeft,
+  User,
+  Star
 } from "lucide-react";
-import { 
-  CardDefinition, 
-  UserCard, 
-  UserUnopenedPack, 
-  PackDefinition, 
-  CardRarity, 
-  RARITY_CONFIG 
-} from "@/lib/cards/types";
+import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG } from "@/lib/cards/types";
+import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
-import PlayerPhoto from "./PlayerPhoto";
-import { cardSound } from "@/lib/cards/audio";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -43,7 +39,7 @@ const PACK_PRICES: Record<string, number> = {
 
 interface DeltaCollectionAlbumProps {
   currentUserId?: string;
-  players?: { id: string; display_name: string; shirt_number: string | null; position: string | null }[];
+  players?: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null }[];
   onOpenPlayerProfile?: (playerId: string) => void;
 }
 
@@ -61,9 +57,11 @@ export default function DeltaCollectionAlbum({
   const [packDefinitions, setPackDefinitions] = useState<PackDefinition[]>([]);
   const [deltaPoints, setDeltaPoints] = useState(0);
 
+  // Active Player Album View (null = show all player cards, playerId = show that player's cards carousel)
+  const [selectedAlbumPlayerId, setSelectedAlbumPlayerId] = useState<string | null>(null);
+
   // Filters & State
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("all");
   const [selectedRarity, setSelectedRarity] = useState<string>("all");
   const [selectedOwnership, setSelectedOwnership] = useState<"all" | "owned" | "missing">("all");
   
@@ -142,7 +140,8 @@ export default function DeltaCollectionAlbum({
 
   useEffect(() => {
     fetchCollection();
-    // Auto-sync rewards silently on mount
+
+    // Auto sync match/training rewards on mount
     fetch("/api/cards/sync-rewards", { method: "POST" })
       .then(res => res.json())
       .then(data => {
@@ -170,59 +169,98 @@ export default function DeltaCollectionAlbum({
   // Group cards by player
   const playerAlbums = useMemo(() => {
     const map = new Map<string, {
-      player: { id: string; display_name: string; shirt_number: string | null; position: string | null };
+      player: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null };
       cards: CardDefinition[];
       ownedCount: number;
+      topOwnedCard: CardDefinition | null;
+      completionRate: number;
     }>();
 
+    // Initialize with all team players
+    players.forEach(p => {
+      map.set(p.id, {
+        player: p,
+        cards: [],
+        ownedCount: 0,
+        topOwnedCard: null,
+        completionRate: 0
+      });
+    });
+
+    // Populate with card definitions
     allCards.forEach(card => {
       const pid = card.player_id;
       if (!map.has(pid)) {
         map.set(pid, {
           player: card.player || { id: pid, display_name: "Zawodnik DELTA", shirt_number: null, position: null },
           cards: [],
-          ownedCount: 0
+          ownedCount: 0,
+          topOwnedCard: null,
+          completionRate: 0
         });
       }
       const entry = map.get(pid)!;
       entry.cards.push(card);
       if (ownedCardsMap.has(card.id)) {
         entry.ownedCount++;
+        // Track highest rarity owned card
+        if (!entry.topOwnedCard) {
+          entry.topOwnedCard = card;
+        }
       }
     });
 
-    return Array.from(map.values());
-  }, [allCards, ownedCardsMap]);
+    // Calculate rates
+    const list = Array.from(map.values()).filter(a => a.cards.length > 0);
+    list.forEach(a => {
+      a.completionRate = a.cards.length > 0 ? Math.round((a.ownedCount / a.cards.length) * 100) : 0;
+    });
 
-  // Filtered card list
-  const filteredCards = useMemo(() => {
-    return allCards.filter(card => {
-      // Search
+    return list;
+  }, [allCards, ownedCardsMap, players]);
+
+  // Filtered player albums for showcase
+  const filteredPlayerAlbums = useMemo(() => {
+    return playerAlbums.filter(album => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const pName = (card.player?.display_name || "").toLowerCase();
-        const cTitle = (card.title || card.card_name).toLowerCase();
-        if (!pName.includes(q) && !cTitle.includes(q)) return false;
+        const pName = album.player.display_name.toLowerCase();
+        if (!pName.includes(q)) return false;
       }
 
-      // Player filter
-      if (selectedPlayerId !== "all" && card.player_id !== selectedPlayerId) {
-        return false;
-      }
-
-      // Rarity filter
-      if (selectedRarity !== "all" && card.rarity !== selectedRarity) {
-        return false;
-      }
-
-      // Ownership filter
-      const isOwned = ownedCardsMap.has(card.id);
-      if (selectedOwnership === "owned" && !isOwned) return false;
-      if (selectedOwnership === "missing" && isOwned) return false;
+      if (selectedOwnership === "owned" && album.ownedCount === 0) return false;
+      if (selectedOwnership === "missing" && album.ownedCount === album.cards.length) return false;
 
       return true;
     });
-  }, [allCards, searchQuery, selectedPlayerId, selectedRarity, selectedOwnership, ownedCardsMap]);
+  }, [playerAlbums, searchQuery, selectedOwnership]);
+
+  // Active selected player album
+  const currentAlbum = useMemo(() => {
+    if (!selectedAlbumPlayerId) return null;
+    return playerAlbums.find(a => a.player.id === selectedAlbumPlayerId) || null;
+  }, [playerAlbums, selectedAlbumPlayerId]);
+
+  // Navigation between players in album mode
+  const handlePrevPlayer = () => {
+    if (!currentAlbum) return;
+    const currentIndex = playerAlbums.findIndex(a => a.player.id === currentAlbum.player.id);
+    if (currentIndex > 0) {
+      setSelectedAlbumPlayerId(playerAlbums[currentIndex - 1].player.id);
+    } else {
+      setSelectedAlbumPlayerId(playerAlbums[playerAlbums.length - 1].player.id);
+    }
+  };
+
+  const handleNextPlayer = () => {
+    if (!currentAlbum) return;
+    const currentIndex = playerAlbums.findIndex(a => a.player.id === currentAlbum.player.id);
+    if (currentIndex < playerAlbums.length - 1) {
+      setSelectedAlbumPlayerId(playerAlbums[currentIndex + 1].player.id);
+    } else {
+      setSelectedAlbumPlayerId(playerAlbums[0].player.id);
+    }
+  };
 
   return (
     <section className="section v8-section-page v104-collection-page animate-fadeIn">
@@ -233,7 +271,7 @@ export default function DeltaCollectionAlbum({
             <span className="eyebrow gold"><Sparkles size={14} className="inline mr-1" /> OFICJALNY KLASER KART KLUBOWYCH</span>
             <h2>DELTA <em>COLLECTION</em></h2>
             <p>
-              Zbieraj unikalne cyfrowe karty zawodników DELTA Warszawa 2018 GM. Otwieraj paczki za mecze, treningi i osiągnięcia lub wymieniaj duplikaty na Delta Points!
+              Zbieraj unikalne cyfrowe karty zawodników DELTA Warszawa 2018 GM. Otwieraj paczki za mecze, treningi i osiągnięcia lub wymieniaj punkty Delta Points!
             </p>
           </div>
 
@@ -258,45 +296,27 @@ export default function DeltaCollectionAlbum({
                 <b className="text-gold">{deltaPoints}</b>
                 <small>DP</small>
               </div>
-              <span className="v104-kpi-sub">Wymiana duplikatów</span>
+              <span className="v104-kpi-hint">Wymieniaj na booster packs</span>
             </div>
-
-            {/* Sync Rewards Button */}
-            <button
-              type="button"
-              onClick={handleSyncRewards}
-              disabled={syncing}
-              className="v104-sync-btn"
-              title="Sprawdź nowe nagrody za mecze i treningi"
-            >
-              <RefreshCw size={20} className={syncing ? "animate-spin" : ""} />
-              <span>SYNCHRONIZUJ</span>
-            </button>
           </div>
         </div>
 
-        {/* ================= UNOPENED PACKS CALLOUT BANNER ================= */}
+        {/* UNOPENED PACKS BANNER */}
         {unopenedPacks.length > 0 && (
-          <div className="v104-unopened-banner">
-            <div className="v104-unopened-info">
-              <div className="v104-unopened-icon">
-                <Gift size={28} />
-              </div>
-              <div>
-                <h4>
-                  MASZ {unopenedPacks.length} {unopenedPacks.length === 1 ? "NOWĄ PACZKĘ" : unopenedPacks.length < 5 ? "NOWE PACZKI" : "NOWYCH PACZEK"} DO OTWARCIA! 🎁
-                </h4>
-                <p>
-                  Odkryj unikalne karty zawodników i wzbogać swój klaser klubowy!
-                </p>
-              </div>
+          <div className="v104-collection-unopened-banner">
+            <div>
+              <span className="v104-unopened-title">
+                🎁 Masz nieotwarte paczki kart ({unopenedPacks.length})!
+              </span>
+              <p className="v104-unopened-sub">
+                Otwórz je teraz, aby zdobyć nowe karty do swojego oficjalnego klasera!
+              </p>
             </div>
-
             <button
               type="button"
               onClick={() => {
-                const first = unopenedPacks[0];
-                const packDef = packDefinitions.find(p => p.id === first.pack_type_id) || packDefinitions[0];
+                const firstPack = unopenedPacks[0];
+                const packDef = packDefinitions.find(p => p.id === firstPack.pack_type_id) || packDefinitions[0];
                 setActivePackToOpen(packDef);
               }}
               className="v104-open-pack-btn"
@@ -322,7 +342,7 @@ export default function DeltaCollectionAlbum({
             {packDefinitions.map(pack => {
               const packCount = unopenedPacks.filter(p => p.pack_type_id === pack.id).length;
               const isInferno = pack.id === "inferno_booster" || pack.theme === "inferno";
-              const isLegend = pack.id === "legend_pack" || pack.theme === "legend";
+              const isLegend = pack.id === "legend_booster" || pack.id === "legend_pack" || pack.theme === "legend";
               const isMatchday = pack.id === "matchday_booster";
 
               return (
@@ -330,13 +350,9 @@ export default function DeltaCollectionAlbum({
                   key={pack.id} 
                   className={`v104-booster-card ${isInferno ? "booster-inferno" : isLegend ? "booster-legend" : isMatchday ? "booster-matchday" : "booster-gold"}`}
                 >
-                  {/* Pack Top Crimp / Foil Tear Line */}
                   <div className="v104-booster-crimp top" />
-
-                  {/* Shimmer Light Reflection */}
                   <div className="v104-booster-shimmer" />
 
-                  {/* Pack Header Badge */}
                   <div className="v104-booster-top">
                     <span className="v104-booster-edition">DELTA GM 2018</span>
                     {packCount > 0 ? (
@@ -348,7 +364,6 @@ export default function DeltaCollectionAlbum({
                     )}
                   </div>
 
-                  {/* Pack Center Crest & Branding */}
                   <div className="v104-booster-center">
                     <div className="v104-booster-crest-wrap">
                       <img src="/teamlogos/gm.png" alt="DELTA" className="v104-booster-crest" />
@@ -357,7 +372,6 @@ export default function DeltaCollectionAlbum({
                     <span className="v104-booster-cards-count">{pack.cards_count} KART W PACZCE</span>
                   </div>
 
-                  {/* Pack Specs & Action */}
                   <div className="v104-booster-bottom">
                     <p className="v104-booster-desc">{pack.description}</p>
                     
@@ -395,7 +409,6 @@ export default function DeltaCollectionAlbum({
                     )}
                   </div>
 
-                  {/* Pack Bottom Crimp */}
                   <div className="v104-booster-crimp bottom" />
                 </div>
               );
@@ -404,162 +417,230 @@ export default function DeltaCollectionAlbum({
         </div>
       </div>
 
-      {/* ================= FILTER & SEARCH BAR ================= */}
-      <div className="v104-filter-bar devil-card">
-        {/* Search */}
-        <div className="v104-search-box">
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder="Szukaj zawodnika lub typu karty..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        {/* Dropdowns */}
-        <div className="v104-filter-controls">
-          {/* Player Select */}
-          <select
-            value={selectedPlayerId}
-            onChange={e => setSelectedPlayerId(e.target.value)}
-            className="v104-select"
-          >
-            <option value="all">Wszyscy zawodnicy ({playerAlbums.length})</option>
-            {playerAlbums.map(a => (
-              <option key={a.player.id} value={a.player.id}>
-                {a.player.display_name} ({a.ownedCount}/{a.cards.length})
-              </option>
-            ))}
-          </select>
-
-          {/* Rarity Select */}
-          <select
-            value={selectedRarity}
-            onChange={e => setSelectedRarity(e.target.value)}
-            className="v104-select"
-          >
-            <option value="all">Wszystkie rzadkości</option>
-            <option value="common">Common (Zwykłe)</option>
-            <option value="rare">Rare (Rzadkie)</option>
-            <option value="epic">Epic (Epickie)</option>
-            <option value="legendary">Legendary (Legendarne)</option>
-            <option value="inferno">🔥 Inferno (Piekielne)</option>
-          </select>
-
-          {/* Ownership Toggle */}
-          <div className="v104-toggle-group">
+      {/* ================= VIEW 1: DEDICATED SINGLE PLAYER ALBUM (CAROUSEL) ================= */}
+      {currentAlbum ? (
+        <div className="v104-single-player-album animate-fadeIn">
+          {/* Top Bar Navigation */}
+          <div className="v104-player-album-topbar devil-card">
             <button
-              onClick={() => setSelectedOwnership("all")}
-              className={selectedOwnership === "all" ? "active" : ""}
+              type="button"
+              onClick={() => setSelectedAlbumPlayerId(null)}
+              className="v104-album-back-btn"
             >
-              Wszystkie
+              <ArrowLeft size={16} /> WRÓĆ DO WSZYSTKICH ZAWODNIKÓW
             </button>
-            <button
-              onClick={() => setSelectedOwnership("owned")}
-              className={selectedOwnership === "owned" ? "active" : ""}
-            >
-              Odblokowane
-            </button>
-            <button
-              onClick={() => setSelectedOwnership("missing")}
-              className={selectedOwnership === "missing" ? "active" : ""}
-            >
-              Brakujące
-            </button>
+
+            <div className="v104-player-album-arrows">
+              <button
+                type="button"
+                onClick={handlePrevPlayer}
+                className="v104-arrow-btn"
+                title="Poprzedni zawodnik"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="v104-album-player-indicator">
+                {currentAlbum.player.display_name}
+              </span>
+              <button
+                type="button"
+                onClick={handleNextPlayer}
+                className="v104-arrow-btn"
+                title="Następny zawodnik"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* ================= ALBUM VIEW / CARDS GRID ================= */}
-      {loading ? (
-        <div className="v104-loading-state">
-          <RefreshCw size={36} className="animate-spin text-gold" />
-          <span>Ładowanie kolekcji kart DELTA...</span>
-        </div>
-      ) : filteredCards.length === 0 ? (
-        <div className="v104-empty-state devil-card">
-          <Layers size={48} />
-          <h3>Brak kart spełniających kryteria</h3>
-          <p>
-            Zmień filtry lub otwórz nową paczkę, aby wzbogacić swój klaser!
-          </p>
-        </div>
-      ) : selectedPlayerId === "all" && selectedOwnership === "all" && !searchQuery.trim() ? (
-        /* ================= GROUPED BY PLAYER ALBUM ================= */
-        <div className="v104-player-albums-list">
-          {playerAlbums.map(album => (
-            <div 
-              key={album.player.id}
-              className="v104-player-album-card devil-card"
-            >
-              {/* Player Mini-Header */}
-              <div className="v104-player-album-head">
-                <div className="v104-player-info-group">
-                  <div className="v104-player-avatar-ring">
-                    <span className="v104-avatar-initials">
-                      {album.player.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <h3>{album.player.display_name}</h3>
-                    <small>
-                      {album.player.position || "ZAWODNIK"} • #{album.player.shirt_number || "GM"}
-                    </small>
-                  </div>
-                </div>
-
-                <div className="v104-player-count-pill">
-                  <b>{album.ownedCount} / {album.cards.length}</b>
-                  <span>KART ODKRYTYCH</span>
-                </div>
+          {/* Player Banner */}
+          <div className="v104-album-player-banner devil-card">
+            <div className="v104-player-banner-info">
+              <div className="v104-player-avatar-large">
+                <span className="v104-avatar-initials-lg">
+                  {currentAlbum.player.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                </span>
               </div>
-
-              {/* Player's Cards Carousel / Grid */}
-              <div className="v104-cards-row">
-                {album.cards.map(card => {
-                  const userCard = ownedCardsMap.get(card.id) || null;
-                  const isLocked = !userCard;
-
-                  return (
-                    <div key={card.id} className="v104-card-wrapper">
-                      <CollectibleCard3D
-                        card={card}
-                        userCard={userCard}
-                        isLocked={isLocked}
-                        size="md"
-                        interactive={true}
-                        showFlip={true}
-                        onClick={() => setInspectCard({ card, userCard })}
-                      />
-                    </div>
-                  );
-                })}
+              <div>
+                <span className="eyebrow gold">KLASER ZAWODNIKA DELTA GM</span>
+                <h3 className="v104-album-player-name">{currentAlbum.player.display_name}</h3>
+                <div className="v104-album-player-meta">
+                  <span className="v104-album-badge pos">{currentAlbum.player.position || "ZAWODNIK"}</span>
+                  <span className="v104-album-badge num">#{currentAlbum.player.shirt_number || "DELTA"}</span>
+                  <span className="v104-album-badge count">
+                    <Sparkles size={13} className="inline mr-1" />
+                    {currentAlbum.ownedCount} / {currentAlbum.cards.length} KART ZDOBYTYCH ({currentAlbum.completionRate}%)
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
+
+            <div className="v104-album-progress-box">
+              <div className="v104-album-progress-bar">
+                <i style={{ width: `${currentAlbum.completionRate}%` }} />
+              </div>
+              <span className="v104-album-progress-label">
+                {currentAlbum.completionRate === 100 ? "👑 KOMPLETNA KOLEKCJA!" : `Brakuje ${currentAlbum.cards.length - currentAlbum.ownedCount} kart do kompletu`}
+              </span>
+            </div>
+          </div>
+
+          {/* Player Cards Horizontal 3D Carousel */}
+          <div className="v104-album-carousel-section">
+            <div className="v104-carousel-header">
+              <span className="eyebrow gold"><Layers size={14} className="inline mr-1" /> KARTY W TEJ KOLEKCJI ({currentAlbum.cards.length})</span>
+              <p className="v104-carousel-sub">
+                Kliknij kartę, aby powiększyć i obejrzeć historię na rewersie. Karty zablokowane zdobędziesz otwierając paczki!
+              </p>
+            </div>
+
+            <div className="v104-player-carousel-track">
+              {currentAlbum.cards.map(card => {
+                const userCard = ownedCardsMap.get(card.id) || null;
+                const isLocked = !userCard;
+
+                return (
+                  <div key={card.id} className="v104-carousel-card-item">
+                    <CollectibleCard3D
+                      card={card}
+                      userCard={userCard}
+                      isLocked={isLocked}
+                      size="lg"
+                      interactive={true}
+                      showFlip={true}
+                      onClick={() => setInspectCard({ card, userCard })}
+                    />
+
+                    <div className="v104-carousel-card-footer">
+                      {!isLocked ? (
+                        <span className="v104-status-tag owned">
+                          <CheckCircle2 size={12} /> ODBLOKOWANA
+                          {userCard?.duplicates_count ? ` (+${userCard.duplicates_count} dup)` : ""}
+                        </span>
+                      ) : (
+                        <span className="v104-status-tag locked">
+                          <Lock size={12} /> ZABLOKOWANA
+                        </span>
+                      )}
+                      <span className="v104-card-rarity-pill">
+                        {card.rarity.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       ) : (
-        /* ================= FLAT FILTERED GRID ================= */
-        <div className="v104-flat-cards-grid">
-          {filteredCards.map(card => {
-            const userCard = ownedCardsMap.get(card.id) || null;
-            const isLocked = !userCard;
+        /* ================= VIEW 2: ROSTER SHOWCASE (ALL PLAYERS OVERVIEW) ================= */
+        <div className="v104-roster-showcase-section animate-fadeIn">
+          {/* Search & Filters */}
+          <div className="v104-filter-bar devil-card">
+            <div className="v104-search-box">
+              <Search size={16} />
+              <input
+                type="text"
+                placeholder="Szukaj zawodnika DELTA Warszawa..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-            return (
-              <div key={card.id} className="v104-card-wrapper">
-                <CollectibleCard3D
-                  card={card}
-                  userCard={userCard}
-                  isLocked={isLocked}
-                  size="md"
-                  interactive={true}
-                  showFlip={true}
-                  onClick={() => setInspectCard({ card, userCard })}
-                />
-              </div>
-            );
-          })}
+            <div className="v104-toggle-group">
+              <button
+                onClick={() => setSelectedOwnership("all")}
+                className={selectedOwnership === "all" ? "active" : ""}
+              >
+                Wszyscy zawodnicy ({playerAlbums.length})
+              </button>
+              <button
+                onClick={() => setSelectedOwnership("owned")}
+                className={selectedOwnership === "owned" ? "active" : ""}
+              >
+                Rozpoczęte klasery
+              </button>
+              <button
+                onClick={() => setSelectedOwnership("missing")}
+                className={selectedOwnership === "missing" ? "active" : ""}
+              >
+                Nieukończone
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="v104-loading-state">
+              <RefreshCw size={36} className="animate-spin text-gold" />
+              <span>Ładowanie kart zawodników DELTA...</span>
+            </div>
+          ) : filteredPlayerAlbums.length === 0 ? (
+            <div className="v104-empty-state devil-card">
+              <Layers size={48} />
+              <h3>Brak zawodników spełniających kryteria</h3>
+              <p>Wpisz inne nazwisko lub zresetuj filtry.</p>
+            </div>
+          ) : (
+            <div className="v104-roster-grid">
+              {filteredPlayerAlbums.map(album => {
+                const hasCards = album.ownedCount > 0;
+                const representativeCard = album.topOwnedCard || album.cards[0];
+                const isRepLocked = !album.topOwnedCard;
+
+                return (
+                  <div
+                    key={album.player.id}
+                    onClick={() => setSelectedAlbumPlayerId(album.player.id)}
+                    className="v104-player-showcase-card devil-card"
+                  >
+                    {/* Card 3D Preview (Showcase Hero) */}
+                    <div className="v104-showcase-card-preview">
+                      <CollectibleCard3D
+                        card={representativeCard}
+                        userCard={album.topOwnedCard ? (ownedCardsMap.get(representativeCard.id) || null) : null}
+                        isLocked={isRepLocked}
+                        size="md"
+                        interactive={false}
+                        showFlip={false}
+                      />
+                    </div>
+
+                    {/* Player Info & Stats */}
+                    <div className="v104-showcase-info">
+                      <div className="v104-showcase-name-row">
+                        <h4>{album.player.display_name}</h4>
+                        <span className="v104-showcase-number">
+                          #{album.player.shirt_number || "GM"}
+                        </span>
+                      </div>
+
+                      <span className="v104-showcase-pos">
+                        {album.player.position || "ZAWODNIK DELTA"}
+                      </span>
+
+                      {/* Progress Bar */}
+                      <div className="v104-showcase-progress">
+                        <div className="v104-showcase-bar-track">
+                          <i style={{ width: `${album.completionRate}%` }} />
+                        </div>
+                        <div className="v104-showcase-bar-text">
+                          <span>{album.ownedCount} / {album.cards.length} kart</span>
+                          <b>{album.completionRate}%</b>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="v104-showcase-open-btn"
+                      >
+                        OTWÓRZ KLASER <ChevronRight size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

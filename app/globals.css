@@ -11857,6 +11857,424 @@ body > main,
   animation: pulse 2s infinite;
 }
 
+/* ================= ROSTER SHOWCASE GRID ================= */
+.v104-roster-showcase-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.v104-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.v104-player-showcase-card {
+  padding: 16px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  background: rgba(10, 14, 22, 0.7);
+  border: 1px solid rgba(241, 201, 92, 0.15);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.v104-player-showcase-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(241, 201, 92, 0.5);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(241, 201, 92, 0.2);
+}
+
+.v104-showcase-card-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding-top: 6px;
+}
+
+.v104-showcase-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v104-showcase-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v104-showcase-name-row h4 {
+  font-size: 16px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.v104-showcase-number {
+  font-size: 12px;
+  font-weight: 900;
+  color: #f1c95c;
+  padding: 2px 8px;
+  background: rgba(241, 201, 92, 0.12);
+  border-radius: 6px;
+  border: 1px solid rgba(241, 201, 92, 0.3);
+}
+
+.v104-showcase-pos {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.v104-showcase-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.v104-showcase-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v104-showcase-bar-track i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f1c95c, #eab308);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.v104-showcase-bar-text {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.v104-showcase-bar-text b {
+  color: #f1c95c;
+}
+
+.v104-showcase-open-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v104-player-showcase-card:hover .v104-showcase-open-btn {
+  background: linear-gradient(135deg, #f1c95c, #ca8a04);
+  color: #000000;
+  border-color: #fde047;
+  box-shadow: 0 4px 15px rgba(241, 201, 92, 0.4);
+}
+
+/* ================= DEDICATED SINGLE PLAYER ALBUM ================= */
+.v104-single-player-album {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.v104-player-album-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-radius: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.v104-album-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f1c95c;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v104-album-back-btn:hover {
+  color: #ffffff;
+  transform: translateX(-3px);
+}
+
+.v104-player-album-arrows {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.v104-album-player-indicator {
+  font-size: 14px;
+  font-weight: 1000;
+  color: #ffffff;
+}
+
+.v104-arrow-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v104-arrow-btn:hover {
+  background: rgba(241, 201, 92, 0.2);
+  border-color: #f1c95c;
+  color: #f1c95c;
+}
+
+.v104-album-player-banner {
+  padding: 24px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.v104-player-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.v104-player-avatar-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 2px solid #f1c95c;
+  box-shadow: 0 0 20px rgba(241, 201, 92, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v104-avatar-initials-lg {
+  font-size: 20px;
+  font-weight: 1000;
+  color: #f1c95c;
+}
+
+.v104-album-player-name {
+  font-size: 24px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 4px 0 8px;
+}
+
+.v104-album-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.v104-album-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v104-album-badge.pos {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.v104-album-badge.num {
+  background: rgba(241, 201, 92, 0.15);
+  border: 1px solid rgba(241, 201, 92, 0.4);
+  color: #f1c95c;
+}
+
+.v104-album-badge.count {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.v104-album-progress-box {
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v104-album-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v104-album-progress-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f1c95c, #eab308, #22c55e);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.v104-album-progress-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-align: right;
+}
+
+/* 3D CAROUSEL OF CARDS */
+.v104-album-carousel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.v104-carousel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v104-carousel-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.v104-player-carousel-track {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 28px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 24px 12px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 201, 92, 0.4) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.v104-player-carousel-track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.v104-player-carousel-track::-webkit-scrollbar-thumb {
+  background: rgba(241, 201, 92, 0.4);
+  border-radius: 999px;
+}
+
+.v104-carousel-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v104-carousel-card-item:hover {
+  transform: translateY(-8px) scale(1.03);
+}
+
+.v104-carousel-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v104-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v104-status-tag.owned {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #34d399;
+}
+
+.v104-status-tag.locked {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.v104-card-rarity-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: rgba(241, 201, 92, 0.15);
+  border: 1px solid rgba(241, 201, 92, 0.4);
+  color: #f1c95c;
+}
+
+
 
 
 
