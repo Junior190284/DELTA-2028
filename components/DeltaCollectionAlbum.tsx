@@ -21,13 +21,20 @@ import {
   X,
   ArrowLeft,
   User,
-  Star
+  Star,
+  Users,
+  ArrowLeftRight,
+  Swords
 } from "lucide-react";
 import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
 import CardUnlockCinematicModal from "./CardUnlockCinematicModal";
+import DailyInfernoSpin from "./DailyInfernoSpin";
+import SquadBuilder3D from "./SquadBuilder3D";
+import CardBattleCompareModal from "./CardBattleCompareModal";
+import DeltaTradeHubModal from "./DeltaTradeHubModal";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -71,6 +78,10 @@ export default function DeltaCollectionAlbum({
   const [inspectFlipped, setInspectFlipped] = useState(false);
   const [activePackToOpen, setActivePackToOpen] = useState<PackDefinition | null>(null);
   const [cinematicCardToUnlock, setCinematicCardToUnlock] = useState<CardDefinition | null>(null);
+  const [showDailySpin, setShowDailySpin] = useState(false);
+  const [showSquadBuilder, setShowSquadBuilder] = useState(false);
+  const [showTradeHub, setShowTradeHub] = useState(false);
+  const [showBattleCompare, setShowBattleCompare] = useState(false);
 
   const getCardUnlockCondition = (card: CardDefinition): string => {
     const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
@@ -187,6 +198,10 @@ export default function DeltaCollectionAlbum({
     });
     return map;
   }, [userCards]);
+
+  const ownedCardsList = useMemo(() => {
+    return allCards.filter(c => ownedCardsMap.has(c.id));
+  }, [allCards, ownedCardsMap]);
 
   // Total completion statistics
   const totalCount = allCards.length;
@@ -352,6 +367,57 @@ export default function DeltaCollectionAlbum({
             </button>
           </div>
         )}
+
+        {/* ================= 2.0 GAMING NAVIGATION RIBBON ================= */}
+        <div className="v200-collection-gaming-ribbon">
+          <button
+            type="button"
+            onClick={() => setShowDailySpin(true)}
+            className="v200-gaming-nav-btn spin"
+          >
+            <Flame size={20} className="text-red-500 animate-pulse flex-shrink-0" />
+            <div className="text-left">
+              <span className="v200-gbtn-kicker">CODZIENNY BONUS</span>
+              <strong className="v200-gbtn-title">KOŁO FORTUNY 🔥</strong>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowSquadBuilder(true)}
+            className="v200-gaming-nav-btn squad"
+          >
+            <Users size={20} className="text-yellow-400 flex-shrink-0" />
+            <div className="text-left">
+              <span className="v200-gbtn-kicker">MURAWA 3D</span>
+              <strong className="v200-gbtn-title">MOJA DRUŻYNA</strong>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowTradeHub(true)}
+            className="v200-gaming-nav-btn trade"
+          >
+            <ArrowLeftRight size={20} className="text-cyan-400 flex-shrink-0" />
+            <div className="text-left">
+              <span className="v200-gbtn-kicker">SZATNIA DELTA</span>
+              <strong className="v200-gbtn-title">GIEŁDA WYMIANY</strong>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowBattleCompare(true)}
+            className="v200-gaming-nav-btn battle"
+          >
+            <Swords size={20} className="text-purple-400 flex-shrink-0" />
+            <div className="text-left">
+              <span className="v200-gbtn-kicker">HEAD-TO-HEAD</span>
+              <strong className="v200-gbtn-title">POJEDYNEK KART</strong>
+            </div>
+          </button>
+        </div>
 
         {/* ================= 3D BOOSTER PACKS VAULT ================= */}
         <div className="v104-vault-section">
@@ -792,6 +858,55 @@ export default function DeltaCollectionAlbum({
               onOpenPlayerProfile(cinematicCardToUnlock.player_id);
             }
           }}
+        />
+      )}
+
+      {/* ================= 1. DAILY INFERNO SPIN MODAL ================= */}
+      {showDailySpin && (
+        <DailyInfernoSpin
+          onClose={() => setShowDailySpin(false)}
+          onRewardClaimed={(newBal) => {
+            setDeltaPoints(newBal);
+            fetchCollection();
+          }}
+          onOpenPack={(pack) => {
+            setShowDailySpin(false);
+            setActivePackToOpen(pack);
+          }}
+          packDefinitions={packDefinitions}
+        />
+      )}
+
+      {/* ================= 2. SQUAD BUILDER 3D MODAL ================= */}
+      {showSquadBuilder && (
+        <div className="v200-picker-backdrop" onClick={() => setShowSquadBuilder(false)}>
+          <div className="v200-picker-modal max-w-4xl" onClick={e => e.stopPropagation()}>
+            <SquadBuilder3D
+              ownedCards={ownedCardsList}
+              userCardsMap={ownedCardsMap}
+              onClose={() => setShowSquadBuilder(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ================= 3. CARD BATTLE & COMPARE MODAL ================= */}
+      {showBattleCompare && (
+        <CardBattleCompareModal
+          cards={allCards}
+          userCardsMap={ownedCardsMap}
+          onClose={() => setShowBattleCompare(false)}
+        />
+      )}
+
+      {/* ================= 4. DELTA TRADE HUB MODAL ================= */}
+      {showTradeHub && (
+        <DeltaTradeHubModal
+          userCards={userCards}
+          allCards={allCards}
+          deltaPoints={deltaPoints}
+          onClose={() => setShowTradeHub(false)}
+          onTradeComplete={() => fetchCollection()}
         />
       )}
     </section>
