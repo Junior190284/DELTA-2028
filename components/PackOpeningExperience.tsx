@@ -17,6 +17,8 @@ import {
 import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
+import CanvasParticles from "./CanvasParticles";
+import ProceduralTunnel from "./ProceduralTunnel";
 
 interface PackOpeningExperienceProps {
   pack: PackDefinition;
@@ -27,7 +29,8 @@ interface PackOpeningExperienceProps {
 
 type Stage = 
   | "sealed" 
-  | "tearing" 
+  | "charging" 
+  | "flash"
   | "walkout_teaser_1" 
   | "walkout_teaser_2" 
   | "walkout_teaser_3" 
@@ -48,12 +51,30 @@ export default function PackOpeningExperience({
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
   const [soundMuted, setSoundMuted] = useState(false);
+  const [screenShake, setScreenShake] = useState(false);
+
+  // 3D Hover tilt for sealed pack
+  const [packTilt, setPackTilt] = useState({ x: 0, y: 0 });
+  const packRef = useRef<HTMLDivElement | null>(null);
+
+  const handlePackMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!packRef.current || stage !== "sealed") return;
+    const rect = packRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setPackTilt({ x: x * 22, y: -y * 22 });
+  };
+
+  const handlePackMouseLeave = () => {
+    setPackTilt({ x: 0, y: 0 });
+  };
 
   // Trigger server-side opening API
   const handleTearPack = async () => {
     if (loading || stage !== "sealed") return;
     setLoading(true);
-    setStage("tearing");
+    setStage("charging");
+    setScreenShake(true);
     if (!soundMuted) cardSound.playPackTear();
 
     try {
@@ -88,44 +109,48 @@ export default function PackOpeningExperience({
       const topCard = sortedCards[0];
       const topRank = rarityRank[topCard?.card?.rarity || "common"] || 1;
 
-      // If top card is Epic, Legendary, Inferno (or 50% chance for Rare) -> Run EA FC Walkout
-      if (topRank >= 3 || (topRank === 2 && Math.random() > 0.4)) {
-        setWalkoutItem(topCard);
-        
-        // Start Walkout Timeline
-        setTimeout(() => {
-          if (!soundMuted) cardSound.playCinematicBoom();
-          setStage("walkout_teaser_1");
-          if (!soundMuted) cardSound.playTeaserHit(1);
+      // Charge up -> Flash transition
+      setTimeout(() => {
+        setStage("flash");
+        setScreenShake(false);
 
-          setTimeout(() => {
-            setStage("walkout_teaser_2");
-            if (!soundMuted) cardSound.playTeaserHit(2);
+        setTimeout(() => {
+          // If top card is Epic, Legendary, Inferno (or 50% chance for Rare) -> Run EA FC Walkout
+          if (topRank >= 3 || (topRank === 2 && Math.random() > 0.4)) {
+            setWalkoutItem(topCard);
+            if (!soundMuted) cardSound.playCinematicBoom();
+            setStage("walkout_teaser_1");
+            if (!soundMuted) cardSound.playTeaserHit(1);
 
             setTimeout(() => {
-              setStage("walkout_teaser_3");
-              if (!soundMuted) cardSound.playTeaserHit(3);
+              setStage("walkout_teaser_2");
+              if (!soundMuted) cardSound.playTeaserHit(2);
 
               setTimeout(() => {
-                setStage("walkout_slam");
-                if (!soundMuted) {
-                  if (topCard.card.rarity === "inferno") {
-                    cardSound.playReveal("inferno");
-                  } else {
-                    cardSound.playWalkoutFanfare();
+                setStage("walkout_teaser_3");
+                if (!soundMuted) cardSound.playTeaserHit(3);
+
+                setTimeout(() => {
+                  setStage("walkout_slam");
+                  setScreenShake(true);
+                  setTimeout(() => setScreenShake(false), 800);
+                  if (!soundMuted) {
+                    if (topCard.card.rarity === "inferno") {
+                      cardSound.playReveal("inferno");
+                    } else {
+                      cardSound.playWalkoutFanfare();
+                    }
                   }
-                }
-              }, 1400);
-            }, 1300);
-          }, 1300);
-        }, 800);
-      } else {
-        // Standard Direct Reveal
-        setTimeout(() => {
-          setStage("revealing");
-          setCurrentCardIndex(0);
-        }, 900);
-      }
+                }, 1300);
+              }, 1200);
+            }, 1200);
+          } else {
+            // Standard Direct Reveal
+            setStage("revealing");
+            setCurrentCardIndex(0);
+          }
+        }, 300);
+      }, 700);
     } catch (e: any) {
       alert(e.message || "Nie udało się otworzyć paczki.");
       setStage("sealed");
@@ -140,13 +165,13 @@ export default function PackOpeningExperience({
     setCurrentCardIndex(0);
   };
 
-  // Reveal current card in sequence
-  const handleRevealCurrentCard = () => {
+  // Reveal current card in stage
+  const handleRevealCurrent = () => {
     if (!openingResult) return;
-    const cardItem = openingResult.cards[currentCardIndex];
-    if (!cardItem) return;
+    const currentItem = openingResult.cards[currentCardIndex];
+    if (!currentItem) return;
 
-    const rarity = cardItem.card.rarity || "common";
+    const rarity = (currentItem.card.rarity || "common") as any;
 
     // Play sound
     if (!soundMuted) {
@@ -178,11 +203,36 @@ export default function PackOpeningExperience({
   };
 
   const packTheme = pack.theme || "gold";
+  const particleTheme = (walkoutItem?.card?.rarity === "inferno" ? "inferno" : walkoutItem?.card?.rarity === "legendary" ? "legend" : "gold") as any;
 
   return (
-    <div className="v104-open-modal">
+    <div className={`v104-open-modal ${screenShake ? "v104-screen-shake" : ""}`}>
+      {/* FLASH TRANSITION OVERLAY */}
+      {stage === "flash" && (
+        <div 
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "#ffffff",
+            zIndex: 999,
+            pointerEvents: "none",
+            animation: "fadeOutFlash 0.35s ease-out forwards"
+          }} 
+        />
+      )}
+
       {/* BACKGROUND STADIUM LIGHTS / AMBIENT GLOW */}
       <div className={`v104-open-ambient ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : ""}`} />
+
+      {/* TUNNEL BACKGROUND FOR WALKOUT */}
+      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && (
+        <ProceduralTunnel theme={particleTheme} speed={stage === "walkout_slam" ? 0.4 : 1.2} />
+      )}
+
+      {/* CONFETTI & SPARKS BURST ON WALKOUT SLAM & SUMMARY */}
+      {(stage === "walkout_slam" || stage === "summary") && (
+        <CanvasParticles theme={particleTheme} active={true} />
+      )}
 
       {/* TOP HEADER CONTROLS */}
       <div className="v104-open-topbar">
@@ -252,22 +302,20 @@ export default function PackOpeningExperience({
 
                 {/* 2. POSITION */}
                 {(stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
-                  <div className="v104-walkout-teaser-pillar">
+                  <div className="v104-walkout-teaser-pillar animate-slideUp">
                     <span className="v104-walkout-teaser-label">POZYCJA</span>
-                    <span style={{ fontSize: "28px" }}>⚽</span>
-                    <span className="v104-walkout-teaser-val" style={{ color: "#38bdf8" }}>
-                      {walkoutItem.card.player?.position || "ZAWODNIK"}
+                    <span className="v104-walkout-position-badge">
+                      {walkoutItem.card.player?.position || "POLE"}
                     </span>
                   </div>
                 )}
 
-                {/* 3. NUMBER */}
+                {/* 3. SHIRT NUMBER */}
                 {stage === "walkout_teaser_3" && (
-                  <div className="v104-walkout-teaser-pillar">
+                  <div className="v104-walkout-teaser-pillar animate-slideUp">
                     <span className="v104-walkout-teaser-label">NUMER</span>
-                    <span style={{ fontSize: "28px" }}>👕</span>
-                    <span className="v104-walkout-teaser-val" style={{ color: "#f1c95c" }}>
-                      #{walkoutItem.card.player?.shirt_number || "GM"}
+                    <span className="v104-walkout-number-badge">
+                      #{walkoutItem.card.player?.shirt_number || "DELTA"}
                     </span>
                   </div>
                 )}
@@ -275,33 +323,42 @@ export default function PackOpeningExperience({
             </div>
           )}
 
-          {/* Walkout Slam Screen (Grand Reveal) */}
+          {/* Walkout Step 4: Slam Reveal & Pyro */}
           {stage === "walkout_slam" && (
-            <div className="v104-walkout-reveal-container">
-              <span className={`v104-walkout-badge-pill ${walkoutItem.card.rarity === "inferno" ? "inferno" : walkoutItem.card.rarity === "legendary" ? "legend" : ""}`}>
-                ★ {walkoutItem.card.rarity?.toUpperCase()} WALKOUT ★
-              </span>
+            <div className="v104-walkout-slam-container animate-slamZoom">
+              <div className="v104-walkout-pyro" />
 
-              <CollectibleCard3D
-                card={walkoutItem.card}
-                size="xl"
-                interactive={true}
-                showFlip={true}
-              />
+              <div style={{ transform: "scale(1.15)", transformOrigin: "center center" }}>
+                <CollectibleCard3D
+                  card={walkoutItem.card}
+                  userCard={undefined}
+                  isLocked={false}
+                  size="xl"
+                  interactive={true}
+                  showFlip={true}
+                />
+              </div>
 
-              {walkoutItem.is_duplicate && (
-                <div className="v104-open-dup-banner">
-                  <Coins size={16} /> DUPLIKAT! +{walkoutItem.duplicate_points} DELTA POINTS
-                </div>
-              )}
+              <div className="v104-walkout-details">
+                <span className="v104-walkout-player-title">
+                  {walkoutItem.card.title || walkoutItem.card.card_name}
+                </span>
+                <span className="v104-walkout-player-name">
+                  {walkoutItem.card.player?.display_name || "Zawodnik DELTA"}
+                </span>
+                {walkoutItem.is_duplicate && (
+                  <span className="v104-duplicate-tag">
+                    <Coins size={12} className="inline mr-1" /> DUPLIKAT (+{walkoutItem.duplicate_points} DP)
+                  </span>
+                )}
+              </div>
 
               <button
                 type="button"
                 onClick={handleProceedToPack}
-                className="v104-open-tear-btn"
-                style={{ marginTop: "12px" }}
+                className="v104-walkout-continue-btn"
               >
-                <Sparkles size={18} /> ZOBACZ WSZYSTKIE KARTY W PACZCE
+                ODKRYJ RESZTĘ PACZKI <ChevronRight size={18} />
               </button>
             </div>
           )}
@@ -309,16 +366,23 @@ export default function PackOpeningExperience({
       )}
 
       {/* ================= STAGE 1: SEALED FOIL PACK ================= */}
-      {stage === "sealed" && (
+      {(stage === "sealed" || stage === "charging") && (
         <div className="v104-open-stage">
-          {/* 3D PACK FOIL */}
+          {/* 3D PACK FOIL with Interactive Tilt & Charge Pulse */}
           <div 
+            ref={packRef}
+            onMouseMove={handlePackMouseMove}
+            onMouseLeave={handlePackMouseLeave}
             onClick={handleTearPack}
-            className={`v104-open-foil-pack ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : "gold"}`}
+            style={{
+              transform: `perspective(1000px) rotateY(${packTilt.x}deg) rotateX(${packTilt.y}deg) scale(${stage === "charging" ? 1.05 : 1})`,
+              transition: stage === "charging" ? "transform 0.1s ease" : "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)"
+            }}
+            className={`v104-open-foil-pack ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : "gold"} ${stage === "charging" ? "charging-glow" : ""}`}
           >
             {/* Tear Line Indicator at Top */}
             <div className="v104-open-tear-header">
-              <span>ROZERWIJ PACZKĘ</span>
+              <span>{stage === "charging" ? "ŁADOWANIE PACZKI..." : "ROZERWIJ PACZKĘ"}</span>
               <Sparkles size={16} style={{ color: "#fde047" }} />
             </div>
 
@@ -354,22 +418,11 @@ export default function PackOpeningExperience({
           <button
             type="button"
             onClick={handleTearPack}
+            disabled={stage === "charging"}
             className="v104-open-tear-btn"
           >
-            <Sparkles size={18} /> KLIKNIJ, ABY OTWORZYĆ
+            <Sparkles size={18} /> {stage === "charging" ? "OTWIERANIE..." : "KLIKNIJ, ABY OTWORZYĆ"}
           </button>
-        </div>
-      )}
-
-      {/* ================= STAGE 2: TEARING ================= */}
-      {stage === "tearing" && (
-        <div className="v104-open-stage">
-          <div style={{ width: "280px", height: "400px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px" }}>
-            <Sparkles size={64} style={{ color: "#f1c95c" }} />
-            <span style={{ fontWeight: 900, fontSize: "20px", color: "#ffffff", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              OTWIERANIE PACZKI...
-            </span>
-          </div>
         </div>
       )}
 
@@ -398,144 +451,124 @@ export default function PackOpeningExperience({
             const isRevealed = revealedCards[currentCardIndex];
 
             return (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-                {!isRevealed ? (
-                  /* Card Back (Click to reveal) */
-                  <div 
-                    onClick={handleRevealCurrentCard}
-                    className="v104-open-reveal-card-back"
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <img 
-                        src="/teamlogos/gm.png" 
-                        alt="DELTA" 
-                        width={20}
-                        height={20}
-                        style={{ width: "20px", height: "20px", objectFit: "contain" }} 
-                      />
-                      <span style={{ fontSize: "11px", fontWeight: 900, color: "#cbd5e1", letterSpacing: "0.08em" }}>DELTA GM</span>
-                    </div>
+              <div className="v104-open-card-wrapper animate-fadeIn">
+                <CollectibleCard3D
+                  card={currentItem.card}
+                  userCard={undefined}
+                  isLocked={!isRevealed}
+                  size="xl"
+                  interactive={true}
+                  showFlip={isRevealed}
+                  onFlipChange={(flipped) => {
+                    if (flipped && !soundMuted) {
+                      cardSound.playFlip();
+                    }
+                  }}
+                />
 
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      <div className="v104-open-reveal-icon-circle">
-                        <Sparkles size={36} />
-                      </div>
-                      <span style={{ fontSize: "15px", fontWeight: 900, color: "#ffffff", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                        KARTA #{currentCardIndex + 1} Z {openingResult.cards.length}
-                      </span>
-                      <span style={{ fontSize: "12px", color: "#f1c95c", fontWeight: 900, marginTop: "6px" }}>
-                        KLIKNIJ, ABY ODKRYĆ!
-                      </span>
-                    </div>
-
-                    <span style={{ fontSize: "9px", color: "#64748b", fontFamily: "monospace" }}>SEZON 2026/27</span>
-                  </div>
-                ) : (
-                  /* Card Front (Revealed) */
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <CollectibleCard3D
-                      card={currentItem.card}
-                      size="lg"
-                      interactive={true}
-                      showFlip={true}
-                    />
-
-                    {/* Duplicate Indicator */}
-                    {currentItem.is_duplicate && (
-                      <div className="v104-open-dup-banner">
-                        <Coins size={16} /> DUPLIKAT! +{currentItem.duplicate_points} DELTA POINTS
-                      </div>
-                    )}
-
-                    {/* Action Button: Next Card or Summary */}
+                {/* Bottom Action Controls */}
+                <div className="v104-open-card-controls">
+                  {!isRevealed ? (
                     <button
                       type="button"
-                      onClick={handleNextCard}
-                      className="v104-open-next-btn"
+                      onClick={handleRevealCurrent}
+                      className="v104-open-action-btn reveal"
                     >
-                      {currentCardIndex + 1 < openingResult.cards.length ? (
-                        <>KOLEJNA KARTA <ChevronRight size={18} /></>
-                      ) : (
-                        <>PODSUMOWANIE PACZKI <Check size={18} /></>
-                      )}
+                      <Sparkles size={18} /> ODKRYJ KARTĘ ({currentCardIndex + 1}/{openingResult.cards.length})
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    <div className="v104-open-revealed-panel">
+                      <div className="v104-open-revealed-info">
+                        <span className="v104-open-card-name">
+                          {currentItem.card.title || currentItem.card.card_name}
+                        </span>
+                        <span className="v104-open-player-name">
+                          {currentItem.card.player?.display_name || "Zawodnik DELTA"}
+                        </span>
+                        {currentItem.is_duplicate && (
+                          <span className="v104-duplicate-badge">
+                            <Coins size={12} className="inline mr-1" /> DUPLIKAT (+{currentItem.duplicate_points} DP)
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleNextCard}
+                        className="v104-open-action-btn next"
+                      >
+                        {currentCardIndex + 1 < openingResult.cards.length ? (
+                          <>NASTĘPNA KARTA <ChevronRight size={18} /></>
+                        ) : (
+                          <>PODSUMOWANIE PACZKI <Check size={18} /></>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}
         </div>
       )}
 
-      {/* ================= STAGE 4: SUMMARY SHOWCASE ================= */}
+      {/* ================= STAGE 4: SUMMARY ================= */}
       {stage === "summary" && openingResult && (
-        <div className="v104-open-stage">
-          <div style={{ textAlign: "center", marginBottom: "16px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 900, letterSpacing: "0.12em", color: "#f1c95c", textTransform: "uppercase" }}>
-              GRATULACJE!
-            </span>
-            <h2 style={{ fontSize: "26px", fontWeight: 900, color: "#ffffff", margin: "4px 0" }}>
-              OTRZYMANE KARTY
-            </h2>
+        <div className="v104-open-summary-stage animate-fadeIn">
+          <div className="v104-summary-header">
+            <span className="eyebrow gold"><Check size={14} className="inline mr-1" /> PACZKA ZOSTAŁA OTWARTA</span>
+            <h3 className="v104-summary-title">ZDOBYTE KARTY DELTA</h3>
             {openingResult.total_delta_points_earned > 0 && (
-              <div className="v104-open-dup-banner" style={{ display: "inline-flex" }}>
-                <Coins size={16} /> Łącznie zdobyto +{openingResult.total_delta_points_earned} Delta Points za duplikaty
+              <div className="v104-summary-points">
+                <Coins size={16} style={{ color: "#f1c95c" }} />
+                <span>Otrzymujesz <b>+{openingResult.total_delta_points_earned} DP</b> za karty zduplikowane!</span>
               </div>
             )}
           </div>
 
-          {/* Cards Grid Showcase */}
-          <div className="v104-open-summary-grid">
+          {/* Cards Grid */}
+          <div className="v104-summary-grid">
             {openingResult.cards.map((item, idx) => (
-              <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+              <div key={idx} className="v104-summary-card-item">
                 <CollectibleCard3D
                   card={item.card}
+                  userCard={undefined}
+                  isLocked={false}
                   size="md"
                   interactive={true}
-                  showFlip={true}
+                  showFlip={false}
                 />
                 {item.is_duplicate && (
-                  <span style={{ fontSize: "10px", fontWeight: 900, color: "#f1c95c", background: "rgba(0,0,0,0.6)", padding: "2px 8px", borderRadius: "999px", border: "1px solid rgba(241,201,92,0.4)" }}>
-                    +{item.duplicate_points} DP (Duplikat)
+                  <span className="v104-summary-dup-tag">
+                    +{item.duplicate_points} DP
                   </span>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Bottom Summary Buttons */}
-          <div className="v104-open-btn-row">
-            <button
-              type="button"
-              onClick={onClose}
-              className="v104-open-secondary-btn"
-            >
-              Przejdź do kolekcji
-            </button>
-
+          {/* Bottom Actions */}
+          <div className="v104-summary-actions">
             {unopenedCount > 0 && onOpenAnother && (
               <button
                 type="button"
-                onClick={() => {
-                  setStage("sealed");
-                  setOpeningResult(null);
-                  setRevealedCards([]);
-                  onOpenAnother();
-                }}
-                className="v104-open-tear-btn"
-                style={{ marginTop: 0 }}
+                onClick={onOpenAnother}
+                className="v104-summary-btn primary"
               >
-                <Gift size={18} /> Otwórz następną ({unopenedCount})
+                <RefreshCw size={18} /> OTWÓRZ KOLEJNĄ PACZKĘ ({unopenedCount})
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="v104-summary-btn secondary"
+            >
+              PRZEJDŹ DO KLASERA
+            </button>
           </div>
         </div>
       )}
-
-      {/* FOOTER NOTE */}
-      <div style={{ position: "relative", zIndex: 10, textAlign: "center", paddingTop: "8px", fontSize: "10px", color: "#64748b" }}>
-        Karty zostają trwale przypisane do Twojego profilu klubowego w DELTA Warszawa 2018 GM.
-      </div>
     </div>
   );
 }

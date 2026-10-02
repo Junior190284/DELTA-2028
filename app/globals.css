@@ -11427,6 +11427,49 @@ body > main,
   box-shadow: 0 0 35px rgba(192, 132, 252, 0.8);
 }
 
+/* Cinematic EA FC Screen Shake & Flash */
+.v104-screen-shake {
+  animation: v104-screen-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes v104-screen-shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-0.5deg); }
+  20%, 80% { transform: translate3d(4px, -2px, 0) rotate(1deg); }
+  30%, 50%, 70% { transform: translate3d(-6px, 3px, 0) rotate(-1.5deg); }
+  40%, 60% { transform: translate3d(6px, -3px, 0) rotate(1.5deg); }
+}
+
+.charging-glow {
+  animation: v104-charge-pulse 0.4s ease-in-out infinite alternate, v104-pack-shake 0.15s ease-in-out infinite !important;
+}
+
+@keyframes v104-pack-shake {
+  0% { transform: scale(1.05) translate(0, 0); }
+  25% { transform: scale(1.05) translate(-3px, 2px); }
+  50% { transform: scale(1.06) translate(3px, -2px); }
+  75% { transform: scale(1.05) translate(-2px, -2px); }
+  100% { transform: scale(1.05) translate(2px, 2px); }
+}
+
+@keyframes v104-charge-pulse {
+  0% {
+    filter: brightness(1) drop-shadow(0 0 20px rgba(241, 201, 92, 0.5));
+  }
+  100% {
+    filter: brightness(1.6) drop-shadow(0 0 60px rgba(253, 224, 71, 0.95)) drop-shadow(0 0 100px rgba(255, 255, 255, 0.9));
+  }
+}
+
+@keyframes fadeOutFlash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-slamZoom {
+  animation: v104-card-slam 0.65s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+
 
 
 
