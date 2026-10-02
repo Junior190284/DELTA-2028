@@ -11469,6 +11469,115 @@ body > main,
   animation: v104-card-slam 0.65s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
 }
 
+/* Premium Card Reveal Panel & Next Button */
+.v104-open-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 20;
+}
+
+.v104-open-card-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.v104-open-revealed-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.v104-open-revealed-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.v104-open-card-name {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f1c95c;
+  text-shadow: 0 0 10px rgba(241, 201, 92, 0.5);
+}
+
+.v104-open-player-name {
+  font-size: 24px;
+  font-weight: 1000;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+.v104-duplicate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+  animation: pulse 2s infinite;
+}
+
+.v104-open-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 230px;
+  padding: 13px 30px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v104-open-action-btn.reveal {
+  background: linear-gradient(135deg, #fde047, #f1c95c, #ca8a04);
+  color: #000000;
+  border: 1px solid #fef08a;
+  box-shadow: 0 4px 20px rgba(241, 201, 92, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.v104-open-action-btn.next {
+  background: linear-gradient(135deg, #ffffff, #e2e8f0);
+  color: #04070d;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.v104-open-action-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 30px rgba(241, 201, 92, 0.6);
+}
+
+.v104-open-action-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+
 
 
 
