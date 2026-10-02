@@ -11299,7 +11299,7 @@ body > main,
   position: fixed;
   inset: 0;
   z-index: 100000;
-  background: #040609;
+  background: transparent;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -11585,7 +11585,8 @@ body > main,
   justify-content: center;
   width: 100%;
   max-width: 1200px;
-  margin: 0 auto;
+  min-height: calc(100vh - 100px);
+  margin: auto;
   padding: 20px;
   box-sizing: border-box;
   text-align: center;
@@ -11769,6 +11770,93 @@ body > main,
 .v104-summary-btn:active {
   transform: translateY(0) scale(0.98);
 }
+
+/* ================= WALKOUT SLAM DETAILS & CONTINUE BUTTON ================= */
+.v104-walkout-slam-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  position: relative;
+  z-index: 20;
+  text-align: center;
+  margin: auto;
+}
+
+.v104-walkout-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.v104-walkout-player-title {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #f1c95c;
+  text-shadow: 0 0 15px rgba(241, 201, 92, 0.7);
+}
+
+.v104-walkout-player-name {
+  font-size: 26px;
+  font-weight: 1000;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 255, 255, 0.3);
+}
+
+.v104-walkout-continue-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 260px;
+  margin-top: 10px;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #000000;
+  background: linear-gradient(135deg, #fde047, #f1c95c, #ca8a04);
+  border: 1px solid #fef08a;
+  box-shadow: 0 4px 25px rgba(241, 201, 92, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v104-walkout-continue-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 35px rgba(241, 201, 92, 0.8);
+}
+
+.v104-walkout-continue-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.v104-duplicate-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  color: #fbbf24;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  margin-top: 4px;
+  animation: pulse 2s infinite;
+}
+
 
 
 
