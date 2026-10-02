@@ -7,7 +7,7 @@ import PlayerPhoto from "./PlayerPhoto";
 import MatchGallery from "./MatchGallery";
 import MatchCenterModal from "./MatchCenterModal";
 import StadiumFX from "./StadiumFX";
-import LeagueCenter, { LEAGUE_ROUNDS, LeagueHome, leagueByeTeam, leagueRoundDate } from "./LeagueCenter";
+import LeagueCenter, { LEAGUE_ROUNDS, LeagueHome, leagueByeTeam, leagueRoundDate, leagueScheduleWithMatches } from "./LeagueCenter";
 import { MyChildCenter, MatchDayMode, HallOfFame } from "./MegaPanels";
 import PlayerCard3D, { CardTheme } from "./PlayerCard3D";
 import BadgeCelebrationModal, { BadgeDetail } from "./BadgeCelebrationModal";
@@ -139,7 +139,7 @@ export default function TeamHub(props:{
   parentPlayerIds:string[];
   userPermissions:UserPermissions;
 }){
-  const supabase=createClient();
+  const supabase=useMemo(()=>createClient(),[]);
   const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league"|"teamcenter">("home");
   const [viewFx,setViewFx]=useState(false);
   const [cinematicActive, setCinematicActive] = useState(false);
@@ -391,6 +391,34 @@ export default function TeamHub(props:{
 
   useEffect(()=>{
     let cancelled=false;
+    const refreshMatchData=async()=>{
+      const [matchResult,attendanceResult,lineupResult,eventResult]=await Promise.all([
+        supabase.from("matches").select("id,round_no,match_date,match_time,venue,home_team,away_team,home_score,away_score,status").order("match_date"),
+        supabase.from("match_attendance").select("match_id,player_id,status"),
+        supabase.from("match_lineup").select("match_id,player_id,is_starter,is_captain"),
+        supabase.from("match_events").select("id,match_id,event_type,player_id,assist_player_id,minute,created_at").order("created_at"),
+      ]);
+      if(cancelled)return;
+      if(matchResult.data)setMatches(matchResult.data as Match[]);
+      if(attendanceResult.data)setAttendance(attendanceResult.data as Attendance[]);
+      if(lineupResult.data)setLineup(lineupResult.data as Lineup[]);
+      if(eventResult.data)setEvents(eventResult.data as Event[]);
+    };
+    const onFocus=()=>{void refreshMatchData()};
+    const onVisibility=()=>{if(document.visibilityState==="visible")void refreshMatchData()};
+    const timer=window.setInterval(()=>{void refreshMatchData()},60000);
+    window.addEventListener("focus",onFocus);
+    document.addEventListener("visibilitychange",onVisibility);
+    return()=>{
+      cancelled=true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus",onFocus);
+      document.removeEventListener("visibilitychange",onVisibility);
+    };
+  },[supabase]);
+
+  useEffect(()=>{
+    let cancelled=false;
     const refreshClub=async()=>{
       const {data}=await supabase
         .from("club_updates")
@@ -491,12 +519,15 @@ export default function TeamHub(props:{
     return {played,wins,draws,losses,goals,assists};
   },[matches,events]);
 
-  const nextMatch=matches.find(m=>m.status==="scheduled");
+  const leagueSchedule=useMemo(()=>leagueScheduleWithMatches(matches),[matches]);
+  const nextMatch=useMemo(()=>matches
+    .filter(m=>m.status==="scheduled"&&parseLocalMatchDate(m.match_date,m.match_time).getTime()>=now.getTime()-3*60*60*1000)
+    .sort((a,b)=>parseLocalMatchDate(a.match_date,a.match_time).getTime()-parseLocalMatchDate(b.match_date,b.match_time).getTime())[0],[matches,now]);
   const ourLeagueByes=useMemo<LeagueBye[]>(()=>LEAGUE_ROUNDS.flatMap(round=>{
-    const date=leagueRoundDate(round);
-    const team=leagueByeTeam(round);
+    const date=leagueRoundDate(round,leagueSchedule);
+    const team=leagueByeTeam(round,leagueSchedule);
     return team===CLUB&&date?[{round,date,team}]:[];
-  }),[]);
+  }),[leagueSchedule]);
   const matchArchiveItems=useMemo(()=>[
     ...matches.map(match=>({key:`match-${match.id}`,date:match.match_date,match,bye:null as LeagueBye|null})),
     ...ourLeagueByes.map(bye=>({key:`bye-${bye.round}`,date:bye.date,match:null as Match|null,bye}))

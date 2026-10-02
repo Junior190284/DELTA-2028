@@ -9674,4 +9674,25 @@ body > main,
   }
 }
 
+/* Player cards: keep the complete portrait visible in the large, collectible views. */
+.v119-showcase-art,
+.v123-mobile-art,
+.v111-character-art,
+.v87-player-photo,
+.v874-featured-card-image {
+  background:
+    radial-gradient(circle at 50% 58%, rgba(228, 31, 46, 0.3), transparent 43%),
+    linear-gradient(180deg, #181015 0%, #080a0e 100%);
+}
+
+.v119-showcase-art > img,
+.v123-mobile-art > img,
+.v111-character-art > img,
+.v87-player-photo > .player-photo,
+.v874-featured-card-image > img {
+  object-fit: contain !important;
+  object-position: center bottom !important;
+}
+
+
 
