@@ -1,268 +1,90 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/current-profile";
+import { decodeDeltaHtml, parseDeltaUpdates, type ClubItem } from "@/lib/delta-sync/parser";
 import crypto from "node:crypto";
 import webpush from "web-push";
-import { decodeHtmlEntities } from "@/lib/text";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const dynamic="force-dynamic";
+export const runtime="nodejs";
 
-const DELTA_URL = "https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108";
+const DELTA_URL="https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108";
+const FETCH_TIMEOUT_MS=15_000;
+const MAX_HTML_BYTES=5_000_000;
 
-type ClubItem = {
+type ExistingClubItem={
   source_key:string;
   title:string;
-  body:string;
-  published_at:string;
+  body:string|null;
   priority:number;
-  source_url:string;
+  published_at:string;
 };
 
-function decoderScore(text:string){
-  let score=0;
-  const good=[
-    "Powołania","Górny Mokotów","Zbiórka","piłk","zajęcia",
-    "drużyna","trening","Warszawa","Święto"
-  ];
-  for(const x of good) if(text.includes(x)) score+=20;
-  const bad=["�","Ã","Å","Ä","Â","â€","PowoĹ","GĂłrny","piĹ"];
-  for(const x of bad) score-=50*(text.split(x).length-1);
-  return score;
+function sameItem(existing:ExistingClubItem,item:ClubItem){
+  return existing.title===item.title
+    && (existing.body||"")===(item.body||"")
+    && existing.priority===item.priority
+    && new Date(existing.published_at).toISOString()===new Date(item.published_at).toISOString();
 }
 
-function decodeHtml(buffer:ArrayBuffer){
-  const candidates:string[]=[];
-  for(const enc of ["windows-1250","utf-8","iso-8859-2"]){
-    try{ candidates.push(new TextDecoder(enc).decode(buffer)); }catch{}
-  }
-  if(!candidates.length) return new TextDecoder().decode(buffer);
-  return candidates.sort((a,b)=>decoderScore(b)-decoderScore(a))[0];
-}
-
-function htmlToTokens(html:string){
-  const cleaned=html
-    .replace(/<script[\s\S]*?<\/script>/gi," ")
-    .replace(/<style[\s\S]*?<\/style>/gi," ")
-    .replace(/<!--[\s\S]*?-->/g," ")
-    .replace(/<(br|\/p|\/div|\/li|\/tr|\/td|\/h\d|\/a)>/gi,"\n")
-    .replace(/<[^>]+>/g," ");
-
-  return decodeHtmlEntities(cleaned)
-    .replace(/\r/g,"")
-    .split(/\n+/)
-    .map(x=>x.replace(/\s+/g," ").trim())
-    .filter(Boolean);
-}
-
-function stableId(title:string,date:string){
-  return crypto.createHash("sha256").update(`${title}|${date}`).digest("hex");
-}
-
-function isDateToken(x:string){
-  return /^\d{2}-\d{2}-\d{4}$/.test(x.trim());
-}
-
-function extractHeadlineAndDate(tokens:string[], i:number){
-  const inline=tokens[i].match(/^(.*?)\s+(\d{2}-\d{2}-\d{4})$/);
-  if(inline){
-    return {title:inline[1].trim(),date:inline[2],dateIndex:i};
-  }
-  if(isDateToken(tokens[i]) && i>0){
-    return {title:tokens[i-1].trim(),date:tokens[i].trim(),dateIndex:i};
-  }
-  return null;
-}
-
-function isBadHeadline(title:string){
-  const t=title.trim();
-  if(!t || t.length<4 || t.length>180) return true;
-  if(/^\d{4}$/.test(t)) return true;
-  if(/^kolejka\b/i.test(t)) return true;
-  if(/^sezon \d{4}/i.test(t)) return true;
-  if(/^2018$/i.test(t)) return true;
-  if(/^Powołania 2018$/i.test(t)) return true; // reprezentacja, nie Górny Mokotów
-  if(/^(SENIORZY|Trener|Asystent|Praktykant|Trener Bramkarzy)$/i.test(t)) return true;
-  if(/K\.S\. Delta Warszawa .* - |FC Vizja|MUKS Julianów|RKS Ursus|Alfa Przymierze Rodzin/.test(t)) return true;
-  return false;
-}
-
-function relevantScheduleExcerpt(parts:string[]){
-  const keep:string[]=[];
-  for(let i=0;i<parts.length;i++){
-    const s=parts[i];
-    const low=s.toLocaleLowerCase("pl-PL");
-    const relevant=
-      low.includes("2018") ||
-      low.includes("dni wolne") ||
-      low.includes("rozpoczęcie zajęć") ||
-      low.includes("zakończenie zajęć") ||
-      low.includes("przerwa świąteczna") ||
-      low.includes("majówka") ||
-      low.includes("boże ciało");
-
-    if(relevant){
-      if(i>0 && !keep.includes(parts[i-1])) keep.push(parts[i-1]);
-      keep.push(s);
-      if(i+1<parts.length) keep.push(parts[i+1]);
-    }
-  }
-  return [...new Set(keep)].join(" ").replace(/\s+/g," ").trim().slice(0,3000);
-}
-
-function buildBody(title:string, parts:string[]){
-  const cleaned=parts
-    .filter(x=>x && !/^\[?\d+\]?$/.test(x))
-    .filter(x=>!/^>>>$/.test(x))
-    .filter(x=>!/^Copyright/i.test(x))
-    .filter(x=>!/^ZAPISY$/i.test(x));
-
-  if(/^Grafik sezon/i.test(title)){
-    return relevantScheduleExcerpt(cleaned);
-  }
-
-  return cleaned.join(" ").replace(/\s+/g," ").trim().slice(0,3200);
-}
-
-function priority(title:string){
-  const t=title.toLocaleLowerCase("pl-PL");
-  if(t.includes("powołania 2018 górny mokotów")) return 100;
-  if(t.includes("zmiana miejsca treningu")) return 95;
-  if(t.includes("grafik sezon")) return 90;
-  if(t.includes("zgrupowanie")) return 80;
-  if(t.includes("trening") || t.includes("zajęcia")) return 75;
-  return 60;
-}
-
-function parseDeltaUpdates(html:string){
-  const tokens=htmlToTokens(html);
-
-  // The selected team's news feed is newest-first. The former parser started
-  // at the known call-up article, so every newer article above it was skipped.
-  // Walk back to the pagination marker that directly precedes this feed.
-  const knownTeamArticle=tokens.findIndex(x=>x.includes("Powołania 2018 Górny Mokotów"));
-  if(knownTeamArticle<0) throw new Error("Nie znaleziono sekcji wiadomości 2018 Górny Mokotów na stronie DELTY.");
-  let start=knownTeamArticle;
-  for(let i=knownTeamArticle-1;i>=Math.max(0,knownTeamArticle-180);i--){
-    if(tokens[i].includes(">>>")){
-      start=i+1;
-      break;
-    }
-  }
-
-  const scoped=tokens.slice(start);
-  const heads:{title:string;date:string;headIndex:number;dateIndex:number}[]=[];
-
-  for(let i=0;i<scoped.length;i++){
-    const h=extractHeadlineAndDate(scoped,i);
-    if(!h || isBadHeadline(h.title)) continue;
-
-    // Headline is accepted only when it looks like a real news title.
-    // This removes date lines embedded in article bodies.
-    const title=h.title;
-    const looksNews=
-      /[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(title) &&
-      !/^\d{1,2}[:.]\d{2}/.test(title) &&
-      !/^(od|do)\s+\d{2}-\d{2}-\d{4}/i.test(title);
-
-    if(!looksNews) continue;
-
-    // Avoid duplicate detection when date was in the same token.
-    if(heads.some(x=>x.dateIndex===h.dateIndex)) continue;
-
-    heads.push({title,date:h.date,headIndex:i,dateIndex:h.dateIndex});
-  }
-
-  const items:ClubItem[]=[];
-
-  for(let n=0;n<heads.length;n++){
-    const h=heads[n];
-
-    // Skip central 2018 representation call-up; this app is for Górny Mokotów.
-    if(/^Powołania 2018$/i.test(h.title)) continue;
-
-    const next=heads[n+1];
-    const bodyStart=h.dateIndex+1;
-    const bodyEnd=next ? next.headIndex : Math.min(scoped.length,bodyStart+100);
-    const parts=scoped.slice(bodyStart,bodyEnd);
-    const body=buildBody(h.title,parts);
-
-    const [dd,mm,yyyy]=h.date.split("-");
-    items.push({
-      source_key:stableId(h.title,h.date),
-      title:h.title,
-      body,
-      published_at:`${yyyy}-${mm}-${dd}T12:00:00+02:00`,
-      priority:priority(h.title),
-      source_url:DELTA_URL
-    });
-  }
-
-  const unique=new Map<string,ClubItem>();
-  for(const item of items){
-    if(!unique.has(item.source_key)) unique.set(item.source_key,item);
-  }
-
-  const result=[...unique.values()]
-    .filter(x=>x.title!=="2018")
-    .filter(x=>!/^20\d{2}$/.test(x.title))
-    .sort((a,b)=>b.published_at.localeCompare(a.published_at))
-    .slice(0,30);
-
-  // Safety guard: never wipe the existing feed if parsing went wrong.
-  if(result.length<3 || !result.some(x=>x.title.includes("Powołania 2018 Górny Mokotów"))){
-    throw new Error(`Parser DELTY zwrócił podejrzany wynik (${result.length} wpisów). Baza nie została wyczyszczona.`);
-  }
-
-  return result;
+function errorCategory(error:unknown){
+  const message=String((error as any)?.message||error);
+  const name=String((error as any)?.name||"");
+  if(name==="TimeoutError"||name==="AbortError"||/timeout/i.test(message))return "timeout";
+  if(/^DELTA_HTTP_/.test(message))return "source_http";
+  if(/^DELTA_CONTENT_TYPE/.test(message))return "source_content_type";
+  if(/^DELTA_RESPONSE_SIZE/.test(message))return "source_response_size";
+  if(name==="DeltaParserError")return "parser";
+  return "internal";
 }
 
 async function sendClubPush(admin:any,newItems:ClubItem[]){
-  if(!newItems.length) return {sent:0,failed:0,skipped:true};
-
+  if(!newItems.length)return {sent:0,failed:0,skipped:true};
   const subject=process.env.VAPID_SUBJECT;
   const publicKey=process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey=process.env.VAPID_PRIVATE_KEY;
-  if(!subject||!publicKey||!privateKey){
-    return {sent:0,failed:0,skipped:true,reason:"VAPID not configured"};
-  }
+  if(!subject||!publicKey||!privateKey)return {sent:0,failed:0,skipped:true,reason:"VAPID not configured"};
 
   webpush.setVapidDetails(subject,publicKey,privateKey);
-  const {data:subs,error}=await admin.from("push_subscriptions").select("id,endpoint,p256dh,auth");
-  if(error) throw error;
+  const {data:subscriptions,error}=await admin.from("push_subscriptions").select("id,endpoint,p256dh,auth");
+  if(error)throw error;
 
   const primary=newItems[0];
   const payload=JSON.stringify({
-    title:newItems.length===1 ? "Nowa informacja z klubu" : `${newItems.length} nowe informacje z klubu`,
-    body:newItems.length===1 ? primary.title : `${primary.title} (+${newItems.length-1})`,
+    title:newItems.length===1?"Nowa informacja z klubu":`${newItems.length} nowe informacje z klubu`,
+    body:newItems.length===1?primary.title:`${primary.title} (+${newItems.length-1})`,
     url:`/dashboard?view=club&club=${encodeURIComponent(primary.source_key)}`,
     tag:`delta-club-${primary.source_key}`
   });
 
-  let sent=0,failed=0;
-  for(const sub of subs||[]){
+  let sent=0;
+  let failed=0;
+  for(const subscription of subscriptions||[]){
     try{
       await webpush.sendNotification({
-        endpoint:sub.endpoint,
-        keys:{p256dh:sub.p256dh,auth:sub.auth}
+        endpoint:subscription.endpoint,
+        keys:{p256dh:subscription.p256dh,auth:subscription.auth}
       },payload);
       sent++;
-    }catch(err:any){
+    }catch(error:any){
       failed++;
-      const code=Number(err?.statusCode||0);
-      if(code===404||code===410){
-        await admin.from("push_subscriptions").delete().eq("id",sub.id);
-      }
+      const code=Number(error?.statusCode||0);
+      if(code===404||code===410)await admin.from("push_subscriptions").delete().eq("id",subscription.id);
     }
   }
   return {sent,failed,skipped:false};
 }
 
-async function authorize(req:NextRequest){
-  const secret=process.env.DELTA_SYNC_SECRET;
-  const sent=req.headers.get("x-delta-sync-secret") || req.nextUrl.searchParams.get("secret");
-  if(secret && sent && secret===sent) return true;
+function validSecret(expected:string,sent:string|null){
+  if(!sent)return false;
+  const expectedBuffer=Buffer.from(expected);
+  const sentBuffer=Buffer.from(sent);
+  return expectedBuffer.length===sentBuffer.length&&crypto.timingSafeEqual(expectedBuffer,sentBuffer);
+}
 
+async function authorize(request:NextRequest){
+  const secret=process.env.DELTA_SYNC_SECRET;
+  if(secret&&validSecret(secret,request.headers.get("x-delta-sync-secret")))return true;
   try{
     const {profile}=await getCurrentProfile();
     return profile?.role==="admin";
@@ -271,90 +93,92 @@ async function authorize(req:NextRequest){
   }
 }
 
-export async function POST(req:NextRequest){
-  if(!(await authorize(req))){
-    return NextResponse.json({error:"Unauthorized"},{status:401});
-  }
+export async function POST(request:NextRequest){
+  if(!(await authorize(request)))return NextResponse.json({error:"Unauthorized"},{status:401});
+  const startedAt=Date.now();
 
   try{
-    const res=await fetch(DELTA_URL,{
+    const response=await fetch(DELTA_URL,{
       cache:"no-store",
+      signal:AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers:{
-        "user-agent":"DELTA-2018-GM-TeamHub/1.0 (+https://delta-2028.vercel.app)",
-        "accept":"text/html,application/xhtml+xml"
+        "user-agent":"DELTA-2018-GM-TeamHub/2.0 (+https://delta-2028.vercel.app)",
+        accept:"text/html,application/xhtml+xml"
       }
     });
+    if(!response.ok)throw new Error(`DELTA_HTTP_${response.status}`);
+    const contentType=response.headers.get("content-type")||"";
+    if(contentType&&!contentType.toLocaleLowerCase().includes("text/html")){
+      throw new Error(`DELTA_CONTENT_TYPE_${contentType}`);
+    }
 
-    if(!res.ok) throw new Error(`DELTA HTTP ${res.status}`);
+    const buffer=await response.arrayBuffer();
+    if(buffer.byteLength<1_000||buffer.byteLength>MAX_HTML_BYTES){
+      throw new Error(`DELTA_RESPONSE_SIZE_${buffer.byteLength}`);
+    }
 
-    const buffer=await res.arrayBuffer();
-    const html=decodeHtml(buffer);
-    const items=parseDeltaUpdates(html);
+    const items=parseDeltaUpdates(decodeDeltaHtml(buffer),DELTA_URL);
     const admin=createAdminClient();
-
-    // V8.7.8: after successful parsing, replace the old source feed completely.
-    // This removes malformed V8.7.6/V8.7.7 rows such as 2017/2019/2020 cards.
-    const {data:oldRows,error:oldErr}=await admin
+    const {data:existingRows,error:existingError}=await admin
       .from("club_updates")
-      .select("id,source_key")
+      .select("source_key,title,body,priority,published_at")
       .eq("source_url",DELTA_URL);
+    if(existingError)throw existingError;
 
-    if(oldErr) throw oldErr;
-    const cleaned=oldRows?.length||0;
-    const oldKeys=new Set((oldRows||[]).map((x:any)=>x.source_key));
-    const newItems=items.filter(item=>!oldKeys.has(item.source_key));
-
-    const {error:deleteErr}=await admin
-      .from("club_updates")
-      .delete()
-      .eq("source_url",DELTA_URL);
-    if(deleteErr) throw deleteErr;
-
+    const existingByKey=new Map((existingRows||[]).map((row:ExistingClubItem)=>[row.source_key,row]));
+    const newItems=items.filter(item=>!existingByKey.has(item.source_key));
+    const updatedItems=items.filter(item=>{
+      const existing=existingByKey.get(item.source_key);
+      return existing&&!sameItem(existing,item);
+    });
     const now=new Date().toISOString();
-    const rows=items.map(item=>({
-      ...item,
-      source_name:"K.S. Delta Warszawa",
-      synced_at:now
-    }));
-
-    const {error:insertErr}=await admin.from("club_updates").insert(rows);
-    if(insertErr) throw insertErr;
+    const rows=items.map(({content_hash:_,...item})=>({...item,source_name:"K.S. Delta Warszawa",synced_at:now}));
+    const {error:upsertError}=await admin.from("club_updates").upsert(rows,{onConflict:"source_key"});
+    if(upsertError)throw upsertError;
 
     const push=await sendClubPush(admin,newItems);
-
-    await admin.from("delta_sync_log").insert({
+    const durationMs=Date.now()-startedAt;
+    const details={
+      source:DELTA_URL,
+      duration_ms:durationMs,
+      new:newItems.length,
+      updated:updatedItems.length,
+      unchanged:Math.max(0,items.length-newItems.length-updatedItems.length),
+      push_sent:push.sent,
+      push_failed:push.failed
+    };
+    const {error:logError}=await admin.from("delta_sync_log").insert({
       status:"ok",
       items_found:items.length,
       items_inserted:newItems.length,
-      details:`clean_feed=true; removed_old=${cleaned}; encoding=fixed; new=${newItems.length}; push_sent=${push.sent}; push_failed=${push.failed}`
+      details:JSON.stringify(details)
     });
+    if(logError)console.error("DELTA Sync log write failed:",logError.message);
 
     return NextResponse.json({
       ok:true,
       source:DELTA_URL,
       found:items.length,
       inserted:newItems.length,
-      updated:Math.max(0,items.length-newItems.length),
-      cleaned,
-      new_items:newItems.length,
+      updated:updatedItems.length,
+      unchanged:details.unchanged,
       push,
+      duration_ms:durationMs,
       synced_at:now,
-      preview:items.slice(0,5).map(x=>x.title)
+      preview:items.slice(0,5).map(item=>item.title)
     });
-  }catch(error:any){
+  }catch(error:unknown){
+    const durationMs=Date.now()-startedAt;
+    const message=String((error as any)?.message||error);
     try{
       const admin=createAdminClient();
       await admin.from("delta_sync_log").insert({
         status:"error",
         items_found:0,
         items_inserted:0,
-        details:String(error?.message||error)
+        details:JSON.stringify({source:DELTA_URL,duration_ms:durationMs,category:errorCategory(error),message})
       });
     }catch{}
-    return NextResponse.json({ok:false,error:String(error?.message||error)},{status:500});
+    return NextResponse.json({ok:false,error:message,category:errorCategory(error),duration_ms:durationMs},{status:500});
   }
-}
-
-export async function GET(req:NextRequest){
-  return POST(req);
 }

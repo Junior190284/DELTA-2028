@@ -39,7 +39,8 @@ export default async function AdminPage() {
     { data: trainingEvents },
     { data: matchMedia },
     { data: parentLinks },
-    { data: allPermissions }
+    { data: allPermissions },
+    { data: syncLogs }
   ] = await Promise.all([
     supabase.from("players").select("*").order("display_name"),
     supabase.from("matches").select("*").order("match_date"),
@@ -56,7 +57,10 @@ export default async function AdminPage() {
     supabase.from("training_events").select("*").order("created_at"),
     supabase.from("match_media").select("*").order("created_at"),
     supabase.from("parent_players").select("*"),
-    coreStaff ? adminClient.from("user_permissions").select("*") : Promise.resolve({data:[]} as any)
+    coreStaff ? adminClient.from("user_permissions").select("*") : Promise.resolve({data:[]} as any),
+    profile.role==="admin"
+      ? adminClient.from("delta_sync_log").select("id,status,items_found,items_inserted,details,created_at").order("created_at",{ascending:false}).limit(20)
+      : Promise.resolve({data:[]} as any)
   ]);
 
   return <AdminPanel
@@ -78,5 +82,6 @@ export default async function AdminPage() {
     initialParentLinks={parentLinks || []}
     initialPermissions={allPermissions || []}
     currentPermissions={permissions}
+    initialSyncLogs={syncLogs || []}
   />;
 }
