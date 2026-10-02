@@ -27,6 +27,7 @@ type TrainingGame={id:string;training_id:string;team_a_name:string;team_b_name:s
 type TrainingGamePlayer={game_id:string;player_id:string;team:string};
 type TrainingEvent={id:string;game_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;created_at:string};
 type MatchMedia={id:string;match_id:string;storage_path:string;caption:string|null;created_at:string};
+type SyncLog={id:number|string;status:string;items_found:number;items_inserted:number;details:string|null;created_at:string};
 
 const CLUB="K.S. Delta Warszawa GM";
 
@@ -49,6 +50,7 @@ export default function AdminPanel(props:{
   initialParentLinks:ParentLink[];
   initialPermissions:PermissionRow[];
   currentPermissions:UserPermissions;
+  initialSyncLogs:SyncLog[];
 }){
   const supabase=createClient();
   const coreStaff=props.currentUser.role==="admin"||props.currentUser.role==="coach";
@@ -66,6 +68,7 @@ export default function AdminPanel(props:{
   const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"cards"|"news"|"parents"|"push"|"sync">(firstTab as any);
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
+  const [syncLogs,setSyncLogs]=useState(props.initialSyncLogs);
   const [players,setPlayers]=useState(props.initialPlayers);
   const [matches,setMatches]=useState(props.initialMatches);
   const [attendance,setAttendance]=useState(props.initialAttendance);
@@ -839,7 +842,15 @@ export default function AdminPanel(props:{
       const res=await fetch("/api/delta-sync",{method:"POST"});
       const data=await res.json();
       if(!res.ok)throw new Error(data.error||"Błąd synchronizacji");
-      setSyncResult(`Pobrano ${data.found} poprawnych wpisów. Nowe: ${data.new_items ?? data.inserted ?? 0}. Push: ${data.push?.sent ?? 0} wysłanych.`);
+      setSyncResult(`Pobrano ${data.found} poprawnych wpisów. Nowe: ${data.inserted??0}. Zmienione: ${data.updated??0}. Bez zmian: ${data.unchanged??0}.`);
+      setSyncLogs(current=>[{
+        id:`local-${Date.now()}`,
+        status:"ok",
+        items_found:data.found??0,
+        items_inserted:data.inserted??0,
+        details:JSON.stringify({duration_ms:data.duration_ms,new:data.inserted,updated:data.updated,unchanged:data.unchanged}),
+        created_at:data.synced_at||new Date().toISOString()
+      },...current].slice(0,20));
     }catch(e:any){
       setSyncResult(`Błąd: ${e?.message||e}`);
     }finally{
@@ -1059,7 +1070,7 @@ export default function AdminPanel(props:{
       {canNews&&<button className={tab==="news"?"active":""} onClick={()=>setTab("news")}><Newspaper size={17}/> Aktualności</button>}
       {coreStaff&&<button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice i role</button>}
       {coreStaff&&<button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>}
-      {coreStaff&&<button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>}
+      {isAdmin&&<button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>}
     </nav>
 
     <main className="admin-main">
@@ -1421,15 +1432,25 @@ export default function AdminPanel(props:{
         <button className="push-main" onClick={sendPush}><Bell size={18}/> Wyślij test push do wszystkich</button>
       </section>}
 
-      {tab==="sync" && coreStaff && <section className="admin-card">
+      {tab==="sync" && isAdmin && <section className="admin-card">
         <div className="admin-card-head"><h2>DELTA Sync</h2></div>
-        <p className="muted">Pobiera nowe informacje z oficjalnej strony drużyny i zapisuje je w kafelku „Z klubu”. Automatyczne odpytywanie można uruchomić co minutę przez Supabase Cron.</p>
+        <p className="muted">Pobiera wyłącznie nowe wiadomości z oficjalnej strony drużyny i zapisuje je w kafelku „Z klubu”. Terminarz i mecze pozostają pod kontrolą administratora.</p>
         <button className="push-main" disabled={syncing} onClick={runDeltaSync}><RefreshCw size={18}/>{syncing?" Synchronizacja…":" Synchronizuj teraz"}</button>
         {syncResult&&<div className="staff-note"><Shield size={18}/>{syncResult}</div>}
         <div className="admin-subcard" style={{marginTop:16}}>
           <h3>Źródło</h3>
           <p>https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108</p>
           <p className="muted">Dane klubowe są trzymane oddzielnie od naszych prywatnych statystyk, obecności i profili zawodników.</p>
+        </div>
+        <div className="admin-subcard" style={{marginTop:16}}>
+          <h3>Historia synchronizacji</h3>
+          <div className="admin-news-list">
+            {syncLogs.length?syncLogs.slice(0,10).map(log=>{
+              let detail:any={};
+              try{detail=JSON.parse(log.details||"{}");}catch{}
+              return <article key={log.id}><div><strong>{log.status==="ok"?"🟢 OK":"🔴 BŁĄD"}</strong><p>{new Date(log.created_at).toLocaleString("pl-PL")} • znaleziono: {log.items_found} • nowe: {log.items_inserted}{typeof detail.updated==="number"?` • zmienione: ${detail.updated}`:""}{typeof detail.duration_ms==="number"?` • ${detail.duration_ms} ms`:""}</p>{log.status!=="ok"&&<p>{detail.message||log.details||"Nieznany błąd"}</p>}</div></article>;
+            }):<p className="muted">Brak zapisanych przebiegów synchronizacji.</p>}
+          </div>
         </div>
       </section>}
 
