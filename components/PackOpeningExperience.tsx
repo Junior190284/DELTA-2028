@@ -197,7 +197,46 @@ export default function PackOpeningExperience({
   };
 
   const packTheme = pack.theme || "gold";
-  const particleTheme = (walkoutItem?.card?.rarity === "inferno" ? "inferno" : walkoutItem?.card?.rarity === "legendary" ? "legend" : "gold") as any;
+  const currentCard = openingResult?.cards[currentCardIndex]?.card;
+  const currentCardRarity = currentCard?.rarity || "common";
+
+  const particleTheme = (
+    (stage === "revealing" && currentCardRarity === "inferno") || walkoutItem?.card?.rarity === "inferno"
+      ? "inferno" 
+      : (stage === "revealing" && currentCardRarity === "legendary") || walkoutItem?.card?.rarity === "legendary"
+      ? "legend" 
+      : "gold"
+  ) as any;
+
+  // Determine active video background across all stages
+  const activeVideoSrc = 
+    (stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3")
+      ? "/videos/tunnel.mp4"
+      : stage === "walkout_slam"
+      ? (walkoutItem?.card?.rarity === "inferno"
+          ? "/videos/bg_inferno.mp4"
+          : walkoutItem?.card?.rarity === "legendary"
+          ? "/videos/bg_legend.mp4"
+          : pack.id === "matchday_booster"
+          ? "/videos/bg_matchday.mp4"
+          : "/videos/bg_gold.mp4")
+      : stage === "revealing"
+      ? (currentCardRarity === "inferno"
+          ? "/videos/bg_inferno.mp4"
+          : currentCardRarity === "legendary"
+          ? "/videos/bg_legend.mp4"
+          : (pack.id === "matchday_booster" || currentCard?.card_type === "matchday")
+          ? "/videos/bg_matchday.mp4"
+          : "/videos/bg_gold.mp4")
+      : stage === "summary"
+      ? (pack.theme === "inferno"
+          ? "/videos/bg_inferno.mp4"
+          : pack.theme === "legend"
+          ? "/videos/bg_legend.mp4"
+          : pack.id === "matchday_booster"
+          ? "/videos/bg_matchday.mp4"
+          : "/videos/bg_gold.mp4")
+      : undefined;
 
   return (
     <div className={`v104-open-modal ${screenShake ? "v104-screen-shake" : ""}`}>
@@ -215,21 +254,11 @@ export default function PackOpeningExperience({
         />
       )}
 
-      {/* FULLSCREEN HARDWARE-ACCELERATED VIDEO PLAYER (TUNNEL & BACKGROUNDS) */}
-      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && (
+      {/* FULLSCREEN HARDWARE-ACCELERATED VIDEO PLAYER */}
+      {activeVideoSrc && (
         <video
-          key={stage === "walkout_slam" ? "slam-bg" : "tunnel-bg"}
-          src={
-            stage === "walkout_slam"
-              ? (walkoutItem?.card?.rarity === "inferno"
-                  ? "/videos/bg_inferno.mp4"
-                  : walkoutItem?.card?.rarity === "legendary"
-                  ? "/videos/bg_legend.mp4"
-                  : pack.id === "matchday_booster"
-                  ? "/videos/bg_matchday.mp4"
-                  : "/videos/bg_gold.mp4")
-              : "/videos/tunnel.mp4"
-          }
+          key={activeVideoSrc}
+          src={activeVideoSrc}
           autoPlay
           loop
           muted
@@ -242,13 +271,15 @@ export default function PackOpeningExperience({
             height: "100%",
             objectFit: "cover",
             zIndex: 2,
-            pointerEvents: "none"
+            pointerEvents: "none",
+            filter: stage === "summary" || stage === "revealing" ? "brightness(0.75) contrast(1.08)" : "none",
+            transition: "filter 0.4s ease"
           }}
         />
       )}
 
-      {/* CONFETTI & SPARKS BURST ON WALKOUT SLAM & SUMMARY */}
-      {(stage === "walkout_slam" || stage === "summary") && (
+      {/* CONFETTI & SPARKS BURST ON WALKOUT SLAM & SUMMARY & REVEALING */}
+      {(stage === "walkout_slam" || stage === "summary" || (stage === "revealing" && (currentCardRarity === "inferno" || currentCardRarity === "legendary"))) && (
         <CanvasParticles theme={particleTheme} active={true} />
       )}
 
