@@ -3,12 +3,25 @@
 -- Safe, additive, idempotent schema migration
 -- ==========================================================================
 
--- 1. Definicje wzorów kart (Katalog kart)
+-- 1. Definicje typów paczek (Katalog paczek)
+create table if not exists public.pack_definitions (
+  id text primary key,
+  name text not null,
+  description text,
+  cards_count integer not null default 3,
+  drop_rates jsonb not null default '{"common": 60, "rare": 25, "epic": 10, "legendary": 4, "inferno": 1}'::jsonb,
+  min_rarity text default 'common',
+  theme text not null default 'gold',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- 2. Definicje wzorów kart (Katalog kart)
 create table if not exists public.card_definitions (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references public.players(id) on delete cascade,
   season text not null default '2026/27',
-  card_type text not null, -- 'base', 'matchday', 'training_warrior', 'goal_hunter', 'mvp', 'inferno', 'hat_trick_hero', 'captain', etc.
+  card_type text not null,
   card_name text not null,
   title text not null,
   rarity text not null default 'common' check (rarity in ('common', 'rare', 'epic', 'legendary', 'inferno')),
@@ -30,19 +43,6 @@ create table if not exists public.card_definitions (
 create index if not exists idx_card_definitions_player on public.card_definitions(player_id);
 create index if not exists idx_card_definitions_season on public.card_definitions(season);
 create index if not exists idx_card_definitions_rarity on public.card_definitions(rarity);
-
--- 2. Definicje typów paczek (Katalog paczek)
-create table if not exists public.pack_definitions (
-  id text primary key, -- 'training', 'matchday', 'winner', 'streak', 'achievement', 'legendary', 'inferno', 'special_event'
-  name text not null,
-  description text,
-  cards_count integer not null default 3,
-  drop_rates jsonb not null default '{"common": 60, "rare": 25, "epic": 10, "legendary": 4, "inferno": 1}'::jsonb,
-  min_rarity text default 'common',
-  theme text not null default 'gold',
-  is_active boolean not null default true,
-  created_at timestamptz not null default now()
-);
 
 -- 3. Punkty Delta Points (DP)
 create table if not exists public.user_delta_points (
@@ -91,77 +91,68 @@ create table if not exists public.pack_opening_logs (
 
 create index if not exists idx_pack_opening_logs_user on public.pack_opening_logs(user_id, created_at desc);
 
--- 7. Włączenie RLS
-alter table public.card_definitions enable row level security;
+-- 7. Włączenie RLS dla wszystkich tabel
 alter table public.pack_definitions enable row level security;
+alter table public.card_definitions enable row level security;
 alter table public.user_delta_points enable row level security;
 alter table public.user_unopened_packs enable row level security;
 alter table public.user_cards enable row level security;
 alter table public.pack_opening_logs enable row level security;
 
--- Polityki RLS
-drop policy if exists "card_definitions_read_all" on public.card_definitions;
-create policy "card_definitions_read_all" on public.card_definitions
-for select to authenticated using (true);
+-- 8. Bezpieczne polityki RLS
+do $$
+begin
+  -- pack_definitions
+  drop policy if exists "pack_definitions_read_all" on public.pack_definitions;
+  create policy "pack_definitions_read_all" on public.pack_definitions for select to authenticated using (true);
 
-drop policy if exists "card_definitions_staff_all" on public.card_definitions;
-create policy "card_definitions_staff_all" on public.card_definitions
-for all to authenticated using (public.is_staff()) with check (public.is_staff());
+  drop policy if exists "pack_definitions_staff_all" on public.pack_definitions;
+  create policy "pack_definitions_staff_all" on public.pack_definitions for all to authenticated using (public.is_staff()) with check (public.is_staff());
 
-drop policy if exists "pack_definitions_read_all" on public.pack_definitions;
-create policy "pack_definitions_read_all" on public.pack_definitions
-for select to authenticated using (true);
+  -- card_definitions
+  drop policy if exists "card_definitions_read_all" on public.card_definitions;
+  create policy "card_definitions_read_all" on public.card_definitions for select to authenticated using (true);
 
-drop policy if exists "pack_definitions_staff_all" on public.pack_definitions;
-create policy "pack_definitions_staff_all" on public.pack_definitions
-for all to authenticated using (public.is_staff()) with check (public.is_staff());
+  drop policy if exists "card_definitions_staff_all" on public.card_definitions;
+  create policy "card_definitions_staff_all" on public.card_definitions for all to authenticated using (public.is_staff()) with check (public.is_staff());
 
-drop policy if exists "user_delta_points_read_own" on public.user_delta_points;
-create policy "user_delta_points_read_own" on public.user_delta_points
-for select to authenticated using (user_id = (select auth.uid()) or public.is_staff());
+  -- user_delta_points
+  drop policy if exists "user_delta_points_read_own" on public.user_delta_points;
+  create policy "user_delta_points_read_own" on public.user_delta_points for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_delta_points_upsert_own" on public.user_delta_points;
-create policy "user_delta_points_upsert_own" on public.user_delta_points
-for all to authenticated using (user_id = (select auth.uid()) or public.is_staff())
-with check (user_id = (select auth.uid()) or public.is_staff());
+  drop policy if exists "user_delta_points_upsert_own" on public.user_delta_points;
+  create policy "user_delta_points_upsert_own" on public.user_delta_points for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_unopened_packs_read_own" on public.user_unopened_packs;
-create policy "user_unopened_packs_read_own" on public.user_unopened_packs
-for select to authenticated using (user_id = (select auth.uid()) or public.is_staff());
+  -- user_unopened_packs
+  drop policy if exists "user_unopened_packs_read_own" on public.user_unopened_packs;
+  create policy "user_unopened_packs_read_own" on public.user_unopened_packs for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_unopened_packs_modify_own" on public.user_unopened_packs;
-create policy "user_unopened_packs_modify_own" on public.user_unopened_packs
-for all to authenticated using (user_id = (select auth.uid()) or public.is_staff())
-with check (user_id = (select auth.uid()) or public.is_staff());
+  drop policy if exists "user_unopened_packs_modify_own" on public.user_unopened_packs;
+  create policy "user_unopened_packs_modify_own" on public.user_unopened_packs for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_cards_read_own" on public.user_cards;
-create policy "user_cards_read_own" on public.user_cards
-for select to authenticated using (user_id = (select auth.uid()) or public.is_staff());
+  -- user_cards
+  drop policy if exists "user_cards_read_own" on public.user_cards;
+  create policy "user_cards_read_own" on public.user_cards for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "user_cards_modify_own" on public.user_cards;
-create policy "user_cards_modify_own" on public.user_cards
-for all to authenticated using (user_id = (select auth.uid()) or public.is_staff())
-with check (user_id = (select auth.uid()) or public.is_staff());
+  drop policy if exists "user_cards_modify_own" on public.user_cards;
+  create policy "user_cards_modify_own" on public.user_cards for all to authenticated using (user_id = auth.uid() or public.is_staff()) with check (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "pack_opening_logs_read_own" on public.pack_opening_logs;
-create policy "pack_opening_logs_read_own" on public.pack_opening_logs
-for select to authenticated using (user_id = (select auth.uid()) or public.is_staff());
+  -- pack_opening_logs
+  drop policy if exists "pack_opening_logs_read_own" on public.pack_opening_logs;
+  create policy "pack_opening_logs_read_own" on public.pack_opening_logs for select to authenticated using (user_id = auth.uid() or public.is_staff());
 
-drop policy if exists "pack_opening_logs_insert_own" on public.pack_opening_logs;
-create policy "pack_opening_logs_insert_own" on public.pack_opening_logs
-for insert to authenticated with check (user_id = (select auth.uid()) or public.is_staff());
+  drop policy if exists "pack_opening_logs_insert_own" on public.pack_opening_logs;
+  create policy "pack_opening_logs_insert_own" on public.pack_opening_logs for insert to authenticated with check (user_id = auth.uid() or public.is_staff());
+end $$;
 
--- 8. Seed domyślnych typów paczek
+-- 9. Seed domyślnych typów paczek
 insert into public.pack_definitions (id, name, description, cards_count, drop_rates, min_rarity, theme)
 values
-  ('training', 'TRAINING PACK', 'Paczka za regularny udział i zaangażowanie na treningach DELTY.', 3, '{"common": 65, "rare": 25, "epic": 8, "legendary": 2, "inferno": 0}'::jsonb, 'common', 'gold'),
-  ('matchday', 'MATCHDAY PACK', 'Oficjalna paczka meczowa za występ w spotkaniu ligowym.', 3, '{"common": 50, "rare": 35, "epic": 11, "legendary": 3, "inferno": 1}'::jsonb, 'rare', 'gold'),
-  ('winner', 'WINNER PACK', 'Nagroda za zwycięstwo drużyny w oficjalnym meczu.', 3, '{"common": 40, "rare": 40, "epic": 14, "legendary": 5, "inferno": 1}'::jsonb, 'rare', 'gold'),
-  ('streak', 'STREAK PACK', 'Paczka za żelazną serię 5 lub więcej obecności bez opuszczenia.', 3, '{"common": 30, "rare": 45, "epic": 18, "legendary": 6, "inferno": 1}'::jsonb, 'rare', 'inferno'),
-  ('achievement', 'ACHIEVEMENT PACK', 'Ekskluzywna paczka za odblokowanie kamienia milowego w klubie.', 3, '{"common": 20, "rare": 45, "epic": 25, "legendary": 8, "inferno": 2}'::jsonb, 'epic', 'gold'),
-  ('legendary', 'LEGENDARY PACK', 'Królewska paczka z gwarancją legendarnych trafień i hat-tricków.', 3, '{"common": 0, "rare": 30, "epic": 45, "legendary": 20, "inferno": 5}'::jsonb, 'epic', 'legend'),
-  ('inferno', 'INFERNO PACK', 'Mistyczna, płonąca paczka o potężnym potencjale ognia DELTA INFERNO.', 3, '{"common": 0, "rare": 20, "epic": 40, "legendary": 25, "inferno": 15}'::jsonb, 'epic', 'inferno'),
-  ('special_event', 'SPECIAL EVENT PACK', 'Pamiątkowa paczka z turniejów, obozów i wydarzeń specjalnych.', 3, '{"common": 35, "rare": 35, "epic": 20, "legendary": 8, "inferno": 2}'::jsonb, 'rare', 'legend')
+  ('standard_pack', 'Paczka Standardowa', '3 karty zawodników DELTA GM. Gwarantowana min. 1 karta Common.', 3, '{"common": 70, "rare": 22, "epic": 6, "legendary": 1.8, "inferno": 0.2}'::jsonb, 'common', 'gold'),
+  ('matchday_booster', 'Matchday Booster', '4 karty zawodników DELTA GM. Zwiększona szansa na karty meczowe!', 4, '{"common": 50, "rare": 35, "epic": 11, "legendary": 3.5, "inferno": 0.5}'::jsonb, 'rare', 'gold'),
+  ('gold_booster', 'Gold Booster', '5 kart zawodników DELTA GM. Gwarantowana min. 1 karta Rare!', 5, '{"common": 40, "rare": 42, "epic": 14, "legendary": 3.5, "inferno": 0.5}'::jsonb, 'rare', 'gold'),
+  ('inferno_booster', '🔥 Inferno Booster', '5 kart z podwyższoną szansą na ognistą kartę INFERNO!', 5, '{"common": 20, "rare": 40, "epic": 28, "legendary": 9, "inferno": 3}'::jsonb, 'epic', 'inferno'),
+  ('legend_booster', '👑 Legend Pack', '6 kart mistrzowskich. Gwarantowana min. 1 karta Legendary!', 6, '{"common": 10, "rare": 35, "epic": 35, "legendary": 17, "inferno": 3}'::jsonb, 'legendary', 'legend')
 on conflict (id) do update set
   name = excluded.name,
   description = excluded.description,

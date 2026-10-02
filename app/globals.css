@@ -10083,9 +10083,26 @@ body > main,
 .v104-player-avatar-ring {
   width: 44px;
   height: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  min-height: 44px;
+  max-height: 44px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid rgba(241, 201, 92, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #090c12;
+}
+
+.v104-player-avatar-ring img,
+.v104-player-avatar-ring .player-photo {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
 }
 
 .v104-player-info-group h3 {
@@ -10130,10 +10147,18 @@ body > main,
   flex-wrap: wrap;
   align-items: center;
   gap: 16px;
+  padding: 8px 0;
 }
 
 .v104-card-wrapper {
   position: relative;
+  width: 185px;
+  height: 270px;
+  min-width: 185px;
+  max-width: 185px;
+  min-height: 270px;
+  max-height: 270px;
+  flex-shrink: 0;
 }
 
 .v104-flat-cards-grid {
