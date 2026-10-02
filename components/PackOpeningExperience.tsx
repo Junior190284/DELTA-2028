@@ -16,7 +16,6 @@ import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG } from
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import CanvasParticles from "./CanvasParticles";
-import ProceduralTunnel from "./ProceduralTunnel";
 
 interface PackOpeningExperienceProps {
   pack: PackDefinition;
@@ -90,7 +89,7 @@ export default function PackOpeningExperience({
       setOpeningResult(data);
       setRevealedCards(new Array(data.cards.length).fill(false));
 
-      // Check for Walkout worthy card (Inferno, Legendary, Epic, or high-tier Rare)
+      // Rank cards to find the star card
       const rarityRank: Record<string, number> = {
         inferno: 5,
         legendary: 4,
@@ -105,20 +104,20 @@ export default function PackOpeningExperience({
 
       const topCard = sortedCards[0];
       const topRank = rarityRank[topCard?.card?.rarity || "common"] || 1;
+      setWalkoutItem(topCard);
 
-      // Charge up -> Flash transition
+      // Charge up -> Flash transition -> ALWAYS start Tunnel Video
       setTimeout(() => {
         setStage("flash");
         setScreenShake(false);
 
         setTimeout(() => {
-          // If top card is Epic, Legendary, Inferno (or 50% chance for Rare) -> Run EA FC Walkout
-          if (topRank >= 3 || (topRank === 2 && Math.random() > 0.4)) {
-            setWalkoutItem(topCard);
-            cardSound.playCinematicBoom();
-            setStage("walkout_teaser_1");
-            cardSound.playTeaserHit(1);
+          cardSound.playCinematicBoom();
+          setStage("walkout_teaser_1");
+          cardSound.playTeaserHit(1);
 
+          // If top rank is Rare or higher -> run full 3-step teaser sequence
+          if (topRank >= 2) {
             setTimeout(() => {
               setStage("walkout_teaser_2");
               cardSound.playTeaserHit(2);
@@ -136,13 +135,17 @@ export default function PackOpeningExperience({
                   } else {
                     cardSound.playWalkoutFanfare();
                   }
-                }, 1200);
-              }, 1100);
-            }, 1100);
+                }, 1300);
+              }, 1200);
+            }, 1200);
           } else {
-            // Standard Direct Reveal
-            setStage("revealing");
-            setCurrentCardIndex(0);
+            // For common cards: tunnel flies for 2.0s then slams
+            setTimeout(() => {
+              setStage("walkout_slam");
+              setScreenShake(true);
+              setTimeout(() => setScreenShake(false), 700);
+              cardSound.playReveal("common");
+            }, 2000);
           }
         }, 280);
       }, 600);
@@ -212,32 +215,35 @@ export default function PackOpeningExperience({
         />
       )}
 
-      {/* BACKGROUND STADIUM LIGHTS / AMBIENT GLOW */}
-      <div className={`v104-open-ambient ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : ""}`} />
-
-      {/* CINEMATIC TUNNEL VIDEO DURING TEASERS */}
-      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
-        <ProceduralTunnel 
-          theme={particleTheme} 
-          speed={1.2} 
-          videoSrc="/videos/tunnel.mp4" 
-        />
-      )}
-
-      {/* DEDICATED CARD BG VIDEO DURING WALKOUT SLAM */}
-      {stage === "walkout_slam" && (
-        <ProceduralTunnel 
-          theme={particleTheme} 
-          speed={0.3} 
-          videoSrc={
-            walkoutItem?.card?.rarity === "inferno"
-              ? "/videos/bg_inferno.mp4"
-              : walkoutItem?.card?.rarity === "legendary"
-              ? "/videos/bg_legend.mp4"
-              : pack.id === "matchday_booster"
-              ? "/videos/bg_matchday.mp4"
-              : "/videos/bg_gold.mp4"
-          } 
+      {/* FULLSCREEN HARDWARE-ACCELERATED VIDEO PLAYER (TUNNEL & BACKGROUNDS) */}
+      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && (
+        <video
+          key={stage === "walkout_slam" ? "slam-bg" : "tunnel-bg"}
+          src={
+            stage === "walkout_slam"
+              ? (walkoutItem?.card?.rarity === "inferno"
+                  ? "/videos/bg_inferno.mp4"
+                  : walkoutItem?.card?.rarity === "legendary"
+                  ? "/videos/bg_legend.mp4"
+                  : pack.id === "matchday_booster"
+                  ? "/videos/bg_matchday.mp4"
+                  : "/videos/bg_gold.mp4")
+              : "/videos/tunnel.mp4"
+          }
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: 2,
+            pointerEvents: "none"
+          }}
         />
       )}
 
@@ -247,7 +253,7 @@ export default function PackOpeningExperience({
       )}
 
       {/* TOP HEADER CONTROLS */}
-      <div className="v104-open-topbar">
+      <div className="v104-open-topbar" style={{ zIndex: 100 }}>
         <div className="v104-open-top-brand">
           <img 
             src="/teamlogos/gm.png" 
@@ -284,9 +290,7 @@ export default function PackOpeningExperience({
 
       {/* ================= EA FC WALKOUT CINEMATIC SEQUENCE ================= */}
       {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && walkoutItem && (
-        <div className="v104-walkout-stage">
-          <div className={`v104-walkout-beams ${walkoutItem.card.rarity === "inferno" ? "inferno" : walkoutItem.card.rarity === "legendary" ? "legend" : ""}`} />
-
+        <div className="v104-walkout-stage" style={{ background: "transparent", zIndex: 10 }}>
           {/* Top Skip Button */}
           <div style={{ position: "absolute", top: "24px", right: "24px", zIndex: 100 }}>
             <button
@@ -300,7 +304,7 @@ export default function PackOpeningExperience({
           {/* Walkout Step 1, 2, 3 Teaser Pillars */}
           {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
             <div className="v104-walkout-teaser-container">
-              <span style={{ fontSize: "12px", fontWeight: 900, letterSpacing: "0.2em", color: "#f1c95c", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "13px", fontWeight: 900, letterSpacing: "0.22em", color: "#f1c95c", textTransform: "uppercase", textShadow: "0 2px 10px rgba(0,0,0,0.9)" }}>
                 🔥 WALKOUT INCOMING... 🔥
               </span>
 
@@ -308,7 +312,7 @@ export default function PackOpeningExperience({
                 {/* 1. CLUB & NATION */}
                 <div className="v104-walkout-teaser-pillar">
                   <span className="v104-walkout-teaser-label">KLUB / KRAJ</span>
-                  <img src="/teamlogos/gm.png" alt="DELTA" width={40} height={40} style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+                  <img src="/teamlogos/gm.png" alt="DELTA" width={44} height={44} style={{ width: "44px", height: "44px", objectFit: "contain" }} />
                   <span className="v104-walkout-teaser-val">DELTA GM</span>
                 </div>
 
@@ -335,11 +339,9 @@ export default function PackOpeningExperience({
             </div>
           )}
 
-          {/* Walkout Step 4: Slam Reveal & Pyro */}
+          {/* Walkout Step 4: Slam Reveal */}
           {stage === "walkout_slam" && (
             <div className="v104-walkout-slam-container animate-slamZoom">
-              <div className="v104-walkout-pyro" />
-
               <div style={{ transform: "scale(1.12)", transformOrigin: "center center" }}>
                 <CollectibleCard3D
                   card={walkoutItem.card}
@@ -379,7 +381,7 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 1: SEALED FOIL PACK ================= */}
       {(stage === "sealed" || stage === "charging") && (
-        <div className="v104-open-stage">
+        <div className="v104-open-stage" style={{ zIndex: 10 }}>
           {/* 3D PACK FOIL with Interactive Tilt & Charge Pulse */}
           <div 
             ref={packRef}
@@ -432,7 +434,7 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 3: REVEALING CARDS ONE BY ONE ================= */}
       {stage === "revealing" && openingResult && (
-        <div className="v104-open-stage">
+        <div className="v104-open-stage" style={{ zIndex: 10 }}>
           {/* Progress Indicator */}
           <div className="v104-open-progress">
             {openingResult.cards.map((_, idx) => (
@@ -518,7 +520,7 @@ export default function PackOpeningExperience({
 
       {/* ================= STAGE 4: SUMMARY ================= */}
       {stage === "summary" && openingResult && (
-        <div className="v104-open-summary-stage animate-fadeIn">
+        <div className="v104-open-summary-stage animate-fadeIn" style={{ zIndex: 10 }}>
           <div className="v104-summary-header">
             <span className="eyebrow gold"><Check size={14} className="inline mr-1" /> PACZKA ZOSTAŁA OTWARTA</span>
             <h3 className="v104-summary-title">ZDOBYTE KARTY DELTA</h3>
