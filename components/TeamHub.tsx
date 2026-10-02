@@ -13,6 +13,7 @@ import PlayerCard3D, { CardTheme } from "./PlayerCard3D";
 import BadgeCelebrationModal, { BadgeDetail } from "./BadgeCelebrationModal";
 import PackOpeningModal from "./PackOpeningModal";
 import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
+import DeltaLiveBar from "./DeltaLiveBar";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
 import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
@@ -1125,6 +1126,13 @@ export default function TeamHub(props:{
 
     {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
     <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
+      <DeltaLiveBar
+        matches={matches}
+        trainingSessions={trainingSessions}
+        news={news}
+        unansweredNotices={unanswered}
+        onNavigate={(targetTab) => setTab(targetTab as any)}
+      />
       {tab==="teamcenter"&&<section className="section v151-team-center">
         <header className="v151-team-hero devil-card"><span className="eyebrow gold">DELTA 2018 GM · STREFA RODZICA</span><h1>CENTRUM <em>DRUŻYNY</em></h1><p>Najbliższe wydarzenia, Twoje sprawy i sezon w jednym miejscu.</p></header>
         <div className="v151-team-grid">
