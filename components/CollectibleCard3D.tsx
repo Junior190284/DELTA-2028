@@ -191,13 +191,20 @@ export default function CollectibleCard3D({
 
           {/* TOP HEADER ROW: DELTA Crest + Rarity Tag */}
           <div className="relative z-20 flex items-center justify-between w-full">
-            <div className="flex items-center gap-1.5">
-              <img src="/teamlogos/gm.png" alt="DELTA" className="w-4 h-4 object-contain drop-shadow" />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <img 
+                src="/teamlogos/gm.png" 
+                alt="DELTA" 
+                width={16}
+                height={16}
+                style={{ width: "16px", height: "16px", minWidth: "16px", maxWidth: "16px", minHeight: "16px", maxHeight: "16px", objectFit: "contain" }}
+                className="drop-shadow shrink-0" 
+              />
               <span className="font-extrabold text-[9px] tracking-wider text-slate-300">GM</span>
             </div>
             
             <span 
-              className="px-2 py-0.5 text-[8px] font-black tracking-widest rounded uppercase shadow-md flex items-center gap-1"
+              className="px-2 py-0.5 text-[8px] font-black tracking-widest rounded uppercase shadow-md flex items-center gap-1 shrink-0"
               style={{
                 backgroundColor: config.color,
                 color: rarity === "legendary" || rarity === "rare" || rarity === "common" ? "#000" : "#fff",
@@ -333,8 +340,15 @@ export default function CollectibleCard3D({
         >
           {/* Top Bar on Reverse */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-            <div className="flex items-center gap-1">
-              <img src="/teamlogos/gm.png" alt="DELTA" className="w-4 h-4 object-contain" />
+            <div className="flex items-center gap-1 shrink-0">
+              <img 
+                src="/teamlogos/gm.png" 
+                alt="DELTA" 
+                width={16}
+                height={16}
+                style={{ width: "16px", height: "16px", minWidth: "16px", maxWidth: "16px", minHeight: "16px", maxHeight: "16px", objectFit: "contain" }}
+                className="shrink-0" 
+              />
               <span className="font-extrabold text-[9px] tracking-wider text-slate-300">DELTA GM</span>
             </div>
             <span className="font-mono text-[8px] text-amber-400 font-bold">

@@ -10166,12 +10166,16 @@ body > main,
 .v104-card-wrapper {
   position: relative;
   width: 185px;
-  height: 270px;
+  height: 275px;
   min-width: 185px;
   max-width: 185px;
-  min-height: 270px;
-  max-height: 270px;
+  min-height: 275px;
+  max-height: 275px;
   flex-shrink: 0;
+}
+
+.v104-card-wrapper img {
+  max-width: 100%;
 }
 
 .v104-flat-cards-grid {
