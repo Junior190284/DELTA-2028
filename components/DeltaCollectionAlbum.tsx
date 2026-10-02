@@ -246,7 +246,7 @@ export default function DeltaCollectionAlbum({
                   MASZ {unopenedPacks.length} {unopenedPacks.length === 1 ? "NOWĄ PACZKĘ" : unopenedPacks.length < 5 ? "NOWE PACZKI" : "NOWYCH PACZEK"} DO OTWARCIA! 🎁
                 </h4>
                 <p>
-                  Odkryj karty zawodników i powiększ swoją kolekcję klubową!
+                  Odkryj unikalne karty zawodników i wzbogać swój klaser klubowy!
                 </p>
               </div>
             </div>
@@ -264,6 +264,84 @@ export default function DeltaCollectionAlbum({
             </button>
           </div>
         )}
+
+        {/* ================= 3D BOOSTER PACKS VAULT ================= */}
+        <div className="v104-vault-section">
+          <div className="v104-vault-header">
+            <div>
+              <span className="eyebrow gold"><Gift size={13} className="inline mr-1" /> SKARBIEC PACZEK DELTA</span>
+              <h3 className="v104-vault-title">RODZAJE PACZEK & BOOSTERÓW</h3>
+            </div>
+            <span className="v104-vault-subhint">
+              Paczki zdobywasz za obecność na treningach, mecze ligowe, turnieje oraz wyzwania!
+            </span>
+          </div>
+
+          <div className="v104-vault-grid">
+            {packDefinitions.map(pack => {
+              const packCount = unopenedPacks.filter(p => p.pack_type_id === pack.id).length;
+              const isInferno = pack.id === "inferno_booster" || pack.theme === "inferno";
+              const isLegend = pack.id === "legend_pack" || pack.theme === "legend";
+              const isMatchday = pack.id === "matchday_booster";
+
+              return (
+                <div 
+                  key={pack.id} 
+                  className={`v104-booster-card ${isInferno ? "booster-inferno" : isLegend ? "booster-legend" : isMatchday ? "booster-matchday" : "booster-gold"}`}
+                >
+                  {/* Pack Top Crimp / Foil Tear Line */}
+                  <div className="v104-booster-crimp top" />
+
+                  {/* Shimmer Light Reflection */}
+                  <div className="v104-booster-shimmer" />
+
+                  {/* Pack Header Badge */}
+                  <div className="v104-booster-top">
+                    <span className="v104-booster-edition">DELTA GM 2018</span>
+                    {packCount > 0 ? (
+                      <span className="v104-booster-owned-badge active">
+                        {packCount} DOSTĘPNE
+                      </span>
+                    ) : (
+                      <span className="v104-booster-owned-badge">0 W ZASOBACH</span>
+                    )}
+                  </div>
+
+                  {/* Pack Center Crest & Branding */}
+                  <div className="v104-booster-center">
+                    <div className="v104-booster-crest-wrap">
+                      <img src="/teamlogos/gm.png" alt="DELTA" className="v104-booster-crest" />
+                    </div>
+                    <h4 className="v104-booster-name">{pack.name}</h4>
+                    <span className="v104-booster-cards-count">{pack.cards_count} KART W PACZCE</span>
+                  </div>
+
+                  {/* Pack Specs & Action */}
+                  <div className="v104-booster-bottom">
+                    <p className="v104-booster-desc">{pack.description}</p>
+                    
+                    {packCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setActivePackToOpen(pack)}
+                        className="v104-booster-action-btn active"
+                      >
+                        <Sparkles size={14} /> OTWÓRZ TERAZ ({packCount})
+                      </button>
+                    ) : (
+                      <div className="v104-booster-earn-hint">
+                        <span>ZDOBĄDŹ ZA MECZE / TRENINGI</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pack Bottom Crimp */}
+                  <div className="v104-booster-crimp bottom" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* ================= FILTER & SEARCH BAR ================= */}

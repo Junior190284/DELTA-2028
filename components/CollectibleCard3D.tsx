@@ -6,10 +6,10 @@ import {
   Sparkles, 
   RotateCw, 
   Lock, 
-  Shield, 
   Crown, 
   CheckCircle2, 
-  User
+  HelpCircle,
+  ShieldAlert
 } from "lucide-react";
 import PlayerPhoto from "./PlayerPhoto";
 import { CardDefinition, CardRarity, RARITY_CONFIG, CARD_TYPES_CONFIG, UserCard } from "@/lib/cards/types";
@@ -107,32 +107,34 @@ export default function CollectibleCard3D({
   
   // Custom cutout selection
   let cutoutImage: string | null = null;
-  if (isRyszard) {
-    if (rarity === "inferno") cutoutImage = "/assets/players/ryszard-inferno.png";
-    else if (rarity === "legendary") cutoutImage = "/assets/players/ryszard-gold.png";
-    else cutoutImage = "/assets/players/ryszard-legend.png";
-  } else if (card.artwork_url) {
-    cutoutImage = card.artwork_url;
+  if (!isLocked) {
+    if (isRyszard) {
+      if (rarity === "inferno") cutoutImage = "/assets/players/ryszard-inferno.png";
+      else if (rarity === "legendary") cutoutImage = "/assets/players/ryszard-gold.png";
+      else cutoutImage = "/assets/players/ryszard-legend.png";
+    } else if (card.artwork_url) {
+      cutoutImage = card.artwork_url;
+    }
   }
 
-  // Dimensions based on size
+  // Exact fixed card dimensions
   const dim = {
-    sm: { w: 140, h: 205, text: "text-[9px]" },
-    md: { w: 185, h: 270, text: "text-xs" },
-    lg: { w: 240, h: 350, text: "text-sm" },
-    xl: { w: 300, h: 440, text: "text-base" }
+    sm: { w: 140, h: 210 },
+    md: { w: 185, h: 275 },
+    lg: { w: 240, h: 355 },
+    xl: { w: 300, h: 445 }
   }[size];
 
   return (
     <div 
-      className="relative select-none perspective-1000 cursor-pointer group shrink-0"
+      className="relative select-none perspective-1000 cursor-pointer group shrink-0 block"
       style={{
-        width: dim.w,
-        height: dim.h,
-        minWidth: dim.w,
-        maxWidth: dim.w,
-        minHeight: dim.h,
-        maxHeight: dim.h
+        width: `${dim.w}px`,
+        height: `${dim.h}px`,
+        minWidth: `${dim.w}px`,
+        maxWidth: `${dim.w}px`,
+        minHeight: `${dim.h}px`,
+        maxHeight: `${dim.h}px`
       }}
       onClick={onClick}
       onPointerEnter={handlePointerEnter}
@@ -141,20 +143,23 @@ export default function CollectibleCard3D({
     >
       <div 
         ref={cardRef}
-        className={`w-full h-full relative transition-transform duration-300 transform-gpu preserve-3d rounded-2xl shadow-xl ${
+        className={`w-full h-full relative transition-transform duration-300 transform-gpu preserve-3d rounded-2xl ${
           isHovered ? "scale-[1.03]" : "scale-100"
         }`}
         style={{
           transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${isFlipped ? rotateY + 180 : rotateY}deg)`,
-          transition: isHovered ? "transform 0.08s ease-out" : "transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)"
+          transition: isHovered ? "transform 0.08s ease-out" : "transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)",
+          boxShadow: isLocked 
+            ? `0 6px 20px rgba(0,0,0,0.7), 0 0 12px ${config.borderGlow}`
+            : `0 10px 30px -5px ${config.borderGlow}, 0 0 20px ${config.borderGlow}`
         }}
       >
         {/* ================= FRONT SIDE ================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden backface-hidden border flex flex-col justify-between p-3 z-10"
+          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden backface-hidden border flex flex-col justify-between p-3 z-10 box-border"
           style={{
             background: isLocked 
-              ? "radial-gradient(circle at 50% 30%, #1e2533 0%, #0c1017 65%, #05070a 100%)" 
+              ? `linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 13, 20, 0.98) 100%), radial-gradient(circle at 50% 40%, ${config.borderGlow} 0%, transparent 70%)`
               : rarity === "inferno"
                 ? "radial-gradient(circle at 50% 25%, #7f1d1d 0%, #200404 60%, #0a0101 100%)"
                 : rarity === "legendary"
@@ -164,111 +169,120 @@ export default function CollectibleCard3D({
                     : rarity === "rare"
                       ? "radial-gradient(circle at 50% 25%, #0369a1 0%, #082f49 60%, #03131e 100%)"
                       : "radial-gradient(circle at 50% 25%, #334155 0%, #0f172a 60%, #050811 100%)",
-            borderColor: isLocked ? "rgba(100, 116, 139, 0.4)" : config.borderGlow,
-            boxShadow: isLocked 
-              ? "inset 0 0 15px rgba(0,0,0,0.8)" 
-              : `0 8px 24px -4px ${config.borderGlow}, inset 0 0 16px -4px ${config.borderGlow}`
+            borderColor: config.color,
+            boxShadow: `inset 0 0 20px rgba(0,0,0,0.8), inset 0 0 10px ${config.borderGlow}`
           }}
         >
-          {/* Card Border Highlight */}
+          {/* Outer Glowing Border Ring */}
           <div 
-            className="absolute inset-0 rounded-2xl pointer-events-none border opacity-75"
-            style={{ borderColor: isLocked ? "rgba(255,255,255,0.1)" : config.color }}
+            className="absolute inset-0 rounded-2xl pointer-events-none border-2 opacity-80"
+            style={{ borderColor: config.color }}
           />
 
-          {/* Animated Sheen Overlay for High Tiers */}
-          {!isLocked && (rarity === "legendary" || rarity === "inferno" || rarity === "epic") && (
-            <div 
-              className="absolute inset-0 pointer-events-none rounded-2xl opacity-40 mix-blend-overlay"
-              style={{
-                backgroundImage: "linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.7) 45%, rgba(255,255,255,0.9) 50%, transparent 60%)",
-                backgroundSize: "200% 200%",
-                animation: "cardShimmer 4s infinite linear"
-              }}
-            />
-          )}
-
-          {/* Holographic Glare Overlay */}
-          {!isLocked && (
-            <div 
-              className="absolute inset-0 pointer-events-none rounded-2xl transition-opacity duration-200"
-              style={{
-                background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(255,255,255,${glarePos.opacity * 0.3}) 0%, transparent 60%)`,
-                mixBlendMode: "screen"
-              }}
-            />
-          )}
+          {/* Shimmer Sheen */}
+          <div 
+            className="absolute inset-0 pointer-events-none rounded-2xl opacity-30 mix-blend-overlay"
+            style={{
+              backgroundImage: "linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.7) 45%, rgba(255,255,255,0.9) 50%, transparent 60%)",
+              backgroundSize: "200% 200%",
+              animation: "cardShimmer 4s infinite linear"
+            }}
+          />
 
           {/* TOP HEADER ROW: DELTA Crest + Rarity Tag */}
           <div className="relative z-20 flex items-center justify-between w-full">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <img src="/teamlogos/gm.png" alt="DELTA" className="w-4 h-4 object-contain drop-shadow" />
               <span className="font-extrabold text-[9px] tracking-wider text-slate-300">GM</span>
             </div>
             
-            <div className="flex items-center gap-1">
-              <span 
-                className="px-1.5 py-0.5 text-[8px] font-black tracking-widest rounded uppercase shadow-sm flex items-center gap-0.5"
-                style={{
-                  backgroundColor: isLocked ? "#475569" : config.color,
-                  color: isLocked ? "#fff" : rarity === "legendary" || rarity === "rare" || rarity === "common" ? "#000" : "#fff"
-                }}
-              >
-                {!isLocked && rarity === "inferno" && <Flame size={9} className="animate-pulse" />}
-                {!isLocked && rarity === "legendary" && <Crown size={9} />}
-                {!isLocked && rarity === "epic" && <Sparkles size={9} />}
-                {isLocked ? "LOCK" : config.label}
-              </span>
-            </div>
+            <span 
+              className="px-2 py-0.5 text-[8px] font-black tracking-widest rounded uppercase shadow-md flex items-center gap-1"
+              style={{
+                backgroundColor: config.color,
+                color: rarity === "legendary" || rarity === "rare" || rarity === "common" ? "#000" : "#fff",
+                boxShadow: `0 0 10px ${config.color}88`
+              }}
+            >
+              {rarity === "inferno" && <Flame size={9} className="animate-pulse" />}
+              {rarity === "legendary" && <Crown size={9} />}
+              {rarity === "epic" && <Sparkles size={9} />}
+              {config.label}
+            </span>
           </div>
 
           {/* CARD TYPE BADGE (e.g. MVP, GOAL HUNTER, TRAINING WARRIOR) */}
-          <div className="relative z-20 mt-0.5 flex justify-center">
+          <div className="relative z-20 mt-1 flex justify-center">
             <div 
-              className="px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider uppercase backdrop-blur-md border shadow-sm"
+              className="px-2.5 py-0.5 rounded-full text-[8.5px] font-black tracking-wider uppercase backdrop-blur-md border shadow-md"
               style={{
-                backgroundColor: "rgba(0,0,0,0.6)",
-                borderColor: isLocked ? "rgba(255,255,255,0.15)" : `${config.color}66`,
-                color: isLocked ? "#94a3b8" : config.color
+                backgroundColor: "rgba(0,0,0,0.7)",
+                borderColor: `${config.color}88`,
+                color: config.color
               }}
             >
               {card.title || typeConfig.name}
             </div>
           </div>
 
-          {/* CENTER: PLAYER CUTOUT ARTWORK / LOCKED SILHOUETTE */}
-          <div className="relative flex-1 flex items-center justify-center my-1 overflow-hidden z-10">
+          {/* CENTER: PLAYER CUTOUT ARTWORK / LOCKED FUT SILHOUETTE */}
+          <div className="relative flex-1 flex items-center justify-center my-1 overflow-hidden z-10 w-full">
             {isLocked ? (
-              <div className="flex flex-col items-center justify-center gap-1.5 text-slate-500 py-2">
-                <div className="w-12 h-12 rounded-full bg-slate-900/90 border border-slate-700 flex items-center justify-center text-slate-400 shadow-inner">
-                  <Lock size={20} />
+              /* ===== LOCKED MYSTERY CARD FORMAT (FUT / PANINI STYLE) ===== */
+              <div className="flex flex-col items-center justify-center gap-2 text-center w-full py-2">
+                <div 
+                  className="w-16 h-16 rounded-2xl bg-black/60 border-2 flex items-center justify-center text-white shadow-2xl relative overflow-hidden"
+                  style={{ 
+                    borderColor: `${config.color}aa`,
+                    boxShadow: `0 0 20px ${config.borderGlow}`
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                  <span className="text-2xl font-black italic tracking-tighter" style={{ color: config.color }}>
+                    ?
+                  </span>
+                  <div className="absolute bottom-1 right-1">
+                    <Lock size={12} className="text-slate-400" />
+                  </div>
                 </div>
-                <span className="text-[9px] font-bold tracking-widest text-slate-400">DO ODKRYCIA</span>
-                <span className="text-[8px] text-slate-500 max-w-[120px] text-center leading-tight">Otwórz paczkę kart</span>
+
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-black tracking-widest text-slate-300 uppercase">
+                    DO ODKRYCIA
+                  </span>
+                  <span className="text-[7.5px] text-slate-400 font-bold">
+                    Otwórz w paczce
+                  </span>
+                </div>
               </div>
             ) : cutoutImage ? (
+              /* ===== UNLOCKED CUTOUT ===== */
               <div className="relative w-full h-full max-h-[135px] flex items-center justify-center">
                 <img 
                   src={cutoutImage} 
                   alt={card.player?.display_name || "Zawodnik"}
-                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_6px_10px_rgba(0,0,0,0.85)] transform transition-transform duration-300 group-hover:scale-105"
+                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.9)] transform transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
             ) : (
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 shadow-lg relative flex items-center justify-center bg-slate-900" style={{ borderColor: config.color }}>
+              /* ===== UNLOCKED PHOTO / BADGE ===== */
+              <div 
+                className="w-16 h-16 rounded-full overflow-hidden border-2 shadow-xl relative flex items-center justify-center bg-slate-900"
+                style={{ borderColor: config.color }}
+              >
                 {card.player?.id ? (
                   <PlayerPhoto playerId={card.player.id} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={24} className="text-slate-400" />
+                  <img src="/teamlogos/gm.png" alt="" className="w-10 h-10 object-contain" />
                 )}
               </div>
             )}
           </div>
 
           {/* BOTTOM PLAYER IDENTITY FOOTER */}
-          <div className="relative z-20 w-full pt-1 border-t border-white/10 backdrop-blur-sm bg-black/50 -mx-3 -mb-3 p-2.5 rounded-b-2xl">
+          <div className="relative z-20 w-full pt-1.5 border-t border-white/10 backdrop-blur-sm bg-black/60 -mx-3 -mb-3 p-2.5 rounded-b-2xl">
             <div className="flex items-end justify-between">
-              <div className="flex flex-col overflow-hidden max-w-[70%]">
+              <div className="flex flex-col overflow-hidden max-w-[72%]">
                 <span className="text-[8px] font-bold tracking-wider text-slate-400 uppercase truncate">
                   {card.player?.position || "ZAWODNIK"} • #{card.player?.shirt_number || "GM"}
                 </span>
@@ -285,7 +299,7 @@ export default function CollectibleCard3D({
 
             {/* DUPLICATES BADGE */}
             {userCard && userCard.duplicates_count > 0 && (
-              <div className="mt-0.5 flex items-center justify-between text-[8px]">
+              <div className="mt-1 flex items-center justify-between text-[8px]">
                 <span className="text-emerald-400 font-bold flex items-center gap-0.5">
                   <CheckCircle2 size={9} /> W kolekcji (x{userCard.duplicates_count + 1})
                 </span>
@@ -310,7 +324,7 @@ export default function CollectibleCard3D({
 
         {/* ================= REVERSE SIDE (LORE & STATS) ================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden backface-hidden rotate-y-180 border flex flex-col justify-between p-3 z-10"
+          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden backface-hidden rotate-y-180 border flex flex-col justify-between p-3 z-10 box-border"
           style={{
             background: "radial-gradient(circle at 50% 20%, #1a1e29 0%, #0d1017 60%, #05060a 100%)",
             borderColor: config.borderGlow,
