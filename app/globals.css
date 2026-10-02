@@ -11294,5 +11294,139 @@ body > main,
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* ================= EA FC / FIFA WALKOUT CINEMATIC ================= */
+.v104-walkout-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: #040609;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.v104-walkout-beams {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(ellipse at 20% 0%, rgba(241, 201, 92, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 0%, rgba(220, 38, 38, 0.35) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(241, 201, 92, 0.1) 0%, transparent 60%);
+  animation: v101HeroLights 8s ease-in-out infinite alternate;
+}
+
+.v104-walkout-beams.inferno {
+  background: 
+    radial-gradient(ellipse at 20% 0%, rgba(239, 68, 68, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 0%, rgba(249, 115, 22, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.2) 0%, transparent 60%);
+}
+
+.v104-walkout-beams.legend {
+  background: 
+    radial-gradient(ellipse at 20% 0%, rgba(192, 132, 252, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 0%, rgba(241, 201, 92, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(192, 132, 252, 0.15) 0%, transparent 60%);
+}
+
+.v104-walkout-teaser-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.v104-walkout-teasers-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.v104-walkout-teaser-pillar {
+  min-width: 100px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: rgba(10, 14, 22, 0.85);
+  border: 2px solid rgba(241, 201, 92, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(241, 201, 92, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: v104-teaser-pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+@keyframes v104-teaser-pop {
+  0% { transform: scale(0.4) translateY(30px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.v104-walkout-teaser-label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.v104-walkout-teaser-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+.v104-walkout-reveal-container {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: v104-card-slam 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes v104-card-slam {
+  0% { transform: scale(2.2) translateY(-40px); opacity: 0; filter: blur(10px); }
+  60% { transform: scale(0.95) translateY(10px); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.v104-walkout-badge-pill {
+  padding: 6px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #000000;
+  background: linear-gradient(135deg, #f1c95c, #ca8a04);
+  box-shadow: 0 0 30px rgba(241, 201, 92, 0.8);
+  animation: pulse 2s infinite;
+}
+
+.v104-walkout-badge-pill.inferno {
+  color: #ffffff;
+  background: linear-gradient(135deg, #ef4444, #991b1b);
+  box-shadow: 0 0 35px rgba(239, 68, 68, 0.9);
+}
+
+.v104-walkout-badge-pill.legend {
+  color: #ffffff;
+  background: linear-gradient(135deg, #c084fc, #7e22ce);
+  box-shadow: 0 0 35px rgba(192, 132, 252, 0.8);
+}
+
+
 
 

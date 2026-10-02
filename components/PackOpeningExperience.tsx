@@ -25,7 +25,15 @@ interface PackOpeningExperienceProps {
   unopenedCount?: number;
 }
 
-type Stage = "sealed" | "tearing" | "burst" | "revealing" | "summary";
+type Stage = 
+  | "sealed" 
+  | "tearing" 
+  | "walkout_teaser_1" 
+  | "walkout_teaser_2" 
+  | "walkout_teaser_3" 
+  | "walkout_slam" 
+  | "revealing" 
+  | "summary";
 
 export default function PackOpeningExperience({
   pack,
@@ -36,9 +44,9 @@ export default function PackOpeningExperience({
   const [stage, setStage] = useState<Stage>("sealed");
   const [loading, setLoading] = useState(false);
   const [openingResult, setOpeningResult] = useState<PackOpeningResult | null>(null);
+  const [walkoutItem, setWalkoutItem] = useState<{ card: CardDefinition; is_duplicate: boolean; duplicate_points: number } | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
-  const [infernoCinematic, setInfernoCinematic] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
 
   // Trigger server-side opening API
@@ -46,7 +54,7 @@ export default function PackOpeningExperience({
     if (loading || stage !== "sealed") return;
     setLoading(true);
     setStage("tearing");
-    cardSound.playPackTear();
+    if (!soundMuted) cardSound.playPackTear();
 
     try {
       const res = await fetch("/api/cards/open-pack", {
@@ -64,20 +72,72 @@ export default function PackOpeningExperience({
       setOpeningResult(data);
       setRevealedCards(new Array(data.cards.length).fill(false));
 
-      // Timing for burst animation
-      setTimeout(() => {
-        setStage("burst");
+      // Check for Walkout worthy card (Inferno, Legendary, Epic, or high-tier Rare)
+      const rarityRank: Record<string, number> = {
+        inferno: 5,
+        legendary: 4,
+        epic: 3,
+        rare: 2,
+        common: 1
+      };
+
+      const sortedCards = [...data.cards].sort((a, b) => {
+        return (rarityRank[b.card.rarity || "common"] || 1) - (rarityRank[a.card.rarity || "common"] || 1);
+      });
+
+      const topCard = sortedCards[0];
+      const topRank = rarityRank[topCard?.card?.rarity || "common"] || 1;
+
+      // If top card is Epic, Legendary, Inferno (or 50% chance for Rare) -> Run EA FC Walkout
+      if (topRank >= 3 || (topRank === 2 && Math.random() > 0.4)) {
+        setWalkoutItem(topCard);
+        
+        // Start Walkout Timeline
+        setTimeout(() => {
+          if (!soundMuted) cardSound.playCinematicBoom();
+          setStage("walkout_teaser_1");
+          if (!soundMuted) cardSound.playTeaserHit(1);
+
+          setTimeout(() => {
+            setStage("walkout_teaser_2");
+            if (!soundMuted) cardSound.playTeaserHit(2);
+
+            setTimeout(() => {
+              setStage("walkout_teaser_3");
+              if (!soundMuted) cardSound.playTeaserHit(3);
+
+              setTimeout(() => {
+                setStage("walkout_slam");
+                if (!soundMuted) {
+                  if (topCard.card.rarity === "inferno") {
+                    cardSound.playReveal("inferno");
+                  } else {
+                    cardSound.playWalkoutFanfare();
+                  }
+                }
+              }, 1400);
+            }, 1300);
+          }, 1300);
+        }, 800);
+      } else {
+        // Standard Direct Reveal
         setTimeout(() => {
           setStage("revealing");
           setCurrentCardIndex(0);
-        }, 800);
-      }, 700);
+        }, 900);
+      }
     } catch (e: any) {
       alert(e.message || "Nie udało się otworzyć paczki.");
       setStage("sealed");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Start sequential reveal after walkout
+  const handleProceedToPack = () => {
+    setStage("revealing");
+    setCurrentCardIndex(0);
   };
 
   // Reveal current card in sequence
@@ -91,14 +151,6 @@ export default function PackOpeningExperience({
     // Play sound
     if (!soundMuted) {
       cardSound.playReveal(rarity);
-    }
-
-    // Inferno special cinematic
-    if (rarity === "inferno") {
-      setInfernoCinematic(true);
-      setTimeout(() => {
-        setInfernoCinematic(false);
-      }, 2400);
     }
 
     setRevealedCards(prev => {
@@ -126,12 +178,6 @@ export default function PackOpeningExperience({
   };
 
   const packTheme = pack.theme || "gold";
-  const packBg = 
-    packTheme === "inferno"
-      ? "from-red-900 via-stone-900 to-black"
-      : packTheme === "legend"
-        ? "from-amber-800 via-zinc-900 to-black"
-        : "from-amber-600 via-stone-900 to-black";
 
   return (
     <div className="v104-open-modal">
@@ -174,20 +220,91 @@ export default function PackOpeningExperience({
         </div>
       </div>
 
-      {/* ================= INFERNO CINEMATIC OVERLAY ================= */}
-      {infernoCinematic && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100000, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.9)" }}>
-          <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", textAlign: "center" }}>
-            <div style={{ padding: "16px", borderRadius: "50%", background: "rgba(239,68,68,0.3)", border: "2px solid #ef4444", boxShadow: "0 0 50px rgba(239,68,68,0.8)" }}>
-              <Flame size={64} style={{ color: "#ef4444" }} />
-            </div>
-            <h1 style={{ fontSize: "48px", fontWeight: 900, fontStyle: "italic", color: "#f87171", textShadow: "0 0 35px rgba(255,100,0,0.9)", margin: 0 }}>
-              🔥 INFERNO DROP! 🔥
-            </h1>
-            <p style={{ fontSize: "16px", fontWeight: 900, letterSpacing: "0.15em", color: "#fecaca", textTransform: "uppercase", margin: 0 }}>
-              NAJRZADSZA KARTA W GRZE!
-            </p>
+      {/* ================= EA FC WALKOUT CINEMATIC SEQUENCE ================= */}
+      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && walkoutItem && (
+        <div className="v104-walkout-stage">
+          <div className={`v104-walkout-beams ${walkoutItem.card.rarity === "inferno" ? "inferno" : walkoutItem.card.rarity === "legendary" ? "legend" : ""}`} />
+
+          {/* Top Skip Button */}
+          <div style={{ position: "absolute", top: "24px", right: "24px", zIndex: 100 }}>
+            <button
+              onClick={handleProceedToPack}
+              className="v104-open-skip-btn"
+            >
+              Pomiń animację
+            </button>
           </div>
+
+          {/* Walkout Step 1, 2, 3 Teaser Pillars */}
+          {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
+            <div className="v104-walkout-teaser-container">
+              <span style={{ fontSize: "12px", fontWeight: 900, letterSpacing: "0.2em", color: "#f1c95c", textTransform: "uppercase" }}>
+                🔥 WALKOUT INCOMING... 🔥
+              </span>
+
+              <div className="v104-walkout-teasers-row">
+                {/* 1. CLUB & NATION */}
+                <div className="v104-walkout-teaser-pillar">
+                  <span className="v104-walkout-teaser-label">KLUB / KRAJ</span>
+                  <img src="/teamlogos/gm.png" alt="DELTA" width={40} height={40} style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+                  <span className="v104-walkout-teaser-val">DELTA GM</span>
+                </div>
+
+                {/* 2. POSITION */}
+                {(stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
+                  <div className="v104-walkout-teaser-pillar">
+                    <span className="v104-walkout-teaser-label">POZYCJA</span>
+                    <span style={{ fontSize: "28px" }}>⚽</span>
+                    <span className="v104-walkout-teaser-val" style={{ color: "#38bdf8" }}>
+                      {walkoutItem.card.player?.position || "ZAWODNIK"}
+                    </span>
+                  </div>
+                )}
+
+                {/* 3. NUMBER */}
+                {stage === "walkout_teaser_3" && (
+                  <div className="v104-walkout-teaser-pillar">
+                    <span className="v104-walkout-teaser-label">NUMER</span>
+                    <span style={{ fontSize: "28px" }}>👕</span>
+                    <span className="v104-walkout-teaser-val" style={{ color: "#f1c95c" }}>
+                      #{walkoutItem.card.player?.shirt_number || "GM"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Walkout Slam Screen (Grand Reveal) */}
+          {stage === "walkout_slam" && (
+            <div className="v104-walkout-reveal-container">
+              <span className={`v104-walkout-badge-pill ${walkoutItem.card.rarity === "inferno" ? "inferno" : walkoutItem.card.rarity === "legendary" ? "legend" : ""}`}>
+                ★ {walkoutItem.card.rarity?.toUpperCase()} WALKOUT ★
+              </span>
+
+              <CollectibleCard3D
+                card={walkoutItem.card}
+                size="xl"
+                interactive={true}
+                showFlip={true}
+              />
+
+              {walkoutItem.is_duplicate && (
+                <div className="v104-open-dup-banner">
+                  <Coins size={16} /> DUPLIKAT! +{walkoutItem.duplicate_points} DELTA POINTS
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleProceedToPack}
+                className="v104-open-tear-btn"
+                style={{ marginTop: "12px" }}
+              >
+                <Sparkles size={18} /> ZOBACZ WSZYSTKIE KARTY W PACZCE
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -244,13 +361,13 @@ export default function PackOpeningExperience({
         </div>
       )}
 
-      {/* ================= STAGE 2: TEARING & BURST ================= */}
-      {(stage === "tearing" || stage === "burst") && (
+      {/* ================= STAGE 2: TEARING ================= */}
+      {stage === "tearing" && (
         <div className="v104-open-stage">
           <div style={{ width: "280px", height: "400px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px" }}>
             <Sparkles size={64} style={{ color: "#f1c95c" }} />
             <span style={{ fontWeight: 900, fontSize: "20px", color: "#ffffff", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              OTWIERANIE...
+              OTWIERANIE PACZKI...
             </span>
           </div>
         </div>

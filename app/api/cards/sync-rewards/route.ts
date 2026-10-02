@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     if (!existingReasons.has(welcomeReason)) {
       newPacksToGrant.push({
         user_id: user.id,
-        pack_type_id: "matchday",
+        pack_type_id: "matchday_booster",
         source_reason: welcomeReason
       });
       existingReasons.add(welcomeReason);
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     // Sprawdzamy nagrody dla każdego przypisanego zawodnika
     for (const pId of playerIds) {
-      // 1. Sprawdzamy mecze (Matchday Pack & Winner Pack)
+      // 1. Sprawdzamy mecze (Matchday Booster & Gold Booster)
       const { data: attendedMatches } = await supabase
         .from("match_attendance")
         .select("match:matches(id, match_date, home_team, away_team, home_score, away_score, status)")
@@ -53,19 +53,19 @@ export async function POST(req: Request) {
           const m: any = item.match;
           if (!m || m.status !== "played") continue;
 
-          // Matchday pack
+          // Matchday booster
           const matchReason = `Mecz • ${m.home_team} vs ${m.away_team} (${m.match_date})`;
           if (!existingReasons.has(matchReason)) {
             newPacksToGrant.push({
               user_id: user.id,
-              pack_type_id: "matchday",
+              pack_type_id: "matchday_booster",
               source_reason: matchReason
             });
             existingReasons.add(matchReason);
           }
 
-          // Winner pack
-          const isOursHome = m.home_team.includes("Delta");
+          // Winner pack (Gold Booster)
+          const isOursHome = (m.home_team || "").includes("Delta") || (m.home_team || "").includes("DELTA");
           const ours = isOursHome ? m.home_score : m.away_score;
           const opp = isOursHome ? m.away_score : m.home_score;
           if (ours > opp) {
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
             if (!existingReasons.has(winReason)) {
               newPacksToGrant.push({
                 user_id: user.id,
-                pack_type_id: "winner",
+                pack_type_id: "gold_booster",
                 source_reason: winReason
               });
               existingReasons.add(winReason);
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
           if (!existingReasons.has(htReason)) {
             newPacksToGrant.push({
               user_id: user.id,
-              pack_type_id: "legendary",
+              pack_type_id: "legend_booster",
               source_reason: htReason
             });
             existingReasons.add(htReason);
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
         }
       }
 
-      // 3. Sprawdzamy treningi (Training Pack & Streak Pack)
+      // 3. Sprawdzamy treningi (Standard Pack & Inferno Booster)
       const { data: trainingsAttended } = await supabase
         .from("training_attendance")
         .select("training:training_sessions(id, training_date)")
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
         if (!existingReasons.has(tr5Reason)) {
           newPacksToGrant.push({
             user_id: user.id,
-            pack_type_id: "training",
+            pack_type_id: "gold_booster",
             source_reason: tr5Reason
           });
           existingReasons.add(tr5Reason);
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         if (!existingReasons.has(tr10Reason)) {
           newPacksToGrant.push({
             user_id: user.id,
-            pack_type_id: "streak",
+            pack_type_id: "inferno_booster",
             source_reason: tr10Reason
           });
           existingReasons.add(tr10Reason);

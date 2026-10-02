@@ -30,6 +30,16 @@ import {
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
 import PlayerPhoto from "./PlayerPhoto";
+import { cardSound } from "@/lib/cards/audio";
+
+const PACK_PRICES: Record<string, number> = {
+  standard_pack: 50,
+  matchday_booster: 80,
+  gold_booster: 120,
+  inferno_booster: 250,
+  legend_booster: 350,
+  legend_pack: 350
+};
 
 interface DeltaCollectionAlbumProps {
   currentUserId?: string;
@@ -44,6 +54,7 @@ export default function DeltaCollectionAlbum({
 }: DeltaCollectionAlbumProps) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [buyingPackId, setBuyingPackId] = useState<string | null>(null);
   const [allCards, setAllCards] = useState<CardDefinition[]>([]);
   const [userCards, setUserCards] = useState<UserCard[]>([]);
   const [unopenedPacks, setUnopenedPacks] = useState<UserUnopenedPack[]>([]);
@@ -96,6 +107,36 @@ export default function DeltaCollectionAlbum({
       console.error("Error syncing rewards:", e);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // Buy pack with Delta Points
+  const handleBuyPack = async (packId: string) => {
+    const price = PACK_PRICES[packId] || 100;
+    if (deltaPoints < price) {
+      alert(`Potrzebujesz ${price} DP, aby odblokować tę paczkę. Obecnie masz ${deltaPoints} DP. Zbieraj punkty za duplikaty!`);
+      return;
+    }
+
+    try {
+      setBuyingPackId(packId);
+      const res = await fetch("/api/cards/buy-pack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pack_type_id: packId })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Błąd zakupu paczki");
+      }
+
+      cardSound.playPurchase();
+      await fetchCollection();
+    } catch (e: any) {
+      alert(e.message || "Nie udało się kupić paczki.");
+    } finally {
+      setBuyingPackId(null);
     }
   };
 
@@ -329,8 +370,27 @@ export default function DeltaCollectionAlbum({
                         <Sparkles size={14} /> OTWÓRZ TERAZ ({packCount})
                       </button>
                     ) : (
-                      <div className="v104-booster-earn-hint">
-                        <span>ZDOBĄDŹ ZA MECZE / TRENINGI</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleBuyPack(pack.id)}
+                          disabled={buyingPackId === pack.id || deltaPoints < (PACK_PRICES[pack.id] || 100)}
+                          className={`v104-booster-action-btn ${deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "active" : ""}`}
+                          style={{
+                            background: deltaPoints >= (PACK_PRICES[pack.id] || 100) 
+                              ? "linear-gradient(135deg, #f1c95c, #ca8a04)" 
+                              : "rgba(255,255,255,0.06)",
+                            color: deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "#000" : "#94a3b8",
+                            border: deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "1px solid #fde047" : "1px solid rgba(255,255,255,0.1)",
+                            cursor: deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "pointer" : "default"
+                          }}
+                        >
+                          <Coins size={13} /> {buyingPackId === pack.id ? "KUPUJĘ..." : `KUP ZA ${PACK_PRICES[pack.id] || 100} DP`}
+                        </button>
+
+                        <div className="v104-booster-earn-hint">
+                          <span>LUB ZDOBĄDŹ ZA MECZE / TRENINGI</span>
+                        </div>
                       </div>
                     )}
                   </div>
