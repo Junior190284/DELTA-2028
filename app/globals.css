@@ -13524,6 +13524,194 @@ body > main,
   text-overflow: ellipsis;
 }
 
+/* ==========================================================================
+   CARD UNLOCK REVEAL ANIMATION (MODUŁ 59)
+   ========================================================================== */
+
+.v200-reveal-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: #030508;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.v200-screen-shake {
+  animation: v200Shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes v200Shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(3px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+  40%, 60% { transform: translate3d(5px, 0, 0); }
+}
+
+.v200-reveal-video-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  pointer-events: none;
+  filter: brightness(0.85) contrast(1.1);
+  transition: opacity 0.5s ease;
+}
+
+.v200-reveal-skip-btn {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0px));
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #d1d5db;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.v200-reveal-skip-btn:hover {
+  background: rgba(227, 29, 47, 0.4);
+  color: #ffffff;
+  border-color: rgba(227, 29, 47, 0.8);
+}
+
+.v200-floodlight-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+  z-index: 5;
+  animation: v200Strobe 0.7s ease-out forwards;
+}
+
+@keyframes v200Strobe {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  60% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+.v200-reveal-category-slam {
+  position: relative;
+  z-index: 20;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: v200TitleZoom 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.v200-reveal-kicker {
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.2em;
+  color: #f1c95c;
+  text-transform: uppercase;
+}
+
+.v200-reveal-category-slam h1 {
+  margin: 8px 0 2px;
+  font-size: clamp(32px, 8vw, 64px);
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 0 30px rgba(241, 201, 92, 0.4);
+}
+
+.v200-reveal-category-slam h1.inferno-text {
+  color: #ff5722;
+  text-shadow: 0 0 35px rgba(227, 29, 47, 0.8);
+}
+
+.v200-reveal-category-slam p {
+  font-size: 16px;
+  font-weight: 800;
+  color: #d1d5db;
+}
+
+@keyframes v200TitleZoom {
+  0% { transform: scale(0.6); opacity: 0; }
+  50% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.v200-reveal-stage {
+  position: relative;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: v200CardSlam 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.v200-reveal-card-wrap {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+}
+
+@keyframes v200CardSlam {
+  0% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+  60% { transform: translateY(5px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.v200-reveal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  animation: v200FadeIn 0.4s ease-out forwards;
+}
+
+.v200-reveal-btn-main {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  border-radius: 12px;
+}
+
+.v200-reveal-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #9aa5b1;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: all 0.2s;
+}
+
+.v200-reveal-btn-secondary:hover {
+  color: #f1c95c;
+}
+
+
 
 
 

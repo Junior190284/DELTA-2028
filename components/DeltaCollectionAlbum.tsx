@@ -27,6 +27,7 @@ import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition,
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
+import CardUnlockCinematicModal from "./CardUnlockCinematicModal";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -68,6 +69,31 @@ export default function DeltaCollectionAlbum({
   // Modals
   const [inspectCard, setInspectCard] = useState<{ card: CardDefinition; userCard: UserCard | null } | null>(null);
   const [activePackToOpen, setActivePackToOpen] = useState<PackDefinition | null>(null);
+  const [cinematicCardToUnlock, setCinematicCardToUnlock] = useState<CardDefinition | null>(null);
+
+  const getCardUnlockCondition = (card: CardDefinition): string => {
+    const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
+    const r = (card.rarity || "").toLowerCase();
+    if (r === "inferno" || t.includes("inferno")) {
+      return "Odblokuj przez: Osiągnięcie Inferno Master lub Hat-trick w meczu";
+    }
+    if (t.includes("training") || card.card_type === "training") {
+      return "Odblokuj przez: 10 oficjalnych treningów DELTA GM";
+    }
+    if (t.includes("captain") || card.card_type === "captain") {
+      return "Odblokuj przez: Wyjście w pierwszym składzie z opaską kapitana";
+    }
+    if (t.includes("goal") || t.includes("striker")) {
+      return "Zdobądź: Hat-trick lub Dublet w meczu ligowym";
+    }
+    if (t.includes("matchday") || card.card_type === "matchday") {
+      return "Odblokuj przez: Udział w 10 meczach oficjalnych";
+    }
+    if (r === "legendary") {
+      return "Odblokuj przez: Tytuł MVP meczu lub 25 rozegranych spotkań";
+    }
+    return "Odblokuj przez: Oficjalny debiut lub otwarcie paczki DELTA";
+  };
 
   // Fetch collection data from API
   const fetchCollection = async () => {
@@ -513,18 +539,42 @@ export default function DeltaCollectionAlbum({
 
                     <div className="v104-carousel-card-footer">
                       {!isLocked ? (
-                        <span className="v104-status-tag owned">
-                          <CheckCircle2 size={12} /> ODBLOKOWANA
-                          {userCard?.duplicates_count ? ` (+${userCard.duplicates_count} dup)` : ""}
-                        </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                            <span className="v104-status-tag owned">
+                              <CheckCircle2 size={12} /> ODBLOKOWANA
+                              {userCard?.duplicates_count ? ` (+${userCard.duplicates_count})` : ""}
+                            </span>
+                            <span className="v104-card-rarity-pill">
+                              {card.rarity.toUpperCase()}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="v200-test-reveal-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCinematicCardToUnlock(card);
+                            }}
+                          >
+                            <Sparkles size={11} /> ZOBACZ REVEAL 3D
+                          </button>
+                        </div>
                       ) : (
-                        <span className="v104-status-tag locked">
-                          <Lock size={12} /> ZABLOKOWANA
-                        </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                            <span className="v104-status-tag locked">
+                              <Lock size={12} /> ZABLOKOWANA
+                            </span>
+                            <span className="v104-card-rarity-pill">
+                              {card.rarity.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="v200-card-condition-hint">
+                            <small>{getCardUnlockCondition(card)}</small>
+                          </div>
+                        </div>
                       )}
-                      <span className="v104-card-rarity-pill">
-                        {card.rarity.toUpperCase()}
-                      </span>
                     </div>
                   </div>
                 );
@@ -696,6 +746,23 @@ export default function DeltaCollectionAlbum({
               setActivePackToOpen(null);
             }
             fetchCollection();
+          }}
+        />
+      )}
+
+      {/* ================= CARD UNLOCK CINEMATIC MODAL ================= */}
+      {cinematicCardToUnlock && (
+        <CardUnlockCinematicModal
+          card={cinematicCardToUnlock}
+          onClose={() => setCinematicCardToUnlock(null)}
+          onAddToCollection={() => {
+            setCinematicCardToUnlock(null);
+            fetchCollection();
+          }}
+          onViewProfile={() => {
+            if (onOpenPlayerProfile && cinematicCardToUnlock.player_id) {
+              onOpenPlayerProfile(cinematicCardToUnlock.player_id);
+            }
           }}
         />
       )}
