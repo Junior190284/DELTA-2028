@@ -10342,104 +10342,107 @@ body > main,
 
 .v104-vault-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
 }
 
-.v104-booster-card {
+.v104-booster-pack-card {
   position: relative;
-  border-radius: 18px;
-  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(10, 13, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 310px;
-  padding: 16px 14px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  gap: 14px;
   user-select: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
-.v104-booster-card:hover {
-  transform: translateY(-4px) scale(1.02);
+.v104-booster-pack-card:hover {
+  transform: translateY(-6px);
 }
 
-/* Booster Themes */
-.v104-booster-card.booster-gold {
-  background: radial-gradient(circle at 50% 20%, rgba(241, 201, 92, 0.25), transparent 70%),
-              linear-gradient(145deg, #1c180e 0%, #0d0c07 100%);
-  border-color: rgba(241, 201, 92, 0.4);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(241, 201, 92, 0.15);
+.v104-booster-pack-card.pack-gold:hover {
+  border-color: rgba(241, 201, 92, 0.6);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(241, 201, 92, 0.25);
 }
 
-.v104-booster-card.booster-gold:hover {
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.8), 0 0 30px rgba(241, 201, 92, 0.35);
+.v104-booster-pack-card.pack-inferno:hover {
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(239, 68, 68, 0.35);
 }
 
-.v104-booster-card.booster-inferno {
-  background: radial-gradient(circle at 50% 20%, rgba(239, 68, 68, 0.3), transparent 70%),
-              linear-gradient(145deg, #240c0c 0%, #0e0505 100%);
-  border-color: rgba(239, 68, 68, 0.5);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 22px rgba(239, 68, 68, 0.2);
+.v104-booster-pack-card.pack-legend:hover {
+  border-color: rgba(192, 132, 252, 0.7);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(192, 132, 252, 0.3);
 }
 
-.v104-booster-card.booster-inferno:hover {
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.8), 0 0 32px rgba(239, 68, 68, 0.45);
+.v104-booster-pack-card.pack-matchday:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.3);
 }
 
-.v104-booster-card.booster-legend {
-  background: radial-gradient(circle at 50% 20%, rgba(192, 132, 252, 0.25), transparent 70%),
-              linear-gradient(145deg, #1b0e24 0%, #0c0612 100%);
-  border-color: rgba(192, 132, 252, 0.4);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(192, 132, 252, 0.15);
+.v104-booster-pack-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.48;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+  background: #050608;
 }
 
-.v104-booster-card.booster-matchday {
-  background: radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.25), transparent 70%),
-              linear-gradient(145deg, #0e1b24 0%, #060e14 100%);
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.15);
+.v104-booster-pack-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.9));
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Pack Crimped Ends */
-.v104-booster-crimp {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 8px;
-  background-image: repeating-linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.15) 0px,
-    rgba(255, 255, 255, 0.15) 3px,
-    transparent 3px,
-    transparent 6px
-  );
-  pointer-events: none;
+.v104-booster-pack-preview:hover .v104-booster-pack-img {
+  transform: scale(1.04) rotate(-1deg);
 }
 
-.v104-booster-crimp.top {
-  top: 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
-}
-
-.v104-booster-crimp.bottom {
-  bottom: 0;
-  border-top: 1px dashed rgba(255, 255, 255, 0.3);
-}
-
-.v104-booster-shimmer {
+.v104-booster-pack-glare {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
     115deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.08) 45%,
-    rgba(255, 255, 255, 0.18) 50%,
-    transparent 60%
+    transparent 30%,
+    rgba(255, 255, 255, 0.15) 48%,
+    rgba(255, 255, 255, 0.35) 52%,
+    transparent 65%
   );
   background-size: 200% 200%;
-  animation: cardShimmer 5s infinite linear;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  transition: opacity 0.3s ease;
+}
+
+.v104-booster-pack-preview:hover .v104-booster-pack-glare {
+  opacity: 0.85;
+  animation: cardShimmer 2.5s infinite linear;
+}
+
+.v104-booster-pack-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v104-booster-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .v104-booster-top {
@@ -11132,6 +11135,84 @@ body > main,
   box-sizing: border-box;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 2px solid;
+}
+
+.v104-open-foil-pack-3d {
+  width: 280px;
+  height: 430px;
+  border-radius: 22px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  box-sizing: border-box;
+  user-select: none;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(241, 201, 92, 0.3);
+  background: #06070a;
+}
+
+.v104-open-foil-pack-3d.inferno {
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(239, 68, 68, 0.5);
+}
+
+.v104-open-foil-pack-3d.legend {
+  border-color: rgba(192, 132, 252, 0.6);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(192, 132, 252, 0.4);
+}
+
+.v104-open-foil-pack-3d.matchday {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(56, 189, 248, 0.4);
+}
+
+.v104-open-foil-pack-3d.gold {
+  border-color: rgba(241, 201, 92, 0.6);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(241, 201, 92, 0.4);
+}
+
+.v104-open-pack-art-container {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.v104-open-pack-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.9));
+  transition: transform 0.3s ease;
+}
+
+.v104-open-foil-pack-3d:hover .v104-open-pack-art-img {
+  transform: scale(1.03);
+}
+
+.v104-open-pack-foil-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.2) 48%,
+    rgba(255, 255, 255, 0.55) 52%,
+    transparent 65%
+  );
+  background-size: 200% 200%;
+  mix-blend-mode: overlay;
+  animation: cardShimmer 3s infinite linear;
 }
 
 .v104-open-foil-pack:hover {

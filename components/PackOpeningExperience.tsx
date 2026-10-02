@@ -12,7 +12,7 @@ import {
   Gift,
   Crown
 } from "lucide-react";
-import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG } from "@/lib/cards/types";
+import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import { MEDIA, getCardTierBackgroundVideo } from "@/lib/media";
 import CollectibleCard3D from "./CollectibleCard3D";
@@ -425,40 +425,28 @@ export default function PackOpeningExperience({
               transition: stage === "charging" ? "transform 0.1s ease" : "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
               cursor: "pointer"
             }}
-            className={`v104-open-foil-pack ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : "gold"} ${stage === "charging" ? "charging-glow" : ""}`}
+            className={`v104-open-foil-pack-3d ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : packTheme === "matchday" ? "matchday" : "gold"} ${stage === "charging" ? "charging-glow" : ""}`}
           >
             {/* Tear Line Indicator at Top */}
             <div className="v104-open-tear-header">
-              <span>{stage === "charging" ? "ŁADOWANIE..." : "ROZERWIJ PACZKĘ"}</span>
+              <span>{stage === "charging" ? "⚡ ROZRYWANIE FOLII..." : "✂️ KLIKNIJ, ABY OTWORZYĆ"}</span>
               <Sparkles size={16} style={{ color: "#fde047" }} />
             </div>
 
-            {/* Pack Center Branding */}
-            <div className="v104-open-pack-center">
+            {/* Realistic HD Pack Wrapper Artwork */}
+            <div className="v104-open-pack-art-container">
               <img 
-                src="/teamlogos/gm.png" 
-                alt="DELTA" 
-                width={76}
-                height={76}
-                className="v104-open-pack-center-logo" 
+                src={pack.image_url || getPackImageUrl(pack.id, pack.theme)} 
+                alt={pack.name} 
+                className="v104-open-pack-art-img"
               />
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontSize: "10px", fontWeight: 900, letterSpacing: "0.12em", color: "#f1c95c", textTransform: "uppercase" }}>
-                  OFICJALNA PACZKA
-                </span>
-                <h3 className="v104-open-pack-title">
-                  {pack.name}
-                </h3>
-              </div>
-              <span className="v104-open-pack-badge">
-                {pack.cards_count} {pack.cards_count === 1 ? "KARTA" : pack.cards_count < 5 ? "KARTY" : "KART"}
-              </span>
+              <div className="v104-open-pack-foil-shimmer" />
             </div>
 
             {/* Pack Footer */}
             <div className="v104-open-pack-footer">
-              <span>KLIKNIJ, ABY OTWORZYĆ</span>
-              <b>{pack.min_rarity.toUpperCase()}</b>
+              <span>GWARANTOWANA MINIMALNA:</span>
+              <b style={{ color: "#f1c95c" }}>{pack.min_rarity.toUpperCase()}</b>
             </div>
           </div>
         </div>

@@ -64,8 +64,19 @@ export interface PackDefinition {
   cards_count: number;
   drop_rates: Record<CardRarity, number>;
   min_rarity: CardRarity;
-  theme: "gold" | "inferno" | "legend" | string;
+  theme: "gold" | "inferno" | "legend" | "matchday" | "standard" | string;
+  image_url?: string;
   is_active: boolean;
+}
+
+export function getPackImageUrl(packId?: string, theme?: string): string {
+  const id = (packId || "").toLowerCase();
+  const th = (theme || "").toLowerCase();
+  if (id.includes("inferno") || th === "inferno") return "/assets/packs/pack-inferno.jpg";
+  if (id.includes("legend") || th === "legend") return "/assets/packs/pack-legend.jpg";
+  if (id.includes("matchday") || th === "matchday") return "/assets/packs/pack-matchday.jpg";
+  if (id.includes("gold") || th === "gold") return "/assets/packs/pack-gold.jpg";
+  return "/assets/packs/pack-standard.jpg";
 }
 
 export interface UserUnopenedPack {

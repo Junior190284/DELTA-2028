@@ -23,7 +23,7 @@ import {
   User,
   Star
 } from "lucide-react";
-import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG } from "@/lib/cards/types";
+import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
@@ -370,36 +370,46 @@ export default function DeltaCollectionAlbum({
               const packCount = unopenedPacks.filter(p => p.pack_type_id === pack.id).length;
               const isInferno = pack.id === "inferno_booster" || pack.theme === "inferno";
               const isLegend = pack.id === "legend_booster" || pack.id === "legend_pack" || pack.theme === "legend";
-              const isMatchday = pack.id === "matchday_booster";
+              const isMatchday = pack.id === "matchday_booster" || pack.theme === "matchday";
+              const isGold = pack.id === "gold_booster" || pack.theme === "gold";
+              const packImg = pack.image_url || getPackImageUrl(pack.id, pack.theme);
 
               return (
                 <div 
                   key={pack.id} 
-                  className={`v104-booster-card ${isInferno ? "booster-inferno" : isLegend ? "booster-legend" : isMatchday ? "booster-matchday" : "booster-gold"}`}
+                  className={`v104-booster-pack-card ${isInferno ? "pack-inferno" : isLegend ? "pack-legend" : isMatchday ? "pack-matchday" : isGold ? "pack-gold" : "pack-standard"}`}
                 >
-                  <div className="v104-booster-crimp top" />
-                  <div className="v104-booster-shimmer" />
+                  {/* 3D Realistic Foil Booster Pack Visual */}
+                  <div 
+                    className="v104-booster-pack-preview"
+                    onClick={() => {
+                      if (packCount > 0) setActivePackToOpen(pack);
+                    }}
+                    style={{ cursor: packCount > 0 ? "pointer" : "default" }}
+                  >
+                    <img 
+                      src={packImg} 
+                      alt={pack.name} 
+                      className="v104-booster-pack-img" 
+                    />
+                    <div className="v104-booster-pack-glare" />
 
-                  <div className="v104-booster-top">
-                    <span className="v104-booster-edition">DELTA GM 2018</span>
                     {packCount > 0 ? (
                       <span className="v104-booster-owned-badge active">
-                        {packCount} DOSTĘPNE
+                        <Sparkles size={11} /> {packCount} DOSTĘPNE
                       </span>
                     ) : (
                       <span className="v104-booster-owned-badge">0 W ZASOBACH</span>
                     )}
                   </div>
 
-                  <div className="v104-booster-center">
-                    <div className="v104-booster-crest-wrap">
-                      <img src="/teamlogos/gm.png" alt="DELTA" className="v104-booster-crest" />
+                  {/* Pack Metadata & Actions */}
+                  <div className="v104-booster-pack-meta">
+                    <div className="v104-booster-title-row">
+                      <h4 className="v104-booster-name">{pack.name}</h4>
+                      <span className="v104-booster-cards-count">{pack.cards_count} KART</span>
                     </div>
-                    <h4 className="v104-booster-name">{pack.name}</h4>
-                    <span className="v104-booster-cards-count">{pack.cards_count} KART W PACZCE</span>
-                  </div>
 
-                  <div className="v104-booster-bottom">
                     <p className="v104-booster-desc">{pack.description}</p>
                     
                     {packCount > 0 ? (
@@ -435,8 +445,6 @@ export default function DeltaCollectionAlbum({
                       </div>
                     )}
                   </div>
-
-                  <div className="v104-booster-crimp bottom" />
                 </div>
               );
             })}

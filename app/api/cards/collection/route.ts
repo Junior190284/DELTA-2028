@@ -21,41 +21,56 @@ export async function GET() {
       {
         id: "standard_pack",
         name: "Paczka Standardowa",
-        description: "3 karty zawodników DELTA GM. Gwarantowana min. 1 karta Common.",
+        description: "3 karty zawodników DELTA GM. Karty klubowe z sezonu 2026/27.",
         cards_count: 3,
         drop_rates: { common: 70, rare: 22, epic: 6, legendary: 1.8, inferno: 0.2 },
         min_rarity: "common",
-        theme: "gold",
+        theme: "standard",
+        image_url: "/assets/packs/pack-standard.jpg",
+        is_active: true
+      },
+      {
+        id: "matchday_booster",
+        name: "Matchday Booster",
+        description: "4 karty meczowe z jupiterami. Specjalne karty z występów w lidze i pucharach!",
+        cards_count: 4,
+        drop_rates: { common: 50, rare: 35, epic: 11, legendary: 3.5, inferno: 0.5 },
+        min_rarity: "rare",
+        theme: "matchday",
+        image_url: "/assets/packs/pack-matchday.jpg",
         is_active: true
       },
       {
         id: "gold_booster",
         name: "Gold Booster",
-        description: "5 kart zawodników DELTA GM. Gwarantowana min. 1 karta Rare!",
+        description: "5 kart w złotej folii. Gwarantowana min. 1 karta Gold / Rare!",
         cards_count: 5,
-        drop_rates: { common: 40, rare: 42, epic: 14, legendary: 3.5, inferno: 0.5 },
+        drop_rates: { common: 35, rare: 45, epic: 15, legendary: 4.5, inferno: 0.5 },
         min_rarity: "rare",
         theme: "gold",
+        image_url: "/assets/packs/pack-gold.jpg",
         is_active: true
       },
       {
         id: "inferno_booster",
         name: "🔥 Inferno Booster",
-        description: "5 kart z podwyższoną szansą na ognistą kartę INFERNO!",
+        description: "5 kart w płomiennej oprawie. Podwyższona szansa na ognistą kartę INFERNO!",
         cards_count: 5,
         drop_rates: { common: 20, rare: 40, epic: 28, legendary: 9, inferno: 3 },
         min_rarity: "epic",
         theme: "inferno",
+        image_url: "/assets/packs/pack-inferno.jpg",
         is_active: true
       },
       {
-        id: "legend_booster",
+        id: "legend_pack",
         name: "👑 Legend Pack",
-        description: "6 kart mistrzowskich. Gwarantowana min. 1 karta Legendary!",
+        description: "6 kart mistrzowskich w królewskim fiolecie. Gwarantowana min. 1 karta Legendy!",
         cards_count: 6,
         drop_rates: { common: 10, rare: 35, epic: 35, legendary: 17, inferno: 3 },
         min_rarity: "legendary",
         theme: "legend",
+        image_url: "/assets/packs/pack-legend.jpg",
         is_active: true
       }
     ];
