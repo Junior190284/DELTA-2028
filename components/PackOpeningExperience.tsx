@@ -224,9 +224,19 @@ export default function PackOpeningExperience({
       {/* BACKGROUND STADIUM LIGHTS / AMBIENT GLOW */}
       <div className={`v104-open-ambient ${packTheme === "inferno" ? "inferno" : packTheme === "legend" ? "legend" : ""}`} />
 
-      {/* TUNNEL BACKGROUND FOR WALKOUT */}
-      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && (
-        <ProceduralTunnel theme={particleTheme} speed={stage === "walkout_slam" ? 0.4 : 1.2} />
+      {/* TUNNEL & STADIUM VIDEO BACKGROUND */}
+      {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam" || stage === "revealing" || stage === "summary") && (
+        <ProceduralTunnel 
+          theme={particleTheme} 
+          speed={stage === "walkout_slam" || stage === "revealing" || stage === "summary" ? 0.3 : 1.3} 
+          videoSrc={
+            stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3"
+              ? "/videos/tunnel.mp4"
+              : stage === "walkout_slam"
+              ? (walkoutItem?.card?.rarity === "inferno" ? "/videos/bg_inferno.mp4" : walkoutItem?.card?.rarity === "legendary" ? "/videos/bg_legend.mp4" : pack.id === "matchday_booster" ? "/videos/bg_matchday.mp4" : "/videos/bg_gold.mp4")
+              : (pack.theme === "inferno" ? "/videos/bg_inferno.mp4" : pack.theme === "legend" ? "/videos/bg_legend.mp4" : pack.id === "matchday_booster" ? "/videos/bg_matchday.mp4" : "/videos/bg_gold.mp4")
+          }
+        />
       )}
 
       {/* CONFETTI & SPARKS BURST ON WALKOUT SLAM & SUMMARY */}
