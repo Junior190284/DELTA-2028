@@ -19,7 +19,7 @@ import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/pu
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -1067,6 +1067,15 @@ export default function TeamHub(props:{
     return ()=>window.removeEventListener("keydown",onEscape);
   },[mobileMoreOpen]);
 
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const isMatchToday = useMemo(() => {
+    return matches.some(m => m.match_date === todayStr);
+  }, [matches, todayStr]);
+  const isTrainingToday = useMemo(() => {
+    return trainingSessions.some(t => t.training_date === todayStr);
+  }, [trainingSessions, todayStr]);
+  const unreadNoticeCount = unanswered.length;
+
   const navItems:[string,string,any][]=[
     ["home","Start",Home],["teamcenter","Centrum drużyny",UserCheck],
     ...(props.parentPlayerIds.length?[["mychild","Moje dziecko",UserRound] as [string,string,any]]:[]),
@@ -2056,20 +2065,298 @@ export default function TeamHub(props:{
       {tab==="news"&&<section className="section v8-section-page"><div className="section-title"><h2>Aktualności</h2>{(staff||props.userPermissions.can_manage_news)&&<button className="btn gold-btn" onClick={saveNewsItem}>Dodaj aktualność</button>}</div><div className="news-grid">{news.map(n=><article className="news-card devil-card" key={n.id}><span className="tag">{n.type}</span><h3>{n.title}</h3><p>{n.body}</p><small>{new Date(n.published_at).toLocaleString("pl-PL")}</small></article>)}</div></section>}
     </main>
 
-    {mobileMoreOpen&&<div className="v106-more-backdrop" onClick={()=>setMobileMoreOpen(false)} aria-hidden="true"/>}
-    {mobileMoreOpen&&<div className="v106-more-menu" id="delta-mobile-more-menu" role="menu" aria-label="Więcej opcji">
-      <div className="v106-more-title">WIĘCEJ W DELTA</div>
-      {canOpenAdmin&&<>
-        <a role="menuitem" href="/admin"><Shield size={18}/><span>Panel administratora</span><ChevronRight size={16}/></a>
-        <a role="menuitem" href="/admin?tab=training"><CalendarDays size={18}/><span>Dodaj trening</span><ChevronRight size={16}/></a>
-        <div className="v106-more-divider"/>
-      </>}
-      {navItems.filter(([id])=>!["home","matches","calendar","training"].includes(id)).map(([id,label,Icon])=><button type="button" role="menuitem" key={id} onClick={()=>{setMobileMoreOpen(false);setTab(id as typeof tab);}}><Icon size={18}/><span>{label}</span><ChevronRight size={16}/></button>)}
-      <a role="menuitem" href="/"><Home size={18}/><span>Strona publiczna</span><ChevronRight size={16}/></a>
-    </div>}
-    <nav className="bottom-nav v8-bottom-nav v106-bottom-nav" aria-label="Nawigacja drużyny">
-      {navItems.filter(([id])=>["home","matches","calendar","training"].includes(id)).map(([id,label,Icon])=><button key={id} type="button" className={tab===id?"active":""} onClick={()=>{setMobileMoreOpen(false);setTab(id as typeof tab);}}><Icon size={18}/><span>{label}</span></button>)}
-      <button type="button" className={`v106-more-trigger ${mobileMoreOpen||!["home","matches","calendar","training"].includes(tab)?"active":""}`} onClick={()=>setMobileMoreOpen(v=>!v)} aria-label="Więcej opcji" aria-expanded={mobileMoreOpen} aria-controls="delta-mobile-more-menu"><MoreHorizontal size={20}/><span>Więcej</span></button>
+    {/* NAVIGATION 2.0: KAFELKOWY HUB "WIĘCEJ" */}
+    {mobileMoreOpen && (
+      <div className="v200-more-backdrop" onClick={() => setMobileMoreOpen(false)} aria-hidden="true" />
+    )}
+    {mobileMoreOpen && (
+      <div className="v200-more-sheet" id="delta-mobile-more-menu" role="dialog" aria-modal="true" aria-label="Więcej opcji DELTA 2018 GM">
+        <div className="v200-more-header">
+          <div className="v200-more-title-wrap">
+            <img src="/teamlogos/gm.png" alt="DELTA" />
+            <h3>Więcej w DELTA 2018 GM</h3>
+          </div>
+          <button 
+            type="button" 
+            className="v200-more-close" 
+            onClick={() => setMobileMoreOpen(false)}
+            aria-label="Zamknij menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="v200-more-content">
+          <div className="v200-more-grid">
+            {/* 1. KARTY KOLEKCJONERSKIE 3D */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "collection" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("collection"); }}
+            >
+              <div className="v200-tile-icon">
+                <Sparkles size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Kolekcja Kart</strong>
+                <small>Karty 3D zawodników</small>
+              </div>
+              <span className="v200-tile-badge">3D</span>
+            </button>
+
+            {/* 2. OSIĄGNIĘCIA 2.0 */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "achievements" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("achievements"); }}
+            >
+              <div className="v200-tile-icon">
+                <Trophy size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Osiągnięcia</strong>
+                <small>Wyzwania i nagrody</small>
+              </div>
+              <span className="v200-tile-badge" style={{ background: "linear-gradient(135deg, #f1c95c, #9c7d2b)", color: "#05070a" }}>2.0</span>
+            </button>
+
+            {/* 3. CENTRUM DRUŻYNY */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "teamcenter" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("teamcenter"); }}
+            >
+              <div className="v200-tile-icon">
+                <UserCheck size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Centrum Drużyny</strong>
+                <small>Obecności i skład</small>
+              </div>
+            </button>
+
+            {/* 4. MOJE DZIECKO (jeśli profil powiązany) */}
+            {props.parentPlayerIds.length > 0 && (
+              <button
+                type="button"
+                className={`v200-tile ${tab === "mychild" ? "active" : ""}`}
+                onClick={() => { setMobileMoreOpen(false); setTab("mychild"); }}
+              >
+                <div className="v200-tile-icon">
+                  <UserRound size={20} />
+                </div>
+                <div className="v200-tile-text">
+                  <strong>Moje Dziecko</strong>
+                  <small>Profil zawodnika</small>
+                </div>
+              </button>
+            )}
+
+            {/* 5. MATCH DAY MODE (jeśli uprawniony) */}
+            {(canManageMatches || canEditMatchEvents) && (
+              <button
+                type="button"
+                className={`v200-tile ${tab === "matchday" ? "active" : ""}`}
+                onClick={() => { setMobileMoreOpen(false); setTab("matchday"); }}
+              >
+                <div className="v200-tile-icon" style={{ color: "#ff5722" }}>
+                  <Flame size={20} />
+                </div>
+                <div className="v200-tile-text">
+                  <strong>Match Day</strong>
+                  <small>Panel live meczu</small>
+                </div>
+              </button>
+            )}
+
+            {/* 6. SKŁAD / ZAWODNICY */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "players" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("players"); }}
+            >
+              <div className="v200-tile-icon">
+                <Users size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Drużyna</strong>
+                <small>Skład rocznika 2018</small>
+              </div>
+            </button>
+
+            {/* 7. ROZGRYWKI / TABELA */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "league" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("league"); }}
+            >
+              <div className="v200-tile-icon">
+                <Trophy size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Rozgrywki</strong>
+                <small>Tabela i liga MZPN</small>
+              </div>
+            </button>
+
+            {/* 8. HALL OF FAME */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "hall" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("hall"); }}
+            >
+              <div className="v200-tile-icon">
+                <Medal size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Hall of Fame</strong>
+                <small>Legendy Klubu</small>
+              </div>
+            </button>
+
+            {/* 9. STATYSTYKI */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "stats" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("stats"); }}
+            >
+              <div className="v200-tile-icon">
+                <TrendingUp size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Statystyki</strong>
+                <small>Gole, asysty, minuty</small>
+              </div>
+            </button>
+
+            {/* 10. KRONIKA */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "chronicle" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("chronicle"); }}
+            >
+              <div className="v200-tile-icon">
+                <History size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Kronika</strong>
+                <small>Historia sezonów</small>
+              </div>
+            </button>
+
+            {/* 11. Z KLUBU */}
+            <button
+              type="button"
+              className={`v200-tile ${tab === "club" ? "active" : ""}`}
+              onClick={() => { setMobileMoreOpen(false); setTab("club"); }}
+            >
+              <div className="v200-tile-icon">
+                <Shield size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Z Klubu</strong>
+                <small>Serwis delta.warszawa.pl</small>
+              </div>
+            </button>
+          </div>
+
+          <div className="v200-more-footer">
+            {canOpenAdmin && (
+              <>
+                <a href="/admin" className="v200-footer-link admin-highlight">
+                  <span>🛡️ Panel administratora</span>
+                  <ChevronRight size={15} />
+                </a>
+                <a href="/admin?tab=training" className="v200-footer-link">
+                  <span>⚡ Szybkie dodanie treningu</span>
+                  <ChevronRight size={15} />
+                </a>
+              </>
+            )}
+            <a href="/" className="v200-footer-link">
+              <span>🏠 Strona publiczna klubu</span>
+              <ExternalLink size={14} />
+            </a>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* NAVIGATION 2.0: DOKŁADNIE 5 GŁÓWNYCH ELEMENTÓW (BOTTOM BAR) */}
+    <nav className="bottom-nav v200-bottom-nav" aria-label="Główna nawigacja drużyny">
+      {/* 1. HOME */}
+      <button 
+        type="button" 
+        className={`v200-nav-btn ${tab === "home" ? "active" : ""}`} 
+        onClick={() => { setMobileMoreOpen(false); setTab("home"); }}
+        aria-label="Start"
+      >
+        <div className="v200-nav-icon-wrap">
+          <Home size={20} />
+        </div>
+        <span>Start</span>
+      </button>
+
+      {/* 2. MECZE (z poświatą Matchday gdy mecz dziś) */}
+      <button 
+        type="button" 
+        className={`v200-nav-btn ${tab === "matches" || tab === "calendar" ? "active" : ""} ${isMatchToday ? "matchday-glow" : ""}`} 
+        onClick={() => { setMobileMoreOpen(false); setTab("matches"); }}
+        aria-label="Mecze"
+      >
+        <div className="v200-nav-icon-wrap">
+          <CalendarDays size={20} />
+          {isMatchToday && <span className="v200-live-dot" title="Dziś mecz!" />}
+        </div>
+        <span>Mecze</span>
+      </button>
+
+      {/* 3. TRENING (z kropką LIVE gdy trwa trening) */}
+      <button 
+        type="button" 
+        className={`v200-nav-btn ${tab === "training" ? "active" : ""}`} 
+        onClick={() => { setMobileMoreOpen(false); setTab("training"); }}
+        aria-label="Trening"
+      >
+        <div className="v200-nav-icon-wrap">
+          <Zap size={20} />
+          {isTrainingToday && <span className="v200-live-dot" title="Trening w toku" />}
+        </div>
+        <span>Trening</span>
+      </button>
+
+      {/* 4. WIADOMOŚCI (z licznikiem nieprzeczytanych / nowych) */}
+      <button 
+        type="button" 
+        className={`v200-nav-btn ${tab === "news" ? "active" : ""}`} 
+        onClick={() => { setMobileMoreOpen(false); setTab("news"); }}
+        aria-label="Wiadomości"
+      >
+        <div className="v200-nav-icon-wrap">
+          <Newspaper size={20} />
+          {unreadNoticeCount > 0 && (
+            <span className="v200-nav-badge">
+              {unreadNoticeCount > 9 ? "9+" : unreadNoticeCount}
+            </span>
+          )}
+        </div>
+        <span>Wiadomości</span>
+      </button>
+
+      {/* 5. WIĘCEJ (Kafelkowy Hub) */}
+      <button 
+        type="button" 
+        className={`v200-nav-btn ${mobileMoreOpen || !["home", "matches", "calendar", "training", "news"].includes(tab) ? "active" : ""}`} 
+        onClick={() => setMobileMoreOpen(v => !v)}
+        aria-label="Więcej opcji"
+        aria-expanded={mobileMoreOpen}
+        aria-controls="delta-mobile-more-menu"
+      >
+        <div className="v200-nav-icon-wrap">
+          <LayoutGrid size={20} />
+        </div>
+        <span>Więcej</span>
+      </button>
     </nav>
 
     {selectedPlayer&&createPortal(<section className="v111-player-screen v112-player-screen" role="dialog" aria-modal="true" aria-label={`Profil zawodnika: ${selectedPlayer.display_name}`}>
