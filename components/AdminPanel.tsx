@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserPermissions } from "@/lib/permissions";
 import { EMPTY_PERMISSIONS } from "@/lib/permissions";
@@ -123,6 +123,12 @@ export default function AdminPanel(props:{
   const [grantPointsAmount, setGrantPointsAmount] = useState<number>(50);
   const [grantPointsReason, setGrantPointsReason] = useState<string>("Bonus za zaangażowanie");
   const [grantingPoints, setGrantingPoints] = useState(false);
+
+  // Stan zarządzania i usuwania kart z kolekcji
+  const [manageCardsUserId, setManageCardsUserId] = useState<string>(props.allProfiles[0]?.id || "");
+  const [userManagedCards, setUserManagedCards] = useState<any[]>([]);
+  const [loadingUserCards, setLoadingUserCards] = useState(false);
+  const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
 
   const filteredAdminPlayers = useMemo(() => {
     return players.filter(p => {
@@ -943,6 +949,95 @@ export default function AdminPanel(props:{
     }
   }
 
+  async function fetchUserCards(userId: string) {
+    if (!userId) return;
+    setLoadingUserCards(true);
+    try {
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get_user_cards", target_user_id: userId })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserManagedCards(data.cards || []);
+      }
+    } catch {} finally {
+      setLoadingUserCards(false);
+    }
+  }
+
+  useEffect(() => {
+    if (manageCardsUserId) {
+      fetchUserCards(manageCardsUserId);
+    }
+  }, [manageCardsUserId]);
+
+  async function handleDeleteUserCard(userCardId: string) {
+    if (!confirm("Czy na pewno chcesz usunąć tę kartę z kolekcji tego użytkownika?")) return;
+    setDeletingCardId(userCardId);
+    try {
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_card", user_card_id: userCardId })
+      });
+      if (res.ok) {
+        setUserManagedCards(prev => prev.filter(c => c.id !== userCardId));
+        alert("Karta została pomyślnie usunięta z kolekcji.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Błąd usuwania karty");
+      }
+    } catch (e: any) {
+      alert(e.message || "Błąd usuwania karty");
+    } finally {
+      setDeletingCardId(null);
+    }
+  }
+
+  async function handleClearUserCards(userId: string) {
+    const targetUser = props.allProfiles.find(p => p.id === userId)?.display_name || "użytkownika";
+    if (!confirm(`⚠️ UWAGA: Czy na pewno chcesz SKASOWAĆ CAŁĄ KOLEKCJĘ kart dla ${targetUser}? Ta operacja jest nieodwracalna!`)) return;
+    try {
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_user_cards", target_user_id: userId })
+      });
+      if (res.ok) {
+        setUserManagedCards([]);
+        alert("Wszystkie karty tego użytkownika zostały usunięte.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Błąd operacji");
+      }
+    } catch (e: any) {
+      alert(e.message || "Błąd operacji");
+    }
+  }
+
+  async function handleGlobalResetCards() {
+    const code = prompt("⚠️ KRYTYCZNA OPERACJA: Aby zresetować kolekcję WSZYSTKICH użytkowników w klubie, wpisz RESET:");
+    if (code !== "RESET") return;
+    try {
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_all_cards" })
+      });
+      if (res.ok) {
+        setUserManagedCards([]);
+        alert("Wszystkie kolekcje w klubie zostały pomyślnie zresetowane.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Błąd operacji");
+      }
+    } catch (e: any) {
+      alert(e.message || "Błąd operacji");
+    }
+  }
+
   const matchEvents=selectedMatch?events.filter(e=>e.match_id===selectedMatch.id):[];
 
   return <div className="admin-app">
@@ -1567,6 +1662,131 @@ export default function AdminPanel(props:{
           >
             <Plus size={15} /> {savingCardDef ? "Tworzenie..." : "Utwórz kartę w katalogu"}
           </button>
+        </div>
+
+        {/* ================= ZARZĄDZANIE KOLEKCJAMI I USUWANIE KART ================= */}
+        <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-rose-400 font-black text-sm uppercase">
+              <Trash2 size={18} /> Zarządzanie kartami w kolekcjach & Kasowanie
+            </div>
+            <button
+              type="button"
+              onClick={handleGlobalResetCards}
+              className="px-3 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-700 text-rose-200 text-xs font-bold transition flex items-center gap-1.5"
+            >
+              <AlertCircle size={14} /> ⚠️ Reset kolekcji wszystkich użytkowników
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-400">
+            Wybierz użytkownika, aby podejrzeć jego karty, usunąć pojedyncze karty lub całkowicie wyczyścić jego klaser.
+          </p>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="block text-xs font-bold text-slate-300 flex-1 min-w-[240px]">
+              Wybierz użytkownika do podglądu kolekcji:
+              <select 
+                value={manageCardsUserId} 
+                onChange={e => setManageCardsUserId(e.target.value)}
+                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white"
+              >
+                {props.allProfiles.map(p => (
+                  <option key={p.id} value={p.id}>{p.display_name || "Użytkownik"} ({p.role})</option>
+                ))}
+              </select>
+            </label>
+
+            <div className="flex items-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => fetchUserCards(manageCardsUserId)}
+                disabled={loadingUserCards}
+                className="px-3.5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <RefreshCw size={14} className={loadingUserCards ? "animate-spin" : ""} /> Odśwież
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleClearUserCards(manageCardsUserId)}
+                disabled={loadingUserCards || userManagedCards.length === 0}
+                className="px-3.5 py-2.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 border border-rose-600 text-rose-100 text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <Trash2 size={14} /> Wyczyść całą kolekcję tego użytkownika
+              </button>
+            </div>
+          </div>
+
+          {/* LISTA KART WYBRANEGO UŻYTKOWNIKA */}
+          <div className="mt-4 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-slate-300">
+                Zdobyte karty użytkownika ({userManagedCards.length}):
+              </span>
+            </div>
+
+            {loadingUserCards ? (
+              <div className="py-8 text-center text-xs text-slate-400">Ładowanie kolekcji...</div>
+            ) : userManagedCards.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-500 bg-black/20 rounded-xl border border-slate-800/60">
+                Ten użytkownik nie posiada jeszcze żadnych kart w swojej kolekcji.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[420px] overflow-y-auto p-1">
+                {userManagedCards.map(uc => {
+                  const cardDef = uc.card_definition;
+                  const rarity = cardDef?.rarity || "common";
+                  const isInferno = rarity === "inferno";
+                  const isLegend = rarity === "legendary";
+                  const isEpic = rarity === "epic";
+                  const isRare = rarity === "rare";
+
+                  return (
+                    <div 
+                      key={uc.id} 
+                      className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between gap-2.5 transition hover:border-slate-700"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                            isInferno ? "bg-red-950 text-red-400 border-red-700" :
+                            isLegend ? "bg-purple-950 text-purple-300 border-purple-700" :
+                            isEpic ? "bg-indigo-950 text-indigo-300 border-indigo-700" :
+                            isRare ? "bg-blue-950 text-blue-300 border-blue-700" :
+                            "bg-slate-800 text-slate-300 border-slate-700"
+                          }`}>
+                            {rarity}
+                          </span>
+                          {uc.duplicates_count > 0 && (
+                            <span className="text-[10px] font-black text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded">
+                              +{uc.duplicates_count} dup
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="font-bold text-xs text-white truncate">
+                          {cardDef?.title || cardDef?.card_name || "Karta DELTA"}
+                        </div>
+                        <div className="text-[11px] text-slate-400 truncate">
+                          {cardDef?.player?.display_name || "Zawodnik"} (#{cardDef?.player?.shirt_number || "—"})
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUserCard(uc.id)}
+                        disabled={deletingCardId === uc.id}
+                        className="w-full py-1.5 px-2 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 text-[11px] font-bold transition flex items-center justify-center gap-1.5"
+                      >
+                        <Trash2 size={12} /> {deletingCardId === uc.id ? "Usuwanie..." : "Usuń tę kartę"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </section>}
     </main>
