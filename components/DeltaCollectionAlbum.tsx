@@ -505,7 +505,7 @@ export default function DeltaCollectionAlbum({
                       card={card}
                       userCard={userCard}
                       isLocked={isLocked}
-                      size="lg"
+                      size="md"
                       interactive={true}
                       showFlip={true}
                       onClick={() => setInspectCard({ card, userCard })}

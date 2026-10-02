@@ -12200,24 +12200,24 @@ body > main,
 .v104-player-carousel-track {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 28px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 24px 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px 10px;
   box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(241, 201, 92, 0.4) transparent;
-  -webkit-overflow-scrolling: touch;
 }
 
-.v104-player-carousel-track::-webkit-scrollbar {
-  height: 6px;
-}
-
-.v104-player-carousel-track::-webkit-scrollbar-thumb {
-  background: rgba(241, 201, 92, 0.4);
-  border-radius: 999px;
+@media (max-width: 900px) {
+  .v104-player-carousel-track {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(241, 201, 92, 0.4) transparent;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 24px;
+  }
 }
 
 .v104-carousel-card-item {
