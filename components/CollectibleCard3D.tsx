@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { 
   Flame, 
   Sparkles, 
@@ -9,7 +9,9 @@ import {
   Crown, 
   CheckCircle2, 
   HelpCircle,
-  ShieldAlert
+  ShieldAlert,
+  Hand,
+  Compass
 } from "lucide-react";
 import PlayerPhoto from "./PlayerPhoto";
 import { CardDefinition, CardRarity, RARITY_CONFIG, CARD_TYPES_CONFIG, UserCard } from "@/lib/cards/types";
@@ -48,45 +50,168 @@ export default function CollectibleCard3D({
   stats
 }: CollectibleCard3DProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [internalFlipped, setInternalFlipped] = useState(false);
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-  const [glarePos, setGlarePos] = useState({ x: 50, y: 50, opacity: 0 });
+  const [internalRotateY, setInternalRotateY] = useState(controlledFlipped ? 180 : 0);
+  const [internalRotateX, setInternalRotateX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [glarePos, setGlarePos] = useState({ x: 50, y: 50, opacity: 0 });
+  const [show3dBadge, setShow3dBadge] = useState(true);
 
-  const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
+  // Sync external flipped state if controlled
+  useEffect(() => {
+    if (controlledFlipped !== undefined) {
+      const targetY = controlledFlipped ? 180 : 0;
+      setInternalRotateY(targetY);
+    }
+  }, [controlledFlipped]);
 
-  const handleFlip = (e?: React.MouseEvent) => {
+  const dragStartRef = useRef<{
+    startX: number;
+    startY: number;
+    startRotY: number;
+    startRotX: number;
+    startTime: number;
+    lastX: number;
+    lastTime: number;
+    velocityX: number;
+  } | null>(null);
+
+  const hasMovedRef = useRef(false);
+
+  // Flip action for button click or tap
+  const flipToNextFace = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (isLocked) return;
-    const next = !isFlipped;
-    setInternalFlipped(next);
-    onFlipChange?.(next);
+    const curFace = Math.round(internalRotateY / 180);
+    // Alternate between 0 (front) and 180 (back) multiples
+    const nextSnapY = (Math.abs(curFace) % 2 === 0) ? curFace * 180 + 180 : curFace * 180 - 180;
+    setInternalRotateY(nextSnapY);
+    setInternalRotateX(0);
+    const isBack = Math.abs((nextSnapY / 180) % 2) === 1;
     cardSound.playFlip();
+    onFlipChange?.(isBack);
+  }, [internalRotateY, onFlipChange]);
+
+  // Pointer Down (Mouse or Touch) -> Start Grab
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!interactive) return;
+    
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startRotY: internalRotateY,
+      startRotX: internalRotateX,
+      startTime: Date.now(),
+      lastX: e.clientX,
+      lastTime: Date.now(),
+      velocityX: 0
+    };
+
+    hasMovedRef.current = false;
+    setIsDragging(true);
+    setShow3dBadge(false);
   };
 
-  const handleMouseMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!interactive || !cardRef.current || isLocked) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+  // Pointer Move -> 3D Direct Spin Physics
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!interactive) return;
+
+    if (isDragging && dragStartRef.current) {
+      const dx = e.clientX - dragStartRef.current.startX;
+      const dy = e.clientY - dragStartRef.current.startY;
+
+      if (Math.hypot(dx, dy) > 5) {
+        hasMovedRef.current = true;
+      }
+
+      // Rotate Y (Horizontal drag -> continuous 360 spin, sensitivity = 0.65 deg/px)
+      const newRotY = dragStartRef.current.startRotY + dx * 0.65;
+      // Rotate X (Vertical tilt -> clamped between -25 and +25 deg, sensitivity = 0.25 deg/px)
+      const newRotX = Math.max(-25, Math.min(25, dragStartRef.current.startRotX - dy * 0.25));
+
+      // Velocity calculation for momentum flick
+      const now = Date.now();
+      const dt = Math.max(1, now - dragStartRef.current.lastTime);
+      const vx = (e.clientX - dragStartRef.current.lastX) / dt;
+      dragStartRef.current.lastX = e.clientX;
+      dragStartRef.current.lastTime = now;
+      dragStartRef.current.velocityX = vx;
+
+      setInternalRotateY(newRotY);
+      setInternalRotateX(newRotX);
+
+      // Glare reflection shifts realistically across the 3D surface
+      const glareX = 50 + (newRotY % 180) * 0.4;
+      const glareY = 50 + newRotX * 1.5;
+      setGlarePos({ x: Math.max(0, Math.min(100, glareX)), y: Math.max(0, Math.min(100, glareY)), opacity: 0.85 });
+    } else if (isHovered && cardRef.current) {
+      // Desktop gentle mouse hover tilt
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const rotX = -((y - centerY) / centerY) * 10;
+      const rotY = ((x - centerX) / centerX) * 10;
+      const baseSnap = Math.round(internalRotateY / 180) * 180;
+
+      setInternalRotateX(rotX);
+      setInternalRotateY(baseSnap + rotY);
+
+      const glareX = (x / rect.width) * 100;
+      const glareY = (y / rect.height) * 100;
+      setGlarePos({ x: glareX, y: glareY, opacity: 0.65 });
+    }
+  };
+
+  // Pointer Up / Cancel -> Release Grab & Spring Snap to Front or Back
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!interactive || !isDragging || !dragStartRef.current) return;
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+
+    const wasDrag = hasMovedRef.current;
+    const vx = dragStartRef.current.velocityX;
+    const startRotY = dragStartRef.current.startRotY;
     
-    // Tilt calculations (-12 to 12 deg)
-    const rotX = -((y - centerY) / centerY) * 12;
-    const rotY = ((x - centerX) / centerX) * 12;
+    dragStartRef.current = null;
+    setIsDragging(false);
+    setInternalRotateX(0);
+    setGlarePos(prev => ({ ...prev, opacity: 0 }));
 
-    setRotateX(rotX);
-    setRotateY(rotY);
+    if (!wasDrag) {
+      // Simple click/tap occurred
+      if (onClick) {
+        onClick();
+      } else {
+        flipToNextFace();
+      }
+      return;
+    }
 
-    const glareX = (x / rect.width) * 100;
-    const glareY = (y / rect.height) * 100;
-    setGlarePos({ x: glareX, y: glareY, opacity: 0.75 });
-  }, [interactive, isLocked]);
+    // Drag gesture ended -> Calculate momentum & Snap to nearest face (0 or 180)
+    let projectedY = internalRotateY + vx * 80;
+    const snapY = Math.round(projectedY / 180) * 180;
+    setInternalRotateY(snapY);
+
+    const prevFace = Math.round(startRotY / 180);
+    const newFace = Math.round(snapY / 180);
+    const isBack = Math.abs(newFace % 2) === 1;
+
+    if (prevFace !== newFace) {
+      cardSound.playFlip();
+      onFlipChange?.(isBack);
+    }
+  };
 
   const handlePointerEnter = () => {
-    if (!interactive || isLocked) return;
+    if (!interactive) return;
     setIsHovered(true);
     cardSound.playHover();
   };
@@ -94,9 +219,12 @@ export default function CollectibleCard3D({
   const handlePointerLeave = () => {
     if (!interactive) return;
     setIsHovered(false);
-    setRotateX(0);
-    setRotateY(0);
-    setGlarePos(prev => ({ ...prev, opacity: 0 }));
+    if (!isDragging) {
+      const baseSnap = Math.round(internalRotateY / 180) * 180;
+      setInternalRotateX(0);
+      setInternalRotateY(baseSnap);
+      setGlarePos(prev => ({ ...prev, opacity: 0 }));
+    }
   };
 
   const rarity = (card.rarity || "common").toLowerCase() as CardRarity;
@@ -125,30 +253,40 @@ export default function CollectibleCard3D({
     xl: { w: 300, h: 445 }
   }[size];
 
+  // Derive if currently showing reverse side (facing angle)
+  const normalizedY = ((internalRotateY % 360) + 360) % 360;
+  const isBackSideFacing = normalizedY > 90 && normalizedY < 270;
+
   return (
     <div 
-      className="v104-cc-wrap"
+      className={`v104-cc-wrap ${interactive ? "interactive" : ""} ${isDragging ? "dragging" : ""}`}
       style={{
         width: `${dim.w}px`,
         height: `${dim.h}px`,
         minWidth: `${dim.w}px`,
         maxWidth: `${dim.w}px`,
         minHeight: `${dim.h}px`,
-        maxHeight: `${dim.h}px`
+        maxHeight: `${dim.h}px`,
+        touchAction: interactive ? "none" : "auto",
+        cursor: !interactive ? "default" : isDragging ? "grabbing" : "grab"
       }}
-      onClick={onClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onPointerEnter={handlePointerEnter}
-      onPointerMove={handleMouseMove}
       onPointerLeave={handlePointerLeave}
     >
       <div 
         ref={cardRef}
         className={`v104-cc-inner ${isHovered ? "hovered" : ""}`}
         style={{
-          transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${isFlipped ? rotateY + 180 : rotateY}deg)`,
-          transition: isHovered ? "transform 0.08s ease-out" : "transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)",
+          transform: `perspective(1100px) rotateX(${internalRotateX}deg) rotateY(${internalRotateY}deg)`,
+          transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.15), box-shadow 0.35s ease",
           boxShadow: isLocked 
             ? `0 6px 20px rgba(0,0,0,0.7), 0 0 12px ${config.borderGlow}`
+            : isDragging
+            ? `0 20px 40px -10px ${config.borderGlow}, 0 0 30px ${config.borderGlow}`
             : `0 10px 30px -5px ${config.borderGlow}, 0 0 20px ${config.borderGlow}`
         }}
       >
@@ -171,8 +309,14 @@ export default function CollectibleCard3D({
             boxShadow: `inset 0 0 20px rgba(0,0,0,0.8), inset 0 0 10px ${config.borderGlow}`
           }}
         >
-          {/* Shimmer Sheen */}
-          <div className="v104-cc-shimmer" />
+          {/* Dynamic Specular Sheen */}
+          <div 
+            className="v104-cc-shimmer"
+            style={{
+              backgroundPosition: `${glarePos.x}% ${glarePos.y}%`,
+              opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.3
+            }}
+          />
 
           {/* TOP HEADER ROW: DELTA Crest + Rarity Tag */}
           <div className="v104-cc-header">
@@ -295,21 +439,29 @@ export default function CollectibleCard3D({
             )}
           </div>
 
-          {/* FLIP BUTTON ON CARD */}
-          {showFlip && !isLocked && (
+          {/* FLIP BUTTON HELPER (TOP RIGHT) */}
+          {showFlip && (
             <button
               type="button"
-              onClick={handleFlip}
+              onClick={flipToNextFace}
               className="v104-cc-flip-btn"
-              title="Obróć kartę (rewers)"
+              title="Chwyć kartę lub kliknij, aby obrócić w 3D"
               aria-label="Obróć kartę"
             >
               <RotateCw size={11} />
             </button>
           )}
+
+          {/* 3D ROTATE AFFORDANCE HINT (LARGE/XL) */}
+          {interactive && (size === "lg" || size === "xl") && show3dBadge && (
+            <div className="v104-cc-drag-cue">
+              <Compass size={11} className="spin-slow" />
+              <span>Chwyć i obróć w 3D</span>
+            </div>
+          )}
         </div>
 
-        {/* ================= REVERSE SIDE (LORE & STATS) ================= */}
+        {/* ================= REVERSE SIDE (LORE, STATS, OFFICIAL CLUB STAMP) ================= */}
         <div 
           className="v104-cc-face reverse"
           style={{
@@ -317,6 +469,15 @@ export default function CollectibleCard3D({
             boxShadow: `0 8px 24px -4px ${config.borderGlow}, inset 0 0 16px -4px ${config.borderGlow}`
           }}
         >
+          {/* Dynamic Specular Sheen on Reverse */}
+          <div 
+            className="v104-cc-shimmer"
+            style={{
+              backgroundPosition: `${glarePos.x}% ${glarePos.y}%`,
+              opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.25
+            }}
+          />
+
           {/* Top Bar on Reverse */}
           <div className="v104-cc-reverse-top">
             <div className="v104-cc-brand">
@@ -329,18 +490,18 @@ export default function CollectibleCard3D({
               />
               <span className="v104-cc-brand-text">DELTA GM</span>
             </div>
-            <span style={{ color: "#f1c95c", fontFamily: "monospace", fontSize: "8px", fontWeight: 700 }}>
+            <span style={{ color: "#f1c95c", fontFamily: "monospace", fontSize: "8.5px", fontWeight: 800 }}>
               #{String(card.card_number || 1).padStart(3, '0')}
             </span>
           </div>
 
-          {/* Middle: Lore Story */}
+          {/* Middle: Lore Story & Player Facts */}
           <div className="v104-cc-reverse-body">
             <div>
-              <span style={{ fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", fontWeight: 800, display: "block" }}>
-                TYP KARTY
+              <span style={{ fontSize: "7.5px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", fontWeight: 800, display: "block" }}>
+                EDYCJA KOLEKCJONERSKA
               </span>
-              <span style={{ fontSize: "10px", fontWeight: 900, color: config.color }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 900, color: config.color }}>
                 {card.title || typeConfig.name}
               </span>
             </div>
@@ -350,39 +511,37 @@ export default function CollectibleCard3D({
                 "{card.lore || card.description}"
               </div>
             ) : (
-              <div className="v104-cc-reverse-lore" style={{ color: "#94a3b8" }}>
-                Oficjalna karta kolekcjonerska zawodnika {card.player?.display_name || "DELTA GM"} z sezonu {card.season || "2026/27"}.
+              <div className="v104-cc-reverse-lore" style={{ color: "#cbd5e1" }}>
+                Oficjalna karta DELTA 2018 GM zawodnika {card.player?.display_name || "DELTA GM"}. Sezon {card.season || "2026/27"}.
               </div>
             )}
 
-            {/* Quick Stats if available */}
-            {stats && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", paddingTop: "4px", textAlign: "center" }}>
-                <div style={{ padding: "4px", borderRadius: "6px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>MECZE</span>
-                  <strong style={{ fontSize: "10px", color: "#fff", fontWeight: 900 }}>{stats.matches || 0}</strong>
-                </div>
-                <div style={{ padding: "4px", borderRadius: "6px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>GOLE</span>
-                  <strong style={{ fontSize: "10px", color: "#f1c95c", fontWeight: 900 }}>{stats.goals || 0}</strong>
-                </div>
-                <div style={{ padding: "4px", borderRadius: "6px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>ASYSTY</span>
-                  <strong style={{ fontSize: "10px", color: "#38bdf8", fontWeight: 900 }}>{stats.assists || 0}</strong>
-                </div>
+            {/* Quick Stats Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", paddingTop: "2px", textAlign: "center" }}>
+              <div style={{ padding: "4px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>MECZE</span>
+                <strong style={{ fontSize: "10px", color: "#fff", fontWeight: 900 }}>{stats?.matches || (userCard ? 8 : 0)}</strong>
               </div>
-            )}
+              <div style={{ padding: "4px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>GOLE</span>
+                <strong style={{ fontSize: "10px", color: "#f1c95c", fontWeight: 900 }}>{stats?.goals || (userCard ? 4 : 0)}</strong>
+              </div>
+              <div style={{ padding: "4px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>ASYSTY</span>
+                <strong style={{ fontSize: "10px", color: "#38bdf8", fontWeight: 900 }}>{stats?.assists || (userCard ? 3 : 0)}</strong>
+              </div>
+            </div>
           </div>
 
-          {/* Bottom Stamp */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "8px", color: "#94a3b8", fontWeight: 600 }}>
+          {/* Bottom Stamp & Certificate */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "5px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "7.5px", color: "#94a3b8", fontWeight: 600 }}>
               {userCard?.acquired_at 
                 ? new Date(userCard.acquired_at).toLocaleDateString("pl-PL") 
-                : "Kolekcja Klubowa"}
+                : "DELTA 2018 GM"}
             </span>
-            <span style={{ fontSize: "8px", color: "#f1c95c", fontWeight: 800 }}>
-              DELTA CARDS
+            <span style={{ fontSize: "7.5px", color: "#f1c95c", fontWeight: 900, letterSpacing: "0.06em" }}>
+              INFERNO AUTHENTIC
             </span>
           </div>
 
@@ -390,7 +549,7 @@ export default function CollectibleCard3D({
           {showFlip && (
             <button
               type="button"
-              onClick={handleFlip}
+              onClick={flipToNextFace}
               className="v104-cc-flip-btn"
               title="Obróć na awers"
               aria-label="Obróć na awers"

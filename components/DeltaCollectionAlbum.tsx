@@ -68,6 +68,7 @@ export default function DeltaCollectionAlbum({
   
   // Modals
   const [inspectCard, setInspectCard] = useState<{ card: CardDefinition; userCard: UserCard | null } | null>(null);
+  const [inspectFlipped, setInspectFlipped] = useState(false);
   const [activePackToOpen, setActivePackToOpen] = useState<PackDefinition | null>(null);
   const [cinematicCardToUnlock, setCinematicCardToUnlock] = useState<CardDefinition | null>(null);
 
@@ -698,14 +699,20 @@ export default function DeltaCollectionAlbum({
       {inspectCard && (
         <div 
           className="v104-inspect-modal-backdrop"
-          onClick={() => setInspectCard(null)}
+          onClick={() => {
+            setInspectCard(null);
+            setInspectFlipped(false);
+          }}
         >
           <div 
             className="v104-inspect-modal-content"
             onClick={e => e.stopPropagation()}
           >
             <button
-              onClick={() => setInspectCard(null)}
+              onClick={() => {
+                setInspectCard(null);
+                setInspectFlipped(false);
+              }}
               className="v104-inspect-close"
               aria-label="Zamknij"
             >
@@ -719,10 +726,23 @@ export default function DeltaCollectionAlbum({
               size="xl"
               interactive={true}
               showFlip={true}
+              isFlipped={inspectFlipped}
+              onFlipChange={setInspectFlipped}
             />
 
+            <div className="v104-inspect-toolbar">
+              <button
+                type="button"
+                className="v104-inspect-flip-btn"
+                onClick={() => setInspectFlipped(!inspectFlipped)}
+              >
+                <RefreshCw size={13} />
+                {inspectFlipped ? "OBRÓĆ NA AWERS" : "OBRÓĆ NA REWERS"}
+              </button>
+            </div>
+
             <span className="v104-inspect-hint">
-              Kliknij ikonę obrotu na karcie, aby zobaczyć opis historii i statystyki na rewersie.
+              <span>✋</span> Chwyć kartę myszką lub palcem i obracaj w 3D • Kliknij, aby szybko odwrócić
             </span>
           </div>
         </div>
