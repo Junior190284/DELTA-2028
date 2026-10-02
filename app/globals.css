@@ -11577,6 +11577,200 @@ body > main,
   transform: translateY(0) scale(0.98);
 }
 
+/* ================= PACK OPENING SUMMARY STAGE & CAROUSEL ================= */
+.v104-open-summary-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: center;
+  position: relative;
+  z-index: 20;
+}
+
+.v104-summary-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.v104-summary-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f1c95c;
+}
+
+.v104-summary-title {
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+}
+
+.v104-summary-points {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fef08a;
+  background: rgba(241, 201, 92, 0.12);
+  border: 1px solid rgba(241, 201, 92, 0.35);
+  box-shadow: 0 0 20px rgba(241, 201, 92, 0.2);
+}
+
+.v104-summary-points b {
+  color: #ffffff;
+  font-weight: 1000;
+}
+
+/* Horizontal Side-by-Side Carousel Track */
+.v104-summary-carousel-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 24px 12px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 201, 92, 0.4) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.v104-summary-carousel-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.v104-summary-carousel-container::-webkit-scrollbar-thumb {
+  background: rgba(241, 201, 92, 0.4);
+  border-radius: 999px;
+}
+
+.v104-summary-carousel-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-width: min-content;
+  margin: 0 auto;
+}
+
+.v104-summary-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v104-summary-card-item:hover {
+  transform: translateY(-8px) scale(1.04);
+}
+
+.v104-summary-dup-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
+.v104-summary-new-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #34d399;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+/* Bottom Action Buttons */
+.v104-summary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.v104-summary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 220px;
+  padding: 13px 28px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v104-summary-btn.primary {
+  background: linear-gradient(135deg, #fde047, #f1c95c, #ca8a04);
+  color: #000000;
+  border: 1px solid #fef08a;
+  box-shadow: 0 4px 20px rgba(241, 201, 92, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.v104-summary-btn.secondary {
+  background: rgba(15, 23, 42, 0.85);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.v104-summary-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 30px rgba(241, 201, 92, 0.6);
+}
+
+.v104-summary-btn.secondary:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8);
+}
+
+.v104-summary-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+
 
 
 

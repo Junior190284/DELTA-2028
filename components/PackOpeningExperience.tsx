@@ -522,35 +522,41 @@ export default function PackOpeningExperience({
       {stage === "summary" && openingResult && (
         <div className="v104-open-summary-stage animate-fadeIn" style={{ zIndex: 10 }}>
           <div className="v104-summary-header">
-            <span className="eyebrow gold"><Check size={14} className="inline mr-1" /> PACZKA ZOSTAŁA OTWARTA</span>
+            <span className="v104-summary-eyebrow"><Check size={14} /> PACZKA ZOSTAŁA OTWARTA</span>
             <h3 className="v104-summary-title">ZDOBYTE KARTY DELTA</h3>
             {openingResult.total_delta_points_earned > 0 && (
               <div className="v104-summary-points">
-                <Coins size={16} style={{ color: "#f1c95c" }} />
+                <Coins size={15} style={{ color: "#f1c95c" }} />
                 <span>Otrzymujesz <b>+{openingResult.total_delta_points_earned} DP</b> za karty zduplikowane!</span>
               </div>
             )}
           </div>
 
-          {/* Cards Grid */}
-          <div className="v104-summary-grid">
-            {openingResult.cards.map((item, idx) => (
-              <div key={idx} className="v104-summary-card-item">
-                <CollectibleCard3D
-                  card={item.card}
-                  userCard={undefined}
-                  isLocked={false}
-                  size="md"
-                  interactive={true}
-                  showFlip={false}
-                />
-                {item.is_duplicate && (
-                  <span className="v104-summary-dup-tag">
-                    +{item.duplicate_points} DP
-                  </span>
-                )}
-              </div>
-            ))}
+          {/* Cards Carousel (Side by Side) */}
+          <div className="v104-summary-carousel-container">
+            <div className="v104-summary-carousel-track">
+              {openingResult.cards.map((item, idx) => (
+                <div key={idx} className="v104-summary-card-item">
+                  <CollectibleCard3D
+                    card={item.card}
+                    userCard={undefined}
+                    isLocked={false}
+                    size="md"
+                    interactive={true}
+                    showFlip={true}
+                  />
+                  {item.is_duplicate ? (
+                    <span className="v104-summary-dup-tag">
+                      <Coins size={11} className="inline mr-1" /> DUPLIKAT (+{item.duplicate_points} DP)
+                    </span>
+                  ) : (
+                    <span className="v104-summary-new-tag">
+                      <Sparkles size={11} className="inline mr-1" /> NOWA KARTA
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Bottom Actions */}
@@ -561,7 +567,7 @@ export default function PackOpeningExperience({
                 onClick={onOpenAnother}
                 className="v104-summary-btn primary"
               >
-                <RefreshCw size={18} /> OTWÓRZ KOLEJNĄ PACZKĘ ({unopenedCount})
+                <RefreshCw size={17} /> OTWÓRZ KOLEJNĄ PACZKĘ ({unopenedCount})
               </button>
             )}
 
