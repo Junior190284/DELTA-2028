@@ -17,6 +17,9 @@ import DeltaLiveBar from "./DeltaLiveBar";
 import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
 import DeltaTyperModal from "./DeltaTyperModal";
+import DeltaKnowledgeCornerModal from "./DeltaKnowledgeCornerModal";
+import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
+import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
@@ -27,7 +30,7 @@ import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/pu
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -179,6 +182,9 @@ export default function TeamHub(props:{
   const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
   const [achievementsTargetPlayer, setAchievementsTargetPlayer] = useState<Player | null>(null);
   const [typerModalOpen, setTyperModalOpen] = useState(false);
+  const [knowledgeModalOpen, setKnowledgeModalOpen] = useState(false);
+  const [matchBriefModalOpen, setMatchBriefModalOpen] = useState(false);
+  const [tacticsModalOpen, setTacticsModalOpen] = useState(false);
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
@@ -1621,6 +1627,42 @@ export default function TeamHub(props:{
               <ChevronRight size={18}/>
             </div>
           </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner knowledge-academy" glowColor="gold" enableTilt={true} onClick={()=>setKnowledgeModalOpen(true)}>
+            <div className="v200-feature-avatar gold">
+              <BookOpen size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge gold">
+                <Sparkles size={12}/>
+                <span>AKADEMIA & QUIZY</span>
+              </div>
+              <h3>KĄCIK WIEDZY I ZASAD</h3>
+              <p>Zasady gry, zdrowe żywienie i regeneracja. Zrób test i odbierz punkty DP!</p>
+            </div>
+            <div className="v200-feature-cta gold">
+              <span>CZYTAJ & TEST</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner tactics-whiteboard" glowColor="red" enableTilt={true} onClick={()=>setTacticsModalOpen(true)}>
+            <div className="v200-feature-avatar red">
+              <Target size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge red">
+                <Shield size={12}/>
+                <span>ODPRAWA PRZEDMECZOWA</span>
+              </div>
+              <h3>TABLICA TAKTYCZNA ORLIKA</h3>
+              <p>Formacje 1-2-3-1, rozstawienie składu na boisku i zadania meczowe</p>
+            </div>
+            <div className="v200-feature-cta red">
+              <span>TABLICA</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
         </div>
         <div className="v104-league-feature">
         <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
@@ -2537,13 +2579,59 @@ export default function TeamHub(props:{
               onClick={() => { setMobileMoreOpen(false); setTyperModalOpen(true); }}
             >
               <div className="v200-tile-icon" style={{ color: "#f59e0b" }}>
-                <Target size={20} />
+                <Crown size={20} />
               </div>
               <div className="v200-tile-text">
                 <strong>Typer Meczowy</strong>
                 <small>Typuj wyniki & wygrywaj DP</small>
               </div>
               <span className="v200-tile-badge" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>LIVE</span>
+            </button>
+
+            {/* 2.2 KĄCIK WIEDZY I QUIZY */}
+            <button
+              type="button"
+              className="v200-tile"
+              onClick={() => { setMobileMoreOpen(false); setKnowledgeModalOpen(true); }}
+            >
+              <div className="v200-tile-icon" style={{ color: "#f6c952" }}>
+                <BookOpen size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Kącik Wiedzy</strong>
+                <small>Zasady, dieta, quizy & nagrody</small>
+              </div>
+              <span className="v200-tile-badge" style={{ background: "linear-gradient(135deg, #f6c952, #d97706)", color: "#000" }}>QUIZ</span>
+            </button>
+
+            {/* 2.3 TABLICA TAKTYCZNA */}
+            <button
+              type="button"
+              className="v200-tile"
+              onClick={() => { setMobileMoreOpen(false); setTacticsModalOpen(true); }}
+            >
+              <div className="v200-tile-icon" style={{ color: "#ef4444" }}>
+                <Target size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Tablica Taktyczna</strong>
+                <small>Formacje i odprawa przedmeczowa</small>
+              </div>
+            </button>
+
+            {/* 2.4 INFORMATOR DLA RODZICÓW */}
+            <button
+              type="button"
+              className="v200-tile"
+              onClick={() => { setMobileMoreOpen(false); setMatchBriefModalOpen(true); }}
+            >
+              <div className="v200-tile-icon" style={{ color: "#38bdf8" }}>
+                <Send size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Informator Meczowy</strong>
+                <small>Generator zbiórki dla rodziców</small>
+              </div>
             </button>
 
             {/* 3. CENTRUM DRUŻYNY */}
@@ -3009,6 +3097,29 @@ export default function TeamHub(props:{
       <DeltaTyperModal
         isOpen={typerModalOpen}
         onClose={() => setTyperModalOpen(false)}
+      />
+    )}
+
+    {knowledgeModalOpen && (
+      <DeltaKnowledgeCornerModal
+        isOpen={knowledgeModalOpen}
+        onClose={() => setKnowledgeModalOpen(false)}
+      />
+    )}
+
+    {tacticsModalOpen && (
+      <DeltaTacticsBoardModal
+        isOpen={tacticsModalOpen}
+        onClose={() => setTacticsModalOpen(false)}
+        players={players}
+      />
+    )}
+
+    {matchBriefModalOpen && (
+      <DeltaMatchBriefModal
+        isOpen={matchBriefModalOpen}
+        onClose={() => setMatchBriefModalOpen(false)}
+        matches={matches}
       />
     )}
   </div>;

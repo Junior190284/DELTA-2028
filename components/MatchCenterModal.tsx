@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchPosterModal from "./MatchPosterModal";
+import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import {
   CalendarDays, Check, ChevronRight, Crown, Goal, Save, ShieldCheck,
-  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles
+  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles, Send
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -81,6 +82,7 @@ export default function MatchCenterModal(props:{
   const [refreshing,setRefreshing]=useState(false);
   const [lastSync,setLastSync]=useState<string>("");
   const [posterOpen,setPosterOpen]=useState(false);
+  const [briefOpen,setBriefOpen]=useState(false);
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -388,6 +390,9 @@ export default function MatchCenterModal(props:{
         <button type="button" className="v200-poster-top-btn" onClick={()=>setPosterOpen(true)} title="Generuj grafikę meczową do pobrania lub udostępnienia">
           <Download size={14}/> GRAFIKA MECZU
         </button>
+        <button type="button" className="v200-poster-top-btn" onClick={()=>setBriefOpen(true)} title="Generuj gotowy komunikat zbiórki i odprawy dla rodziców">
+          <Send size={14}/> KOMUNIKAT DLA RODZICÓW
+        </button>
         <small>{matchStarted?"Podgląd meczu odświeża się automatycznie co 15 sekund.":""}{lastSync?` Ostatnie sprawdzenie: ${lastSync}`:""}</small>
       </div>
       {saved&&<div className="mc-saved" role="status">✓ {saved}</div>}
@@ -563,6 +568,13 @@ export default function MatchCenterModal(props:{
         players={players}
         events={props.events}
         lineup={props.lineup}
+      />
+    )}
+    {briefOpen && (
+      <DeltaMatchBriefModal
+        isOpen={briefOpen}
+        onClose={() => setBriefOpen(false)}
+        matches={[match]}
       />
     )}
   </div>
