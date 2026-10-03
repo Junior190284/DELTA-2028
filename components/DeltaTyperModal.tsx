@@ -468,39 +468,115 @@ export default function DeltaTyperModal({
               })
             )
           ) : activeTab === "leaderboard" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {leaderboard.map((entry, index) => (
-                <div
-                  key={entry.userId}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 16px",
-                    borderRadius: 12,
-                    background: entry.userId === currentUserId ? "rgba(245,158,11,0.15)" : "rgba(18,24,38,0.6)",
-                    border: entry.userId === currentUserId ? "1px solid rgba(245,158,11,0.5)" : "1px solid rgba(255,255,255,0.08)"
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ width: 24, fontSize: 14, fontWeight: 900, color: index < 3 ? "#f59e0b" : "#64748b", fontFamily: "monospace" }}>
-                      #{index + 1}
-                    </span>
-                    <div>
-                      <strong style={{ fontSize: 13, color: "#fff", display: "block" }}>
-                        {entry.name} {entry.userId === currentUserId ? "(Ty)" : ""}
-                      </strong>
-                      <span style={{ fontSize: 10, color: "#94a3b8" }}>
-                        {entry.predictionsCount} typów • {entry.exactHits} trafionych dokładnych
-                      </span>
-                    </div>
+            <div className="v200-typer-podium-wrap">
+              {/* Monthly Championship Banner */}
+              <div className="v200-typer-championship-banner">
+                <div className="v200-typer-champ-left">
+                  <div className="v200-typer-champ-tag">
+                    <Trophy size={13} />
+                    <span>MISTRZOSTWA TYPERÓW</span>
+                  </div>
+                  <h4>Miesięczny Ranking Rodziców & Sztabu</h4>
+                  <p>Top 3 na koniec miesiąca otrzymuje paczki kart i bonusowe punkty DP!</p>
+                </div>
+                <div className="v200-typer-champ-rewards">
+                  <span>🥇 +1000 DP & Złota Paczka</span>
+                  <span>🥈 +500 DP & Paczka</span>
+                  <span>🥉 +250 DP</span>
+                </div>
+              </div>
+
+              {leaderboard.length === 0 ? (
+                <div style={{ padding: "50px 20px", textAlign: "center", background: "rgba(15,23,42,0.4)", borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <Trophy size={40} style={{ color: "#f59e0b", margin: "0 auto 10px" }} />
+                  <h3 style={{ margin: 0, fontSize: 16, color: "#fff" }}>Ranking czeka na pierwsze rozliczone mecze</h3>
+                  <p style={{ margin: "6px 0 0 0", fontSize: 12, color: "#94a3b8" }}>
+                    Zatwierdź swój typ w zakładce „Typuj Mecze”, aby po zakończonym meczu zdobyć punkty DP!
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Top 3 Podium (2nd, 1st, 3rd) */}
+                  <div className="v200-podium-stage">
+                    {/* 2nd Place */}
+                    {leaderboard[1] && (
+                      <div className={`v200-podium-slot rank-2 ${leaderboard[1].userId === currentUserId ? "is-me" : ""}`}>
+                        <div className="v200-podium-medal silver">🥈</div>
+                        <div className="v200-podium-user">
+                          <strong>{leaderboard[1].name} {leaderboard[1].userId === currentUserId ? "(Ty)" : ""}</strong>
+                          <small>{leaderboard[1].exactHits} trafień</small>
+                        </div>
+                        <div className="v200-podium-plinth plinth-2">
+                          <span className="v200-plinth-rank">2</span>
+                          <b className="v200-plinth-pts">+{leaderboard[1].totalPoints} DP</b>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 1st Place (Winner) */}
+                    {leaderboard[0] && (
+                      <div className={`v200-podium-slot rank-1 ${leaderboard[0].userId === currentUserId ? "is-me" : ""}`}>
+                        <div className="v200-podium-crown">
+                          <Crown size={22} />
+                        </div>
+                        <div className="v200-podium-medal gold">🥇</div>
+                        <div className="v200-podium-user">
+                          <div className="v200-champ-badge">MISTRZ TYPERA</div>
+                          <strong>{leaderboard[0].name} {leaderboard[0].userId === currentUserId ? "(Ty)" : ""}</strong>
+                          <small>{leaderboard[0].exactHits} trafień</small>
+                        </div>
+                        <div className="v200-podium-plinth plinth-1">
+                          <span className="v200-plinth-rank">1</span>
+                          <b className="v200-plinth-pts">+{leaderboard[0].totalPoints} DP</b>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3rd Place */}
+                    {leaderboard[2] && (
+                      <div className={`v200-podium-slot rank-3 ${leaderboard[2].userId === currentUserId ? "is-me" : ""}`}>
+                        <div className="v200-podium-medal bronze">🥉</div>
+                        <div className="v200-podium-user">
+                          <strong>{leaderboard[2].name} {leaderboard[2].userId === currentUserId ? "(Ty)" : ""}</strong>
+                          <small>{leaderboard[2].exactHits} trafień</small>
+                        </div>
+                        <div className="v200-podium-plinth plinth-3">
+                          <span className="v200-plinth-rank">3</span>
+                          <b className="v200-plinth-pts">+{leaderboard[2].totalPoints} DP</b>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <strong style={{ fontSize: 15, fontWeight: 900, color: "#34d399", fontFamily: "monospace" }}>
-                    +{entry.totalPoints} DP
-                  </strong>
-                </div>
-              ))}
+                  {/* Rest of the table (4th place and below) */}
+                  {leaderboard.length > 3 && (
+                    <div className="v200-typer-list-table">
+                      {leaderboard.slice(3).map((entry, index) => (
+                        <div
+                          key={entry.userId}
+                          className={`v200-typer-table-row ${entry.userId === currentUserId ? "is-me" : ""}`}
+                        >
+                          <div className="v200-typer-table-left">
+                            <span className="v200-typer-table-rank">#{index + 4}</span>
+                            <div>
+                              <strong className="v200-typer-table-name">
+                                {entry.name} {entry.userId === currentUserId ? "(Ty)" : ""}
+                              </strong>
+                              <span className="v200-typer-table-meta">
+                                {entry.predictionsCount} typów • {entry.exactHits} trafionych dokładnych
+                              </span>
+                            </div>
+                          </div>
+
+                          <strong className="v200-typer-table-pts">
+                            +{entry.totalPoints} DP
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           ) : (
             <div style={{ padding: 18, borderRadius: 16, background: "rgba(18,24,38,0.8)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 12 }}>

@@ -5,9 +5,10 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
+import MatchPosterModal from "./MatchPosterModal";
 import {
   CalendarDays, Check, ChevronRight, Crown, Goal, Save, ShieldCheck,
-  Star, Trophy, UserCheck, Users, X
+  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -79,6 +80,7 @@ export default function MatchCenterModal(props:{
   const [matchBusy,setMatchBusy]=useState(false);
   const [refreshing,setRefreshing]=useState(false);
   const [lastSync,setLastSync]=useState<string>("");
+  const [posterOpen,setPosterOpen]=useState(false);
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -381,7 +383,13 @@ export default function MatchCenterModal(props:{
         </div>
       </div>
 
-      <div className="v125-refresh-line"><button type="button" disabled={refreshing} onClick={refreshMatch}>{refreshing?"Odświeżanie…":"↻ Odśwież wynik i zdarzenia"}</button><small>{matchStarted?"Podgląd meczu odświeża się automatycznie co 15 sekund.":""}{lastSync?` Ostatnie sprawdzenie: ${lastSync}`:""}</small></div>
+      <div className="v125-refresh-line">
+        <button type="button" disabled={refreshing} onClick={refreshMatch}>{refreshing?"Odświeżanie…":"↻ Odśwież wynik i zdarzenia"}</button>
+        <button type="button" className="v200-poster-top-btn" onClick={()=>setPosterOpen(true)} title="Generuj grafikę meczową do pobrania lub udostępnienia">
+          <Download size={14}/> GRAFIKA MECZU
+        </button>
+        <small>{matchStarted?"Podgląd meczu odświeża się automatycznie co 15 sekund.":""}{lastSync?` Ostatnie sprawdzenie: ${lastSync}`:""}</small>
+      </div>
       {saved&&<div className="mc-saved" role="status">✓ {saved}</div>}
       {eventError&&<div className="v125-error" role="alert">{eventError}</div>}
       {canManageMatch&&match.status!=="cancelled"&&<div className="v125-match-control">
@@ -547,6 +555,16 @@ export default function MatchCenterModal(props:{
         </>}
       </div>
     </div>
+    {posterOpen && (
+      <MatchPosterModal
+        isOpen={posterOpen}
+        onClose={() => setPosterOpen(false)}
+        match={match}
+        players={players}
+        events={props.events}
+        lineup={props.lineup}
+      />
+    )}
   </div>
   );
 

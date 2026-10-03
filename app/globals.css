@@ -16509,4 +16509,491 @@ body > main,
   }
 }
 
+/* -------------------------------------------------------------
+   V200 MATCH POSTER GRAPHIC MODAL
+   ------------------------------------------------------------- */
+.v200-poster-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999999 !important;
+  background: rgba(3, 5, 8, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  animation: v200PosterFade 0.25s ease-out both;
+}
+
+@keyframes v200PosterFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.v200-poster-sheet {
+  position: relative !important;
+  width: min(720px, 100%) !important;
+  max-height: 92vh !important;
+  padding: 24px !important;
+  border-radius: 18px !important;
+  background: linear-gradient(150deg, rgba(20, 24, 34, 0.98), rgba(9, 11, 16, 0.99)) !important;
+  border: 1px solid rgba(246, 201, 82, 0.35) !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.9), 0 0 50px rgba(226, 46, 48, 0.2) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  overflow-y: auto !important;
+}
+
+.v200-poster-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(246, 201, 82, 0.14);
+}
+
+.v200-poster-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v200-poster-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(246, 201, 82, 0.12);
+  border: 1px solid rgba(246, 201, 82, 0.35);
+  color: #f6c952;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.v200-poster-title h2 {
+  margin: 2px 0 0 0;
+  font-size: 20px;
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.v200-poster-title p {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.v200-poster-close-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.v200-poster-close-btn:hover {
+  background: rgba(226, 46, 48, 0.2);
+  border-color: rgba(226, 46, 48, 0.5);
+  color: #ff4d58;
+}
+
+.v200-poster-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.v200-poster-preview-container {
+  width: min(480px, 100%);
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.6), 0 0 30px rgba(246, 201, 82, 0.15);
+  border: 1px solid rgba(246, 201, 82, 0.3);
+  display: grid;
+  place-items: center;
+  background: #090b10;
+}
+
+.v200-poster-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.v200-poster-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #f6c952;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.v200-spin-icon {
+  animation: v200Spin 2s linear infinite;
+}
+
+@keyframes v200Spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.v200-poster-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.v200-poster-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 20px;
+  min-height: 48px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.v200-poster-btn.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.v200-poster-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(246, 201, 82, 0.4);
+  color: #f6c952;
+}
+
+.v200-poster-btn.primary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 1px solid rgba(251, 191, 36, 0.8);
+  color: #000000;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
+}
+
+.v200-poster-btn.primary:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.55);
+  transform: translateY(-2px);
+}
+
+.v200-poster-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+@media (max-width: 580px) {
+  .v200-poster-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.v200-poster-top-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  background: rgba(246, 201, 82, 0.14) !important;
+  border: 1px solid rgba(246, 201, 82, 0.45) !important;
+  color: #f6c952 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.v200-poster-top-btn:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border-color: #fbbf24 !important;
+  color: #000000 !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* -------------------------------------------------------------
+   V200 TYPER 3D PODIUM & CHAMPIONSHIP LEADERBOARD
+   ------------------------------------------------------------- */
+.v200-typer-podium-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.v200-typer-championship-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(32, 22, 10, 0.95), rgba(12, 10, 8, 0.98)) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.12);
+}
+
+.v200-typer-champ-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v200-typer-champ-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.v200-typer-champ-left h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 950;
+  color: #fde68a;
+}
+
+.v200-typer-champ-left p {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.v200-typer-champ-rewards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+  font-size: 10px;
+  font-weight: 900;
+  color: #fce196;
+}
+
+.v200-podium-stage {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 24px 10px 0;
+  margin-top: 8px;
+}
+
+.v200-podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.v200-podium-slot.is-me .v200-podium-user strong {
+  color: #f6c952 !important;
+}
+
+.v200-podium-crown {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.8));
+  margin-bottom: -6px;
+  animation: v200CrownBob 2s ease-in-out infinite;
+}
+
+@keyframes v200CrownBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.v200-champ-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+  color: #000;
+  font-size: 8px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.v200-podium-medal {
+  font-size: 26px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.v200-podium-user {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.v200-podium-user strong {
+  font-size: 13px;
+  font-weight: 950;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.v200-podium-user small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.v200-podium-plinth {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.v200-podium-plinth.plinth-1 {
+  height: 120px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.35), rgba(180, 83, 9, 0.15));
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+.v200-podium-plinth.plinth-2 {
+  height: 95px;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.25), rgba(71, 85, 105, 0.12));
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.v200-podium-plinth.plinth-3 {
+  height: 75px;
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.25), rgba(120, 53, 15, 0.12));
+  border-color: rgba(217, 119, 6, 0.45);
+}
+
+.v200-plinth-rank {
+  font-size: 32px;
+  font-weight: 1000;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 1;
+}
+
+.v200-plinth-pts {
+  font-size: 13px;
+  font-weight: 950;
+  color: #34d399;
+  font-family: monospace;
+}
+
+.v200-typer-list-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.v200-typer-table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(18, 24, 38, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.v200-typer-table-row.is-me {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.v200-typer-table-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.v200-typer-table-rank {
+  width: 24px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.v200-typer-table-name {
+  font-size: 13px;
+  color: #ffffff;
+  display: block;
+}
+
+.v200-typer-table-meta {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.v200-typer-table-pts {
+  font-size: 14px;
+  font-weight: 900;
+  color: #34d399;
+  font-family: monospace;
+}
+
+@media (max-width: 580px) {
+  .v200-typer-championship-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .v200-typer-champ-rewards {
+    text-align: left;
+  }
+  .v200-podium-user strong {
+    max-width: 90px;
+    font-size: 11px;
+  }
+}
+
 
