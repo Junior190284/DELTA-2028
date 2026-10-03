@@ -177,6 +177,7 @@ export default function TeamHub(props:{
   const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
   const [achievementsTargetPlayer, setAchievementsTargetPlayer] = useState<Player | null>(null);
   const [typerModalOpen, setTyperModalOpen] = useState(false);
+  const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
@@ -1108,14 +1109,85 @@ export default function TeamHub(props:{
   }, [trainingSessions, todayStr]);
   const unreadNoticeCount = unanswered.length;
 
-  const navItems:[string,string,any][]=[
-    ["home","Start",Home],["teamcenter","Centrum drużyny",UserCheck],
-    ...(props.parentPlayerIds.length?[["mychild","Moje dziecko",UserRound] as [string,string,any]]:[]),
-    ...(canManageMatches||canEditMatchEvents?[["matchday","Match Day",Flame] as [string,string,any]]:[]),
-    ["collection","Kolekcja",Sparkles],
-    ["matches","Mecze",CalendarDays],["calendar","Kalendarz",CalendarDays],["training","Treningi",Zap],["players","Drużyna",Users],["stats","Statystyki",TrendingUp],["hall","Hall of Fame",Medal],
-    ["league","Rozgrywki",Trophy],["achievements","Osiągnięcia",Trophy],["chronicle","Kronika",History],["news","Aktualności",Newspaper],["club","Z klubu",Shield],
-  ];
+  const navCategories = useMemo(() => [
+    {
+      id: "main",
+      title: "GŁÓWNE",
+      shortLabel: "Pulpit",
+      subtitle: "Pulpit i centrum drużyny",
+      Icon: Home,
+      items: [
+        { id: "home", label: "Pulpit Główny", desc: "Najbliższy mecz, frekwencja i skróty", Icon: Home },
+        { id: "teamcenter", label: "Centrum Drużyny", desc: "Frekwencja i status całego zespołu", Icon: UserCheck },
+        ...(props.parentPlayerIds.length ? [
+          { id: "mychild", label: "Moje Dziecko", desc: "Obecności i rozwój Twojego zawodnika", Icon: UserRound, badge: "RODZIC" }
+        ] : []),
+      ]
+    },
+    {
+      id: "sport",
+      title: "SPORT & MECZE",
+      shortLabel: "Sport",
+      subtitle: "Terminarze, zbiórki i treningi",
+      Icon: CalendarDays,
+      items: [
+        ...(canManageMatches || canEditMatchEvents ? [
+          { id: "matchday", label: "Match Day", desc: "Panel meczowy na żywo (składy, minuty, gole)", Icon: Flame, badge: "LIVE" }
+        ] : []),
+        { id: "matches", label: "Mecze & Wyniki", desc: "Terminarz ligowy, składy i wyniki meczów", Icon: CalendarDays },
+        { id: "calendar", label: "Kalendarz", desc: "Zbiórki, wydarzenia klubowe i terminy", Icon: CalendarDays },
+        { id: "training", label: "Treningi", desc: "Frekwencja, historia gierek i ranking", Icon: Zap },
+        { id: "league", label: "Rozgrywki / Tabela", desc: "Tabela grupy MZPN i mecze rywali", Icon: Trophy },
+      ]
+    },
+    {
+      id: "stats",
+      title: "DRUŻYNA & DANE",
+      shortLabel: "Drużyna",
+      subtitle: "Karty zawodników, liczby i historia",
+      Icon: Users,
+      items: [
+        { id: "players", label: "Skład Drużyny", desc: "Profile zawodników i interaktywne karty", Icon: Users },
+        { id: "stats", label: "Statystyki", desc: "Bramki, asysty, minuty i wykresy", Icon: TrendingUp },
+        { id: "hall", label: "Hall of Fame", desc: "Klubowe legendy i rekordy sezonu", Icon: Medal },
+        { id: "chronicle", label: "Kronika Meczowa", desc: "Historia rozegranych spotkań i podsumowania", Icon: History },
+      ]
+    },
+    {
+      id: "gaming",
+      title: "STREFA ROZRYWKI",
+      shortLabel: "Strefa",
+      subtitle: "Karty 3D, Typer i Osiągnięcia",
+      Icon: Sparkles,
+      items: [
+        { id: "collection", label: "Kolekcja Kart", desc: "Klaser kart 3D, sklep z paczkami i wymiany", Icon: Sparkles, badge: "3D", isGoldTag: true },
+        { id: "typer-modal", label: "Klubowy Typer", desc: "Typuj wyniki spotkań i wygrywaj Delta Points", Icon: Crown, badge: "NOWOŚĆ", isGoldTag: true, isAction: "typer" },
+        { id: "achievements-modal", label: "Osiągnięcia i Misje", desc: "30 misji, poziomy i nagrody w paczkach", Icon: Trophy, badge: "30 MISJI", isGoldTag: true, isAction: "achievements" },
+      ]
+    },
+    {
+      id: "club",
+      title: "KLUB & MEDIA",
+      shortLabel: "Klub",
+      subtitle: "Aktualności i oficjalne komunikaty",
+      Icon: Shield,
+      items: [
+        { id: "news", label: "Aktualności", desc: "Wiadomości z życia drużyny i ogłoszenia", Icon: Newspaper },
+        { id: "club", label: "Z Klubu", desc: "Oficjalny feed ze strony głównej DELTA", Icon: Shield },
+      ]
+    },
+  ], [props.parentPlayerIds, canManageMatches, canEditMatchEvents]);
+
+  const activeCategory = useMemo(() => {
+    if (["home", "teamcenter", "mychild"].includes(tab)) return "main";
+    if (["matchday", "matches", "calendar", "training", "league"].includes(tab)) return "sport";
+    if (["players", "stats", "hall", "chronicle"].includes(tab)) return "stats";
+    if (["collection", "achievements"].includes(tab)) return "gaming";
+    if (["news", "club"].includes(tab)) return "club";
+    return "main";
+  }, [tab]);
+
+  const openCategoryData = navCategories.find(c => c.id === activeDrawerCategory) || null;
 
   return <div className="hub v8-hub v101-stadium-hub v104-hub">
     <StadiumFX
@@ -1124,11 +1196,138 @@ export default function TeamHub(props:{
       onCloseCinematic={() => setCinematicActive(false)}
     />
     {viewFx&&<div className="v101-cinematic-veil" aria-hidden="true"><span className="v101-cinematic-smoke"/><span className="v101-cinematic-flare"/></div>}
-    <aside className="v8-side-nav">
-      <button className="v8-side-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><span>GM</span></button>
-      {navItems.map(([id,label,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id as any)}><Icon size={21}/><span>{label}</span></button>)}
-      <div className="v8-side-devil" onClick={() => setCinematicActive(true)} role="button" title="Odtwórz filmowe intro stadionowe" style={{ cursor: "pointer" }}><Flame size={22}/><span>DIABEŁKI</span></div>
+
+    {/* DESKTOP ICON RAIL DOCK (Modern Sidebar 2.0) */}
+    <aside className="v200-rail-container" aria-label="Nawigacja główna">
+      <button
+        type="button"
+        className="v200-rail-brand"
+        onClick={() => { setTab("home"); setActiveDrawerCategory(null); }}
+        title="Przejdź na stronę główną"
+        aria-label="DELTA 2018 GM - Start"
+      >
+        <img src="/teamlogos/gm.png" alt="DELTA GM" />
+        <span>GM</span>
+      </button>
+
+      <nav className="v200-rail-nav">
+        {navCategories.map(cat => {
+          const isCatActive = activeCategory === cat.id;
+          const isCatOpen = activeDrawerCategory === cat.id;
+          const CatIcon = cat.Icon;
+
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              className={`v200-rail-btn ${isCatActive ? "active" : ""} ${isCatOpen ? "open" : ""}`}
+              onClick={() => {
+                setActiveDrawerCategory(prev => prev === cat.id ? null : cat.id);
+              }}
+              title={`${cat.title} - ${cat.subtitle}`}
+              aria-label={cat.title}
+              aria-expanded={isCatOpen}
+            >
+              <CatIcon size={20} />
+              <span className="v200-rail-label">{cat.shortLabel}</span>
+              {cat.id === "main" && unanswered.length > 0 && (
+                <span className="v200-rail-badge">{unanswered.length}</span>
+              )}
+              {cat.id === "sport" && (isMatchToday || isTrainingToday) && (
+                <span className="v200-rail-badge" style={{ background: "#f6c952", color: "#000" }}>●</span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="v200-rail-footer">
+        <button
+          type="button"
+          className="v200-rail-devil-btn"
+          onClick={() => setCinematicActive(true)}
+          title="Odtwórz filmowe intro stadionowe"
+          aria-label="Odtwórz filmowe intro"
+        >
+          <Flame size={18} />
+          <span>INTRO</span>
+        </button>
+      </div>
     </aside>
+
+    {/* FLYOUT DRAWER & BACKDROP */}
+    {openCategoryData && (
+      <>
+        <div
+          className="v200-drawer-backdrop"
+          onClick={() => setActiveDrawerCategory(null)}
+          aria-hidden="true"
+        />
+        <div
+          className="v200-rail-drawer"
+          role="region"
+          aria-label={`Menu: ${openCategoryData.title}`}
+        >
+          <div className="v200-drawer-header">
+            <div className="v200-drawer-header-left">
+              <span className="v200-drawer-category-badge">{openCategoryData.title}</span>
+              <span className="v200-drawer-title">{openCategoryData.subtitle}</span>
+            </div>
+            <button
+              type="button"
+              className="v200-drawer-close-btn"
+              onClick={() => setActiveDrawerCategory(null)}
+              aria-label="Zamknij menu"
+            >
+              <X size={15} />
+            </button>
+          </div>
+
+          <div className="v200-drawer-items-list">
+            {openCategoryData.items.map(item => {
+              const ItemIcon = item.Icon;
+              const isItemActive = tab === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`v200-drawer-card-btn ${isItemActive ? "active" : ""}`}
+                  onClick={() => {
+                    if ((item as any).isAction === "typer") {
+                      setTyperModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "achievements") {
+                      setAchievementsModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else {
+                      setTab(item.id as any);
+                      setActiveDrawerCategory(null);
+                    }
+                  }}
+                >
+                  <div className="v200-drawer-card-icon">
+                    <ItemIcon size={18} />
+                  </div>
+                  <div className="v200-drawer-card-body">
+                    <div className="v200-drawer-card-title-row">
+                      <span className="v200-drawer-card-title">{item.label}</span>
+                      {item.badge && (
+                        <span className={`v200-drawer-card-tag ${(item as any).isGoldTag ? "gold" : ""}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="v200-drawer-card-desc">{item.desc}</span>
+                  </div>
+                  <ChevronRight size={14} className="v200-drawer-card-chevron" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </>
+    )}
 
     <header className="hub-top v8-topbar">
       <button className="v8-mini-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
