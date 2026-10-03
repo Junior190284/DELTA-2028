@@ -70,7 +70,7 @@ export default function MatchCenterModal(props:{
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
   const matchEvents=props.events.filter(e=>e.match_id===match.id);
   const parentPlayers=players.filter(p=>props.parentPlayerIds.includes(p.id));
-  const responseRows=matchAttendance.filter(a=>["yes","no","maybe"].includes(a.status));
+  const responseRows=matchAttendance.filter(a=>["yes","no","maybe","present"].includes(a.status));
   const responseCount=new Set(responseRows.map(a=>a.player_id)).size;
   const presentCount=matchAttendance.filter(a=>a.status==="present"||a.status==="yes").length;
   const deltaIsHome=match.home_team.toLocaleLowerCase("pl-PL").includes("delta");
@@ -381,7 +381,7 @@ export default function MatchCenterModal(props:{
         {tabs.filter(t=>t.allowed!==false).map(({id,label,icon:Icon})=>
           <button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>
             <Icon size={16}/><span>{label}</span>
-            {id==="attendance"&&<em>{responseCount}/{players.length}</em>}
+            {id==="attendance"&&<em>{presentCount}/{players.length}</em>}
           </button>
         )}
       </nav>
@@ -391,7 +391,7 @@ export default function MatchCenterModal(props:{
           <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":matchStarted?"WYNIK NA ŻYWO":"NADCHODZĄCE SPOTKANIE"}</span><strong>{match.home_team}</strong><b>{match.status==="played"||matchStarted?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{match.away_team}</strong></div><div className="v85-summary-grid">
             <div className="v85-summary-card"><span>TERMIN</span><b>{datePL(match.match_date)}</b><small>{match.match_time||"—"}</small></div>
             <div className="v85-summary-card"><span>MIEJSCE</span><b>{match.venue||"Do ustalenia"}</b><small>Kolejka {match.round_no||"—"}</small></div>
-            <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>POTWIERDZENIA</span><b>{responseCount}/{players.length}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>
+            <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>OBECNI</span><b>{presentCount}/{players.length}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>
             <div className="v85-summary-card"><span>WYJŚCIOWA 6</span><b>{selectedStarterIds.size}/6</b><small>{matchLineup.find(l=>l.is_captain)?"Kapitan wybrany":"Kapitan do ustalenia"}</small></div>
           </div>
 
