@@ -19474,6 +19474,232 @@ body > main,
   }
 }
 
+/* ==========================================================================
+   TYPER 1X2 & AI MATCH INSIGHTS (BUKMACHER & ANALIZA FORMY)
+   ========================================================================== */
+.v200-quick-bet-strip {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quick-bet-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: #f6c952;
+  letter-spacing: 0.06em;
+}
+
+.quick-bet-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.v200-bet-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.v200-bet-pill b {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.v200-bet-pill small {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f59e0b;
+  font-family: monospace;
+}
+
+.v200-bet-pill:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.v200-bet-pill.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-color: #f59e0b;
+  color: #000000;
+}
+
+.v200-bet-pill.active b,
+.v200-bet-pill.active small {
+  color: #000000;
+}
+
+.v200-bet-pill.double {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.v200-bet-pill.double small {
+  color: #60a5fa;
+}
+
+.v200-typer-insight-card {
+  background: rgba(16, 20, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.v200-insight-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  user-select: none;
+}
+
+.v200-insight-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #f6c952;
+  letter-spacing: 0.04em;
+}
+
+.v200-insight-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.v200-insight-badge b {
+  color: #34d399;
+}
+
+.v200-insight-body {
+  padding: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.v200-insight-probs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.prob-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prob-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.prob-top b {
+  font-family: monospace;
+}
+
+.prob-bar {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.prob-bar .fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.prob-bar .fill.gold {
+  background: #f59e0b;
+}
+
+.prob-bar .fill.gray {
+  background: #94a3b8;
+}
+
+.prob-bar .fill.red {
+  background: #ef4444;
+}
+
+.v200-insight-analysis {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 2px solid #f59e0b;
+}
+
+.v200-insight-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.v200-insight-rec {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.v200-insight-rec b {
+  color: #f59e0b;
+}
+
+.v200-btn-apply-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.v200-btn-apply-suggestion:hover {
+  background: #f59e0b;
+  color: #000000;
+}
+
+
 
 
 

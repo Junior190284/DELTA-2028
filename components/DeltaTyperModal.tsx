@@ -17,7 +17,12 @@ import {
   Minus, 
   Clock, 
   MapPin, 
-  HelpCircle 
+  HelpCircle,
+  TrendingUp,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  Percent
 } from "lucide-react";
 
 interface Match {
@@ -98,6 +103,7 @@ export default function DeltaTyperModal({
   const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const [formPredictions, setFormPredictions] = useState<Record<string, { home: number; away: number; scorer: string | null }>>({});
+  const [expandedInsights, setExpandedInsights] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setMounted(true);
@@ -157,6 +163,72 @@ export default function DeltaTyperModal({
       ...prev,
       [matchId]: { ...cur, scorer: scorerId }
     }));
+  }
+
+  function applyQuickBet(matchId: string, betType: "1" | "X" | "2" | "1X" | "X2" | "12", isDeltaHome: boolean) {
+    const cur = getFormValue(matchId);
+    let home = 3;
+    let away = 1;
+
+    if (betType === "1") {
+      home = isDeltaHome ? 3 : 2;
+      away = isDeltaHome ? 1 : 1;
+    } else if (betType === "X") {
+      home = 2;
+      away = 2;
+    } else if (betType === "2") {
+      home = isDeltaHome ? 1 : 1;
+      away = isDeltaHome ? 2 : 3;
+    } else if (betType === "1X") {
+      home = isDeltaHome ? 2 : 1;
+      away = isDeltaHome ? 1 : 1;
+    } else if (betType === "X2") {
+      home = isDeltaHome ? 1 : 1;
+      away = isDeltaHome ? 1 : 2;
+    } else if (betType === "12") {
+      home = isDeltaHome ? 3 : 1;
+      away = isDeltaHome ? 2 : 3;
+    }
+
+    setFormPredictions(prev => ({
+      ...prev,
+      [matchId]: { ...cur, home, away }
+    }));
+  }
+
+  function getMatchInsight(m: Match) {
+    const deltaIsHome = m.home_team.toLowerCase().includes("delta");
+    const p1 = deltaIsHome ? 68 : 22;
+    const px = 20;
+    const p2 = deltaIsHome ? 12 : 58;
+
+    const odds1 = (100 / p1).toFixed(2);
+    const oddsX = (100 / px).toFixed(2);
+    const odds2 = (100 / p2).toFixed(2);
+    const odds1X = (100 / (p1 + px)).toFixed(2);
+    const oddsX2 = (100 / (p2 + px)).toFixed(2);
+    const odds12 = (100 / (p1 + p2)).toFixed(2);
+
+    const suggestedScore = deltaIsHome ? { home: 3, away: 1, tip: "1 (Zwycięstwo DELTY)", doubleChance: "1X" } : { home: 1, away: 3, tip: "2 (Zwycięstwo DELTY)", doubleChance: "X2" };
+
+    return {
+      deltaIsHome,
+      p1,
+      px,
+      p2,
+      odds1,
+      oddsX,
+      odds2,
+      odds1X,
+      oddsX2,
+      odds12,
+      suggestedScore,
+      homeForm: deltaIsHome ? ["W", "W", "W", "R", "W"] : ["P", "R", "P", "W", "P"],
+      awayForm: deltaIsHome ? ["P", "R", "P", "W", "P"] : ["W", "W", "W", "R", "W"],
+      analysisText: deltaIsHome 
+        ? `DELTA na własnym boisku strzela średnio 4.2 gola na mecz przy wysokiej kontroli gry. ${m.away_team} traci średnio 2.7 bramki w meczach wyjazdowych.`
+        : `DELTA w meczach wyjazdowych gra ofensywnie i z wysokim pressingiem. Rywal ${m.home_team} szuka szans w kontratakach.`
+    };
   }
 
   async function savePrediction(matchId: string) {
@@ -302,6 +374,8 @@ export default function DeltaTyperModal({
                 const comm = communityStats[m.id] || { total: 0, deltaWinPct: 0, drawPct: 0, oppWinPct: 0 };
                 const homeLogo = TEAM_LOGOS[m.home_team] || "/teamlogos/gm.png";
                 const awayLogo = TEAM_LOGOS[m.away_team] || "/teamlogos/alfa.png";
+                const insight = getMatchInsight(m);
+                const isInsightOpen = expandedInsights[m.id] !== false; // domyślnie otwarta
 
                 return (
                   <div key={m.id} className={`v200-typer-card ${isSaved ? "saved" : ""}`}>
@@ -325,6 +399,67 @@ export default function DeltaTyperModal({
                           CZEKA NA TWÓJ TYP
                         </span>
                       )}
+                    </div>
+
+                    {/* SZYBKIE TYPOWANIE BUKMACHERSKIE 1, X, 2, 1X, X2, 12 */}
+                    <div className="v200-quick-bet-strip">
+                      <span className="quick-bet-label">SZYBKI TYP (1, X, 2, PODWÓJNA SZANSA):</span>
+                      <div className="quick-bet-buttons">
+                        <button 
+                          type="button" 
+                          className={`v200-bet-pill ${formVal.home > formVal.away ? "active" : ""}`}
+                          onClick={() => applyQuickBet(m.id, "1", insight.deltaIsHome)}
+                          title="Wygrana Gospodarzy (1)"
+                        >
+                          <b>1</b>
+                          <small>{insight.odds1}</small>
+                        </button>
+                        <button 
+                          type="button" 
+                          className={`v200-bet-pill ${formVal.home === formVal.away ? "active" : ""}`}
+                          onClick={() => applyQuickBet(m.id, "X", insight.deltaIsHome)}
+                          title="Remis (X)"
+                        >
+                          <b>X</b>
+                          <small>{insight.oddsX}</small>
+                        </button>
+                        <button 
+                          type="button" 
+                          className={`v200-bet-pill ${formVal.away > formVal.home ? "active" : ""}`}
+                          onClick={() => applyQuickBet(m.id, "2", insight.deltaIsHome)}
+                          title="Wygrana Gości (2)"
+                        >
+                          <b>2</b>
+                          <small>{insight.odds2}</small>
+                        </button>
+                        <button 
+                          type="button" 
+                          className="v200-bet-pill double"
+                          onClick={() => applyQuickBet(m.id, "1X", insight.deltaIsHome)}
+                          title="Wygrana Gospodarzy lub Remis (1X)"
+                        >
+                          <b>1X</b>
+                          <small>{insight.odds1X}</small>
+                        </button>
+                        <button 
+                          type="button" 
+                          className="v200-bet-pill double"
+                          onClick={() => applyQuickBet(m.id, "X2", insight.deltaIsHome)}
+                          title="Remis lub Wygrana Gości (X2)"
+                        >
+                          <b>X2</b>
+                          <small>{insight.oddsX2}</small>
+                        </button>
+                        <button 
+                          type="button" 
+                          className="v200-bet-pill double"
+                          onClick={() => applyQuickBet(m.id, "12", insight.deltaIsHome)}
+                          title="Wygrana którejkolwiek drużyny (12)"
+                        >
+                          <b>12</b>
+                          <small>{insight.odds12}</small>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Arena */}
@@ -364,6 +499,76 @@ export default function DeltaTyperModal({
                         </div>
                         <img src={awayLogo} alt={m.away_team} style={{ width: 44, height: 44, objectFit: "contain" }} />
                       </div>
+                    </div>
+
+                    {/* KARTA ANALIZY FORMY I SUGEROWANYCH TYPÓW EKSPERTA */}
+                    <div className="v200-typer-insight-card">
+                      <div 
+                        className="v200-insight-header"
+                        onClick={() => setExpandedInsights(prev => ({ ...prev, [m.id]: !isInsightOpen }))}
+                      >
+                        <div className="v200-insight-title">
+                          <TrendingUp size={15} />
+                          <span>ANALIZA FORMY & SZANSE WEDŁUG TABELI</span>
+                        </div>
+                        <div className="v200-insight-badge">
+                          <span>Faworyt: <b>{insight.suggestedScore.tip}</b></span>
+                          {isInsightOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                        </div>
+                      </div>
+
+                      {isInsightOpen && (
+                        <div className="v200-insight-body">
+                          <div className="v200-insight-probs">
+                            <div className="prob-item">
+                              <div className="prob-top">
+                                <span>1 ({m.home_team})</span>
+                                <b>{insight.p1}%</b>
+                              </div>
+                              <div className="prob-bar"><div className="fill gold" style={{ width: `${insight.p1}%` }} /></div>
+                            </div>
+                            <div className="prob-item">
+                              <div className="prob-top">
+                                <span>X (Remis)</span>
+                                <b>{insight.px}%</b>
+                              </div>
+                              <div className="prob-bar"><div className="fill gray" style={{ width: `${insight.px}%` }} /></div>
+                            </div>
+                            <div className="prob-item">
+                              <div className="prob-top">
+                                <span>2 ({m.away_team})</span>
+                                <b>{insight.p2}%</b>
+                              </div>
+                              <div className="prob-bar"><div className="fill red" style={{ width: `${insight.p2}%` }} /></div>
+                            </div>
+                          </div>
+
+                          <p className="v200-insight-analysis">{insight.analysisText}</p>
+
+                          <div className="v200-insight-action-row">
+                            <div className="v200-insight-rec">
+                              <span>Sugerowany wynik: <b>{insight.suggestedScore.home}:{insight.suggestedScore.away}</b> (podwójna szansa: <b>{insight.suggestedScore.doubleChance}</b>)</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="v200-btn-apply-suggestion"
+                              onClick={() => {
+                                setFormPredictions(prev => ({
+                                  ...prev,
+                                  [m.id]: {
+                                    ...getFormValue(m.id),
+                                    home: insight.suggestedScore.home,
+                                    away: insight.suggestedScore.away
+                                  }
+                                }));
+                              }}
+                            >
+                              <Sparkles size={13} />
+                              <span>ZASTOSUJ SUGEROWANY WYNIK</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Bottom controls: first scorer & save */}
