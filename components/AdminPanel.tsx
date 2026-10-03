@@ -163,6 +163,24 @@ export default function AdminPanel(props:{
     window.setTimeout(()=>setTrainingFeedback(current=>current===message?"":current),1800);
   }
 
+  function cleanTimeForDB(raw?: string | null): string | null {
+    if (!raw) return null;
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const normalized = trimmed.replace(/[.,\s]/g, ":");
+    const parts = normalized.split(":").filter(Boolean);
+    if (parts.length >= 2) {
+      const hh = parts[0].padStart(2, "0");
+      const mm = parts[1].padStart(2, "0");
+      return `${hh}:${mm}:00`;
+    }
+    if (parts.length === 1 && !isNaN(Number(parts[0]))) {
+      const hh = parts[0].padStart(2, "0");
+      return `${hh}:00:00`;
+    }
+    return normalized;
+  }
+
   function friendlyTrainingError(error:any){
     const msg=String(error?.message||error||"Nieznany błąd");
     if(/row-level security|permission denied|policy/i.test(msg))return "Brak uprawnień do zapisu. Sprawdź rolę i uprawnienia Centrum Treningowego w Admin → Rodzice.";
@@ -174,7 +192,7 @@ export default function AdminPanel(props:{
     const home=prompt("Gospodarz",CLUB); if(!home)return;
     const away=prompt("Gość"); if(!away)return;
     const date=prompt("Data YYYY-MM-DD"); if(!date)return;
-    const time=prompt("Godzina HH:MM","09:30")||null;
+    const time=cleanTimeForDB(prompt("Godzina HH:MM (np. 11:20)","09:30"));
     const venue=prompt("Miejsce","Górny Mokotów")||null;
     const {data,error}=await supabase.from("matches").insert({
       home_team:home,away_team:away,match_date:date,match_time:time,venue,status:"scheduled",created_by:props.currentUser.id
@@ -191,12 +209,13 @@ export default function AdminPanel(props:{
     const hs=(document.getElementById("mhs") as HTMLInputElement).value;
     const as=(document.getElementById("mas") as HTMLInputElement).value;
     const venue=(document.getElementById("mvenue") as HTMLInputElement).value;
-    const time=(document.getElementById("mtime") as HTMLInputElement).value;
+    const rawTime=(document.getElementById("mtime") as HTMLInputElement).value;
+    const time=cleanTimeForDB(rawTime);
     const {error}=await supabase.from("matches").update({
-      status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null
+      status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time
     }).eq("id",selectedMatch.id);
     if(error)return alert(error.message);
-    setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null}:m).sort((a,b)=>a.match_date.localeCompare(b.match_date)));
+    setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time}:m).sort((a,b)=>a.match_date.localeCompare(b.match_date)));
     alert("Zapisano mecz");
   }
 
@@ -1162,7 +1181,7 @@ export default function AdminPanel(props:{
             {canMatchBasics&&<div className="admin-form-grid">
               <label>Status<select id="mstatus" key={`status-${selectedMatch.id}-${selectedMatch.status}`} defaultValue={selectedMatch.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
               <label>Data meczu<input id="mdate" type="date" key={`date-${selectedMatch.id}-${selectedMatch.match_date}`} defaultValue={selectedMatch.match_date}/></label>
-              <label>Godzina<input id="mtime" key={`time-${selectedMatch.id}-${selectedMatch.match_time}`} defaultValue={selectedMatch.match_time||""} placeholder="np. 09:30"/></label>
+              <label>Godzina<input id="mtime" key={`time-${selectedMatch.id}-${selectedMatch.match_time}`} defaultValue={(selectedMatch.match_time||"").slice(0, 5)} placeholder="np. 11:20"/></label>
               <label>Miejsce<input id="mvenue" key={`venue-${selectedMatch.id}-${selectedMatch.venue}`} defaultValue={selectedMatch.venue||""} placeholder="np. Mokotów"/></label>
               <label>Gospodarz<input value={selectedMatch.home_team} readOnly/></label>
               <label>Wynik gospodarza<input id="mhs" type="number" key={`hs-${selectedMatch.id}-${selectedMatch.home_score}`} defaultValue={selectedMatch.home_score??""}/></label>
