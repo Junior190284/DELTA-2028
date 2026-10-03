@@ -14,7 +14,7 @@ create table if not exists public.achievement_definitions (
   unit text not null default 'szt',
   icon_name text not null default 'Award',
   reward_dp integer not null default 50,
-  reward_pack_type text references public.pack_definitions(id) on delete set null,
+  reward_pack_type text,
   for_entity text not null default 'player' check (for_entity in ('player', 'user', 'both')),
   sort_order integer not null default 0,
   is_active boolean not null default true,
@@ -86,7 +86,7 @@ values
   -- KOLEKCJONER KART & PACZKI
   ('open_first_pack', 'Otwarcie Sezonu', 'Otwórz swoją pierwszą paczkę kart DELTA CARDS.', 'collection', 'bronze', 1, 'paczka', 'Gift', 50, null, 'user', 210),
   ('collector_10_cards', 'Młody Kolekcjoner', 'Zbierz 10 unikalnych kart zawodników w swoim albumie.', 'collection', 'bronze', 10, 'kart', 'Layers', 100, null, 'user', 220),
-  ('collector_team_complete', 'Cała DELTA 2018', 'Zbierz karty wszystkich aktywnych zawodników drużyny!', 'collection', 'diamond', 1, 'komplet', 'Award', 600, 'legend_pack', 'user', 230),
+  ('collector_team_complete', 'Cała DELTA 2018', 'Zbierz karty wszystkich aktywnych zawodników drużyny!', 'collection', 'diamond', 1, 'komplet', 'Award', 600, 'legend_booster', 'user', 230),
   ('pull_epic_or_better', 'Czyste Złoto', 'Traf w paczce rzadką kartę: Epic, Legendary lub Inferno!', 'collection', 'gold', 1, 'karta', 'Sparkles', 200, null, 'user', 240),
   ('daily_spin_streak_3', 'Koło w Ruchu', 'Zakręć Daily Inferno Spin przez 3 dni.', 'collection', 'bronze', 3, 'kręcenia', 'RotateCw', 100, null, 'user', 250),
   ('first_trade', 'Klubowy Kupiec', 'Wymień się kartą z innym rodzicem na DELTA Trade Hub.', 'collection', 'silver', 1, 'wymiana', 'ArrowLeftRight', 150, null, 'user', 260),
