@@ -22,6 +22,8 @@ import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
 import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
 import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
+import DeltaSeasonPassModal from "./DeltaSeasonPassModal";
+import DeltaPhotoBoothModal from "./DeltaPhotoBoothModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
@@ -32,7 +34,7 @@ import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/pu
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -189,6 +191,8 @@ export default function TeamHub(props:{
   const [tacticsModalOpen, setTacticsModalOpen] = useState(false);
   const [questsModalOpen, setQuestsModalOpen] = useState(false);
   const [trainingKingModalOpen, setTrainingKingModalOpen] = useState(false);
+  const [seasonPassModalOpen, setSeasonPassModalOpen] = useState(false);
+  const [photoBoothModalOpen, setPhotoBoothModalOpen] = useState(false);
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
@@ -1189,6 +1193,7 @@ export default function TeamHub(props:{
       Icon: Sparkles,
       items: [
         { id: "collection", label: "Kolekcja Kart", desc: "Klaser kart 3D, sklep z paczkami i wymiany", Icon: Sparkles, badge: "3D", isGoldTag: true },
+        { id: "season-pass-modal", label: "DELTA Battle Pass", desc: "Sezonowa ścieżka nagród, poziomy 1–20 i XP", Icon: Flame, badge: "SEZON 1", isGoldTag: true, isAction: "seasonpass" },
         { id: "typer-modal", label: "Klubowy Typer", desc: "Typuj wyniki spotkań i wygrywaj Delta Points", Icon: Crown, badge: "NOWOŚĆ", isGoldTag: true, isAction: "typer" },
         { id: "achievements-modal", label: "Osiągnięcia i Misje", desc: "30 misji, poziomy i nagrody w paczkach", Icon: Trophy, badge: "30 MISJI", isGoldTag: true, isAction: "achievements" },
       ]
@@ -1200,6 +1205,7 @@ export default function TeamHub(props:{
       subtitle: "Aktualności i oficjalne komunikaty",
       Icon: Shield,
       items: [
+        { id: "photobooth-modal", label: "Foto-Budka DELTA", desc: "Twórz profesjonalne grafiki i relacje Instagram / WhatsApp", Icon: Camera, badge: "HD STUDIO", isGoldTag: true, isAction: "photobooth" },
         { id: "news", label: "Aktualności", desc: "Wiadomości z życia drużyny i ogłoszenia", Icon: Newspaper },
         { id: "club", label: "Z Klubu", desc: "Oficjalny feed ze strony głównej DELTA", Icon: Shield },
       ]
@@ -1327,6 +1333,12 @@ export default function TeamHub(props:{
                       setActiveDrawerCategory(null);
                     } else if ((item as any).isAction === "achievements") {
                       setAchievementsModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "seasonpass") {
+                      setSeasonPassModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "photobooth") {
+                      setPhotoBoothModalOpen(true);
                       setActiveDrawerCategory(null);
                     } else {
                       setTab(item.id as any);
@@ -1646,6 +1658,42 @@ export default function TeamHub(props:{
             </div>
             <div className="v200-feature-cta gold">
               <span>CZYTAJ & TEST</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner season-pass-vip" glowColor="gold" enableTilt={true} onClick={()=>setSeasonPassModalOpen(true)}>
+            <div className="v200-feature-avatar gold">
+              <Flame size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge gold">
+                <Crown size={12}/>
+                <span>SEZON 1: MŁODE WILKI</span>
+              </div>
+              <h3>DELTA BATTLE PASS 🏆</h3>
+              <p>Zdobywaj XP za mecze i quizy, awansuj poziomy 1–20 i odbieraj Złote Skrzynie!</p>
+            </div>
+            <div className="v200-feature-cta gold">
+              <span>BATTLE PASS</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner photobooth-vip" glowColor="gold" enableTilt={true} onClick={()=>setPhotoBoothModalOpen(true)}>
+            <div className="v200-feature-avatar gold">
+              <Camera size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge gold">
+                <Sparkles size={12}/>
+                <span>STUDIO GRAFIK HD</span>
+              </div>
+              <h3>FOTO-BUDKA DELTA 📸</h3>
+              <p>Twórz profesjonalne plakaty, relacje na Instagram / WhatsApp i karty meczowe!</p>
+            </div>
+            <div className="v200-feature-cta gold">
+              <span>STWÓRZ PLAKAT</span>
               <ChevronRight size={18}/>
             </div>
           </SpotlightCard>
@@ -3191,6 +3239,23 @@ export default function TeamHub(props:{
         trainingAttendance={trainingAttendance}
         trainingGames={trainingGames}
         trainingGamePlayers={trainingGamePlayers}
+      />
+    )}
+
+    {seasonPassModalOpen && (
+      <DeltaSeasonPassModal
+        isOpen={seasonPassModalOpen}
+        onClose={() => setSeasonPassModalOpen(false)}
+        userXp={1150}
+      />
+    )}
+
+    {photoBoothModalOpen && (
+      <DeltaPhotoBoothModal
+        isOpen={photoBoothModalOpen}
+        onClose={() => setPhotoBoothModalOpen(false)}
+        players={players}
+        defaultPlayerName={props.profile.display_name || "ZAWODNIK DELTA"}
       />
     )}
   </div>;
