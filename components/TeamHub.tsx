@@ -1070,6 +1070,22 @@ export default function TeamHub(props:{
     return calculatePlayerRecords(primaryPlayer.id, stats, trainingPlayerStats, maxGoalsSingleMatch, 8, unlockedAch);
   }, [primaryPlayer, stats, trainingPlayerStats, maxGoalsSingleMatch, allPlayerAchievements]);
 
+  function handleGoHomeTop() {
+    setTab("home");
+    setActiveDrawerCategory(null);
+    setSelectedMatch(null);
+    setMobileMoreOpen(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      document.documentElement.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      document.body.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      const mainEl = document.querySelector(".hub-main") || document.querySelector("main");
+      if (mainEl) {
+        mainEl.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      }
+    }
+  }
+
   function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary",placement:"home"|"overlay"="overlay"){
     setMatchInitialTab(initial);
     setMatchPlacement(placement);
@@ -1202,7 +1218,7 @@ export default function TeamHub(props:{
       <button
         type="button"
         className="v200-rail-brand"
-        onClick={() => { setTab("home"); setActiveDrawerCategory(null); }}
+        onClick={handleGoHomeTop}
         title="Przejdź na stronę główną"
         aria-label="DELTA 2018 GM - Start"
       >
@@ -1330,7 +1346,7 @@ export default function TeamHub(props:{
     )}
 
     <header className="hub-top v8-topbar">
-      <button className="v8-mini-brand v101-home-logo-btn" onClick={()=>setTab("home")} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
+      <button className="v8-mini-brand v101-home-logo-btn" onClick={handleGoHomeTop} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
       <div className="v8-top-spacer"/>
       <button
         type="button"
@@ -2578,7 +2594,7 @@ export default function TeamHub(props:{
       <button 
         type="button" 
         className={`v200-nav-btn ${tab === "home" ? "active" : ""}`} 
-        onClick={() => { setMobileMoreOpen(false); setTab("home"); }}
+        onClick={handleGoHomeTop}
         aria-label="Start"
       >
         <div className="v200-nav-icon-wrap">
