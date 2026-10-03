@@ -108,8 +108,10 @@ export default function CollectibleCard3D({
     lastX: number;
     lastTime: number;
     velocityX: number;
+    rect: DOMRect | null;
   } | null>(null);
 
+  const hoverRectRef = useRef<DOMRect | null>(null);
   const hasMovedRef = useRef(false);
 
   // Flip action for button click or tap
@@ -133,6 +135,8 @@ export default function CollectibleCard3D({
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
 
+    const rect = cardRef.current ? cardRef.current.getBoundingClientRect() : null;
+
     dragStartRef.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -141,7 +145,8 @@ export default function CollectibleCard3D({
       startTime: Date.now(),
       lastX: e.clientX,
       lastTime: Date.now(),
-      velocityX: 0
+      velocityX: 0,
+      rect
     };
     hasMovedRef.current = false;
     setIsDragging(true);
@@ -175,14 +180,14 @@ export default function CollectibleCard3D({
       setInternalRotateY(rotY);
       setInternalRotateX(rotX);
 
-      if (cardRef.current) {
-        const rect = cardRef.current.getBoundingClientRect();
+      const rect = dragStartRef.current.rect;
+      if (rect) {
         const glareX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
         const glareY = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
         setGlarePos({ x: glareX, y: glareY, opacity: 0.85 });
       }
     } else if (isHovered && cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
+      const rect = hoverRectRef.current || cardRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const centerX = rect.width / 2;
@@ -244,6 +249,7 @@ export default function CollectibleCard3D({
 
   const handlePointerEnter = () => {
     if (!interactive) return;
+    hoverRectRef.current = cardRef.current ? cardRef.current.getBoundingClientRect() : null;
     setIsHovered(true);
     cardSound.playHover();
   };

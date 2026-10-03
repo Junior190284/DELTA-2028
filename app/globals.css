@@ -10864,6 +10864,34 @@ body > main,
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+@media (max-width: 640px) {
+  .v104-inspect-modal-backdrop {
+    padding: 12px;
+    z-index: 9999999;
+  }
+  .v104-inspect-modal-content {
+    gap: 8px;
+    max-height: 94vh;
+  }
+  .v104-inspect-modal-content .v104-cc-wrap {
+    transform: scale(0.80);
+    transform-origin: center center;
+    margin: -30px 0;
+  }
+  .v104-inspect-close {
+    top: -38px;
+    right: 4px;
+    padding: 6px;
+  }
+  .v104-inspect-toolbar {
+    margin-top: 2px;
+  }
+  .v104-inspect-flip-btn {
+    font-size: 10.5px;
+    padding: 7px 16px;
+  }
+}
+
 /* ================= 3D BOOSTER PACKS VAULT ================= */
 .v104-vault-section {
   margin-top: 24px;

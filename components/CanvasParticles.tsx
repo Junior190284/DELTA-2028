@@ -42,6 +42,10 @@ export default function CanvasParticles({ theme = "gold", active = true }: Canva
     };
     window.addEventListener("resize", handleResize);
 
+    const isMobile = window.innerWidth < 768;
+    const initialBurst = isMobile ? 35 : 90;
+    const maxParticles = isMobile ? 50 : 160;
+
     const colors =
       theme === "inferno"
         ? ["#ef4444", "#f97316", "#fbbf24", "#dc2626", "#ffffff"]
@@ -58,31 +62,31 @@ export default function CanvasParticles({ theme = "gold", active = true }: Canva
 
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 12 + 4;
+        const speed = Math.random() * (isMobile ? 8 : 12) + 3;
         particles.push({
-          x: centerX + (Math.random() - 0.5) * 60,
-          y: centerY + (Math.random() - 0.5) * 60,
+          x: centerX + (Math.random() - 0.5) * 40,
+          y: centerY + (Math.random() - 0.5) * 40,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - Math.random() * 4,
-          size: Math.random() * 8 + 3,
+          vy: Math.sin(angle) * speed - Math.random() * 3,
+          size: Math.random() * (isMobile ? 6 : 8) + 3,
           color: colors[Math.floor(Math.random() * colors.length)],
           alpha: 1,
-          decay: Math.random() * 0.015 + 0.008,
+          decay: Math.random() * 0.018 + 0.010,
           rotation: Math.random() * 360,
-          rotationSpeed: (Math.random() - 0.5) * 12,
+          rotationSpeed: (Math.random() - 0.5) * 10,
           shape: Math.random() > 0.4 ? "rect" : "circle"
         });
       }
     };
 
-    createBurst(90);
+    createBurst(initialBurst);
 
     // Render loop
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
       // Continuous ambient floating sparkles
-      if (Math.random() > 0.4 && particles.length < 160) {
+      if (Math.random() > (isMobile ? 0.7 : 0.4) && particles.length < maxParticles) {
         particles.push({
           x: Math.random() * width,
           y: height + 10,
@@ -126,10 +130,12 @@ export default function CanvasParticles({ theme = "gold", active = true }: Canva
           ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          // Sparkle star
+          // Sparkle star (avoid expensive shadowBlur on mobile)
           ctx.fillStyle = p.color;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = p.color;
+          if (!isMobile) {
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = p.color;
+          }
           ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
         }
 
