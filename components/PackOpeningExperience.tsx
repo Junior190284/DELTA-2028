@@ -457,19 +457,21 @@ export default function PackOpeningExperience({
             </div>
           )}
 
-          {/* Walkout Step 4: Grand Slam Reveal + Dual Pyro Jets */}
+          {/* STADIUM PYRO JETS IN BACKGROUND */}
+          {stage === "walkout_slam" && (
+            <div className="v200-walkout-pyro-container" aria-hidden="true">
+              <div className={`v200-walkout-pyro-jet left ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`}>
+                <div className="v200-pyro-flame-core" />
+              </div>
+              <div className={`v200-walkout-pyro-jet right ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`}>
+                <div className="v200-pyro-flame-core" />
+              </div>
+            </div>
+          )}
+
+          {/* Walkout Step 4: Grand Slam Reveal */}
           {stage === "walkout_slam" && (
             <div className="v104-walkout-slam-container animate-slamZoom">
-              {/* DUAL FLAME PYRO JETS */}
-              <div className={`v200-walkout-pyro-jet left ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`} aria-hidden="true">
-                <div className="v200-pyro-flame-core" />
-                <div className="v200-pyro-sparks-stream" />
-              </div>
-              <div className={`v200-walkout-pyro-jet right ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`} aria-hidden="true">
-                <div className="v200-pyro-flame-core" />
-                <div className="v200-pyro-sparks-stream" />
-              </div>
-
               {/* Top Walkout Luxury Ribbon */}
               <div className={`v200-walkout-ribbon ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`}>
                 {isInfernoWalkout ? (
@@ -493,8 +495,8 @@ export default function PackOpeningExperience({
                 )}
               </div>
 
-              {/* 3D Grand Card Showcase */}
-              <div className="v200-walkout-card-stage" style={{ transform: "scale(1.15)", transformOrigin: "center center" }}>
+              {/* 3D Grand Card Showcase with High-Contrast Stage */}
+              <div className="v200-walkout-card-stage">
                 <CollectibleCard3D
                   card={walkoutItem.card}
                   userCard={undefined}

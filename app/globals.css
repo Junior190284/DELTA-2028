@@ -12505,36 +12505,66 @@ body > main,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: clamp(8px, 1.8vh, 16px);
   position: relative;
   z-index: 20;
   text-align: center;
   margin: auto;
+  max-height: 94vh;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.v200-walkout-card-stage {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.v200-walkout-card-stage::before {
+  content: '';
+  position: absolute;
+  inset: -24px -32px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.55) 50%, transparent 75%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(12px);
 }
 
 .v104-walkout-details {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 3px;
+  padding: 6px 22px;
+  border-radius: 999px;
+  background: rgba(10, 14, 24, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.75);
+  max-width: 90vw;
 }
 
 .v104-walkout-player-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #f1c95c;
-  text-shadow: 0 0 15px rgba(241, 201, 92, 0.7);
+  text-shadow: 0 0 10px rgba(241, 201, 92, 0.6);
 }
 
 .v104-walkout-player-name {
-  font-size: 26px;
+  font-size: clamp(18px, 2.8vw, 24px);
   font-weight: 1000;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   color: #ffffff;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+  line-height: 1.1;
 }
 
 .v104-walkout-continue-btn {
@@ -12542,20 +12572,20 @@ body > main,
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-width: 260px;
-  margin-top: 10px;
-  padding: 14px 32px;
+  min-width: 240px;
+  padding: 12px 28px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
   color: #000000;
   background: linear-gradient(135deg, #fde047, #f1c95c, #ca8a04);
   border: 1px solid #fef08a;
-  box-shadow: 0 4px 25px rgba(241, 201, 92, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 20px rgba(241, 201, 92, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  margin-top: 2px;
 }
 
 .v104-walkout-continue-btn:hover {
@@ -12864,53 +12894,53 @@ body > main,
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 6;
+  z-index: 1;
   overflow: hidden;
 }
 
 .v200-laser-beam {
   position: absolute;
   top: 0;
-  width: 4px;
+  width: 3px;
   height: 120%;
-  opacity: 0.75;
-  filter: blur(2px);
+  opacity: 0.25;
+  filter: blur(3px);
   transform-origin: top center;
 }
 
 .v200-laser-beam.beam-left {
-  left: 20%;
-  animation: v200-laser-left 3s ease-in-out infinite alternate;
+  left: 15%;
+  animation: v200-laser-left 4s ease-in-out infinite alternate;
 }
 
 .v200-laser-beam.beam-right {
-  right: 20%;
-  animation: v200-laser-right 3s ease-in-out infinite alternate;
+  right: 15%;
+  animation: v200-laser-right 4s ease-in-out infinite alternate;
 }
 
 .v200-laser-beam.inferno {
   background: linear-gradient(180deg, #ff4444 0%, #dc2626 50%, transparent 100%);
-  box-shadow: 0 0 25px #ef4444, 0 0 50px #b91c1c;
+  box-shadow: 0 0 20px #ef4444, 0 0 40px #b91c1c;
 }
 
 .v200-laser-beam.legend {
   background: linear-gradient(180deg, #fde047 0%, #c084fc 50%, transparent 100%);
-  box-shadow: 0 0 25px #fde047, 0 0 50px #9333ea;
+  box-shadow: 0 0 20px #fde047, 0 0 40px #9333ea;
 }
 
 .v200-laser-beam.gold {
   background: linear-gradient(180deg, #fef08a 0%, #f59e0b 50%, transparent 100%);
-  box-shadow: 0 0 25px #f59e0b, 0 0 50px #d97706;
+  box-shadow: 0 0 20px #f59e0b, 0 0 40px #d97706;
 }
 
 @keyframes v200-laser-left {
-  0% { transform: rotate(-25deg); }
-  100% { transform: rotate(15deg); }
+  0% { transform: rotate(-30deg); }
+  100% { transform: rotate(10deg); }
 }
 
 @keyframes v200-laser-right {
-  0% { transform: rotate(25deg); }
-  100% { transform: rotate(-15deg); }
+  0% { transform: rotate(30deg); }
+  100% { transform: rotate(-10deg); }
 }
 
 /* Walkout Teaser Incoming Header Banner */
@@ -13050,24 +13080,32 @@ body > main,
   text-transform: uppercase;
 }
 
-/* DUAL STADIUM PYRO FLAME JETS */
+/* DUAL STADIUM PYRO FLAME JETS IN BACKGROUND */
+.v200-walkout-pyro-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
 .v200-walkout-pyro-jet {
   position: absolute;
-  bottom: 0;
-  width: 140px;
-  height: 380px;
+  bottom: -20px;
+  width: 160px;
+  height: 420px;
   pointer-events: none;
-  z-index: 15;
+  opacity: 0.45;
 }
 
 .v200-walkout-pyro-jet.left {
-  left: 5%;
-  transform: rotate(10deg);
+  left: -20px;
+  transform: rotate(-16deg);
 }
 
 .v200-walkout-pyro-jet.right {
-  right: 5%;
-  transform: rotate(-10deg);
+  right: -20px;
+  transform: rotate(16deg);
 }
 
 .v200-pyro-flame-core {
@@ -13075,22 +13113,22 @@ body > main,
   bottom: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(ellipse at bottom center, rgba(253, 224, 71, 0.9) 0%, rgba(245, 158, 11, 0.8) 30%, rgba(220, 38, 38, 0.6) 60%, transparent 85%);
-  filter: blur(8px);
-  animation: v200-pyro-surge 0.5s infinite alternate ease-in-out;
+  background: radial-gradient(ellipse at bottom center, rgba(253, 224, 71, 0.8) 0%, rgba(245, 158, 11, 0.6) 30%, rgba(220, 38, 38, 0.3) 60%, transparent 85%);
+  filter: blur(12px);
+  animation: v200-pyro-surge 0.6s infinite alternate ease-in-out;
 }
 
 .v200-walkout-pyro-jet.inferno .v200-pyro-flame-core {
-  background: radial-gradient(ellipse at bottom center, rgba(255, 255, 255, 0.95) 0%, rgba(239, 68, 68, 0.85) 35%, rgba(153, 27, 27, 0.7) 65%, transparent 90%);
+  background: radial-gradient(ellipse at bottom center, rgba(255, 255, 255, 0.85) 0%, rgba(239, 68, 68, 0.7) 35%, rgba(153, 27, 27, 0.4) 65%, transparent 90%);
 }
 
 .v200-walkout-pyro-jet.legend .v200-pyro-flame-core {
-  background: radial-gradient(ellipse at bottom center, rgba(255, 255, 255, 0.95) 0%, rgba(253, 224, 71, 0.85) 35%, rgba(180, 83, 9, 0.7) 65%, transparent 90%);
+  background: radial-gradient(ellipse at bottom center, rgba(255, 255, 255, 0.85) 0%, rgba(253, 224, 71, 0.7) 35%, rgba(180, 83, 9, 0.4) 65%, transparent 90%);
 }
 
 @keyframes v200-pyro-surge {
-  0% { transform: scaleY(0.8) scaleX(0.9); opacity: 0.7; }
-  100% { transform: scaleY(1.15) scaleX(1.1); opacity: 1; }
+  0% { transform: scaleY(0.85) scaleX(0.9); opacity: 0.35; }
+  100% { transform: scaleY(1.1) scaleX(1.05); opacity: 0.55; }
 }
 
 /* Walkout Luxury Ribbon */
