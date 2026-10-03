@@ -18,6 +18,7 @@ import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
 import DeltaTyperModal from "./DeltaTyperModal";
 import PlayerRecordsView from "./PlayerRecordsView";
+import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
@@ -2859,6 +2860,24 @@ export default function TeamHub(props:{
                   </div>
                   <div className="v111-player-milestones v112-milestones"><div><Crown size={22}/><span><b>{s.captain}</b> razy kapitan</span></div><div><Users size={22}/><span><b>{s.starts}</b> razy w pierwszej szóstce</span></div><div><Star size={22}/><span><b>{s.mvp}</b> wyróżnień MVP</span></div></div>
                   
+                  {/* RADAR UMIEJĘTNOŚCI (EA FC SKILL RADAR) */}
+                  <PlayerSkillRadar
+                    stats={{
+                      matches: s.m,
+                      starts: s.starts,
+                      captain: s.captain,
+                      goals: s.g,
+                      assists: s.a,
+                      mvp: s.mvp,
+                      trainings: t.sessions,
+                      trainingGoals: t.goals,
+                      trainingAssists: t.assists,
+                      streak: t.attendanceStreak
+                    }}
+                    playerName={p.display_name}
+                    position={p.position}
+                  />
+
                   {/* MOJE REKORDY (PLAYER RECORDS) */}
                   <PlayerRecordsView 
                     records={calculatePlayerRecords(p.id, stats, trainingPlayerStats, maxGoalsSingleMatch, 8, unlockedCount(p))}

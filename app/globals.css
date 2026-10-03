@@ -16285,4 +16285,228 @@ body > main,
   transform: translateY(0);
 }
 
+/* -------------------------------------------------------------
+   V200 EA FC PLAYER SKILL RADAR
+   ------------------------------------------------------------- */
+.v200-skill-radar-card {
+  margin: 18px 0;
+  padding: 24px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(16, 20, 28, 0.96), rgba(8, 10, 14, 0.98)) !important;
+  border: 1px solid rgba(246, 201, 82, 0.28) !important;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.5), inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.v200-skill-radar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(246, 201, 82, 0.12);
+}
+
+.v200-skill-radar-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v200-skill-radar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(246, 201, 82, 0.12);
+  border: 1px solid rgba(246, 201, 82, 0.35);
+  color: #f6c952;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.v200-skill-radar-title-wrap h3 {
+  margin: 2px 0 0 0;
+  font-size: 18px;
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.v200-skill-radar-title-wrap p {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.v200-ovr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.v200-ovr-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.v200-ovr-value strong {
+  font-size: 38px;
+  font-weight: 1000;
+  line-height: 1;
+  color: #f6c952;
+  text-shadow: 0 0 20px rgba(246, 201, 82, 0.5);
+  font-family: inherit;
+}
+
+.v200-ovr-value small {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+
+.v200-playstyle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.v200-playstyle-pill span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.v200-skill-radar-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  align-items: center;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.v200-radar-canvas-wrap {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.v200-radar-svg {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
+}
+
+.v200-radar-axis-text {
+  font-size: 10px;
+  font-weight: 950;
+  fill: #cbd5e1;
+  letter-spacing: 0.06em;
+}
+
+.v200-skill-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.v200-skill-metric-item {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.v200-skill-metric-item:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(246, 201, 82, 0.25);
+}
+
+.v200-skill-metric-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v200-skill-metric-icon {
+  color: #f6c952;
+  display: grid;
+  place-items: center;
+}
+
+.v200-skill-metric-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-right: auto;
+}
+
+.v200-skill-metric-val {
+  font-size: 16px;
+  font-weight: 1000;
+  color: #ffffff;
+}
+
+.v200-skill-progress-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.v200-skill-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f6c952, #ff202b);
+  box-shadow: 0 0 10px rgba(246, 201, 82, 0.4);
+}
+
+.v200-skill-metric-desc {
+  font-size: 9px;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .v200-skill-radar-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .v200-skill-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .v200-skill-radar-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .v200-ovr-card {
+    align-items: flex-start;
+  }
+}
+
 
