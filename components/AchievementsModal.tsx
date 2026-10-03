@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Trophy, 
   Award, 
@@ -159,7 +160,12 @@ export default function AchievementsModal({
     }
   }
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
 
   const filtered = achievements.filter(a => {
     if (selectedCategory === "all") return true;
@@ -171,8 +177,8 @@ export default function AchievementsModal({
   const unclaimedCount = achievements.filter(a => a.is_unlocked && !a.claimed_reward).length;
   const progressPercent = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black border border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.15)] text-white overflow-hidden"
         onClick={e => e.stopPropagation()}
@@ -404,6 +410,7 @@ export default function AchievementsModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

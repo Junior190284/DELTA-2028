@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Trophy, 
   Target, 
@@ -194,15 +195,20 @@ export default function DeltaTyperModal({
     }
   }
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
 
   const scheduledMatches = matches.filter(m => m.status === "scheduled");
   const playedMatches = matches.filter(m => m.status === "played");
   const userRank = leaderboard.findIndex(l => l.userId === currentUserId) + 1;
   const userStats = leaderboard.find(l => l.userId === currentUserId);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black border border-amber-500/30 shadow-[0_0_60px_rgba(245,158,11,0.18)] text-white overflow-hidden"
         onClick={e => e.stopPropagation()}
@@ -709,6 +715,7 @@ export default function DeltaTyperModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
