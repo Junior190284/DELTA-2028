@@ -279,21 +279,30 @@ export default function CollectibleCard3D({
     }
   }
 
-  // Exact card dimensions (1:1.70 standard aspect ratio)
+  // Exact card dimensions (1:1.50 standard card ratio for 682x1024 frames)
   const dim = {
-    sm: { w: 130, h: 221 },
-    md: { w: 180, h: 306 },
-    lg: { w: 240, h: 408 },
-    xl: { w: 300, h: 510 }
+    sm: { w: 140, h: 210 },
+    md: { w: 190, h: 285 },
+    lg: { w: 260, h: 390 },
+    xl: { w: 330, h: 495 }
   }[size];
 
-  // Template image for this card tier
+  // Template image for this card tier (Front)
   const frameTemplateUrl = useMemo(() => {
     if (rarity === "inferno") return "/assets/cards/templates/frame_inferno.png";
     if (rarity === "legendary") return "/assets/cards/templates/frame_legend.png";
     if (rarity === "epic" || card.card_type === "mvp") return "/assets/cards/templates/frame_gold.png";
     if (rarity === "rare" || card.card_type === "matchday") return "/assets/cards/templates/frame_matchday.png";
     return "/assets/cards/templates/frame_base.png";
+  }, [rarity, card.card_type]);
+
+  // Template image for this card tier (Reverse / Back)
+  const reverseTemplateUrl = useMemo(() => {
+    if (rarity === "inferno") return "/assets/cards/templates/reverse_inferno.png";
+    if (rarity === "legendary") return "/assets/cards/templates/reverse_legend.png";
+    if (rarity === "epic" || card.card_type === "mvp") return "/assets/cards/templates/reverse_gold.png";
+    if (rarity === "rare" || card.card_type === "matchday") return "/assets/cards/templates/reverse_matchday.png";
+    return "/assets/cards/templates/reverse_base.png";
   }, [rarity, card.card_type]);
 
   const fifaStats = useMemo(() => getCardFIFAStats(card, stats), [card, stats]);
@@ -376,8 +385,8 @@ export default function CollectibleCard3D({
               className="v200-card-top-left-badge" 
               style={{ 
                 position: "absolute",
-                top: `${Math.round(dim.h * 0.10)}px`,
-                left: `${Math.round(dim.w * 0.085)}px`,
+                top: `${Math.round(dim.h * 0.07)}px`,
+                left: `${Math.round(dim.w * 0.08)}px`,
                 width: `${Math.round(dim.w * 0.16)}px`,
                 display: "flex",
                 flexDirection: "column",
@@ -390,7 +399,7 @@ export default function CollectibleCard3D({
               <span 
                 className={`v200-card-ovr ${rarity}`}
                 style={{
-                  fontSize: `${Math.max(12, Math.round(dim.w * 0.088))}px`,
+                  fontSize: `${Math.max(14, Math.round(dim.w * 0.095))}px`,
                   fontWeight: 1000,
                   lineHeight: 0.95,
                   letterSpacing: "-0.04em"
@@ -401,7 +410,7 @@ export default function CollectibleCard3D({
               <span 
                 className={`v200-card-pos ${rarity}`}
                 style={{
-                  fontSize: `${Math.max(6, Math.round(dim.w * 0.042))}px`,
+                  fontSize: `${Math.max(6.5, Math.round(dim.w * 0.045))}px`,
                   fontWeight: 900,
                   letterSpacing: "0.05em",
                   marginTop: "1px",
@@ -415,7 +424,7 @@ export default function CollectibleCard3D({
                 role="img" 
                 aria-label="Polska"
                 style={{
-                  fontSize: `${Math.max(6, Math.round(dim.w * 0.045))}px`,
+                  fontSize: `${Math.max(6.5, Math.round(dim.w * 0.046))}px`,
                   marginTop: "2px",
                   lineHeight: 1,
                   display: "block"
@@ -428,8 +437,8 @@ export default function CollectibleCard3D({
                 alt="DELTA" 
                 className="v200-card-mini-crest"
                 style={{
-                  width: `${Math.max(8, Math.round(dim.w * 0.062))}px`,
-                  height: `${Math.max(8, Math.round(dim.w * 0.062))}px`,
+                  width: `${Math.max(9, Math.round(dim.w * 0.065))}px`,
+                  height: `${Math.max(9, Math.round(dim.w * 0.065))}px`,
                   objectFit: "contain",
                   marginTop: "2px"
                 }}
@@ -445,7 +454,7 @@ export default function CollectibleCard3D({
               top: `${Math.round(dim.h * 0.08)}px`,
               left: `${Math.round(dim.w * 0.12)}px`,
               right: `${Math.round(dim.w * 0.12)}px`,
-              bottom: `${Math.round(dim.h * 0.35)}px`,
+              bottom: `${Math.round(dim.h * 0.28)}px`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -499,10 +508,10 @@ export default function CollectibleCard3D({
             className="v200-card-nameplate" 
             style={{ 
               position: "absolute",
-              top: `${Math.round(dim.h * 0.665)}px`,
-              left: `${Math.round(dim.w * 0.07)}px`,
-              right: `${Math.round(dim.w * 0.07)}px`,
-              height: `${Math.round(dim.h * 0.070)}px`,
+              top: `${Math.round(dim.h * 0.735)}px`,
+              left: `${Math.round(dim.w * 0.10)}px`,
+              right: `${Math.round(dim.w * 0.10)}px`,
+              height: `${Math.round(dim.h * 0.108)}px`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -514,7 +523,7 @@ export default function CollectibleCard3D({
             <span 
               className={`v200-card-name-text ${rarity}`}
               style={{
-                fontSize: `${Math.max(8, Math.round(dim.w * 0.048))}px`,
+                fontSize: `${Math.max(9, Math.round(dim.w * 0.052))}px`,
                 fontWeight: 1000,
                 letterSpacing: "0.08em",
                 lineHeight: 1,
@@ -524,26 +533,6 @@ export default function CollectibleCard3D({
               }}
             >
               {isLocked ? "???" : `${playerName} ${shirtNum}`}
-            </span>
-          </div>
-
-          {/* FRONT BOTTOM BRAND ACCENT */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: `${Math.round(dim.h * 0.04)}px`,
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 5,
-              pointerEvents: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              opacity: 0.85
-            }}
-          >
-            <span style={{ fontSize: `${Math.max(6, Math.round(dim.w * 0.026))}px`, fontWeight: 900, letterSpacing: "0.15em", color: config.color, textTransform: "uppercase" }}>
-              DELTA 2018 GM
             </span>
           </div>
 
@@ -576,20 +565,41 @@ export default function CollectibleCard3D({
           style={{
             borderColor: config.borderGlow,
             boxShadow: `0 8px 24px -4px ${config.borderGlow}, inset 0 0 16px -4px ${config.borderGlow}`,
-            padding: `${Math.max(6, Math.round(dim.w * 0.05))}px`
+            padding: `${Math.max(8, Math.round(dim.w * 0.055))}px`,
+            position: "absolute",
+            inset: 0,
+            overflow: "hidden"
           }}
         >
+          {/* Custom Template Background for Reverse */}
+          <img 
+            src={reverseTemplateUrl} 
+            alt="Delta Card Back"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: 1,
+              pointerEvents: "none",
+              filter: "brightness(0.35) saturate(1.2)"
+            }}
+          />
+
           {/* Dynamic Specular Sheen on Reverse */}
           <div 
             className="v104-cc-shimmer"
             style={{
               backgroundPosition: `${glarePos.x}% ${glarePos.y}%`,
-              opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.25
+              opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.25,
+              zIndex: 2,
+              pointerEvents: "none"
             }}
           />
 
           {/* Top Bar on Reverse */}
-          <div className="v104-cc-reverse-top" style={{ paddingBottom: "4px" }}>
+          <div className="v104-cc-reverse-top" style={{ position: "relative", zIndex: 3, paddingBottom: "4px" }}>
             <div className="v104-cc-brand" style={{ gap: "4px" }}>
               <img 
                 src="/teamlogos/gm.png" 
@@ -613,7 +623,7 @@ export default function CollectibleCard3D({
           </div>
 
           {/* Middle: FIFA Stats + Lore Story + Match Stats */}
-          <div className="v104-cc-reverse-body" style={{ margin: "4px 0", gap: "5px" }}>
+          <div className="v104-cc-reverse-body" style={{ position: "relative", zIndex: 3, margin: "4px 0", gap: "5px" }}>
             <div>
               <span style={{ fontSize: `${Math.max(6, Math.round(dim.w * 0.028))}px`, textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", fontWeight: 800, display: "block" }}>
                 {isLocked ? "KARTA DO ODKRYCIA" : `${playerName} ${shirtNum}`}
@@ -628,10 +638,10 @@ export default function CollectibleCard3D({
               display: "grid", 
               gridTemplateColumns: "repeat(3, 1fr)", 
               gap: "3px",
-              background: "rgba(0,0,0,0.5)", 
+              background: "rgba(0,0,0,0.65)", 
               padding: "4px", 
               borderRadius: "8px", 
-              border: "1px solid rgba(255,255,255,0.08)" 
+              border: "1px solid rgba(255,255,255,0.12)" 
             }}>
               {[
                 { lbl: "PAC", full: "TEMPO", val: fifaStats.pac, col: "#38bdf8" },
@@ -646,7 +656,7 @@ export default function CollectibleCard3D({
                   alignItems: "center", 
                   justifyContent: "space-between", 
                   padding: "2px 4px", 
-                  background: "rgba(255,255,255,0.04)", 
+                  background: "rgba(255,255,255,0.06)", 
                   borderRadius: "4px" 
                 }}>
                   <span style={{ fontSize: `${Math.max(6, Math.round(dim.w * 0.030))}px`, fontWeight: 900, color: "#94a3b8" }}>
@@ -661,15 +671,15 @@ export default function CollectibleCard3D({
 
             {/* Match Stats Grid */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "3px", textAlign: "center" }}>
-              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <span style={{ fontSize: `${Math.max(5.5, Math.round(dim.w * 0.026))}px`, color: "#94a3b8", display: "block", fontWeight: 800 }}>MECZE</span>
                 <strong style={{ fontSize: `${Math.max(8, Math.round(dim.w * 0.042))}px`, color: "#fff", fontWeight: 900 }}>{stats?.matches || (userCard ? 8 : 0)}</strong>
               </div>
-              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <span style={{ fontSize: `${Math.max(5.5, Math.round(dim.w * 0.026))}px`, color: "#94a3b8", display: "block", fontWeight: 800 }}>GOLE</span>
                 <strong style={{ fontSize: `${Math.max(8, Math.round(dim.w * 0.042))}px`, color: "#f1c95c", fontWeight: 900 }}>{stats?.goals || (userCard ? 4 : 0)}</strong>
               </div>
-              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <span style={{ fontSize: `${Math.max(5.5, Math.round(dim.w * 0.026))}px`, color: "#94a3b8", display: "block", fontWeight: 800 }}>ASYSTY</span>
                 <strong style={{ fontSize: `${Math.max(8, Math.round(dim.w * 0.042))}px`, color: "#38bdf8", fontWeight: 900 }}>{stats?.assists || (userCard ? 3 : 0)}</strong>
               </div>
@@ -677,24 +687,24 @@ export default function CollectibleCard3D({
 
             {/* Lore Story */}
             {card.lore || card.description ? (
-              <div className="v104-cc-reverse-lore" style={{ fontSize: `${Math.max(6.5, Math.round(dim.w * 0.033))}px`, padding: "4px 6px" }}>
+              <div className="v104-cc-reverse-lore" style={{ fontSize: `${Math.max(6.5, Math.round(dim.w * 0.033))}px`, padding: "4px 6px", background: "rgba(0,0,0,0.65)" }}>
                 "{card.lore || card.description}"
               </div>
             ) : (
-              <div className="v104-cc-reverse-lore" style={{ color: "#cbd5e1", fontSize: `${Math.max(6.5, Math.round(dim.w * 0.033))}px`, padding: "4px 6px" }}>
+              <div className="v104-cc-reverse-lore" style={{ color: "#cbd5e1", fontSize: `${Math.max(6.5, Math.round(dim.w * 0.033))}px`, padding: "4px 6px", background: "rgba(0,0,0,0.65)" }}>
                 Oficjalna karta DELTA 2018 GM: {card.player?.display_name || "DELTA GM"}. Sezon {card.season || "2026/27"}.
               </div>
             )}
           </div>
 
           {/* Bottom Stamp & Certificate */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "5px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "7.5px", color: "#94a3b8", fontWeight: 600 }}>
+          <div style={{ position: "relative", zIndex: 3, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: "5px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: `${Math.max(6.5, Math.round(dim.w * 0.032))}px`, color: "#94a3b8", fontWeight: 600 }}>
               {userCard?.acquired_at 
                 ? new Date(userCard.acquired_at).toLocaleDateString("pl-PL") 
                 : "DELTA 2018 GM"}
             </span>
-            <span style={{ fontSize: "7.5px", color: "#f1c95c", fontWeight: 900, letterSpacing: "0.06em" }}>
+            <span style={{ fontSize: `${Math.max(6.5, Math.round(dim.w * 0.032))}px`, color: "#f1c95c", fontWeight: 900, letterSpacing: "0.06em" }}>
               DELTA AUTHENTIC
             </span>
           </div>
