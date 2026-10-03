@@ -650,10 +650,10 @@ export default function TeamHub(props:{
     });
   },[calendarItems,calendarMonth]);
   const nextPresent=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&(a.status==="present"||a.status==="yes")).length:0;
-  const nextResponses=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&["yes","no","maybe"].includes(a.status)):[];
+  const nextResponses=nextMatch?attendance.filter(a=>a.match_id===nextMatch.id&&["yes","no","maybe","present"].includes(a.status)):[];
   const nextResponseCount=new Set(nextResponses.map(a=>a.player_id)).size;
   const parentPlayers=players.filter(p=>props.parentPlayerIds.includes(p.id));
-  const attendanceStatus=(playerId:string)=>nextResponses.find(a=>a.player_id===playerId)?.status||"";
+  const attendanceStatus=(playerId:string)=>attendance.find(a=>a.match_id===nextMatch?.id&&a.player_id===playerId)?.status||"";
   const topScorer=players.slice().sort((a,b)=>(stats[b.id]?.g||0)-(stats[a.id]?.g||0))[0];
   const topAssister=players.slice().sort((a,b)=>(stats[b.id]?.a||0)-(stats[a.id]?.a||0))[0];
   const topMvp=players.slice().sort((a,b)=>(stats[b.id]?.mvp||0)-(stats[a.id]?.mvp||0))[0];
@@ -1433,9 +1433,9 @@ export default function TeamHub(props:{
 
               <button type="button" className="v891-attendance-mini" onClick={()=>openMatch(nextMatch,"attendance","home")}>
                 <span><UserCheck size={16}/> OBECNOŚĆ</span>
-                <strong>{nextResponseCount}<em>/ {players.length}</em></strong>
-                <div className="v891-attendance-progress"><i style={{width:`${players.length?Math.min(100,nextResponseCount/players.length*100):0}%`}}/></div>
-                <small>{staff?"Zobacz odpowiedzi":"Potwierdź udział dziecka"} <ChevronRight size={12}/></small>
+                <strong>{nextPresent}<em>/ {players.length}</em></strong>
+                <div className="v891-attendance-progress"><i style={{width:`${players.length?Math.min(100,nextPresent/players.length*100):0}%`}}/></div>
+                <small>{staff?"Zobacz obecności i skład":"Potwierdź udział dziecka"} <ChevronRight size={12}/></small>
               </button>
             </div>
 
