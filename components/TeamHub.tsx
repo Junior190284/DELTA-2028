@@ -20,6 +20,8 @@ import DeltaTyperModal from "./DeltaTyperModal";
 import DeltaKnowledgeCornerModal from "./DeltaKnowledgeCornerModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
+import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
+import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
@@ -30,7 +32,7 @@ import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/pu
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -185,6 +187,8 @@ export default function TeamHub(props:{
   const [knowledgeModalOpen, setKnowledgeModalOpen] = useState(false);
   const [matchBriefModalOpen, setMatchBriefModalOpen] = useState(false);
   const [tacticsModalOpen, setTacticsModalOpen] = useState(false);
+  const [questsModalOpen, setQuestsModalOpen] = useState(false);
+  const [trainingKingModalOpen, setTrainingKingModalOpen] = useState(false);
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
@@ -1911,6 +1915,16 @@ export default function TeamHub(props:{
             <div><strong>{trainingGames.length}</strong><span>GRY KONTROLNE</span></div>
             <div><strong>{trainingEvents.filter(e=>e.event_type==="goal").length}</strong><span>GOLE TRENINGOWE</span></div>
           </div>
+          <div style={{ marginTop: "14px", display: "flex", gap: "10px" }}>
+            <button 
+              type="button" 
+              className="v200-btn-claim-chest" 
+              onClick={() => setTrainingKingModalOpen(true)}
+              style={{ fontSize: "12px", padding: "10px 18px" }}
+            >
+              <Trophy size={16}/> OTWÓRZ RANKING: KRÓL TRENINGU & GIERKI
+            </button>
+          </div>
         </div>
 
         <div className="v900-training-grid">
@@ -2634,6 +2648,37 @@ export default function TeamHub(props:{
               </div>
             </button>
 
+            {/* 2.5 WYZWANIA TYGODNIA */}
+            <button
+              type="button"
+              className="v200-tile"
+              onClick={() => { setMobileMoreOpen(false); setQuestsModalOpen(true); }}
+            >
+              <div className="v200-tile-icon" style={{ color: "#f59e0b" }}>
+                <Flame size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Wyzwania Tygodnia</strong>
+                <small>Misje & Złota Skrzynia</small>
+              </div>
+              <span className="v200-tile-badge" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>MISJE</span>
+            </button>
+
+            {/* 2.6 KRÓL TRENINGU */}
+            <button
+              type="button"
+              className="v200-tile"
+              onClick={() => { setMobileMoreOpen(false); setTrainingKingModalOpen(true); }}
+            >
+              <div className="v200-tile-icon" style={{ color: "#e22e30" }}>
+                <Trophy size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Król Treningu</strong>
+                <small>Gierki, frekwencja i forma</small>
+              </div>
+            </button>
+
             {/* 3. CENTRUM DRUŻYNY */}
             <button
               type="button"
@@ -3120,6 +3165,32 @@ export default function TeamHub(props:{
         isOpen={matchBriefModalOpen}
         onClose={() => setMatchBriefModalOpen(false)}
         matches={matches}
+      />
+    )}
+
+    {questsModalOpen && (
+      <DeltaWeeklyQuestsModal
+        isOpen={questsModalOpen}
+        onClose={() => setQuestsModalOpen(false)}
+        onNavigateAction={(actionKey) => {
+          if (actionKey === "knowledge") setKnowledgeModalOpen(true);
+          else if (actionKey === "typer") setTyperModalOpen(true);
+          else if (actionKey === "attendance") setTab("teamcenter");
+          else if (actionKey === "cards") setTab("collection");
+          else if (actionKey === "fanvote" && matches.length > 0) setSelectedMatch(matches[0]);
+        }}
+      />
+    )}
+
+    {trainingKingModalOpen && (
+      <DeltaTrainingKingModal
+        isOpen={trainingKingModalOpen}
+        onClose={() => setTrainingKingModalOpen(false)}
+        players={players}
+        trainingSessions={trainingSessions}
+        trainingAttendance={trainingAttendance}
+        trainingGames={trainingGames}
+        trainingGamePlayers={trainingGamePlayers}
       />
     )}
   </div>;

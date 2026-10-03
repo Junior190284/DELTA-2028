@@ -7,9 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
 import MatchPosterModal from "./MatchPosterModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
+import DeltaFanVotingModal from "./DeltaFanVotingModal";
 import {
   CalendarDays, Check, ChevronRight, Crown, Goal, Save, ShieldCheck,
-  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles, Send
+  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles, Send, Heart
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -83,6 +84,7 @@ export default function MatchCenterModal(props:{
   const [lastSync,setLastSync]=useState<string>("");
   const [posterOpen,setPosterOpen]=useState(false);
   const [briefOpen,setBriefOpen]=useState(false);
+  const [fanVotingOpen,setFanVotingOpen]=useState(false);
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -393,6 +395,9 @@ export default function MatchCenterModal(props:{
         <button type="button" className="v200-poster-top-btn" onClick={()=>setBriefOpen(true)} title="Generuj gotowy komunikat zbiórki i odprawy dla rodziców">
           <Send size={14}/> KOMUNIKAT DLA RODZICÓW
         </button>
+        <button type="button" className="v200-poster-top-btn" onClick={()=>setFanVotingOpen(true)} title="Głosowanie rodziców i kibiców na Zawodnika Meczu">
+          <Heart size={14}/> GŁOSOWANIE KIBICÓW
+        </button>
         <small>{matchStarted?"Podgląd meczu odświeża się automatycznie co 15 sekund.":""}{lastSync?` Ostatnie sprawdzenie: ${lastSync}`:""}</small>
       </div>
       {saved&&<div className="mc-saved" role="status">✓ {saved}</div>}
@@ -556,6 +561,17 @@ export default function MatchCenterModal(props:{
             </select>
             <button onClick={setMvp}><Star size={16}/> Zapisz MVP</button>
             {matchEvents.find(e=>e.event_type==="mvp")&&<div className="v85-current-mvp"><ShieldCheck size={17}/> Aktualny MVP: <b>{players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name}</b></div>}
+            
+            <div style={{ marginTop: "18px", paddingTop: "18px", borderTop: "1px solid rgba(255,255,255,0.08)", width: "100%" }}>
+              <button 
+                type="button" 
+                className="v200-btn-claim-chest" 
+                onClick={()=>setFanVotingOpen(true)} 
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                <Heart size={16}/> GŁOSOWANIE RODZICÓW: SERDUSZKO TRYBUN ❤️
+              </button>
+            </div>
           </div>
         </>}
       </div>
@@ -575,6 +591,14 @@ export default function MatchCenterModal(props:{
         isOpen={briefOpen}
         onClose={() => setBriefOpen(false)}
         matches={[match]}
+      />
+    )}
+    {fanVotingOpen && (
+      <DeltaFanVotingModal
+        isOpen={fanVotingOpen}
+        onClose={() => setFanVotingOpen(false)}
+        match={match}
+        players={players}
       />
     )}
   </div>
