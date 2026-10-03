@@ -1496,43 +1496,62 @@ export default function TeamHub(props:{
 
         <section className="v8-stats-row">
           {[
-            ["MECZE",teamSummary.played,Target,"gold",[3,5,4,6,teamSummary.played]],
-            ["WYGRANE",teamSummary.wins,Trophy,"emerald",[1,2,2,3,teamSummary.wins]],
-            ["REMISY",teamSummary.draws,Shield,"blue",[0,1,0,1,teamSummary.draws]],
-            ["PORAŻKI",teamSummary.losses,X,"red",[1,0,1,0,teamSummary.losses]],
-            ["BRAMKI",teamSummary.goals,Goal,"gold",[4,8,12,15,teamSummary.goals]],
-            ["ASYSTY",teamSummary.assists,Star,"gold",[3,6,9,11,teamSummary.assists]]
-          ].map(([label,val,Icon,glow,bars]:any)=>(
-            <SpotlightCard className="v8-stat devil-tile v200-stat-sparkle" glowColor={glow} enableTilt={true} key={label}>
-              <Icon size={25}/>
-              <div>
-                <b>{val}</b>
-                <div className="v200-sparklines-row" aria-hidden="true">
-                  {bars.map((h:number, i:number) => (
-                    <span key={i} className="v200-sparkline-bar" style={{ height: `${Math.max(20, Math.min(100, (h / Math.max(1, val)) * 100))}%` }} />
-                  ))}
+            { label: "MECZE", val: teamSummary.played, Icon: Target, glow: "gold", note: "Rozegrane" },
+            { label: "WYGRANE", val: teamSummary.wins, Icon: Trophy, glow: "emerald", note: "Zwycięstwa" },
+            { label: "REMISY", val: teamSummary.draws, Icon: Shield, glow: "blue", note: "Podział pkt" },
+            { label: "PORAŻKI", val: teamSummary.losses, Icon: X, glow: "red", note: "Przegrane" },
+            { label: "BRAMKI", val: teamSummary.goals, Icon: Goal, glow: "gold", note: `${teamSummary.goals > 0 && teamSummary.played > 0 ? (teamSummary.goals / teamSummary.played).toFixed(1) : "0"} / mecz` },
+            { label: "ASYSTY", val: teamSummary.assists, Icon: Star, glow: "gold", note: "Kluczowe podania" }
+          ].map((item) => (
+            <SpotlightCard className={`v200-stat-card ${item.glow}`} glowColor={item.glow as any} enableTilt={true} key={item.label}>
+              <div className="v200-stat-head">
+                <span className="v200-stat-label">{item.label}</span>
+                <div className="v200-stat-icon-wrap">
+                  <item.Icon size={16}/>
                 </div>
               </div>
-              <span>{label}</span>
+              <div className="v200-stat-body">
+                <b className="v200-stat-val">{item.val}</b>
+                <span className="v200-stat-note">{item.note}</span>
+              </div>
             </SpotlightCard>
           ))}
         </section>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,margin:"14px 0 18px 0"}}>
-          <SpotlightCard className="v151-home-entry devil-card" glowColor="red" enableTilt={true} onClick={()=>setTab("teamcenter")} style={{cursor:"pointer"}}>
-            <span><UserCheck size={24}/><b>CENTRUM DRUŻYNY</b><small>Moje sprawy · najbliższe wydarzenie · sezon</small></span>
-            <ChevronRight size={22}/>
-          </SpotlightCard>
-          <SpotlightCard className="v151-home-entry devil-card v200-typer-vip-tile" glowColor="gold" enableTilt={true} onClick={()=>setTyperModalOpen(true)} style={{cursor:"pointer"}}>
-            <span>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                <Crown size={22} style={{color:"#f59e0b",filter:"drop-shadow(0 0 8px rgba(245,158,11,0.6))"}}/>
-                <span className="v200-drawer-card-tag gold">ZGARNIAJ DP</span>
+        <div className="v200-home-duo-grid">
+          <SpotlightCard className="v200-feature-banner team-center" glowColor="red" enableTilt={true} onClick={()=>setTab("teamcenter")}>
+            <div className="v200-feature-avatar red">
+              <UserCheck size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge red">
+                <span>STREFA DRUŻYNY</span>
               </div>
-              <b>KLUBOWY TYPER MECZOWY</b>
-              <small>Typuj wynik meczu i wygrywaj punkty DP na paczki kart!</small>
-            </span>
-            <ChevronRight size={22} style={{color:"#f59e0b"}}/>
+              <h3>CENTRUM DRUŻYNY</h3>
+              <p>Frekwencja na treningach, status powołań oraz sprawy zespołu</p>
+            </div>
+            <div className="v200-feature-cta red">
+              <span>OTWÓRZ</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner typer-vip" glowColor="gold" enableTilt={true} onClick={()=>setTyperModalOpen(true)}>
+            <div className="v200-feature-avatar gold">
+              <Crown size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge gold">
+                <Flame size={12}/>
+                <span>ZGARNIAJ PUNKTY DP</span>
+              </div>
+              <h3>KLUBOWY TYPER MECZOWY</h3>
+              <p>Typuj dokładny wynik meczu, zdobywaj punkty i otwieraj paczki kart!</p>
+            </div>
+            <div className="v200-feature-cta gold">
+              <span>ZATYPUJ</span>
+              <ChevronRight size={18}/>
+            </div>
           </SpotlightCard>
         </div>
         <div className="v104-league-feature">
