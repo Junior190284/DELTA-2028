@@ -10,7 +10,10 @@ import {
   Coins, 
   RefreshCw,
   Gift,
-  Crown
+  Crown,
+  Zap,
+  Shield,
+  Award
 } from "lucide-react";
 import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -73,6 +76,7 @@ export default function PackOpeningExperience({
     setStage("charging");
     setScreenShake(true);
     cardSound.playPackTear();
+    cardSound.playHaptic("medium");
 
     try {
       const res = await fetch("/api/cards/open-pack", {
@@ -107,46 +111,68 @@ export default function PackOpeningExperience({
       const topRank = rarityRank[topCard?.card?.rarity || "common"] || 1;
       setWalkoutItem(topCard);
 
+      const isInferno = topCard?.card?.rarity === "inferno";
+      const isLegend = topCard?.card?.rarity === "legendary";
+      const isEpic = topCard?.card?.rarity === "epic";
+      const isWalkoutTier = isInferno || isLegend || isEpic;
+
       // Charge up -> Flash transition -> ALWAYS start Tunnel Video
       setTimeout(() => {
         setStage("flash");
         setScreenShake(false);
 
         setTimeout(() => {
-          cardSound.playCinematicBoom();
+          if (isInferno) {
+            cardSound.playSirenAlarm();
+          } else {
+            cardSound.playCinematicBoom();
+          }
+
           setStage("walkout_teaser_1");
           cardSound.playTeaserHit(1);
+          cardSound.playHaptic(isInferno ? "inferno" : "heavy");
 
-          // If top rank is Rare or higher -> run full 3-step teaser sequence
-          if (topRank >= 2) {
+          // If top rank is Epic or higher (or Rare in gold packs) -> run full EA FC 3-step teaser sequence
+          if (isWalkoutTier || topRank >= 2) {
             setTimeout(() => {
               setStage("walkout_teaser_2");
               cardSound.playTeaserHit(2);
+              cardSound.playHaptic("medium");
 
               setTimeout(() => {
                 setStage("walkout_teaser_3");
                 cardSound.playTeaserHit(3);
+                cardSound.playHaptic("heavy");
 
                 setTimeout(() => {
                   setStage("walkout_slam");
                   setScreenShake(true);
-                  setTimeout(() => setScreenShake(false), 700);
-                  if (topCard.card.rarity === "inferno") {
+                  cardSound.playPyroBurst();
+
+                  if (isInferno) {
                     cardSound.playReveal("inferno");
+                    cardSound.playHaptic("inferno");
+                  } else if (isLegend) {
+                    cardSound.playWalkoutFanfare();
+                    cardSound.playHaptic("walkout");
                   } else {
                     cardSound.playWalkoutFanfare();
+                    cardSound.playHaptic("heavy");
                   }
+
+                  setTimeout(() => setScreenShake(false), 900);
                 }, 1300);
               }, 1200);
             }, 1200);
           } else {
-            // For common cards: tunnel flies for 2.0s then slams
+            // For common cards: quick tunnel flight for 1.2s then smooth slam
             setTimeout(() => {
               setStage("walkout_slam");
               setScreenShake(true);
-              setTimeout(() => setScreenShake(false), 700);
               cardSound.playReveal("common");
-            }, 2000);
+              cardSound.playHaptic("light");
+              setTimeout(() => setScreenShake(false), 500);
+            }, 1200);
           }
         }, 280);
       }, 600);
@@ -162,6 +188,7 @@ export default function PackOpeningExperience({
   const handleProceedToPack = () => {
     setStage("revealing");
     setCurrentCardIndex(0);
+    cardSound.playHover();
   };
 
   // Reveal current card in stage
@@ -172,6 +199,7 @@ export default function PackOpeningExperience({
 
     const rarity = (currentItem.card.rarity || "common") as any;
     cardSound.playReveal(rarity);
+    cardSound.playHaptic(rarity === "inferno" ? "inferno" : rarity === "legendary" ? "walkout" : "medium");
 
     setRevealedCards(prev => {
       const updated = [...prev];
@@ -183,6 +211,7 @@ export default function PackOpeningExperience({
   // Next card in pack
   const handleNextCard = () => {
     if (!openingResult) return;
+    cardSound.playHover();
     if (currentCardIndex + 1 < openingResult.cards.length) {
       setCurrentCardIndex(prev => prev + 1);
     } else {
@@ -193,6 +222,8 @@ export default function PackOpeningExperience({
   // Reveal all cards instantly
   const handleRevealAll = () => {
     if (!openingResult) return;
+    cardSound.playWalkoutFanfare();
+    cardSound.playHaptic("medium");
     setRevealedCards(new Array(openingResult.cards.length).fill(true));
     setStage("summary");
   };
@@ -201,22 +232,27 @@ export default function PackOpeningExperience({
   const currentCard = openingResult?.cards[currentCardIndex]?.card;
   const currentCardRarity = currentCard?.rarity || "common";
 
+  const topCardRarity = walkoutItem?.card?.rarity || "common";
+  const isInfernoWalkout = topCardRarity === "inferno";
+  const isLegendWalkout = topCardRarity === "legendary";
+  const isEpicWalkout = topCardRarity === "epic";
+
   const particleTheme = (
-    (stage === "revealing" && currentCardRarity === "inferno") || walkoutItem?.card?.rarity === "inferno"
+    (stage === "revealing" && currentCardRarity === "inferno") || isInfernoWalkout
       ? "inferno" 
-      : (stage === "revealing" && currentCardRarity === "legendary") || walkoutItem?.card?.rarity === "legendary"
+      : (stage === "revealing" && currentCardRarity === "legendary") || isLegendWalkout
       ? "legend" 
       : "gold"
   ) as any;
 
-  // Determine active video background across all stages
+  // Active video background
   const activeVideoSrc = 
     (stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3")
       ? MEDIA.packOpening.tunnel
       : stage === "walkout_slam"
-      ? (walkoutItem?.card?.rarity === "inferno"
+      ? (isInfernoWalkout
           ? MEDIA.packOpening.bgInferno
-          : walkoutItem?.card?.rarity === "legendary"
+          : isLegendWalkout
           ? MEDIA.packOpening.bgLegend
           : pack.id === "matchday_booster"
           ? MEDIA.packOpening.bgMatchday
@@ -247,12 +283,17 @@ export default function PackOpeningExperience({
           style={{
             position: "absolute",
             inset: 0,
-            background: "#ffffff",
+            background: isInfernoWalkout ? "#ff2200" : "#ffffff",
             zIndex: 999,
             pointerEvents: "none",
             animation: "fadeOutFlash 0.3s ease-out forwards"
           }} 
         />
+      )}
+
+      {/* INFERNO ALARM RED VIGNETTE OVERLAY */}
+      {isInfernoWalkout && (stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && (
+        <div className="v200-walkout-siren-overlay" aria-hidden="true" />
       )}
 
       {/* FULLSCREEN HARDWARE-ACCELERATED VIDEO PLAYER */}
@@ -295,7 +336,7 @@ export default function PackOpeningExperience({
             className="v104-open-top-logo" 
           />
           <div>
-            <span className="v104-open-eyebrow">DELTA CARDS & COLLECTION</span>
+            <span className="v104-open-eyebrow">DELTA CARDS & COLLECTION VIP</span>
             <h2 className="v104-open-top-title">{pack.name}</h2>
           </div>
         </div>
@@ -320,7 +361,7 @@ export default function PackOpeningExperience({
         </div>
       </div>
 
-      {/* ================= EA FC WALKOUT CINEMATIC SEQUENCE ================= */}
+      {/* ================= EA FC 25 WALKOUT CINEMATIC SEQUENCE ================= */}
       {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3" || stage === "walkout_slam") && walkoutItem && (
         <div className="v104-walkout-stage" style={{ background: "transparent", zIndex: 10 }}>
           {/* Top Skip Button */}
@@ -333,48 +374,127 @@ export default function PackOpeningExperience({
             </button>
           </div>
 
-          {/* Walkout Step 1, 2, 3 Teaser Pillars */}
+          {/* DUAL STADIUM LASERS */}
+          <div className="v200-walkout-stadium-lasers" aria-hidden="true">
+            <div className={`v200-laser-beam beam-left ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`} />
+            <div className={`v200-laser-beam beam-right ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`} />
+          </div>
+
+          {/* Walkout Step 1, 2, 3 Teaser Pillars (EA FC STYLE) */}
           {(stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
             <div className="v104-walkout-teaser-container">
-              <span style={{ fontSize: "13px", fontWeight: 900, letterSpacing: "0.22em", color: "#f1c95c", textTransform: "uppercase", textShadow: "0 2px 10px rgba(0,0,0,0.9)" }}>
-                🔥 WALKOUT INCOMING... 🔥
-              </span>
+              {/* Dynamic Incoming Title Banner */}
+              <div className={`v200-walkout-teaser-header ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`}>
+                {isInfernoWalkout ? (
+                  <>
+                    <Flame size={18} className="text-red-500 animate-pulse" />
+                    <span>🔥 UWAGA! INFERNO WALKOUT WYKRYTY 🔥</span>
+                    <Flame size={18} className="text-red-500 animate-pulse" />
+                  </>
+                ) : isLegendWalkout ? (
+                  <>
+                    <Crown size={18} className="text-yellow-400 animate-bounce" />
+                    <span>👑 LEGENDARNY WALKOUT DELTA INCOMING 👑</span>
+                    <Crown size={18} className="text-yellow-400 animate-bounce" />
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} className="text-amber-400 animate-spin" />
+                    <span>⭐ WALKOUT W TOKU... ZAWODNIK DELTA ⭐</span>
+                    <Sparkles size={18} className="text-amber-400 animate-spin" />
+                  </>
+                )}
+              </div>
 
               <div className="v104-walkout-teasers-row">
-                {/* 1. CLUB & NATION */}
-                <div className="v104-walkout-teaser-pillar">
-                  <span className="v104-walkout-teaser-label">KLUB / KRAJ</span>
-                  <img src="/teamlogos/gm.png" alt="DELTA" width={44} height={44} style={{ width: "44px", height: "44px", objectFit: "contain" }} />
-                  <span className="v104-walkout-teaser-val">DELTA GM</span>
+                {/* 1. KRAJ & KLUB */}
+                <div className={`v200-walkout-pillar-fifa ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"} animate-slideUp`}>
+                  <span className="v200-pillar-step-badge">KROK 1 • KLUB & KRAJ</span>
+                  <div className="v200-pillar-nation-row">
+                    <span className="v200-flag-emoji" role="img" aria-label="Polska">🇵🇱</span>
+                    <img 
+                      src="/teamlogos/gm.png" 
+                      alt="DELTA" 
+                      className="v200-pillar-crest-img"
+                    />
+                  </div>
+                  <span className="v200-pillar-val-title">K.S. DELTA WARSZAWA</span>
+                  <span className="v200-pillar-sub">ROCZNIK 2018 GM</span>
                 </div>
 
-                {/* 2. POSITION */}
+                {/* 2. POZYCJA */}
                 {(stage === "walkout_teaser_2" || stage === "walkout_teaser_3") && (
-                  <div className="v104-walkout-teaser-pillar animate-slideUp">
-                    <span className="v104-walkout-teaser-label">POZYCJA</span>
-                    <span className="v104-walkout-position-badge">
-                      {walkoutItem.card.player?.position || "POLE"}
+                  <div className={`v200-walkout-pillar-fifa ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"} animate-slideUp`}>
+                    <span className="v200-pillar-step-badge">KROK 2 • POZYCJA</span>
+                    <div className="v200-pillar-pos-wrap">
+                      <span className="v200-pillar-pos-tag">
+                        {walkoutItem.card.player?.position?.toUpperCase() || "POMOCNIK"}
+                      </span>
+                    </div>
+                    <span className="v200-pillar-val-title">
+                      {walkoutItem.card.card_type === "mvp" ? "⭐ DELTA MVP" : walkoutItem.card.card_type === "goal_hunter" ? "🎯 ŁOWCA BRAMEK" : "PIERWSZY SKŁAD"}
                     </span>
+                    <span className="v200-pillar-sub">SEZON 2026/27</span>
                   </div>
                 )}
 
-                {/* 3. SHIRT NUMBER */}
+                {/* 3. NUMER KOSZULKI */}
                 {stage === "walkout_teaser_3" && (
-                  <div className="v104-walkout-teaser-pillar animate-slideUp">
-                    <span className="v104-walkout-teaser-label">NUMER</span>
-                    <span className="v104-walkout-number-badge">
-                      #{walkoutItem.card.player?.shirt_number || "DELTA"}
+                  <div className={`v200-walkout-pillar-fifa ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"} animate-slideUp`}>
+                    <span className="v200-pillar-step-badge">KROK 3 • NUMER</span>
+                    <div className="v200-pillar-num-wrap">
+                      <span className="v200-pillar-number-glow">
+                        #{walkoutItem.card.player?.shirt_number || "DELTA"}
+                      </span>
+                    </div>
+                    <span className="v200-pillar-val-title">
+                      {walkoutItem.card.player?.display_name?.split(" ")[0]?.toUpperCase() || "GWIAZDA"}
                     </span>
+                    <span className="v200-pillar-sub">DUMA DRUŻYNY</span>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Walkout Step 4: Slam Reveal */}
+          {/* Walkout Step 4: Grand Slam Reveal + Dual Pyro Jets */}
           {stage === "walkout_slam" && (
             <div className="v104-walkout-slam-container animate-slamZoom">
-              <div style={{ transform: "scale(1.12)", transformOrigin: "center center" }}>
+              {/* DUAL FLAME PYRO JETS */}
+              <div className={`v200-walkout-pyro-jet left ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`} aria-hidden="true">
+                <div className="v200-pyro-flame-core" />
+                <div className="v200-pyro-sparks-stream" />
+              </div>
+              <div className={`v200-walkout-pyro-jet right ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`} aria-hidden="true">
+                <div className="v200-pyro-flame-core" />
+                <div className="v200-pyro-sparks-stream" />
+              </div>
+
+              {/* Top Walkout Luxury Ribbon */}
+              <div className={`v200-walkout-ribbon ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : "gold"}`}>
+                {isInfernoWalkout ? (
+                  <>
+                    <Flame size={20} className="text-red-500 animate-bounce" />
+                    <span>🔥 ULTRA INFERNO WALKOUT • ELITA DELTA 2018 🔥</span>
+                    <Flame size={20} className="text-red-500 animate-bounce" />
+                  </>
+                ) : isLegendWalkout ? (
+                  <>
+                    <Crown size={20} className="text-yellow-400 animate-bounce" />
+                    <span>👑 OFICJALNY WALKOUT DELTA • SEZON 2026/27 👑</span>
+                    <Crown size={20} className="text-yellow-400 animate-bounce" />
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} className="text-amber-400 animate-spin" />
+                    <span>⭐ SPECIAL WALKOUT • GWIAZDA DRUŻYNY ⭐</span>
+                    <Sparkles size={20} className="text-amber-400 animate-spin" />
+                  </>
+                )}
+              </div>
+
+              {/* 3D Grand Card Showcase */}
+              <div className="v200-walkout-card-stage" style={{ transform: "scale(1.15)", transformOrigin: "center center" }}>
                 <CollectibleCard3D
                   card={walkoutItem.card}
                   userCard={undefined}
@@ -385,6 +505,7 @@ export default function PackOpeningExperience({
                 />
               </div>
 
+              {/* Player Details Card */}
               <div className="v104-walkout-details">
                 <span className="v104-walkout-player-title">
                   {walkoutItem.card.title || walkoutItem.card.card_name}
@@ -394,7 +515,7 @@ export default function PackOpeningExperience({
                 </span>
                 {walkoutItem.is_duplicate && (
                   <span className="v104-duplicate-tag">
-                    <Coins size={12} className="inline mr-1" /> DUPLIKAT (+{walkoutItem.duplicate_points} DP)
+                    <Coins size={14} className="inline mr-1" /> DUPLIKAT (+{walkoutItem.duplicate_points} DP)
                   </span>
                 )}
               </div>
@@ -402,9 +523,10 @@ export default function PackOpeningExperience({
               <button
                 type="button"
                 onClick={handleProceedToPack}
-                className="v104-walkout-continue-btn"
+                className={`v104-walkout-continue-btn ${isInfernoWalkout ? "inferno" : isLegendWalkout ? "legend" : ""}`}
               >
-                ODKRYJ RESZTĘ PACZKI <ChevronRight size={18} />
+                <span>ODKRYJ POZOSTAŁE KARTY W PACZCE</span>
+                <ChevronRight size={20} />
               </button>
             </div>
           )}
@@ -488,6 +610,7 @@ export default function PackOpeningExperience({
                   onFlipChange={(flipped) => {
                     if (flipped) {
                       cardSound.playFlip();
+                      cardSound.playHaptic("light");
                     }
                   }}
                 />

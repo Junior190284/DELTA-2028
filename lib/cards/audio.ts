@@ -146,6 +146,51 @@ class CardSoundEngine {
     }
   }
 
+  // Mobile Device Haptic Vibration
+  playHaptic(pattern: "light" | "medium" | "heavy" | "walkout" | "inferno" = "medium") {
+    try {
+      if (typeof window !== "undefined" && "navigator" in window && navigator.vibrate) {
+        if (pattern === "light") navigator.vibrate(30);
+        else if (pattern === "medium") navigator.vibrate([50, 40, 50]);
+        else if (pattern === "heavy") navigator.vibrate([120, 60, 150]);
+        else if (pattern === "walkout") navigator.vibrate([80, 40, 100, 40, 250]);
+        else if (pattern === "inferno") navigator.vibrate([150, 50, 200, 50, 350, 50, 500]);
+      }
+    } catch {}
+  }
+
+  // Pyro flame cannons sound effect
+  playPyroBurst() {
+    try {
+      this.playSample("teaser_hit", 0.85, 0.6);
+      this.playSample("pack_tear", 0.7, 0.8);
+      this.playHaptic("heavy");
+    } catch {
+      this.playSyntheticBoom();
+    }
+  }
+
+  // Volcanic / Inferno Alarm siren
+  playSirenAlarm() {
+    try {
+      const ctx = this.initCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(320, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(780, ctx.currentTime + 0.35);
+      osc.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.7);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.75);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.75);
+      this.playHaptic("inferno");
+    } catch {}
+  }
+
   // ================= FALLBACK SYNTHETIC METHODS =================
   private playSyntheticHover() {
     try {

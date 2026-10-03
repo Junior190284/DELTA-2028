@@ -12584,6 +12584,290 @@ body > main,
   animation: pulse 2s infinite;
 }
 
+/* ================= EA FC 25 ULTRA-PREMIUM WALKOUT STYLING ================= */
+.v200-walkout-siren-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(circle at center, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.45) 70%, rgba(69, 10, 10, 0.8) 100%);
+  animation: v200-siren-pulse 0.7s infinite alternate ease-in-out;
+}
+
+@keyframes v200-siren-pulse {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.95; }
+}
+
+.v200-walkout-stadium-lasers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+  overflow: hidden;
+}
+
+.v200-laser-beam {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 120%;
+  opacity: 0.75;
+  filter: blur(2px);
+  transform-origin: top center;
+}
+
+.v200-laser-beam.beam-left {
+  left: 20%;
+  animation: v200-laser-left 3s ease-in-out infinite alternate;
+}
+
+.v200-laser-beam.beam-right {
+  right: 20%;
+  animation: v200-laser-right 3s ease-in-out infinite alternate;
+}
+
+.v200-laser-beam.inferno {
+  background: linear-gradient(180deg, #ff4444 0%, #dc2626 50%, transparent 100%);
+  box-shadow: 0 0 25px #ef4444, 0 0 50px #b91c1c;
+}
+
+.v200-laser-beam.legend {
+  background: linear-gradient(180deg, #fde047 0%, #c084fc 50%, transparent 100%);
+  box-shadow: 0 0 25px #fde047, 0 0 50px #9333ea;
+}
+
+.v200-laser-beam.gold {
+  background: linear-gradient(180deg, #fef08a 0%, #f59e0b 50%, transparent 100%);
+  box-shadow: 0 0 25px #f59e0b, 0 0 50px #d97706;
+}
+
+@keyframes v200-laser-left {
+  0% { transform: rotate(-25deg); }
+  100% { transform: rotate(15deg); }
+}
+
+@keyframes v200-laser-right {
+  0% { transform: rotate(25deg); }
+  100% { transform: rotate(-15deg); }
+}
+
+/* Walkout Teaser Incoming Header Banner */
+.v200-walkout-teaser-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.v200-walkout-teaser-header.inferno {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.4), rgba(69, 10, 10, 0.8));
+  border: 1.5px solid #ef4444;
+  color: #fca5a5;
+  box-shadow: 0 0 35px rgba(239, 68, 68, 0.8);
+}
+
+.v200-walkout-teaser-header.legend {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(120, 53, 15, 0.8));
+  border: 1.5px solid #fde047;
+  color: #fef08a;
+  box-shadow: 0 0 35px rgba(253, 224, 71, 0.8);
+}
+
+.v200-walkout-teaser-header.gold {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1.5px solid rgba(241, 201, 92, 0.5);
+  color: #f1c95c;
+}
+
+/* FIFA Futuristic Teaser Pillars */
+.v200-walkout-pillar-fifa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 20%, rgba(30, 41, 59, 0.95), rgba(10, 14, 26, 0.98));
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 0, 0, 0.6);
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.v200-walkout-pillar-fifa.inferno {
+  border-color: #ef4444;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(239, 68, 68, 0.5);
+}
+
+.v200-walkout-pillar-fifa.legend {
+  border-color: #fde047;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(245, 158, 11, 0.5);
+}
+
+.v200-pillar-step-badge {
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.v200-pillar-nation-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.v200-flag-emoji {
+  font-size: 38px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+
+.v200-pillar-crest-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+}
+
+.v200-pillar-pos-wrap, .v200-pillar-num-wrap {
+  margin: 6px 0;
+}
+
+.v200-pillar-pos-tag {
+  display: inline-block;
+  font-size: 22px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  text-shadow: 0 0 18px rgba(56, 189, 248, 0.8);
+}
+
+.v200-walkout-pillar-fifa.inferno .v200-pillar-pos-tag {
+  color: #ef4444;
+  text-shadow: 0 0 18px rgba(239, 68, 68, 0.9);
+}
+
+.v200-walkout-pillar-fifa.legend .v200-pillar-pos-tag {
+  color: #fde047;
+  text-shadow: 0 0 18px rgba(253, 224, 71, 0.9);
+}
+
+.v200-pillar-number-glow {
+  font-size: 38px;
+  font-weight: 1000;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.9), 0 0 35px #f59e0b;
+}
+
+.v200-pillar-val-title {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-align: center;
+}
+
+.v200-pillar-sub {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* DUAL STADIUM PYRO FLAME JETS */
+.v200-walkout-pyro-jet {
+  position: absolute;
+  bottom: 0;
+  width: 140px;
+  height: 380px;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.v200-walkout-pyro-jet.left {
+  left: 5%;
+  transform: rotate(10deg);
+}
+
+.v200-walkout-pyro-jet.right {
+  right: 5%;
+  transform: rotate(-10deg);
+}
+
+.v200-pyro-flame-core {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at bottom center, rgba(253, 224, 71, 0.9) 0%, rgba(245, 158, 11, 0.8) 30%, rgba(220, 38, 38, 0.6) 60%, transparent 85%);
+  filter: blur(8px);
+  animation: v200-pyro-surge 0.5s infinite alternate ease-in-out;
+}
+
+.v200-walkout-pyro-jet.inferno .v200-pyro-flame-core {
+  background: radial-gradient(ellipse at bottom center, rgba(255, 255, 255, 0.95) 0%, rgba(239, 68, 68, 0.85) 35%, rgba(153, 27, 27, 0.7) 65%, transparent 90%);
+}
+
+.v200-walkout-pyro-jet.legend .v200-pyro-flame-core {
+  background: radial-gradient(ellipse at bottom center, rgba(255, 255, 255, 0.95) 0%, rgba(253, 224, 71, 0.85) 35%, rgba(180, 83, 9, 0.7) 65%, transparent 90%);
+}
+
+@keyframes v200-pyro-surge {
+  0% { transform: scaleY(0.8) scaleX(0.9); opacity: 0.7; }
+  100% { transform: scaleY(1.15) scaleX(1.1); opacity: 1; }
+}
+
+/* Walkout Luxury Ribbon */
+.v200-walkout-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 30px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 1000;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  backdrop-filter: blur(14px);
+}
+
+.v200-walkout-ribbon.inferno {
+  color: #ffffff;
+  background: linear-gradient(135deg, #dc2626, #991b1b, #450a0a);
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.v200-walkout-ribbon.legend {
+  color: #000000;
+  background: linear-gradient(135deg, #fde047, #f59e0b, #d97706);
+  border: 2px solid #fef08a;
+  box-shadow: 0 0 40px rgba(253, 224, 71, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.v200-walkout-ribbon.gold {
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: 2px solid #60a5fa;
+  box-shadow: 0 0 35px rgba(59, 130, 246, 0.8);
+}
+
 /* ================= ROSTER SHOWCASE GRID ================= */
 .v104-roster-showcase-section {
   display: flex;
