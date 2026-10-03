@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { 
   Flame, 
   Sparkles, 
@@ -11,7 +11,9 @@ import {
   HelpCircle,
   ShieldAlert,
   Hand,
-  Compass
+  Compass,
+  Zap,
+  Shield
 } from "lucide-react";
 import PlayerPhoto from "./PlayerPhoto";
 import { CardDefinition, CardRarity, RARITY_CONFIG, CARD_TYPES_CONFIG, UserCard } from "@/lib/cards/types";
@@ -35,6 +37,38 @@ interface CollectibleCard3DProps {
     mvp?: number;
     captain?: number;
   };
+}
+
+// Compute dynamic realistic FIFA attributes based on card rarity, player name and position
+function getCardFIFAStats(card: CardDefinition, stats?: any) {
+  const rarity = (card.rarity || "common").toLowerCase();
+  const name = card.player?.display_name || card.card_name || "DELTA";
+  const nameHash = name.split("").reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+
+  const baseOvr = 
+    rarity === "inferno" ? 95 :
+    rarity === "legendary" ? 90 :
+    rarity === "epic" ? 85 :
+    rarity === "rare" ? 80 : 75;
+
+  const extraGoals = stats?.goals ? Math.min(3, Math.floor(stats.goals / 2)) : 0;
+  const extraMatches = stats?.matches ? Math.min(2, Math.floor(stats.matches / 5)) : 0;
+  const ovr = Math.min(99, baseOvr + (nameHash % 4) + extraGoals + extraMatches);
+
+  const posRaw = (card.player?.position || "POM").toUpperCase();
+  const isForward = posRaw.includes("NAP") || posRaw.includes("ST") || posRaw.includes("FW") || card.card_type === "goal_hunter";
+  const isDefender = posRaw.includes("OBR") || posRaw.includes("CB") || posRaw.includes("DF") || posRaw.includes("BRAM") || posRaw.includes("GK");
+  
+  const posCode = posRaw.includes("NAP") ? "ST" : posRaw.includes("BRAM") ? "GK" : posRaw.includes("OBR") ? "CB" : "CAM";
+
+  const pac = Math.min(99, ovr - (isForward ? 1 : 4) + (nameHash % 4));
+  const sho = isForward ? Math.min(99, ovr + 2) : Math.min(99, ovr - 7 + (nameHash % 5));
+  const pas = Math.min(99, ovr - 2 + ((nameHash + 2) % 5));
+  const dri = isForward ? Math.min(99, ovr + 3) : Math.min(99, ovr - 3 + (nameHash % 4));
+  const def = isDefender ? Math.min(99, ovr + 2) : Math.min(99, ovr - 12 + (nameHash % 6));
+  const phy = isDefender ? Math.min(99, ovr + 3) : Math.min(99, ovr - 4 + ((nameHash + 1) % 5));
+
+  return { ovr, posCode, pac, sho, pas, dri, def, phy };
 }
 
 export default function CollectibleCard3D({
@@ -82,12 +116,12 @@ export default function CollectibleCard3D({
   const flipToNextFace = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const curFace = Math.round(internalRotateY / 180);
-    // Alternate between 0 (front) and 180 (back) multiples
     const nextSnapY = (Math.abs(curFace) % 2 === 0) ? curFace * 180 + 180 : curFace * 180 - 180;
     setInternalRotateY(nextSnapY);
     setInternalRotateX(0);
     const isBack = Math.abs((nextSnapY / 180) % 2) === 1;
     cardSound.playFlip();
+    cardSound.playHaptic("light");
     onFlipChange?.(isBack);
   }, [internalRotateY, onFlipChange]);
 
@@ -109,46 +143,45 @@ export default function CollectibleCard3D({
       lastTime: Date.now(),
       velocityX: 0
     };
-
     hasMovedRef.current = false;
     setIsDragging(true);
-    setShow3dBadge(false);
+    cardSound.playHaptic("light");
   };
 
-  // Pointer Move -> 3D Direct Spin Physics
+  // Pointer Move -> Smooth 3D Orbit Dragging
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive) return;
 
     if (isDragging && dragStartRef.current) {
+      const now = Date.now();
       const dx = e.clientX - dragStartRef.current.startX;
       const dy = e.clientY - dragStartRef.current.startY;
 
-      if (Math.hypot(dx, dy) > 5) {
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
         hasMovedRef.current = true;
       }
 
-      // Rotate Y (Horizontal drag -> continuous 360 spin, sensitivity = 0.65 deg/px)
-      const newRotY = dragStartRef.current.startRotY + dx * 0.65;
-      // Rotate X (Vertical tilt -> clamped between -25 and +25 deg, sensitivity = 0.25 deg/px)
-      const newRotX = Math.max(-25, Math.min(25, dragStartRef.current.startRotX - dy * 0.25));
+      const dt = now - dragStartRef.current.lastTime;
+      if (dt > 0) {
+        const stepDx = e.clientX - dragStartRef.current.lastX;
+        dragStartRef.current.velocityX = stepDx / dt;
+        dragStartRef.current.lastX = e.clientX;
+        dragStartRef.current.lastTime = now;
+      }
 
-      // Velocity calculation for momentum flick
-      const now = Date.now();
-      const dt = Math.max(1, now - dragStartRef.current.lastTime);
-      const vx = (e.clientX - dragStartRef.current.lastX) / dt;
-      dragStartRef.current.lastX = e.clientX;
-      dragStartRef.current.lastTime = now;
-      dragStartRef.current.velocityX = vx;
+      const rotY = dragStartRef.current.startRotY + (dx * 0.75);
+      const rotX = Math.max(-28, Math.min(28, dragStartRef.current.startRotX - (dy * 0.45)));
 
-      setInternalRotateY(newRotY);
-      setInternalRotateX(newRotX);
+      setInternalRotateY(rotY);
+      setInternalRotateX(rotX);
 
-      // Glare reflection shifts realistically across the 3D surface
-      const glareX = 50 + (newRotY % 180) * 0.4;
-      const glareY = 50 + newRotX * 1.5;
-      setGlarePos({ x: Math.max(0, Math.min(100, glareX)), y: Math.max(0, Math.min(100, glareY)), opacity: 0.85 });
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        const glareX = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+        const glareY = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+        setGlarePos({ x: glareX, y: glareY, opacity: 0.85 });
+      }
     } else if (isHovered && cardRef.current) {
-      // Desktop gentle mouse hover tilt
       const rect = cardRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -168,7 +201,7 @@ export default function CollectibleCard3D({
     }
   };
 
-  // Pointer Up / Cancel -> Release Grab & Spring Snap to Front or Back
+  // Pointer Up / Cancel
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive || !isDragging || !dragStartRef.current) return;
 
@@ -186,7 +219,6 @@ export default function CollectibleCard3D({
     setGlarePos(prev => ({ ...prev, opacity: 0 }));
 
     if (!wasDrag) {
-      // Simple click/tap occurred
       if (onClick) {
         onClick();
       } else {
@@ -195,7 +227,6 @@ export default function CollectibleCard3D({
       return;
     }
 
-    // Drag gesture ended -> Calculate momentum & Snap to nearest face (0 or 180)
     let projectedY = internalRotateY + vx * 80;
     const snapY = Math.round(projectedY / 180) * 180;
     setInternalRotateY(snapY);
@@ -206,6 +237,7 @@ export default function CollectibleCard3D({
 
     if (prevFace !== newFace) {
       cardSound.playFlip();
+      cardSound.playHaptic("light");
       onFlipChange?.(isBack);
     }
   };
@@ -242,20 +274,31 @@ export default function CollectibleCard3D({
       else cutoutImage = "/assets/players/ryszard-legend.png";
     } else if (card.artwork_url) {
       cutoutImage = card.artwork_url;
+    } else if (card.player?.photo_path) {
+      cutoutImage = card.player.photo_path;
     }
   }
 
-  // Exact fixed card dimensions
+  // Exact card dimensions
   const dim = {
-    sm: { w: 140, h: 210 },
-    md: { w: 185, h: 275 },
-    lg: { w: 240, h: 355 },
-    xl: { w: 300, h: 445 }
+    sm: { w: 140, h: 220 },
+    md: { w: 190, h: 295 },
+    lg: { w: 250, h: 390 },
+    xl: { w: 320, h: 495 }
   }[size];
 
-  // Derive if currently showing reverse side (facing angle)
-  const normalizedY = ((internalRotateY % 360) + 360) % 360;
-  const isBackSideFacing = normalizedY > 90 && normalizedY < 270;
+  // Template image for this card tier
+  const frameTemplateUrl = useMemo(() => {
+    if (rarity === "inferno") return "/assets/cards/templates/frame_inferno.png";
+    if (rarity === "legendary") return "/assets/cards/templates/frame_legend.png";
+    if (rarity === "epic" || card.card_type === "mvp") return "/assets/cards/templates/frame_gold.png";
+    if (rarity === "rare" || card.card_type === "matchday") return "/assets/cards/templates/frame_matchday.png";
+    return "/assets/cards/templates/frame_base.png";
+  }, [rarity, card.card_type]);
+
+  const fifaStats = useMemo(() => getCardFIFAStats(card, stats), [card, stats]);
+  const playerName = (card.player?.display_name || card.card_name || "ZAWODNIK DELTA").toUpperCase();
+  const shirtNum = card.player?.shirt_number ? `#${card.player.shirt_number}` : "";
 
   return (
     <div 
@@ -286,83 +329,70 @@ export default function CollectibleCard3D({
           boxShadow: isLocked 
             ? `0 6px 20px rgba(0,0,0,0.7), 0 0 12px ${config.borderGlow}`
             : isDragging
-            ? `0 20px 40px -10px ${config.borderGlow}, 0 0 30px ${config.borderGlow}`
-            : `0 10px 30px -5px ${config.borderGlow}, 0 0 20px ${config.borderGlow}`
+            ? `0 20px 40px -10px ${config.borderGlow}, 0 0 35px ${config.borderGlow}`
+            : `0 10px 30px -5px ${config.borderGlow}, 0 0 25px ${config.borderGlow}`
         }}
       >
-        {/* ================= FRONT SIDE ================= */}
+        {/* ================= FRONT SIDE (AUTHENTIC EA FC TEMPLATE) ================= */}
         <div 
           className="v104-cc-face"
           style={{
-            background: isLocked 
-              ? `linear-gradient(180deg, rgba(18, 24, 38, 0.95) 0%, rgba(10, 13, 20, 0.98) 100%), radial-gradient(circle at 50% 40%, ${config.borderGlow} 0%, transparent 70%)`
-              : rarity === "inferno"
-                ? "radial-gradient(circle at 50% 25%, #7f1d1d 0%, #200404 60%, #0a0101 100%)"
-                : rarity === "legendary"
-                  ? "radial-gradient(circle at 50% 25%, #854d0e 0%, #2d1804 60%, #0f0701 100%)"
-                  : rarity === "epic"
-                    ? "radial-gradient(circle at 50% 25%, #581c87 0%, #1f0738 60%, #0b0214 100%)"
-                    : rarity === "rare"
-                      ? "radial-gradient(circle at 50% 25%, #0369a1 0%, #082f49 60%, #03131e 100%)"
-                      : "radial-gradient(circle at 50% 25%, #334155 0%, #0f172a 60%, #050811 100%)",
-            borderColor: config.color,
-            boxShadow: `inset 0 0 20px rgba(0,0,0,0.8), inset 0 0 10px ${config.borderGlow}`
+            borderColor: "transparent",
+            background: "transparent",
+            padding: 0,
+            overflow: "hidden"
           }}
         >
-          {/* Dynamic Specular Sheen */}
+          {/* 1. HIGH-RES CUSTOM DESIGNED TEMPLATE FRAME */}
+          <img 
+            src={frameTemplateUrl} 
+            alt={card.card_name}
+            className="v200-card-frame-img"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "fill",
+              zIndex: 1,
+              pointerEvents: "none"
+            }}
+          />
+
+          {/* 2. DYNAMIC SPECULAR HOLOGRAPHIC SHEEN */}
           <div 
             className="v104-cc-shimmer"
             style={{
               backgroundPosition: `${glarePos.x}% ${glarePos.y}%`,
-              opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.3
+              opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.35,
+              zIndex: 8,
+              pointerEvents: "none"
             }}
           />
 
-          {/* TOP HEADER ROW: DELTA Crest + Rarity Tag */}
-          <div className="v104-cc-header">
-            <div className="v104-cc-brand">
+          {/* 3. TOP-LEFT FIFA BADGE (OVR, POS, FLAG, CREST) */}
+          {!isLocked && (
+            <div className="v200-card-top-left-badge" style={{ zIndex: 4 }}>
+              <span className={`v200-card-ovr ${rarity}`}>
+                {fifaStats.ovr}
+              </span>
+              <span className={`v200-card-pos ${rarity}`}>
+                {fifaStats.posCode}
+              </span>
+              <span className="v200-card-flag" role="img" aria-label="Polska">
+                🇵🇱
+              </span>
               <img 
                 src="/teamlogos/gm.png" 
                 alt="DELTA" 
-                width={16}
-                height={16}
-                className="v104-cc-brand-logo" 
+                className="v200-card-mini-crest"
               />
-              <span className="v104-cc-brand-text">GM</span>
             </div>
-            
-            <span 
-              className="v104-cc-rarity-badge"
-              style={{
-                backgroundColor: config.color,
-                color: rarity === "legendary" || rarity === "rare" || rarity === "common" ? "#000" : "#fff",
-                boxShadow: `0 0 10px ${config.color}88`
-              }}
-            >
-              {rarity === "inferno" && <Flame size={9} />}
-              {rarity === "legendary" && <Crown size={9} />}
-              {rarity === "epic" && <Sparkles size={9} />}
-              {config.label}
-            </span>
-          </div>
+          )}
 
-          {/* CARD TYPE BADGE */}
-          <div className="v104-cc-type-badge-wrap">
-            <div 
-              className="v104-cc-type-badge"
-              style={{
-                borderColor: `${config.color}88`,
-                color: config.color
-              }}
-            >
-              {card.title || typeConfig.name}
-            </div>
-          </div>
-
-          {/* CENTER: PLAYER CUTOUT ARTWORK / LOCKED SILHOUETTE */}
-          <div className="v104-cc-body">
+          {/* 4. CENTER: PLAYER CUTOUT / NEON SILHOUETTE */}
+          <div className="v200-card-player-center" style={{ zIndex: 3 }}>
             {isLocked ? (
-              /* ===== LOCKED MYSTERY CARD FORMAT ===== */
               <div className="v104-cc-mystery-container">
                 <div 
                   className="v104-cc-mystery-box"
@@ -378,65 +408,64 @@ export default function CollectibleCard3D({
                     <Lock size={12} />
                   </div>
                 </div>
-
                 <div className="v104-cc-mystery-info">
-                  <span className="v104-cc-mystery-title">
-                    DO ODKRYCIA
-                  </span>
-                  <span className="v104-cc-mystery-sub">
-                    Otwórz w paczce
-                  </span>
+                  <span className="v104-cc-mystery-title">DO ODKRYCIA</span>
+                  <span className="v104-cc-mystery-sub">Otwórz w paczce</span>
                 </div>
               </div>
             ) : cutoutImage ? (
-              /* ===== UNLOCKED CUTOUT ===== */
-              <div className="v104-cc-cutout-wrap">
+              <div className="v200-card-cutout-wrap">
                 <img 
                   src={cutoutImage} 
-                  alt={card.player?.display_name || "Zawodnik"}
-                  className="v104-cc-cutout-img"
+                  alt={playerName}
+                  className="v200-card-cutout-img"
                 />
               </div>
             ) : (
-              /* ===== UNLOCKED BADGE ===== */
-              <div 
-                className="v104-cc-avatar-badge"
-                style={{ borderColor: config.color }}
-              >
-                <span style={{ color: "#f1c95c", fontWeight: 900, fontSize: "14px" }}>
-                  {(card.player?.display_name || "D").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
-                </span>
+              /* High-tech Futuristic Neon Silhouette */
+              <div className="v200-card-silhouette-wrap">
+                <div className={`v200-silhouette-glow ${rarity}`} />
+                <div className="v200-silhouette-jersey">
+                  <img src="/teamlogos/gm.png" alt="DELTA" className="v200-silhouette-crest" />
+                  <span className="v200-silhouette-number">{card.player?.shirt_number || "GM"}</span>
+                </div>
               </div>
             )}
           </div>
 
-          {/* BOTTOM PLAYER IDENTITY FOOTER */}
-          <div className="v104-cc-footer">
-            <div className="v104-cc-footer-row">
-              <div className="v104-cc-footer-left">
-                <span className="v104-cc-player-pos">
-                  {card.player?.position || "ZAWODNIK"} • #{card.player?.shirt_number || "GM"}
-                </span>
-                <h3 className="v104-cc-player-name">
-                  {isLocked ? (card.player?.display_name || "???") : (card.player?.display_name || card.card_name)}
-                </h3>
-              </div>
-              
-              <div className="v104-cc-footer-right">
-                <span className="v104-cc-season-label">SEZON</span>
-                <span className="v104-cc-season-val">{card.season || "2026/27"}</span>
-              </div>
-            </div>
+          {/* 5. NAMEPLATE BANNER */}
+          <div className="v200-card-nameplate" style={{ zIndex: 5 }}>
+            <span className={`v200-card-name-text ${rarity}`}>
+              {isLocked ? "???" : `${playerName} ${shirtNum}`}
+            </span>
+          </div>
 
-            {/* DUPLICATES BADGE */}
-            {userCard && userCard.duplicates_count > 0 && (
-              <div className="v104-cc-dup-badge">
-                <span className="owned">
-                  <CheckCircle2 size={9} /> W kolekcji (x{userCard.duplicates_count + 1})
-                </span>
-                <span className="num">#{String(card.card_number || 1).padStart(3, '0')}</span>
-              </div>
-            )}
+          {/* 6. 6 FIFA ATTRIBUTE BOXES (PAC, SHO, PAS, DRI, DEF, PHY) */}
+          <div className="v200-card-stats-row" style={{ zIndex: 5 }}>
+            <div className="v200-stat-col">
+              <span className="v200-stat-lbl">PAC</span>
+              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.pac}</span>
+            </div>
+            <div className="v200-stat-col">
+              <span className="v200-stat-lbl">SHO</span>
+              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.sho}</span>
+            </div>
+            <div className="v200-stat-col">
+              <span className="v200-stat-lbl">PAS</span>
+              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.pas}</span>
+            </div>
+            <div className="v200-stat-col">
+              <span className="v200-stat-lbl">DRI</span>
+              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.dri}</span>
+            </div>
+            <div className="v200-stat-col">
+              <span className="v200-stat-lbl">DEF</span>
+              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.def}</span>
+            </div>
+            <div className="v200-stat-col">
+              <span className="v200-stat-lbl">PHY</span>
+              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.phy}</span>
+            </div>
           </div>
 
           {/* FLIP BUTTON HELPER (TOP RIGHT) */}
@@ -445,6 +474,7 @@ export default function CollectibleCard3D({
               type="button"
               onClick={flipToNextFace}
               className="v104-cc-flip-btn"
+              style={{ zIndex: 10 }}
               title="Chwyć kartę lub kliknij, aby obrócić w 3D"
               aria-label="Obróć kartę"
             >
@@ -454,7 +484,7 @@ export default function CollectibleCard3D({
 
           {/* 3D ROTATE AFFORDANCE HINT (LARGE/XL) */}
           {interactive && (size === "lg" || size === "xl") && show3dBadge && (
-            <div className="v104-cc-drag-cue">
+            <div className="v104-cc-drag-cue" style={{ zIndex: 10 }}>
               <Compass size={11} className="spin-slow" />
               <span>Chwyć i obróć w 3D</span>
             </div>
@@ -541,7 +571,7 @@ export default function CollectibleCard3D({
                 : "DELTA 2018 GM"}
             </span>
             <span style={{ fontSize: "7.5px", color: "#f1c95c", fontWeight: 900, letterSpacing: "0.06em" }}>
-              INFERNO AUTHENTIC
+              DELTA AUTHENTIC
             </span>
           </div>
 
