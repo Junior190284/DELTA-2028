@@ -16,6 +16,7 @@ import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
 import DeltaLiveBar from "./DeltaLiveBar";
 import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
+import DeltaTyperModal from "./DeltaTyperModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
@@ -175,6 +176,7 @@ export default function TeamHub(props:{
   const [selectedBadgeDetail, setSelectedBadgeDetail] = useState<BadgeDetail | null>(null);
   const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
   const [achievementsTargetPlayer, setAchievementsTargetPlayer] = useState<Player | null>(null);
+  const [typerModalOpen, setTyperModalOpen] = useState(false);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
@@ -1280,7 +1282,16 @@ export default function TeamHub(props:{
           ].map(([label,val,Icon]:any)=><div className="v8-stat devil-tile" key={label}><Icon size={25}/><b>{val}</b><span>{label}</span></div>)}
         </section>
 
-        <button type="button" className="v151-home-entry devil-card" onClick={()=>setTab("teamcenter")}><span><UserCheck size={23}/><b>CENTRUM DRUŻYNY</b><small>Moje sprawy · najbliższe wydarzenie · sezon w skrócie</small></span><ChevronRight size={22}/></button>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:10,margin:"12px 0 16px 0"}}>
+          <button type="button" className="v151-home-entry devil-card" onClick={()=>setTab("teamcenter")}>
+            <span><UserCheck size={23}/><b>CENTRUM DRUŻYNY</b><small>Moje sprawy · najbliższe wydarzenie · sezon</small></span>
+            <ChevronRight size={22}/>
+          </button>
+          <button type="button" className="v151-home-entry devil-card" style={{border:"1px solid rgba(245,158,11,0.35)",background:"linear-gradient(135deg,rgba(245,158,11,0.1),rgba(0,0,0,0.4))"}} onClick={()=>setTyperModalOpen(true)}>
+            <span><Target size={23} style={{color:"#f59e0b"}}/><b>KLUBOWY TYPER MECZOWY</b><small>Typuj wynik meczu i wygrywaj punkty DP na paczki!</small></span>
+            <ChevronRight size={22}/>
+          </button>
+        </div>
         <div className="v104-league-feature">
         <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
         </div>
@@ -2184,6 +2195,22 @@ export default function TeamHub(props:{
               <span className="v200-tile-badge" style={{ background: "linear-gradient(135deg, #f1c95c, #9c7d2b)", color: "#05070a" }}>2.0</span>
             </button>
 
+            {/* 2.1 TYPER MECZOWY */}
+            <button
+              type="button"
+              className="v200-tile"
+              onClick={() => { setMobileMoreOpen(false); setTyperModalOpen(true); }}
+            >
+              <div className="v200-tile-icon" style={{ color: "#f59e0b" }}>
+                <Target size={20} />
+              </div>
+              <div className="v200-tile-text">
+                <strong>Typer Meczowy</strong>
+                <small>Typuj wyniki & wygrywaj DP</small>
+              </div>
+              <span className="v200-tile-badge" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>LIVE</span>
+            </button>
+
             {/* 3. CENTRUM DRUŻYNY */}
             <button
               type="button"
@@ -2621,6 +2648,13 @@ export default function TeamHub(props:{
         onClose={() => setAchievementsModalOpen(false)}
         playerId={achievementsTargetPlayer?.id || null}
         playerName={achievementsTargetPlayer?.display_name || undefined}
+      />
+    )}
+
+    {typerModalOpen && (
+      <DeltaTyperModal
+        isOpen={typerModalOpen}
+        onClose={() => setTyperModalOpen(false)}
       />
     )}
   </div>;
