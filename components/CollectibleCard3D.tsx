@@ -372,26 +372,87 @@ export default function CollectibleCard3D({
 
           {/* 3. TOP-LEFT FIFA BADGE (OVR, POS, FLAG, CREST) */}
           {!isLocked && (
-            <div className="v200-card-top-left-badge" style={{ zIndex: 4 }}>
-              <span className={`v200-card-ovr ${rarity}`}>
+            <div 
+              className="v200-card-top-left-badge" 
+              style={{ 
+                position: "absolute",
+                top: `${Math.round(dim.h * 0.10)}px`,
+                left: `${Math.round(dim.w * 0.085)}px`,
+                width: `${Math.round(dim.w * 0.16)}px`,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "1px",
+                pointerEvents: "none",
+                zIndex: 4 
+              }}
+            >
+              <span 
+                className={`v200-card-ovr ${rarity}`}
+                style={{
+                  fontSize: `${Math.max(12, Math.round(dim.w * 0.088))}px`,
+                  fontWeight: 1000,
+                  lineHeight: 0.95,
+                  letterSpacing: "-0.04em"
+                }}
+              >
                 {fifaStats.ovr}
               </span>
-              <span className={`v200-card-pos ${rarity}`}>
+              <span 
+                className={`v200-card-pos ${rarity}`}
+                style={{
+                  fontSize: `${Math.max(6, Math.round(dim.w * 0.042))}px`,
+                  fontWeight: 900,
+                  letterSpacing: "0.05em",
+                  marginTop: "1px",
+                  lineHeight: 1
+                }}
+              >
                 {fifaStats.posCode}
               </span>
-              <span className="v200-card-flag" role="img" aria-label="Polska">
+              <span 
+                className="v200-card-flag" 
+                role="img" 
+                aria-label="Polska"
+                style={{
+                  fontSize: `${Math.max(6, Math.round(dim.w * 0.045))}px`,
+                  marginTop: "2px",
+                  lineHeight: 1,
+                  display: "block"
+                }}
+              >
                 🇵🇱
               </span>
               <img 
                 src="/teamlogos/gm.png" 
                 alt="DELTA" 
                 className="v200-card-mini-crest"
+                style={{
+                  width: `${Math.max(8, Math.round(dim.w * 0.062))}px`,
+                  height: `${Math.max(8, Math.round(dim.w * 0.062))}px`,
+                  objectFit: "contain",
+                  marginTop: "2px"
+                }}
               />
             </div>
           )}
 
           {/* 4. CENTER: PLAYER CUTOUT / NEON SILHOUETTE */}
-          <div className="v200-card-player-center" style={{ zIndex: 3 }}>
+          <div 
+            className="v200-card-player-center" 
+            style={{ 
+              position: "absolute",
+              top: `${Math.round(dim.h * 0.08)}px`,
+              left: `${Math.round(dim.w * 0.12)}px`,
+              right: `${Math.round(dim.w * 0.12)}px`,
+              bottom: `${Math.round(dim.h * 0.35)}px`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+              zIndex: 3 
+            }}
+          >
             {isLocked ? (
               <div className="v104-cc-mystery-container">
                 <div 
@@ -434,38 +495,101 @@ export default function CollectibleCard3D({
           </div>
 
           {/* 5. NAMEPLATE BANNER */}
-          <div className="v200-card-nameplate" style={{ zIndex: 5 }}>
-            <span className={`v200-card-name-text ${rarity}`}>
+          <div 
+            className="v200-card-nameplate" 
+            style={{ 
+              position: "absolute",
+              top: `${Math.round(dim.h * 0.665)}px`,
+              left: `${Math.round(dim.w * 0.07)}px`,
+              right: `${Math.round(dim.w * 0.07)}px`,
+              height: `${Math.round(dim.h * 0.070)}px`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              pointerEvents: "none",
+              zIndex: 5 
+            }}
+          >
+            <span 
+              className={`v200-card-name-text ${rarity}`}
+              style={{
+                fontSize: `${Math.max(7, Math.round(dim.w * 0.044))}px`,
+                fontWeight: 1000,
+                letterSpacing: "0.08em",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}
+            >
               {isLocked ? "???" : `${playerName} ${shirtNum}`}
             </span>
           </div>
 
           {/* 6. 6 FIFA ATTRIBUTE BOXES (PAC, SHO, PAS, DRI, DEF, PHY) */}
-          <div className="v200-card-stats-row" style={{ zIndex: 5 }}>
-            <div className="v200-stat-col">
-              <span className="v200-stat-lbl">PAC</span>
-              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.pac}</span>
-            </div>
-            <div className="v200-stat-col">
-              <span className="v200-stat-lbl">SHO</span>
-              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.sho}</span>
-            </div>
-            <div className="v200-stat-col">
-              <span className="v200-stat-lbl">PAS</span>
-              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.pas}</span>
-            </div>
-            <div className="v200-stat-col">
-              <span className="v200-stat-lbl">DRI</span>
-              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.dri}</span>
-            </div>
-            <div className="v200-stat-col">
-              <span className="v200-stat-lbl">DEF</span>
-              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.def}</span>
-            </div>
-            <div className="v200-stat-col">
-              <span className="v200-stat-lbl">PHY</span>
-              <span className={`v200-stat-val ${rarity}`}>{isLocked ? "--" : fifaStats.phy}</span>
-            </div>
+          <div 
+            className="v200-card-stats-row" 
+            style={{ 
+              position: "absolute",
+              top: `${Math.round(dim.h * 0.758)}px`,
+              left: `${Math.round(dim.w * 0.055)}px`,
+              right: `${Math.round(dim.w * 0.055)}px`,
+              height: `${Math.round(dim.h * 0.112)}px`,
+              display: "grid",
+              gridTemplateColumns: "repeat(6, 1fr)",
+              gap: "2px",
+              pointerEvents: "none",
+              zIndex: 5 
+            }}
+          >
+            {[
+              { lbl: "PAC", val: fifaStats.pac },
+              { lbl: "SHO", val: fifaStats.sho },
+              { lbl: "PAS", val: fifaStats.pas },
+              { lbl: "DRI", val: fifaStats.dri },
+              { lbl: "DEF", val: fifaStats.def },
+              { lbl: "PHY", val: fifaStats.phy }
+            ].map(stat => (
+              <div 
+                key={stat.lbl}
+                className="v200-stat-col"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "space-around",
+                  height: "100%",
+                  padding: "1px 0",
+                  boxSizing: "border-box",
+                  textAlign: "center"
+                }}
+              >
+                <span 
+                  className="v200-stat-lbl"
+                  style={{
+                    fontSize: `${Math.max(5.5, Math.round(dim.w * 0.027))}px`,
+                    fontWeight: 900,
+                    letterSpacing: "0.03em",
+                    color: "#cbd5e1",
+                    lineHeight: 1,
+                    opacity: 0.95
+                  }}
+                >
+                  {stat.lbl}
+                </span>
+                <span 
+                  className={`v200-stat-val ${rarity}`}
+                  style={{
+                    fontSize: `${Math.max(8, Math.round(dim.w * 0.050))}px`,
+                    fontWeight: 1000,
+                    lineHeight: 1
+                  }}
+                >
+                  {isLocked ? "--" : stat.val}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* FLIP BUTTON HELPER (TOP RIGHT) */}
