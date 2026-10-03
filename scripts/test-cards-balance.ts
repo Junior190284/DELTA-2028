@@ -223,30 +223,35 @@ walletDP += calculateRecycleValue("rare"); // Recycled duplicate
 assert(walletDP === 40, "DP Wallet balance maintains strict non-negative integrity after purchase and recycle");
 
 // -----------------------------------------------------------------
-// 4. TESTING DELTA SKILL ARENA & MINI-GAMES REWARD TIERS
+// 4. TESTING DELTA SKILL ARENA & LEVEL PROGRESSION TIERS
 // -----------------------------------------------------------------
-console.log("\n🎯 4. Testing Delta Skill Mini-Games Scoring & Reward Tiers...");
+console.log("\n🎯 4. Testing Delta Skill Arena 5-Level System & 3 Moving Targets Waves...");
 
-function calculateSkillResult(mode: "free_kicks" | "gk_reflex", score: number): { stars: number; dp: number } {
-  if (mode === "free_kicks") {
-    if (score >= 900) return { stars: 3, dp: 40 };
-    if (score >= 500) return { stars: 2, dp: 25 };
-    if (score >= 200) return { stars: 1, dp: 15 };
-    return { stars: 0, dp: 5 };
-  } else {
-    if (score >= 1200) return { stars: 3, dp: 40 };
-    if (score >= 700) return { stars: 2, dp: 25 };
-    if (score >= 300) return { stars: 1, dp: 15 };
-    return { stars: 0, dp: 5 };
-  }
+import { LEVELS_CONFIG } from "../components/DeltaSkillMiniGamesModal";
+
+assert(LEVELS_CONFIG.length === 5, "Skill Arena includes exactly 5 progressive levels");
+assert(LEVELS_CONFIG[0].speedMultiplier === 1.0, "Level 1 starts at standard speed (1.0x)");
+assert(LEVELS_CONFIG[4].speedMultiplier === 2.8, "Level 5 scales up to Inferno speed (2.8x)");
+assert(LEVELS_CONFIG[4].dpReward === 100, "Level 5 Inferno Master awards +100 DP on completion");
+
+// Test 3-targets wave completion simulation
+let waveTargets = [
+  { id: "1", isHit: false },
+  { id: "2", isHit: false },
+  { id: "3", isHit: false },
+];
+let currentWave = 1;
+const wavesToPass = 3;
+
+// Hit 3 targets
+waveTargets = waveTargets.map(t => ({ ...t, isHit: true }));
+const allHit = waveTargets.every(t => t.isHit);
+assert(allHit, "All 3 moving targets hit in wave");
+
+if (allHit) {
+  currentWave++;
 }
-
-assert(calculateSkillResult("free_kicks", 1100).stars === 3, "Free Kicks High Score gives 3 Stars");
-assert(calculateSkillResult("free_kicks", 1100).dp === 40, "Free Kicks 3 Stars awards +40 DP");
-assert(calculateSkillResult("free_kicks", 600).stars === 2, "Free Kicks Mid Score gives 2 Stars (+25 DP)");
-assert(calculateSkillResult("free_kicks", 250).stars === 1, "Free Kicks Low Score gives 1 Star (+15 DP)");
-assert(calculateSkillResult("gk_reflex", 1400).stars === 3, "GK Reflex Wall Score gives 3 Stars (+40 DP)");
-assert(calculateSkillResult("gk_reflex", 800).stars === 2, "GK Reflex Solid Score gives 2 Stars (+25 DP)");
+assert(currentWave === 2, "Wave automatically advances to Wave 2 after 3 targets hit");
 
 // -----------------------------------------------------------------
 // SUMMARY

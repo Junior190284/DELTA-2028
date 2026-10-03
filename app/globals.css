@@ -24232,6 +24232,248 @@ body > main,
   cursor: pointer;
 }
 
+/* Level Select Cards Grid */
+.v200-levels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.v200-level-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.v200-level-card.unlocked:hover {
+  transform: translateY(-3px);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+}
+
+.v200-level-card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.5);
+}
+
+.v200-level-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v200-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.v200-level-reward-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.v200-level-title {
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.v200-level-subtitle {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.v200-level-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.v200-level-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.v200-level-metrics .metric b {
+  color: #ffffff;
+}
+
+.v200-level-play-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  border: 0;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.v200-level-play-btn.active-play:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(250, 204, 21, 0.4);
+}
+
+.v200-level-play-btn.locked-btn {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* ================= 3 DYNAMIC MOVING TARGETS ANIMATIONS ================= */
+.v200-dynamic-moving-target {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 3px solid;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 12;
+  transition: transform 0.1s ease, border-color 0.2s ease;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+}
+
+.v200-dynamic-moving-target:active {
+  transform: translate(-50%, -50%) scale(0.85);
+}
+
+.v200-target-inner-core {
+  width: 68%;
+  height: 68%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Animation 1: Horizontal Float */
+.v200-dynamic-moving-target.float-h {
+  animation-name: animFloatHorizontal;
+}
+@keyframes animFloatHorizontal {
+  0% { transform: translate(-100%, -50%); }
+  100% { transform: translate(0%, -50%); }
+}
+
+/* Animation 2: Vertical Float */
+.v200-dynamic-moving-target.float-v {
+  animation-name: animFloatVertical;
+}
+@keyframes animFloatVertical {
+  0% { transform: translate(-50%, -90%); }
+  100% { transform: translate(-50%, 10%); }
+}
+
+/* Animation 3: Diagonal Float */
+.v200-dynamic-moving-target.diagonal {
+  animation-name: animDiagonal;
+}
+@keyframes animDiagonal {
+  0% { transform: translate(-80%, -80%) scale(0.95); }
+  100% { transform: translate(10%, 10%) scale(1.05); }
+}
+
+/* Animation 4: Circle Orbit */
+.v200-dynamic-moving-target.circle {
+  animation-name: animCircle;
+}
+@keyframes animCircle {
+  0% { transform: translate(-50%, -50%) rotate(0deg) translateX(25px) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg) translateX(25px) rotate(-360deg); }
+}
+
+/* Animation 5: ZigZag */
+.v200-dynamic-moving-target.zigzag {
+  animation-name: animZigZag;
+}
+@keyframes animZigZag {
+  0% { transform: translate(-70%, -50%); }
+  33% { transform: translate(-20%, -90%); }
+  66% { transform: translate(20%, -10%); }
+  100% { transform: translate(-30%, -50%); }
+}
+
+/* Victory & Next Level UI */
+.v200-victory-trophy-box {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.25), rgba(202, 138, 4, 0.05));
+  border: 2px solid #facc15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(250, 204, 21, 0.4);
+}
+
+.v200-skill-nextlevel-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: 1px solid #4ade80;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35);
+  transition: all 0.2s ease;
+}
+
+.v200-skill-nextlevel-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 25px rgba(34, 197, 94, 0.5);
+}
+
 /* Tile Skill Glow in Collection */
 .v200-vip-action-tile.tile-skill:hover {
   border-color: rgba(245, 158, 11, 0.5);
@@ -24245,6 +24487,7 @@ body > main,
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.4);
 }
+
 
 
 
