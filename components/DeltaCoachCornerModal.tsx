@@ -16,12 +16,14 @@ import {
   Target, 
   Zap, 
   Shield, 
-  Video, 
   Check, 
   MessageSquare,
   ChevronRight,
   BookOpen,
-  Plus
+  Plus,
+  Footprints,
+  UserCheck,
+  HelpCircle
 } from "lucide-react";
 import { cardSound } from "@/lib/cards/audio";
 import CanvasParticles from "./CanvasParticles";
@@ -40,16 +42,17 @@ export interface SkillSubmission {
   challengeKey: string;
   challengeTitle: string;
   scoreResult: string;
+  trainingContext: string;
   submittedAt: string;
   status: "pending" | "approved" | "rejected";
   coachNote?: string;
 }
 
 const INITIAL_SKILL_RECORDS: SkillSubmission[] = [
-  { id: "s1", playerId: "p1", playerName: "Staś Kowalski #10", challengeKey: "juggling", challengeTitle: "Klub Żonglerki", scoreResult: "48 żonglerek", submittedAt: "Wczoraj", status: "approved", coachNote: "Rewelacyjna kontrola piłki obiema nogami! Brawo!" },
-  { id: "s2", playerId: "p2", playerName: "Jan Nowak #7", challengeKey: "slalom", challengeTitle: "Slalom Mistrza", scoreResult: "8.4 sek.", submittedAt: "2 dni temu", status: "approved", coachNote: "Świetna dynamika i ciasne zwody." },
-  { id: "s3", playerId: "p3", playerName: "Tymon Wiśniewski #9", challengeKey: "crossbar", challengeTitle: "Snajper Poprzeczki", scoreResult: "3 trafienia z rzędu", submittedAt: "3 dni temu", status: "approved", coachNote: "Precyzja uderzenia wzorowa!" },
-  { id: "s4", playerId: "p4", playerName: "Oliwier Wójcik #1", challengeKey: "juggling", challengeTitle: "Klub Żonglerki", scoreResult: "28 żonglerek", submittedAt: "Dzisiaj, 10:15", status: "pending" }
+  { id: "s1", playerId: "p1", playerName: "Staś Kowalski #10", challengeKey: "juggling", challengeTitle: "Klub Żonglerki", scoreResult: "48 żonglerek", trainingContext: "Próba na treningu wtorkowym pod okiem trenera", submittedAt: "Wczoraj", status: "approved", coachNote: "Rewelacyjna kontrola piłki obiema nogami! Brawo!" },
+  { id: "s2", playerId: "p2", playerName: "Jan Nowak #7", challengeKey: "slalom", challengeTitle: "Slalom Mistrza", scoreResult: "8.4 sek.", trainingContext: "Próba po czwartkowym treningu", submittedAt: "2 dni temu", status: "approved", coachNote: "Świetna dynamika i ciasne zwody." },
+  { id: "s3", playerId: "p3", playerName: "Tymon Wiśniewski #9", challengeKey: "crossbar", challengeTitle: "Snajper Poprzeczki", scoreResult: "3 trafienia z rzędu", trainingContext: "Próba przed piątkową gierką", submittedAt: "3 dni temu", status: "approved", coachNote: "Precyzja uderzenia wzorowa!" },
+  { id: "s4", playerId: "p4", playerName: "Oliwier Wójcik #1", challengeKey: "juggling", challengeTitle: "Klub Żonglerki", scoreResult: "28 żonglerek", trainingContext: "Próba zgłoszona po rozgrzewce", submittedAt: "Dzisiaj, 10:15", status: "pending" }
 ];
 
 const SKILL_CHALLENGES = [
@@ -125,8 +128,7 @@ export default function DeltaCoachCornerModal({
   const [selectedPlayerId, setSelectedPlayerId] = useState(players.length > 0 ? players[0].id : "");
   const [selectedChallengeKey, setSelectedChallengeKey] = useState("juggling");
   const [scoreInput, setScoreInput] = useState("");
-  const [videoLink, setVideoLink] = useState("");
-  const [notesInput, setNotesInput] = useState("");
+  const [trainingNote, setTrainingNote] = useState("Próba wykonana na treningu pod okiem trenera");
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
   // Idea submission state
@@ -137,7 +139,7 @@ export default function DeltaCoachCornerModal({
     setMounted(true);
   }, []);
 
-  // Submit Skill Record
+  // Submit Skill Record after successful attempt with coach
   const handleSubmitRecord = (e: React.FormEvent) => {
     e.preventDefault();
     if (!scoreInput.trim()) return;
@@ -152,6 +154,7 @@ export default function DeltaCoachCornerModal({
       challengeKey: targetChallenge.key,
       challengeTitle: targetChallenge.title.replace(/^[^\s]+\s/, ""),
       scoreResult: scoreInput.trim(),
+      trainingContext: trainingNote.trim() || "Próba na treningu",
       submittedAt: "Przed chwilą",
       status: "pending"
     };
@@ -160,8 +163,6 @@ export default function DeltaCoachCornerModal({
     cardSound.playPurchase();
     setSubmittedSuccess(true);
     setScoreInput("");
-    setVideoLink("");
-    setNotesInput("");
 
     setTimeout(() => {
       setSubmittedSuccess(false);
@@ -175,6 +176,12 @@ export default function DeltaCoachCornerModal({
     setCelebrating(true);
     setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: "approved", coachNote: "Zatwierdzone przez Trenera!" } : s));
     setTimeout(() => setCelebrating(false), 2000);
+  };
+
+  // Coach rejects record
+  const handleReject = (subId: string) => {
+    cardSound.playHover();
+    setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: "rejected", coachNote: "Wymagana ponowna próba na treningu." } : s));
   };
 
   // Submit Coach Corner Idea
@@ -203,7 +210,7 @@ export default function DeltaCoachCornerModal({
               <span>SZTAB SZKOLENIOWY DELTA WARSZAWA</span>
             </div>
             <h2>KĄCIK TRENERA & SKILL MASTER ⚽</h2>
-            <p>Zadania domowe, oficjalne wyzwania techniczne zatwierdzane przez trenera oraz bank inspiracji!</p>
+            <p>Zadania domowe, oficjalne próby bicia rekordów pod okiem trenera oraz bank inspiracji!</p>
           </div>
 
           <button 
@@ -224,7 +231,7 @@ export default function DeltaCoachCornerModal({
             className={`v200-coach-tab-btn ${activeTab === "skills" ? "active" : ""}`}
           >
             <Trophy size={16} />
-            <span>AKADEMIA SKILL MASTER (WYZWANIA)</span>
+            <span>TABLICA REKORDÓW SKILL MASTER</span>
           </button>
 
           <button
@@ -233,7 +240,7 @@ export default function DeltaCoachCornerModal({
             className={`v200-coach-tab-btn ${activeTab === "submit" ? "active" : ""}`}
           >
             <Plus size={16} />
-            <span>ZGŁOŚ REKORD DO WERYFIKACJI</span>
+            <span>WPISZ WYNIK Z PRÓBY NA TRENINGU</span>
           </button>
 
           <button
@@ -242,7 +249,7 @@ export default function DeltaCoachCornerModal({
             className={`v200-coach-tab-btn ${activeTab === "inspiration" ? "active" : ""}`}
           >
             <Lightbulb size={16} />
-            <span>KĄCIK INSPIRACJI & POMYSŁÓW</span>
+            <span>KĄCIK INSPIRACJI & ZADANIA DOMOWE</span>
           </button>
         </div>
 
@@ -251,6 +258,28 @@ export default function DeltaCoachCornerModal({
           {/* ================= TAB 1: SKILL MASTER CHALLENGES & RECORDS ================= */}
           {activeTab === "skills" && (
             <div className="v200-skills-view animate-fadeIn">
+              {/* How it works info card */}
+              <div className="v200-skill-rules-banner">
+                <div className="v200-rules-header">
+                  <Flame size={20} className="text-red-500 animate-pulse" />
+                  <h4>JAK DZIAŁA SKILL MASTER? ZASADY OFICJALNYCH PRÓB:</h4>
+                </div>
+                <div className="v200-rules-steps-grid">
+                  <div className="v200-rule-step">
+                    <span className="v200-step-num">1</span>
+                    <p><strong>Podejdź do trenera na treningu</strong> i powiedz, że chcesz wykonać oficjalną próbę bicia rekordu.</p>
+                  </div>
+                  <div className="v200-rule-step">
+                    <span className="v200-step-num">2</span>
+                    <p>Gdy trener ma chwilę czasu i wyrazi zgodę, <strong>wykonujesz próbę pod jego okiem</strong>.</p>
+                  </div>
+                  <div className="v200-rule-step">
+                    <span className="v200-step-num">3</span>
+                    <p>Po udanej próbie <strong>wpisujesz wynik w aplikacji</strong>, a trener lub administrator zatwierdza Twój rekord na oficjalnej tablicy!</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Challenge cards grid */}
               <div className="v200-challenges-grid">
                 {SKILL_CHALLENGES.map(ch => (
@@ -279,7 +308,7 @@ export default function DeltaCoachCornerModal({
                   <div>
                     <span className="v200-rec-eyebrow">
                       <Crown size={14} className="text-yellow-400 inline mr-1" />
-                      OFICJALNA TABLICA REKORDÓW DRUŻYNY
+                      OFICJALNA TABLICA REKORDÓW DELTY
                     </span>
                     <h3 className="v200-rec-title">ZATWIERDZENI MISTRZOWIE TECHNIKI</h3>
                   </div>
@@ -290,24 +319,26 @@ export default function DeltaCoachCornerModal({
                     className="v200-add-record-btn"
                   >
                     <Plus size={14} />
-                    <span>ZGŁOŚ SWÓJ REKORD</span>
+                    <span>WPISZ REKORD Z TRENINGU</span>
                   </button>
                 </div>
 
                 <div className="v200-records-list">
                   {submissions.map(sub => {
                     const isApproved = sub.status === "approved";
+                    const isRejected = sub.status === "rejected";
 
                     return (
-                      <div key={sub.id} className={`v200-record-row ${isApproved ? "approved" : "pending"}`}>
+                      <div key={sub.id} className={`v200-record-row ${isApproved ? "approved" : isRejected ? "rejected" : "pending"}`}>
                         <div className="v200-rec-left">
                           <div className="v200-rec-icon">
-                            {isApproved ? "🥇" : "⏳"}
+                            {isApproved ? "🥇" : isRejected ? "❌" : "⏳"}
                           </div>
                           <div>
                             <strong className="v200-rec-pname">{sub.playerName}</strong>
                             <div className="v200-rec-meta">
                               <span>{sub.challengeTitle}</span> • <span className="v200-rec-score">{sub.scoreResult}</span>
+                              <span className="v200-rec-context"> ({sub.trainingContext})</span>
                             </div>
                             {sub.coachNote && (
                               <p className="v200-coach-feedback">
@@ -320,21 +351,35 @@ export default function DeltaCoachCornerModal({
                         <div className="v200-rec-status-col">
                           {isApproved ? (
                             <span className="v200-status-badge approved">
-                              <CheckCircle2 size={13} className="inline mr-1" /> ZATWIERDZONE
+                              <CheckCircle2 size={13} className="inline mr-1" /> ZATWIERDZONE PRZEZ TRENERA
+                            </span>
+                          ) : isRejected ? (
+                            <span className="v200-status-badge rejected">
+                              <X size={13} className="inline mr-1" /> POWTÓRZ PRÓBĘ
                             </span>
                           ) : (
                             <div className="v200-pending-actions">
                               <span className="v200-status-badge pending">
-                                <Clock size={13} className="inline mr-1" /> WERYFIKACJA
+                                <Clock size={13} className="inline mr-1" /> CZEKA NA ZATWIERDZENIE
                               </span>
-                              {/* Coach One-Click Approval */}
+
+                              {/* Coach or Admin Approval Buttons */}
                               <button
                                 type="button"
                                 onClick={() => handleApprove(sub.id)}
                                 className="v200-approve-btn"
-                                title="Kliknij jako Trener, aby zatwierdzić rekord"
+                                title="Kliknij jako Trener / Administrator, aby zatwierdzić rekord"
                               >
                                 <Check size={14} /> Zatwierdź
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleReject(sub.id)}
+                                className="v200-reject-btn"
+                                title="Odrzuć lub poproś o powtórzenie"
+                              >
+                                <X size={14} />
                               </button>
                             </div>
                           )}
@@ -352,18 +397,18 @@ export default function DeltaCoachCornerModal({
             <div className="v200-submit-view animate-fadeIn">
               <div className="v200-submit-card">
                 <div className="v200-submit-header">
-                  <Target size={22} className="text-yellow-400" />
+                  <Target size={24} className="text-yellow-400" />
                   <div>
-                    <h3>ZGŁOSZENIE REKORDU DO WERYFIKACJI TRENERA</h3>
-                    <p>Udało Ci się pobić rekord w żonglerce, slalomie lub poprzeczce? Zgłoś wynik, a trener po sprawdzeniu doda Cię do oficjalnej Tablicy Rekordów DELTY!</p>
+                    <h3>WPISZ WYNIK Z UDANEJ PRÓBY NA TRENINGU</h3>
+                    <p>Udało Ci się zrobić rekord pod okiem trenera na treningu? Wpisz wynik poniżej, a trener lub administrator zatwierdzi go na oficjalnej tablicy!</p>
                   </div>
                 </div>
 
                 {submittedSuccess ? (
                   <div className="v200-submit-success animate-scaleUp">
-                    <CheckCircle2 size={42} className="text-green-400" />
-                    <h4>DZIĘKUJEMY! ZGŁOSZENIE ZOSTAŁO WYSŁANE DO TRENERA!</h4>
-                    <p>Trener zweryfikuje wynik na najbliższym treningu lub po obejrzeniu filmiku i zatwierdzi Twój rekord!</p>
+                    <CheckCircle2 size={44} className="text-green-400" />
+                    <h4>BRAWO! WYNIK ZOSTAŁ WPISANY DO SYSTEMU!</h4>
+                    <p>Trener lub administrator potwierdzi wpis i Twój rekord pojawi się na oficjalnej Tablicy Rekordów DELTY!</p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmitRecord} className="v200-submit-form">
@@ -399,42 +444,36 @@ export default function DeltaCoachCornerModal({
                     </div>
 
                     <div className="v200-form-field">
-                      <label>Osiągnięty wynik (np. 35 żonglerek / 8.8 sekundy / 3 trafienia)</label>
+                      <label>Osiągnięty wynik na treningu (np. 35 żonglerek / 8.6 sekundy / 3 trafienia)</label>
                       <input
                         type="text"
                         value={scoreInput}
                         onChange={(e) => setScoreInput(e.target.value)}
-                        placeholder="Wpisz dokładny wynik..."
+                        placeholder="Wpisz uzyskany wynik..."
                         className="v200-input"
                         required
                       />
                     </div>
 
                     <div className="v200-form-field">
-                      <label>Opcjonalny link do nagrania wideo / informacja o świadku</label>
+                      <label>Kiedy i przy kim wykonano próbę?</label>
                       <input
                         type="text"
-                        value={videoLink}
-                        onChange={(e) => setVideoLink(e.target.value)}
-                        placeholder="np. filmik przesłany na WhatsApp / nagrany przez tatę"
+                        value={trainingNote}
+                        onChange={(e) => setTrainingNote(e.target.value)}
+                        placeholder="np. Próba wykonana przed wtorkowym treningiem pod okiem trenera"
                         className="v200-input"
                       />
                     </div>
 
-                    <div className="v200-form-field">
-                      <label>Dodatkowe uwagi dla trenera</label>
-                      <textarea
-                        value={notesInput}
-                        onChange={(e) => setNotesInput(e.target.value)}
-                        placeholder="Krótki komentarz do wykonania zadania..."
-                        className="v200-textarea"
-                        rows={3}
-                      />
+                    <div className="v200-submit-disclaimer">
+                      <UserCheck size={16} className="text-yellow-400 flex-shrink-0" />
+                      <span>Pamiętaj: Rekord musi być wykonany na żywo pod okiem trenera, aby został oficjalnie zatwierdzony w klasyfikacji.</span>
                     </div>
 
                     <button type="submit" className="v200-form-submit-btn">
                       <Send size={16} />
-                      <span>WYŚLIJ REKORD DO WERYFIKACJI TRENERA</span>
+                      <span>ZAPISZ REKORD DO ZATWIERDZENIA</span>
                     </button>
                   </form>
                 )}
@@ -464,7 +503,7 @@ export default function DeltaCoachCornerModal({
                   <h4>ĆWICZENIE TYGODNIA DO DOMU: „MAGICZNE V-PULL”</h4>
                 </div>
                 <p className="v200-hw-text">
-                  <strong>Instrukcja:</strong> Pociągnij piłkę podeszwą prawej nogi do tyłu, po czym wewnętrzną częścią stopy wypchnij ją pod kątem w lewo. Powtórz lewą nogą! Zrób 3 serie po 20 powtórzeń dziennie.
+                  <strong>Instrukcja dla chłopaków:</strong> Pociągnij piłkę podeszwą prawej nogi do tyłu, po czym wewnętrzną częścią stopy wypchnij ją pod kątem w lewo. Powtórz lewą nogą! Zrób 3 serie po 20 powtórzeń dziennie przed kolejnym treningiem.
                 </p>
               </div>
 
@@ -474,21 +513,21 @@ export default function DeltaCoachCornerModal({
                   <Lightbulb size={24} className="text-yellow-400" />
                   <div>
                     <h4>SZUKAMY POMYSŁÓW I INSPIRACJI! 💡</h4>
-                    <p>Masz pomysł na nowe wyzwanie, urozmaicenie treningu lub usprawnienie działania naszej drużyny? Napisz do nas!</p>
+                    <p>Masz pomysł na nowe wyzwanie, urozmaicenie treningu lub ciekawe ćwiczenie dla chłopaków? Napisz do nas!</p>
                   </div>
                 </div>
 
                 {ideaSubmitted ? (
                   <div className="v200-idea-thankyou animate-fadeIn">
                     <CheckCircle2 size={32} className="text-green-400" />
-                    <span>Dziękujemy za przesłanie pomysłu! Trener zapozna się z Twoją propozycją.</span>
+                    <span>Dziękujemy za przesłanie pomysłu! Sztab szkoleniowy zapozna się z Twoją propozycją.</span>
                   </div>
                 ) : (
                   <form onSubmit={handleSendIdea} className="v200-idea-form">
                     <textarea
                       value={ideaText}
                       onChange={(e) => setIdeaText(e.target.value)}
-                      placeholder="Wpisz swój pomysł, sugestię lub propozycję nowego ćwiczenia..."
+                      placeholder="Wpisz swój pomysł, inspirację lub propozycję nowego ćwiczenia..."
                       className="v200-textarea"
                       rows={3}
                       required
