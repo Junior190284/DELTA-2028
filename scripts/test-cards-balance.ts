@@ -223,6 +223,32 @@ walletDP += calculateRecycleValue("rare"); // Recycled duplicate
 assert(walletDP === 40, "DP Wallet balance maintains strict non-negative integrity after purchase and recycle");
 
 // -----------------------------------------------------------------
+// 4. TESTING DELTA SKILL ARENA & MINI-GAMES REWARD TIERS
+// -----------------------------------------------------------------
+console.log("\n🎯 4. Testing Delta Skill Mini-Games Scoring & Reward Tiers...");
+
+function calculateSkillResult(mode: "free_kicks" | "gk_reflex", score: number): { stars: number; dp: number } {
+  if (mode === "free_kicks") {
+    if (score >= 900) return { stars: 3, dp: 40 };
+    if (score >= 500) return { stars: 2, dp: 25 };
+    if (score >= 200) return { stars: 1, dp: 15 };
+    return { stars: 0, dp: 5 };
+  } else {
+    if (score >= 1200) return { stars: 3, dp: 40 };
+    if (score >= 700) return { stars: 2, dp: 25 };
+    if (score >= 300) return { stars: 1, dp: 15 };
+    return { stars: 0, dp: 5 };
+  }
+}
+
+assert(calculateSkillResult("free_kicks", 1100).stars === 3, "Free Kicks High Score gives 3 Stars");
+assert(calculateSkillResult("free_kicks", 1100).dp === 40, "Free Kicks 3 Stars awards +40 DP");
+assert(calculateSkillResult("free_kicks", 600).stars === 2, "Free Kicks Mid Score gives 2 Stars (+25 DP)");
+assert(calculateSkillResult("free_kicks", 250).stars === 1, "Free Kicks Low Score gives 1 Star (+15 DP)");
+assert(calculateSkillResult("gk_reflex", 1400).stars === 3, "GK Reflex Wall Score gives 3 Stars (+40 DP)");
+assert(calculateSkillResult("gk_reflex", 800).stars === 2, "GK Reflex Solid Score gives 2 Stars (+25 DP)");
+
+// -----------------------------------------------------------------
 // SUMMARY
 // -----------------------------------------------------------------
 console.log("\n=================================================================");

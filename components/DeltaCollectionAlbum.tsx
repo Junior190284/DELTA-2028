@@ -25,7 +25,8 @@ import {
   Users,
   ArrowLeftRight,
   Swords,
-  Shield
+  Shield,
+  Target
 } from "lucide-react";
 import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -37,6 +38,7 @@ import SquadBuilder3D from "./SquadBuilder3D";
 import CardBattleCompareModal from "./CardBattleCompareModal";
 import DeltaTradeHubModal from "./DeltaTradeHubModal";
 import AchievementsModal from "./AchievementsModal";
+import DeltaSkillMiniGamesModal from "./DeltaSkillMiniGamesModal";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -89,6 +91,7 @@ export default function DeltaCollectionAlbum({
   const [showTradeHub, setShowTradeHub] = useState(false);
   const [showBattleCompare, setShowBattleCompare] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showSkillGames, setShowSkillGames] = useState(false);
 
   const getCardUnlockCondition = (card: CardDefinition): string => {
     const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
@@ -528,6 +531,28 @@ export default function DeltaCollectionAlbum({
               <div className="v200-tile-tag tag-gold">WYZWANIA & MISJE</div>
               <h3 className="v200-tile-title">ODZNAKI & NAGRODY</h3>
               <p className="v200-tile-desc">Odbieraj Delta Points za mecze, treningi oraz osiągnięcia!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
+          </button>
+
+          {/* Tile 6: Skill Mini-Games */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowSkillGames(true);
+              cardSound.playFlip();
+              cardSound.playHaptic("medium");
+            }}
+            className="v200-vip-action-tile tile-skill"
+          >
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box skill-glow">
+              <Target size={26} className="text-amber-400 animate-pulse" />
+            </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag tag-skill">MINI-GRY 3D (+DP)</div>
+              <h3 className="v200-tile-title">TRENING CELNOŚCI 🎯</h3>
+              <p className="v200-tile-desc">Rzuty wolne w okienko i refleks bramkarza! Zdobywaj punkty DP!</p>
             </div>
             <div className="v200-tile-chevron">→</div>
           </button>
@@ -1217,6 +1242,14 @@ export default function DeltaCollectionAlbum({
           isOpen={showAchievements}
           onClose={() => setShowAchievements(false)}
           onPointsUpdated={(newPts) => setDeltaPoints(p => p + newPts)}
+        />
+      )}
+
+      {/* ================= 6. SKILL MINI-GAMES MODAL ================= */}
+      {showSkillGames && (
+        <DeltaSkillMiniGamesModal
+          onClose={() => setShowSkillGames(false)}
+          onPointsEarned={(pts) => setDeltaPoints(p => p + pts)}
         />
       )}
     </section>
