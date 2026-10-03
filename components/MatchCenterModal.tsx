@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
@@ -54,6 +55,19 @@ export default function MatchCenterModal(props:{
   const canEditEvents=canManageMatch||!!props.canEditEvents;
   const staff=canManageMatch||canEditEvents;
   const [tab,setTab]=useState<Tab>(props.initialTab||"summary");
+
+  useEffect(()=>{
+    if(props.initialTab) setTab(props.initialTab);
+  },[props.initialTab,props.match.id]);
+
+  useEffect(()=>{
+    if(props.embedded) return;
+    const onKeyDown=(e:KeyboardEvent)=>{
+      if(e.key==="Escape") props.onClose();
+    };
+    window.addEventListener("keydown",onKeyDown);
+    return ()=>window.removeEventListener("keydown",onKeyDown);
+  },[props.embedded,props.onClose]);
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState("");
   const [celebration,setCelebration]=useState<"goal"|"hattrick"|"mvp"|null>(null);
@@ -346,13 +360,14 @@ export default function MatchCenterModal(props:{
     {id:"mvp",label:"MVP",icon:Star,allowed:canEditEvents},
   ];
 
-  return <div className={props.embedded?"match-center-embedded":"match-center-overlay"} onClick={props.embedded?undefined:props.onClose}>
-    {celebration&&<div className={`v101-celebration ${celebration}`} aria-hidden="true">
-      <div className="v101-celebration-smoke"/><div className="v101-celebration-flare"/>
-      <span>{celebration==="goal"?"GOOOL!":celebration==="hattrick"?"HAT-TRICK!":"MVP"}</span>
-      <b>{celebration==="mvp"?"MOST VALUABLE PLAYER":"DELTA 2018 GM"}</b>
-    </div>}
-    <div className="match-center-sheet v85-match-center" onClick={e=>e.stopPropagation()}>
+  const content = (
+    <div className={props.embedded?"match-center-embedded":"match-center-overlay"} onClick={props.embedded?undefined:props.onClose}>
+      {celebration&&<div className={`v101-celebration ${celebration}`} aria-hidden="true">
+        <div className="v101-celebration-smoke"/><div className="v101-celebration-flare"/>
+        <span>{celebration==="goal"?"GOOOL!":celebration==="hattrick"?"HAT-TRICK!":"MVP"}</span>
+        <b>{celebration==="mvp"?"MOST VALUABLE PLAYER":"DELTA 2018 GM"}</b>
+      </div>}
+      <div className="match-center-sheet v85-match-center" onClick={e=>e.stopPropagation()}>
       <button className="close" onClick={props.onClose}>×</button>
 
       <div className="v85-match-head">
@@ -532,5 +547,11 @@ export default function MatchCenterModal(props:{
         </>}
       </div>
     </div>
-  </div>;
+  </div>
+  );
+
+  if (!props.embedded && typeof document !== "undefined") {
+    return createPortal(content, document.body);
+  }
+  return content;
 }

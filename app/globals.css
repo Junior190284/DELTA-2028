@@ -16217,4 +16217,72 @@ body > main,
   user-select: none;
 }
 
+/* -------------------------------------------------------------
+   V200 ENHANCED TEAM CENTER & MODAL STACKING
+   ------------------------------------------------------------- */
+.match-center-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: rgba(4, 6, 10, 0.88) !important;
+  backdrop-filter: blur(14px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+}
+
+.match-center-sheet {
+  position: relative !important;
+  z-index: 100000 !important;
+  width: min(1480px, 100%) !important;
+  max-height: 90vh !important;
+  border-radius: 16px !important;
+  overflow-y: auto !important;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(226, 46, 48, 0.2) !important;
+}
+
+.v151-team-card {
+  position: relative;
+  border-radius: 14px;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v151-team-card:hover {
+  border-color: rgba(246, 201, 82, 0.45) !important;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.5), 0 0 25px rgba(226, 46, 48, 0.15);
+}
+
+.v151-team-card > button {
+  position: relative !important;
+  z-index: 2 !important;
+  margin-top: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 13px 18px !important;
+  min-height: 46px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(246, 206, 109, 0.55) !important;
+  background: linear-gradient(110deg, #8a1722, #400f18) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
+}
+
+.v151-team-card > button:hover {
+  background: linear-gradient(110deg, #aa1e2c, #5c1422) !important;
+  border-color: rgba(251, 191, 36, 0.85) !important;
+  box-shadow: 0 0 20px rgba(226, 46, 48, 0.4), 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-2px);
+}
+
+.v151-team-card > button:active {
+  transform: translateY(0);
+}
+
 

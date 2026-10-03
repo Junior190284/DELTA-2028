@@ -1383,9 +1383,76 @@ export default function TeamHub(props:{
       {tab==="teamcenter"&&<section className="section v151-team-center">
         <header className="v151-team-hero devil-card"><span className="eyebrow gold">DELTA 2018 GM · STREFA RODZICA</span><h1>CENTRUM <em>DRUŻYNY</em></h1><p>Najbliższe wydarzenia, Twoje sprawy i sezon w jednym miejscu.</p></header>
         <div className="v151-team-grid">
-          <article className="v151-team-card devil-card"><div className="v8-panel-title"><CalendarDays size={18}/> NAJBLIŻSZE WYDARZENIE</div>{nextSmart?<><small>{nextSmart.kind==="match"?"MECZ":nextSmart.kind==="training"?"TRENING":"WYDARZENIE"}</small><h2>{nextSmart.title}</h2><p>{nextSmart.subtitle}</p><strong>{formatCountdown(nextSmart.at.getTime()-now.getTime())}</strong><button onClick={()=>nextSmart.kind==="match"&&nextMatch?openMatch(nextMatch,"summary"):setTab("calendar")}>SZCZEGÓŁY <ChevronRight size={15}/></button></>:<p>Brak nadchodzących wydarzeń.</p>}</article>
-          <article className="v151-team-card devil-card"><div className="v8-panel-title"><UserCheck size={18}/> MOJE SPRAWY</div>{parentPlayers.length?nextMatch?<><small>NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>{ownMatchResponses.map(x=><div className="v151-rsvp-row" key={x.player.id}><b>{x.player.display_name}</b><span className={x.status==="yes"?"ok":x.status==="no"?"no":"pending"}>{x.status==="yes"?"Obecność potwierdzona":x.status==="no"?"Nieobecny":x.status==="maybe"?"Do potwierdzenia":"Brak odpowiedzi"}</span></div>)}<button onClick={()=>openMatch(nextMatch,"attendance")}>POTWIERDŹ OBECNOŚĆ <ChevronRight size={15}/></button></>:<p>Na razie nie ma meczu do potwierdzenia.</p>:<p>Ta sekcja pojawi się, gdy konto rodzica będzie powiązane z zawodnikiem.</p>}</article>
-          <article className="v151-team-card devil-card"><div className="v8-panel-title"><Trophy size={18}/> SEZON W SKRÓCIE</div><div className="v151-season-numbers"><span><b>{teamSummary.played}</b><small>MECZE</small></span><span><b>{teamSummary.goals}</b><small>GOLE</small></span><span><b>{teamSummary.wins}</b><small>WYGRANE</small></span></div><p>{latestPlayed?`Ostatni wynik: ${latestPlayed.home_team} ${latestPlayed.home_score}:${latestPlayed.away_score} ${latestPlayed.away_team}`:"Pierwszy wynik pojawi się po meczu."}</p><button onClick={()=>setTab("league")}>CENTRUM ROZGRYWEK <ChevronRight size={15}/></button></article>
+          <article className="v151-team-card devil-card">
+            <div className="v8-panel-title"><CalendarDays size={18}/> NAJBLIŻSZE WYDARZENIE</div>
+            {nextSmart ? (
+              <>
+                <small>{nextSmart.kind==="match"?"MECZ":nextSmart.kind==="training"?"TRENING":"WYDARZENIE"}</small>
+                <h2>{nextSmart.title}</h2>
+                <p>{nextSmart.subtitle}</p>
+                <strong>{formatCountdown(nextSmart.at.getTime()-now.getTime())}</strong>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (nextMatch) {
+                      openMatch(nextMatch, "summary");
+                    } else {
+                      setTab("calendar");
+                    }
+                  }}
+                >
+                  SZCZEGÓŁY <ChevronRight size={15}/>
+                </button>
+              </>
+            ) : (
+              <p>Brak nadchodzących wydarzeń.</p>
+            )}
+          </article>
+          <article className="v151-team-card devil-card">
+            <div className="v8-panel-title"><UserCheck size={18}/> MOJE SPRAWY</div>
+            {parentPlayers.length > 0 ? (
+              nextMatch ? (
+                <>
+                  <small>NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>
+                  {ownMatchResponses.map(x=><div className="v151-rsvp-row" key={x.player.id}><b>{x.player.display_name}</b><span className={x.status==="yes"?"ok":x.status==="no"?"no":"pending"}>{x.status==="yes"?"Obecność potwierdzona":x.status==="no"?"Nieobecny":x.status==="maybe"?"Do potwierdzenia":"Brak odpowiedzi"}</span></div>)}
+                  <button
+                    type="button"
+                    onClick={() => openMatch(nextMatch, "attendance")}
+                  >
+                    POTWIERDŹ OBECNOŚĆ <ChevronRight size={15}/>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>Na razie nie ma meczu do potwierdzenia.</p>
+                  <button type="button" onClick={() => setTab("calendar")}>
+                    OTWÓRZ KALENDARZ <ChevronRight size={15}/>
+                  </button>
+                </>
+              )
+            ) : (
+              nextMatch ? (
+                <>
+                  <small>NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>
+                  <p>Zobacz listę obecności oraz powołania zawodników.</p>
+                  <button
+                    type="button"
+                    onClick={() => openMatch(nextMatch, "attendance")}
+                  >
+                    POTWIERDŹ OBECNOŚĆ <ChevronRight size={15}/>
+                  </button>
+                </>
+              ) : (
+                <p>Ta sekcja pojawi się, gdy konto rodzica będzie powiązane z zawodnikiem.</p>
+              )
+            )}
+          </article>
+          <article className="v151-team-card devil-card">
+            <div className="v8-panel-title"><Trophy size={18}/> SEZON W SKRÓCIE</div>
+            <div className="v151-season-numbers"><span><b>{teamSummary.played}</b><small>MECZE</small></span><span><b>{teamSummary.goals}</b><small>GOLE</small></span><span><b>{teamSummary.wins}</b><small>WYGRANE</small></span></div>
+            <p>{latestPlayed?`Ostatni wynik: ${latestPlayed.home_team} ${latestPlayed.home_score}:${latestPlayed.away_score} ${latestPlayed.away_team}`:"Pierwszy wynik pojawi się po meczu."}</p>
+            <button type="button" onClick={()=>setTab("league")}>CENTRUM ROZGRYWEK <ChevronRight size={15}/></button>
+          </article>
         </div>
       </section>}
       {tab==="home"&&<>
@@ -2867,6 +2934,7 @@ export default function TeamHub(props:{
     </section>,document.body)}
 
     {selectedMatch&&matchPlacement==="overlay"&&<MatchCenterModal
+      key={`${selectedMatch.id}-${matchInitialTab}`}
       match={selectedMatch}
       players={players}
       attendance={attendance}
