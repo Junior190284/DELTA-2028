@@ -21727,6 +21727,581 @@ body > main,
   line-height: 1.4;
 }
 
+/* ================= 4. DELTA COACH CORNER & SKILL MASTER MODAL ================= */
+.v200-coach-modal {
+  position: relative;
+  width: 100%;
+  max-width: 1040px;
+  max-height: 92vh;
+  background: radial-gradient(circle at 50% 10%, rgba(220, 38, 38, 0.18) 0%, rgba(15, 12, 24, 0.98) 60%, rgba(6, 8, 14, 0.99) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.98), 0 0 50px rgba(220, 38, 38, 0.15);
+  overflow: hidden;
+}
+
+.v200-coach-header {
+  padding: 22px 28px;
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.1) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.v200-coach-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.22);
+  border: 1px solid rgba(220, 38, 38, 0.45);
+  color: #fca5a5;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v200-coach-header-left h2 {
+  font-size: 24px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 4px 0 2px;
+}
+
+.v200-coach-header-left p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.v200-coach-close-btn {
+  padding: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.v200-coach-close-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+}
+
+.v200-coach-tabs-row {
+  display: flex;
+  gap: 10px;
+  padding: 12px 28px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.v200-coach-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.v200-coach-tab-btn.active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #fde047;
+  color: #fde047;
+}
+
+.v200-coach-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Skills View */
+.v200-skills-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.v200-challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.v200-challenge-card {
+  background: rgba(12, 16, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v200-ch-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v200-ch-badge {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #f59e0b;
+  text-transform: uppercase;
+}
+
+.v200-ch-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+}
+
+.v200-ch-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+  min-height: 32px;
+}
+
+.v200-ch-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.v200-tier-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.v200-tier-pill strong {
+  color: #fde047;
+}
+
+/* Records Board */
+.v200-records-board {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 20px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.v200-records-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.v200-rec-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  color: #fde047;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v200-rec-title {
+  font-size: 20px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 2px 0 0;
+}
+
+.v200-add-record-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  border: 1px solid #fef08a;
+  color: #000000;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.v200-records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.v200-record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
+
+.v200-record-row.approved {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.v200-rec-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.v200-rec-icon {
+  font-size: 24px;
+}
+
+.v200-rec-pname {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  display: block;
+}
+
+.v200-rec-meta {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.v200-rec-score {
+  color: #fde047;
+  font-weight: 900;
+}
+
+.v200-coach-feedback {
+  font-size: 11px;
+  color: #4ade80;
+  margin: 4px 0 0;
+}
+
+.v200-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.v200-status-badge.approved {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+
+.v200-status-badge.pending {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde047;
+}
+
+.v200-pending-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v200-approve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #22c55e;
+  border: 1px solid #4ade80;
+  color: #000000;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Submit Form */
+.v200-submit-card {
+  background: rgba(12, 16, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.v200-submit-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.v200-submit-header h3 {
+  font-size: 16px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.v200-submit-header p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.v200-submit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.v200-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.v200-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.v200-form-field label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.v200-input, .v200-textarea {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.v200-form-submit-btn {
+  padding: 14px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: 1px solid #f87171;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+  margin-top: 6px;
+}
+
+.v200-submit-success {
+  text-align: center;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.v200-submit-success h4 {
+  font-size: 16px;
+  font-weight: 1000;
+  color: #4ade80;
+  margin: 0;
+}
+
+.v200-submit-success p {
+  font-size: 12px;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+/* Inspiration Tab */
+.v200-inspire-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.v200-wisdom-card {
+  background: radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.2) 0%, rgba(12, 16, 26, 0.95) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.v200-wisdom-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde047;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.v200-wisdom-quote {
+  font-size: 15px;
+  font-style: italic;
+  color: #ffffff;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.v200-wisdom-author {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.v200-homework-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v200-hw-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v200-hw-header h4 {
+  font-size: 14px;
+  font-weight: 1000;
+  color: #fde047;
+  margin: 0;
+}
+
+.v200-hw-text {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.v200-idea-box {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.v200-idea-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.v200-idea-top h4 {
+  font-size: 15px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0 0 2px;
+}
+
+.v200-idea-top p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.v200-idea-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.v200-send-idea-btn {
+  align-self: flex-start;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  border: 1px solid #fef08a;
+  color: #000000;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.v200-idea-thankyou {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
 
 
 

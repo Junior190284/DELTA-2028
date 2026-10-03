@@ -25,6 +25,7 @@ import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
 import DeltaSeasonPassModal from "./DeltaSeasonPassModal";
 import DeltaPhotoBoothModal from "./DeltaPhotoBoothModal";
 import DeltaBirthdayZoneModal from "./DeltaBirthdayZoneModal";
+import DeltaCoachCornerModal from "./DeltaCoachCornerModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
@@ -195,6 +196,7 @@ export default function TeamHub(props:{
   const [seasonPassModalOpen, setSeasonPassModalOpen] = useState(false);
   const [photoBoothModalOpen, setPhotoBoothModalOpen] = useState(false);
   const [birthdayModalOpen, setBirthdayModalOpen] = useState(false);
+  const [coachCornerModalOpen, setCoachCornerModalOpen] = useState(false);
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
@@ -1169,6 +1171,7 @@ export default function TeamHub(props:{
           { id: "matchday", label: "Match Day", desc: "Panel meczowy na żywo (składy, minuty, gole)", Icon: Flame, badge: "LIVE" }
         ] : []),
         { id: "matches", label: "Mecze & Wyniki", desc: "Terminarz ligowy, składy i wyniki meczów", Icon: CalendarDays },
+        { id: "coach-corner-modal", label: "Kącik Trenera", desc: "Wyzwania Skill Master, zadania domowe i inspiracje", Icon: Award, badge: "SKILL MASTER", isGoldTag: true, isAction: "coachcorner" },
         { id: "calendar", label: "Kalendarz", desc: "Zbiórki, wydarzenia klubowe i terminy", Icon: CalendarDays },
         { id: "training", label: "Treningi", desc: "Frekwencja, historia gierek i ranking", Icon: Zap },
         { id: "league", label: "Rozgrywki / Tabela", desc: "Tabela grupy MZPN i mecze rywali", Icon: Trophy },
@@ -1345,6 +1348,9 @@ export default function TeamHub(props:{
                       setActiveDrawerCategory(null);
                     } else if ((item as any).isAction === "birthday") {
                       setBirthdayModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "coachcorner") {
+                      setCoachCornerModalOpen(true);
                       setActiveDrawerCategory(null);
                     } else {
                       setTab(item.id as any);
@@ -1718,6 +1724,24 @@ export default function TeamHub(props:{
             </div>
             <div className="v200-feature-cta gold">
               <span>ŻYCZENIA</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner coach-vip" glowColor="gold" enableTilt={true} onClick={()=>setCoachCornerModalOpen(true)}>
+            <div className="v200-feature-avatar gold">
+              <Award size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge gold">
+                <Crown size={12}/>
+                <span>SZTAB SZKOLENIOWY</span>
+              </div>
+              <h3>KĄCIK TRENERA & SKILL MASTER ⚽</h3>
+              <p>Wyzwania techniczne zatwierdzane przez trenera, zadania domowe i inspiracje!</p>
+            </div>
+            <div className="v200-feature-cta gold">
+              <span>WYZWANIA</span>
               <ChevronRight size={18}/>
             </div>
           </SpotlightCard>
@@ -3289,6 +3313,16 @@ export default function TeamHub(props:{
         onClose={() => setBirthdayModalOpen(false)}
         players={players}
         currentUserName={props.profile.display_name || "Kibic DELTY"}
+      />
+    )}
+
+    {coachCornerModalOpen && (
+      <DeltaCoachCornerModal
+        isOpen={coachCornerModalOpen}
+        onClose={() => setCoachCornerModalOpen(false)}
+        players={players}
+        isCoachOrAdmin={props.profile.role === "coach" || props.profile.role === "admin"}
+        currentUserName={props.profile.display_name || "Trener DELTA"}
       />
     )}
   </div>;
