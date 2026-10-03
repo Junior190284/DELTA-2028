@@ -98,6 +98,7 @@ export default function DeltaTradeHubModal({
   const handleAcceptTrade = (offerId: string) => {
     setTradedOfferId(offerId);
     cardSound.playWalkoutFanfare();
+    cardSound.playHaptic("heavy");
     setTimeout(() => {
       setTeamOffers(prev => prev.filter(o => o.id !== offerId));
       setTradedOfferId(null);
@@ -108,6 +109,7 @@ export default function DeltaTradeHubModal({
   const handleRecycleDuplicate = async (userCardId: string, rarity: string) => {
     setRecyclingCardId(userCardId);
     cardSound.playPurchase();
+    cardSound.playHaptic("medium");
 
     let earnedDP = 25;
     if (rarity === "inferno" || rarity === "legendary") earnedDP = 150;
@@ -137,6 +139,7 @@ export default function DeltaTradeHubModal({
     setTeamOffers(prev => [newOffer, ...prev]);
     setOfferCreatedSuccess(true);
     cardSound.playFlip();
+    cardSound.playHaptic("medium");
 
     setTimeout(() => {
       setOfferCreatedSuccess(false);
@@ -152,6 +155,7 @@ export default function DeltaTradeHubModal({
 
     setDirectTradeSuccess(true);
     cardSound.playWalkoutFanfare();
+    cardSound.playHaptic("walkout");
 
     setTimeout(() => {
       setDirectTradeSuccess(false);

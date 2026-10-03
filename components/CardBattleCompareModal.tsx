@@ -122,6 +122,7 @@ export default function CardBattleCompareModal({
     setMatchWinner(null);
     setRewardClaimed(false);
     cardSound.playPackTear();
+    cardSound.playHaptic("medium");
 
     // Round 1: Pace & Dribble
     setTimeout(() => {
@@ -129,7 +130,7 @@ export default function CardBattleCompareModal({
       const r1 = getStats(rivalCards[0]);
       const scoreDelta = p1.pac + p1.dri;
       const scoreRival = r1.pac + r1.dri;
-      const round1Win = scoreDelta >= scoreRival;
+      const round1Win = scoreDelta > scoreRival || (scoreDelta === scoreRival && Math.random() >= 0.5);
 
       setMatchScore(prev => ({
         delta: prev.delta + (round1Win ? 1 : 0),
@@ -144,6 +145,7 @@ export default function CardBattleCompareModal({
       ]);
       setCurrentRound(2);
       cardSound.playTeaserHit(1);
+      cardSound.playHaptic(round1Win ? "heavy" : "medium");
 
       // Round 2: Tactics & Passing
       setTimeout(() => {
@@ -151,7 +153,7 @@ export default function CardBattleCompareModal({
         const r2 = getStats(rivalCards[1]);
         const scoreDelta2 = p2.pas + p2.def;
         const scoreRival2 = r2.pas + r2.def;
-        const round2Win = scoreDelta2 >= scoreRival2;
+        const round2Win = scoreDelta2 > scoreRival2 || (scoreDelta2 === scoreRival2 && Math.random() >= 0.5);
 
         setMatchScore(prev => ({
           delta: prev.delta + (round2Win ? 1 : 0),
@@ -166,6 +168,7 @@ export default function CardBattleCompareModal({
         ]);
         setCurrentRound(3);
         cardSound.playTeaserHit(2);
+        cardSound.playHaptic(round2Win ? "heavy" : "medium");
 
         // Round 3: Shot & Physical Clash
         setTimeout(() => {
@@ -173,7 +176,7 @@ export default function CardBattleCompareModal({
           const r3 = getStats(rivalCards[2]);
           const scoreDelta3 = p3.sho + p3.phy;
           const scoreRival3 = r3.sho + r3.phy;
-          const round3Win = scoreDelta3 >= scoreRival3;
+          const round3Win = scoreDelta3 > scoreRival3 || (scoreDelta3 === scoreRival3 && Math.random() >= 0.5);
 
           const finalDelta = (round1Win ? 1 : 0) + (round2Win ? 1 : 0) + (round3Win ? 1 : 0);
           const finalRival = (!round1Win ? 1 : 0) + (!round2Win ? 1 : 0) + (!round3Win ? 1 : 0);
@@ -193,8 +196,10 @@ export default function CardBattleCompareModal({
 
           if (winner === "delta") {
             cardSound.playWalkoutFanfare();
+            cardSound.playHaptic("walkout");
           } else {
             cardSound.playFlip();
+            cardSound.playHaptic("medium");
           }
         }, 1400);
       }, 1400);
@@ -554,6 +559,7 @@ export default function CardBattleCompareModal({
                             setRewardClaimed(true);
                             if (onRewardClaimed) onRewardClaimed(25);
                             cardSound.playPurchase();
+                            cardSound.playHaptic("medium");
                           }}
                           className="v200-claim-dp-btn"
                         >

@@ -292,6 +292,8 @@ export default function DeltaCollectionAlbum({
     return playerAlbums.find(a => a.player.id === selectedAlbumPlayerId) || null;
   }, [playerAlbums, selectedAlbumPlayerId]);
 
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
   // Navigation between players in album mode
   const handlePrevPlayer = () => {
     if (!currentAlbum) return;
@@ -311,6 +313,28 @@ export default function DeltaCollectionAlbum({
     } else {
       setSelectedAlbumPlayerId(playerAlbums[0].player.id);
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (diff > 45) {
+      // Swiped left -> Next Player
+      handleNextPlayer();
+      cardSound.playFlip();
+      cardSound.playHaptic("light");
+    } else if (diff < -45) {
+      // Swiped right -> Prev Player
+      handlePrevPlayer();
+      cardSound.playFlip();
+      cardSound.playHaptic("light");
+    }
+    setTouchStartX(null);
   };
 
   return (
@@ -620,7 +644,11 @@ export default function DeltaCollectionAlbum({
 
       {/* ================= VIEW 1: DEDICATED SINGLE PLAYER ALBUM (CAROUSEL) ================= */}
       {currentAlbum ? (
-        <div className="v104-single-player-album animate-fadeIn">
+        <div 
+          className="v104-single-player-album animate-fadeIn"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Top Bar Navigation */}
           <div className="v104-player-album-topbar devil-card">
             <button
@@ -652,6 +680,11 @@ export default function DeltaCollectionAlbum({
                 <ChevronRight size={20} />
               </button>
             </div>
+          </div>
+
+          {/* Mobile Swipe Hint */}
+          <div className="v200-swipe-hint">
+            <span>👈 Przesuń palcem w lewo / prawo aby zmienić stronę klasera 👉</span>
           </div>
 
           {/* Player Banner */}

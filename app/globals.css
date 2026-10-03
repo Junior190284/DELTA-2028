@@ -23637,6 +23637,50 @@ body > main,
   font-weight: 800;
 }
 
+/* ================= HARDWARE GPU ACCELERATION & MOBILE OVERSCROLL CONTAINMENT ================= */
+.v200-battle-backdrop,
+.v200-trade-backdrop,
+.v200-ach-backdrop,
+.v104-cinematic-modal-overlay,
+.v104-spin-modal-overlay,
+.v104-builder-modal-overlay {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.v200-battle-modal,
+.v200-trade-modal,
+.v200-ach-modal,
+.v104-single-player-album {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
+}
+
+.v104-card-3d-wrap,
+.v200-pack-visual-wrap,
+.v200-squad-player-slot,
+.v200-battle-team-card {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Touch Swipe Indicator */
+.v200-swipe-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-top: 8px;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+
 
 
 
