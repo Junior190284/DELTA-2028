@@ -30,8 +30,6 @@ import {
   CalendarCheck, 
   Coins, 
   X, 
-  ChevronRight,
-  Filter,
   Check
 } from "lucide-react";
 
@@ -62,34 +60,33 @@ interface AchievementsModalProps {
   onPointsUpdated?: (newPoints: number) => void;
 }
 
-// Mapa ikon Lucide
 const ICON_MAP: Record<string, React.ReactNode> = {
-  Award: <Award size={20} />,
-  Trophy: <Trophy size={20} />,
-  Sparkles: <Sparkles size={20} />,
-  Flame: <Flame size={20} />,
-  Crown: <Crown size={20} />,
-  ShieldCheck: <ShieldCheck size={20} />,
-  Target: <Target size={20} />,
-  Zap: <Zap size={20} />,
-  Compass: <Compass size={20} />,
-  Star: <Star size={20} />,
-  Shield: <Shield size={20} />,
-  Users: <Users size={20} />,
-  CheckCircle2: <CheckCircle2 size={20} />,
-  Activity: <Activity size={20} />,
-  Dumbbell: <Dumbbell size={20} />,
-  Medal: <Medal size={20} />,
-  Crosshair: <Crosshair size={20} />,
-  Flag: <Flag size={20} />,
-  Gift: <Gift size={20} />,
-  Layers: <Layers size={20} />,
-  RotateCw: <RotateCw size={20} />,
-  ArrowLeftRight: <ArrowLeftRight size={20} />,
-  Heart: <Heart size={20} />,
-  Bell: <Bell size={20} />,
-  CalendarCheck: <CalendarCheck size={20} />,
-  Coins: <Coins size={20} />
+  Award: <Award size={18} />,
+  Trophy: <Trophy size={18} />,
+  Sparkles: <Sparkles size={18} />,
+  Flame: <Flame size={18} />,
+  Crown: <Crown size={18} />,
+  ShieldCheck: <ShieldCheck size={18} />,
+  Target: <Target size={18} />,
+  Zap: <Zap size={18} />,
+  Compass: <Compass size={18} />,
+  Star: <Star size={18} />,
+  Shield: <Shield size={18} />,
+  Users: <Users size={18} />,
+  CheckCircle2: <CheckCircle2 size={18} />,
+  Activity: <Activity size={18} />,
+  Dumbbell: <Dumbbell size={18} />,
+  Medal: <Medal size={18} />,
+  Crosshair: <Crosshair size={18} />,
+  Flag: <Flag size={18} />,
+  Gift: <Gift size={18} />,
+  Layers: <Layers size={18} />,
+  RotateCw: <RotateCw size={18} />,
+  ArrowLeftRight: <ArrowLeftRight size={18} />,
+  Heart: <Heart size={18} />,
+  Bell: <Bell size={18} />,
+  CalendarCheck: <CalendarCheck size={18} />,
+  Coins: <Coins size={18} />
 };
 
 export default function AchievementsModal({
@@ -104,6 +101,11 @@ export default function AchievementsModal({
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [claimFeedback, setClaimFeedback] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -160,11 +162,6 @@ export default function AchievementsModal({
     }
   }
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   if (!isOpen || !mounted || typeof document === "undefined") return null;
 
   const filtered = achievements.filter(a => {
@@ -178,217 +175,189 @@ export default function AchievementsModal({
   const progressPercent = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
-      <div 
-        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-gradient-to-b from-slate-900 via-[#0a0f1d] to-black border border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.15)] text-white overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* NAGŁÓWEK */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-800/80 bg-slate-950/60">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-lg shadow-amber-500/30">
-              <Trophy size={26} className="animate-pulse" />
+    <div className="v200-ach-modal-backdrop" onClick={onClose}>
+      <div className="v200-ach-modal-content" onClick={e => e.stopPropagation()}>
+        {/* HEADER */}
+        <div className="v200-ach-modal-header">
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ padding: "8px 10px", borderRadius: 12, background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000" }}>
+              <Trophy size={24} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500">
-                  Klubowe Osiągnięcia i Odznaki
-                </h2>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h2>Klubowe Osiągnięcia i Odznaki</h2>
                 {unclaimedCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/90 text-white font-black text-[10px] uppercase tracking-wider animate-bounce">
-                    {unclaimedCount} do odbioru
+                  <span style={{ padding: "2px 8px", borderRadius: 999, background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 900 }}>
+                    {unclaimedCount} DO ODBIORU
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p>
                 {playerName ? `Profil osiągnięć zawodnika: ${playerName}` : "System nagród i progresu DELTA 2018 GM"}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
-          >
-            <X size={20} />
+          <button onClick={onClose} className="v200-modal-close-btn" type="button">
+            <X size={18} />
           </button>
         </div>
 
         {/* FEEDBACK BANNER */}
         {claimFeedback && (
-          <div className="px-5 py-2.5 bg-gradient-to-r from-amber-600/90 to-yellow-600/90 text-black font-black text-xs uppercase tracking-wider flex items-center justify-between animate-in slide-in-from-top duration-300">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} />
-              <span>{claimFeedback}</span>
-            </div>
+          <div style={{ padding: "8px 20px", background: "linear-gradient(90deg, #f59e0b, #eab308)", color: "#000", fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Sparkles size={15} /> {claimFeedback}
+            </span>
             <Check size={16} />
           </div>
         )}
 
-        {/* PASEK GŁÓWNEGO PROGRESU */}
-        <div className="p-4 sm:p-6 bg-slate-900/40 border-b border-slate-800/60">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs font-bold">
-            <span className="text-slate-300 flex items-center gap-1.5">
-              <Crown size={14} className="text-amber-400" />
-              Całkowity postęp odznak: <strong className="text-amber-400">{unlockedCount} / {totalCount}</strong>
+        {/* GLOBAL PROGRESS STRIP */}
+        <div style={{ padding: "12px 22px", background: "rgba(15,23,42,0.6)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+            <span style={{ color: "#cbd5e1" }}>
+              Całkowity postęp odznak: <strong style={{ color: "#f1c95c" }}>{unlockedCount} / {totalCount}</strong>
             </span>
-            <span className="text-amber-400 font-mono font-bold text-sm">
-              {progressPercent}%
-            </span>
+            <span style={{ color: "#f1c95c", fontFamily: "monospace", fontWeight: 900 }}>{progressPercent}%</span>
           </div>
-          <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 transition-all duration-700 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-              style={{ width: `${progressPercent}%` }}
-            />
+          <div style={{ width: "100%", height: 8, background: "#0a0f1d", borderRadius: 999, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ width: `${progressPercent}%`, height: "100%", background: "linear-gradient(90deg, #f59e0b, #fde047)", borderRadius: 999, transition: "width 0.4s ease" }} />
           </div>
         </div>
 
-        {/* FILTRY KATEGORII */}
-        <div className="flex items-center gap-2 p-3 sm:px-6 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 no-scrollbar">
+        {/* TABS */}
+        <div className="v200-typer-tabs-row">
           {[
             { id: "all", label: "Wszystkie", icon: <Trophy size={14} /> },
             { id: "match", label: "Mecze & Gole", icon: <Target size={14} /> },
             { id: "training", label: "Treningi", icon: <Activity size={14} /> },
             { id: "collection", label: "Karty & Paczki", icon: <Layers size={14} /> },
             { id: "parent", label: "Klub & Rodzic", icon: <Heart size={14} /> }
-          ].map(cat => {
-            const isActive = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                  isActive
-                    ? "bg-amber-500 text-black shadow-md shadow-amber-500/20"
-                    : "bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800"
-                }`}
-              >
-                {cat.icon}
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
+          ].map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`v200-typer-tab-btn ${selectedCategory === cat.id ? "active" : ""}`}
+              type="button"
+            >
+              {cat.icon}
+              <span>{cat.label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* LISTA OSIĄGNIĘĆ */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+        {/* BODY LIST */}
+        <div className="v200-typer-body">
           {loading ? (
-            <div className="py-16 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
-              <RotateCw size={32} className="animate-spin text-amber-400" />
-              <p className="text-sm font-medium">Przeliczanie osiągnięć i odznak…</p>
+            <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8" }}>
+              <RotateCw size={32} className="animate-spin" style={{ color: "#f59e0b", margin: "0 auto 12px" }} />
+              <p style={{ margin: 0, fontSize: 13 }}>Przeliczanie osiągnięć i odznak…</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-sm">
+            <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8" }}>
               Brak osiągnięć w tej kategorii.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: 12 }}>
               {filtered.map(ach => {
                 const current = Math.min(ach.current_value, ach.target_value);
                 const pct = Math.round((current / ach.target_value) * 100);
 
-                // Style krawędzi i tła w zależności od rangi
-                let tierStyle = "border-slate-800 bg-slate-950/60";
-                let badgeColor = "text-amber-400 bg-amber-950/40 border-amber-500/30";
+                let badgeBorder = "rgba(245, 158, 11, 0.3)";
+                let badgeBg = "rgba(245, 158, 11, 0.1)";
                 let tierLabel = "Brąz";
 
                 if (ach.tier === "silver") {
                   tierLabel = "Srebro";
-                  badgeColor = "text-slate-200 bg-slate-800/60 border-slate-400/40";
+                  badgeBorder = "rgba(203, 213, 225, 0.4)";
+                  badgeBg = "rgba(148, 163, 184, 0.15)";
                 } else if (ach.tier === "gold") {
                   tierLabel = "Złoto";
-                  badgeColor = "text-yellow-400 bg-yellow-950/60 border-yellow-500/50";
+                  badgeBorder = "rgba(250, 204, 21, 0.5)";
+                  badgeBg = "rgba(234, 179, 8, 0.2)";
                 } else if (ach.tier === "diamond") {
                   tierLabel = "Diament";
-                  badgeColor = "text-cyan-300 bg-cyan-950/60 border-cyan-400/50 shadow-[0_0_10px_rgba(34,211,238,0.2)]";
-                }
-
-                if (ach.is_unlocked && !ach.claimed_reward) {
-                  tierStyle = "border-amber-500/60 bg-gradient-to-br from-amber-950/30 to-black shadow-[0_0_15px_rgba(245,158,11,0.15)]";
+                  badgeBorder = "rgba(56, 189, 248, 0.6)";
+                  badgeBg = "rgba(56, 189, 248, 0.2)";
                 }
 
                 return (
                   <div
                     key={ach.id}
-                    className={`relative p-4 rounded-xl border flex flex-col justify-between gap-3 transition-all ${tierStyle}`}
+                    style={{
+                      padding: 14,
+                      borderRadius: 14,
+                      background: ach.is_unlocked && !ach.claimed_reward ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(15,23,42,0.9))" : "rgba(18,24,38,0.85)",
+                      border: ach.is_unlocked && !ach.claimed_reward ? "1px solid rgba(245,158,11,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: 10
+                    }}
                   >
                     <div>
-                      {/* GÓRA KARTY */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2.5 rounded-xl border ${badgeColor}`}>
-                            {ICON_MAP[ach.icon_name] || <Award size={20} />}
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <div style={{ padding: 8, borderRadius: 10, background: badgeBg, border: `1px solid ${badgeBorder}`, color: "#f1c95c", flexShrink: 0 }}>
+                          {ICON_MAP[ach.icon_name] || <Award size={18} />}
+                        </div>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <strong style={{ fontSize: 13, color: "#fff" }}>{ach.title}</strong>
+                            <span style={{ padding: "1px 6px", borderRadius: 4, background: badgeBg, border: `1px solid ${badgeBorder}`, fontSize: 9, fontWeight: 900, color: "#f1c95c" }}>
+                              {tierLabel}
+                            </span>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-bold text-white tracking-wide">
-                                {ach.title}
-                              </h3>
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
-                                {tierLabel}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                              {ach.description}
-                            </p>
-                          </div>
+                          <p style={{ margin: "2px 0 0 0", fontSize: 11, color: "#94a3b8", lineHeight: 1.35 }}>
+                            {ach.description}
+                          </p>
                         </div>
                       </div>
 
-                      {/* PASEK POSTĘPU */}
-                      <div className="mt-3">
-                        <div className="flex justify-between items-center text-[11px] mb-1 font-semibold">
-                          <span className="text-slate-400">Postęp:</span>
-                          <span className={ach.is_unlocked ? "text-emerald-400 font-bold" : "text-slate-300"}>
+                      {/* PROGRESS BAR */}
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#94a3b8", marginBottom: 3 }}>
+                          <span>Postęp:</span>
+                          <span style={{ color: ach.is_unlocked ? "#34d399" : "#f1c95c", fontWeight: 700 }}>
                             {current} / {ach.target_value} {ach.unit} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              ach.is_unlocked
-                                ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-                                : "bg-gradient-to-r from-amber-500 to-yellow-400"
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
+                        <div style={{ width: "100%", height: 5, background: "#0a0f1d", borderRadius: 999, overflow: "hidden" }}>
+                          <div style={{ width: `${pct}%`, height: "100%", background: ach.is_unlocked ? "#10b981" : "#f59e0b", borderRadius: 999 }} />
                         </div>
                       </div>
                     </div>
 
-                    {/* DÓŁ KARTY / NAGRODA & PRZYCISK */}
-                    <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <span className="text-slate-400 text-[11px]">Nagroda:</span>
-                        <span className="font-bold text-amber-400 flex items-center gap-0.5">
+                    {/* REWARD & BUTTON */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 8, fontSize: 11 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: "#94a3b8" }}>Nagroda:</span>
+                        <strong style={{ color: "#f1c95c", display: "flex", alignItems: "center", gap: 2 }}>
                           <Coins size={12} /> +{ach.reward_dp} DP
-                        </span>
+                        </strong>
                         {ach.reward_pack_type && (
-                          <span className="px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-purple-300 text-[10px] font-bold flex items-center gap-1">
-                            <Gift size={10} /> Paczka
+                          <span style={{ padding: "1px 6px", borderRadius: 4, background: "rgba(168,85,247,0.2)", border: "1px solid rgba(168,85,247,0.4)", color: "#d8b4fe", fontSize: 9, fontWeight: 900 }}>
+                            🎁 Paczka
                           </span>
                         )}
                       </div>
 
                       <div>
                         {ach.claimed_reward ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-1 rounded-lg">
-                            <Check size={12} /> Odebrano
+                          <span style={{ color: "#34d399", fontWeight: 800, fontSize: 10, display: "flex", alignItems: "center", gap: 2 }}>
+                            ✓ Odebrano
                           </span>
                         ) : ach.is_unlocked ? (
                           <button
+                            type="button"
                             onClick={() => claimReward(ach)}
                             disabled={claimingId === ach.id}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-[0_0_12px_rgba(245,158,11,0.4)] animate-pulse"
+                            style={{ padding: "5px 12px", borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "1px solid #fde047", color: "#000", fontWeight: 900, fontSize: 10, cursor: "pointer", textTransform: "uppercase" }}
                           >
-                            <Gift size={13} />
-                            {claimingId === ach.id ? "Odbieranie…" : "Odbierz"}
+                            {claimingId === ach.id ? "…" : "Odbierz"}
                           </button>
                         ) : (
-                          <span className="text-[11px] text-slate-500 font-medium">
-                            W toku ({pct}%)
-                          </span>
+                          <span style={{ color: "#64748b", fontSize: 10 }}>W toku ({pct}%)</span>
                         )}
                       </div>
                     </div>
@@ -399,13 +368,10 @@ export default function AchievementsModal({
           )}
         </div>
 
-        {/* STOPKA */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/80 flex items-center justify-between text-xs text-slate-400">
+        {/* FOOTER */}
+        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(10,15,26,0.95)", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "#94a3b8" }}>
           <span>Osiągnięcia aktualizują się automatycznie po każdym meczu i treningu.</span>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition-all text-xs"
-          >
+          <button onClick={onClose} type="button" style={{ padding: "6px 16px", borderRadius: 8, background: "#1e293b", border: "1px solid #334155", color: "#fff", fontWeight: 700, cursor: "pointer" }}>
             Zamknij
           </button>
         </div>
