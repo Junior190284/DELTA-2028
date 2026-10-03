@@ -187,15 +187,16 @@ export default function AdminPanel(props:{
   async function saveMatchBasics(){
     if(!selectedMatch)return;
     const status=(document.getElementById("mstatus") as HTMLSelectElement).value;
+    const date=(document.getElementById("mdate") as HTMLInputElement).value;
     const hs=(document.getElementById("mhs") as HTMLInputElement).value;
     const as=(document.getElementById("mas") as HTMLInputElement).value;
     const venue=(document.getElementById("mvenue") as HTMLInputElement).value;
     const time=(document.getElementById("mtime") as HTMLInputElement).value;
     const {error}=await supabase.from("matches").update({
-      status,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null
+      status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null
     }).eq("id",selectedMatch.id);
     if(error)return alert(error.message);
-    setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,status,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null}:m));
+    setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time||null}:m).sort((a,b)=>a.match_date.localeCompare(b.match_date)));
     alert("Zapisano mecz");
   }
 
@@ -1159,12 +1160,13 @@ export default function AdminPanel(props:{
           {!selectedMatch ? <p>Wybierz mecz.</p> : <>
             <div className="admin-card-head"><h2>Centrum meczu</h2>{canMatchBasics&&<button onClick={saveMatchBasics}><Save size={15}/> Zapisz</button>}</div>
             {canMatchBasics&&<div className="admin-form-grid">
-              <label>Status<select id="mstatus" defaultValue={selectedMatch.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
-              <label>Godzina<input id="mtime" defaultValue={selectedMatch.match_time||""}/></label>
-              <label>Miejsce<input id="mvenue" defaultValue={selectedMatch.venue||""}/></label>
+              <label>Status<select id="mstatus" key={`status-${selectedMatch.id}-${selectedMatch.status}`} defaultValue={selectedMatch.status}><option value="scheduled">Zaplanowany</option><option value="played">Rozegrany</option><option value="cancelled">Odwołany</option></select></label>
+              <label>Data meczu<input id="mdate" type="date" key={`date-${selectedMatch.id}-${selectedMatch.match_date}`} defaultValue={selectedMatch.match_date}/></label>
+              <label>Godzina<input id="mtime" key={`time-${selectedMatch.id}-${selectedMatch.match_time}`} defaultValue={selectedMatch.match_time||""} placeholder="np. 09:30"/></label>
+              <label>Miejsce<input id="mvenue" key={`venue-${selectedMatch.id}-${selectedMatch.venue}`} defaultValue={selectedMatch.venue||""} placeholder="np. Mokotów"/></label>
               <label>Gospodarz<input value={selectedMatch.home_team} readOnly/></label>
-              <label>Wynik gospodarza<input id="mhs" type="number" defaultValue={selectedMatch.home_score??""}/></label>
-              <label>Wynik gościa<input id="mas" type="number" defaultValue={selectedMatch.away_score??""}/></label>
+              <label>Wynik gospodarza<input id="mhs" type="number" key={`hs-${selectedMatch.id}-${selectedMatch.home_score}`} defaultValue={selectedMatch.home_score??""}/></label>
+              <label>Wynik gościa<input id="mas" type="number" key={`as-${selectedMatch.id}-${selectedMatch.away_score}`} defaultValue={selectedMatch.away_score??""}/></label>
             </div>}
 
             {canMatchBasics&&<><h3>Obecność • wyjściowa 6 • kapitan</h3>
