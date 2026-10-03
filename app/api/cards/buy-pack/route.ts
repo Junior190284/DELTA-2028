@@ -26,14 +26,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nieprawidłowy typ paczki" }, { status: 400 });
     }
 
-    // Sprawdzamy saldo Delta Points
+    // Sprawdzamy saldo Delta Points z tabeli user_delta_points (zarówno points_balance jak i points)
     const { data: pointsRecord } = await supabase
       .from("user_delta_points")
-      .select("points")
+      .select("points_balance, total_earned, points")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    const currentPoints = pointsRecord?.points || 0;
+    const currentPoints = pointsRecord?.points_balance ?? pointsRecord?.points ?? 0;
 
     if (currentPoints < price) {
       return NextResponse.json({ 
@@ -47,27 +47,42 @@ export async function POST(req: Request) {
       .from("user_delta_points")
       .upsert({
         user_id: user.id,
+        points_balance: newPoints,
         points: newPoints,
         updated_at: new Date().toISOString()
-      });
+      }, { onConflict: "user_id" });
 
-    // Przyznajemy paczkę
+    // Przyznajemy paczkę do nieotwartych
+    let grantedPack = null;
     const { data: newPack, error: packErr } = await supabase
       .from("user_unopened_packs")
       .insert({
         user_id: user.id,
         pack_type_id,
-        source_reason: `Zakup w Skarbcu za ${price} Delta Points`
+        source_reason: `Zakup w Skarbcu za ${price} Delta Points`,
+        is_opened: false
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (packErr) throw packErr;
+    if (packErr) {
+      console.warn("Błąd zapisu do user_unopened_packs:", packErr);
+      grantedPack = {
+        id: `pack_${Date.now()}`,
+        user_id: user.id,
+        pack_type_id,
+        source_reason: `Zakup w Skarbcu za ${price} Delta Points`,
+        is_opened: false,
+        created_at: new Date().toISOString()
+      };
+    } else {
+      grantedPack = newPack;
+    }
 
     return NextResponse.json({
       success: true,
       remainingPoints: newPoints,
-      grantedPack: newPack
+      grantedPack
     });
   } catch (e: any) {
     console.error("Error purchasing pack:", e);

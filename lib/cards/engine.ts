@@ -123,22 +123,50 @@ export async function openPackServerSide(
     finalPackTypeId = packRow.pack_type_id;
   }
 
-  // 2. Pobieramy konfigurację paczki z bazy
-  const { data: packDef, error: defErr } = await supabase
+  // 2. Pobieramy konfigurację paczki z bazy lub stosujemy unikalną konfigurację dla danego typu
+  const PACK_FALLBACK_CONFIGS: Record<string, { cardsCount: number; dropRates: Record<CardRarity, number>; minRarity: CardRarity }> = {
+    standard_pack: {
+      cardsCount: 3,
+      dropRates: { common: 70, rare: 22, epic: 6, legendary: 1.8, inferno: 0.2 },
+      minRarity: "common"
+    },
+    matchday_booster: {
+      cardsCount: 4,
+      dropRates: { common: 50, rare: 35, epic: 11, legendary: 3.5, inferno: 0.5 },
+      minRarity: "rare"
+    },
+    gold_booster: {
+      cardsCount: 5,
+      dropRates: { common: 35, rare: 45, epic: 15, legendary: 4.5, inferno: 0.5 },
+      minRarity: "rare"
+    },
+    inferno_booster: {
+      cardsCount: 5,
+      dropRates: { common: 20, rare: 40, epic: 28, legendary: 9, inferno: 3 },
+      minRarity: "epic"
+    },
+    legend_pack: {
+      cardsCount: 6,
+      dropRates: { common: 10, rare: 35, epic: 35, legendary: 17, inferno: 3 },
+      minRarity: "legendary"
+    },
+    legend_booster: {
+      cardsCount: 6,
+      dropRates: { common: 10, rare: 35, epic: 35, legendary: 17, inferno: 3 },
+      minRarity: "legendary"
+    }
+  };
+
+  const { data: packDef } = await supabase
     .from("pack_definitions")
     .select("*")
     .eq("id", finalPackTypeId)
-    .single();
+    .maybeSingle();
 
-  const cardsCount = packDef?.cards_count || 3;
-  const dropRates: Record<CardRarity, number> = packDef?.drop_rates || {
-    common: 50,
-    rare: 35,
-    epic: 11,
-    legendary: 3,
-    inferno: 1
-  };
-  const minRarity: CardRarity = packDef?.min_rarity || "common";
+  const fallback = PACK_FALLBACK_CONFIGS[finalPackTypeId] || PACK_FALLBACK_CONFIGS["standard_pack"];
+  const cardsCount = packDef?.cards_count || fallback.cardsCount;
+  const dropRates: Record<CardRarity, number> = packDef?.drop_rates || fallback.dropRates;
+  const minRarity: CardRarity = packDef?.min_rarity || fallback.minRarity;
 
   // 3. Pobieramy wszystkie aktywne wzory kart
   const { data: allCards, error: cardsErr } = await supabase

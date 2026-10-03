@@ -164,11 +164,13 @@ export default function DeltaCollectionAlbum({
         body: JSON.stringify({ pack_type_id: packId })
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Błąd zakupu paczki");
+        throw new Error(data.error || "Błąd zakupu paczki");
       }
-
+      if (data.remainingPoints !== undefined) {
+        setDeltaPoints(data.remainingPoints);
+      }
       cardSound.playPurchase();
       await fetchCollection();
     } catch (e: any) {

@@ -30,20 +30,23 @@ export async function POST(req: Request) {
       // Pobieramy aktualne punkty
       const { data: pointsRecord } = await supabase
         .from("user_delta_points")
-        .select("points")
+        .select("points_balance, total_earned, points")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      const currentPoints = pointsRecord?.points || 0;
+      const currentPoints = pointsRecord?.points_balance ?? pointsRecord?.points ?? 0;
+      const currentTotal = pointsRecord?.total_earned ?? currentPoints;
       updatedPoints = currentPoints + reward.amount;
 
       await supabase
         .from("user_delta_points")
         .upsert({
           user_id: user.id,
+          points_balance: updatedPoints,
           points: updatedPoints,
+          total_earned: currentTotal + reward.amount,
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: "user_id" });
     } else if (reward.type === "pack" && reward.packTypeId) {
       // Przyznajemy paczkę
       const { data: newPack, error: packErr } = await supabase
@@ -51,10 +54,11 @@ export async function POST(req: Request) {
         .insert({
           user_id: user.id,
           pack_type_id: reward.packTypeId,
-          source_reason: `Nagroda z Koła Fortuny DELTA: ${reward.name}`
+          source_reason: `Nagroda z Koła Fortuny DELTA: ${reward.name}`,
+          is_opened: false
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (packErr) {
         console.error("Błąd dodawania paczki z koła fortuny:", packErr);
@@ -65,11 +69,11 @@ export async function POST(req: Request) {
       // Pobieramy saldo punktów
       const { data: pointsRecord } = await supabase
         .from("user_delta_points")
-        .select("points")
+        .select("points_balance, points")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      updatedPoints = pointsRecord?.points || 0;
+      updatedPoints = pointsRecord?.points_balance ?? pointsRecord?.points ?? 0;
     }
 
     return NextResponse.json({
