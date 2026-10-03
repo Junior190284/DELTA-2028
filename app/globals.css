@@ -11188,6 +11188,7 @@ body > main,
   padding: 12px;
   box-sizing: border-box;
   z-index: 10;
+  container-type: inline-size;
 }
 
 .v104-cc-face.reverse {
@@ -12593,23 +12594,24 @@ body > main,
   object-fit: fill;
   pointer-events: none;
   filter: drop-shadow(0 8px 25px rgba(0, 0, 0, 0.7));
+  border-radius: 16px;
 }
 
 .v200-card-top-left-badge {
   position: absolute;
-  top: 10%;
-  left: 9%;
+  top: 9%;
+  left: 8.5%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 0.5cqw;
   pointer-events: none;
 }
 
 .v200-card-ovr {
-  font-size: 20px;
+  font-size: 10.5cqw;
   font-weight: 1000;
-  line-height: 1;
+  line-height: 0.95;
   letter-spacing: -0.04em;
   color: #ffffff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
@@ -12636,26 +12638,27 @@ body > main,
 }
 
 .v200-card-pos {
-  font-size: 10px;
+  font-size: 4.8cqw;
   font-weight: 900;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: #cbd5e1;
   text-transform: uppercase;
   line-height: 1;
-  margin-top: 1px;
+  margin-top: 0.5cqw;
 }
 
 .v200-card-flag {
-  font-size: 12px;
-  margin-top: 2px;
+  font-size: 5.6cqw;
+  margin-top: 0.6cqw;
   line-height: 1;
+  display: block;
 }
 
 .v200-card-mini-crest {
-  width: 14px;
-  height: 14px;
+  width: 7.2cqw;
+  height: 7.2cqw;
   object-fit: contain;
-  margin-top: 1px;
+  margin-top: 0.5cqw;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
@@ -12663,8 +12666,8 @@ body > main,
 .v200-card-player-center {
   position: absolute;
   top: 10%;
-  left: 18%;
-  right: 18%;
+  left: 14%;
+  right: 14%;
   bottom: 34%;
   display: flex;
   align-items: center;
@@ -12676,7 +12679,7 @@ body > main,
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
 }
 
@@ -12699,11 +12702,11 @@ body > main,
 
 .v200-silhouette-glow {
   position: absolute;
-  width: 70px;
-  height: 70px;
+  width: 38cqw;
+  height: 38cqw;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
-  filter: blur(10px);
+  filter: blur(8px);
 }
 
 .v200-silhouette-glow.inferno {
@@ -12724,18 +12727,18 @@ body > main,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 0.5cqw;
 }
 
 .v200-silhouette-crest {
-  width: 32px;
-  height: 32px;
+  width: 16cqw;
+  height: 16cqw;
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
 }
 
 .v200-silhouette-number {
-  font-size: 15px;
+  font-size: 7.5cqw;
   font-weight: 1000;
   color: #ffffff;
   letter-spacing: -0.02em;
@@ -12746,9 +12749,9 @@ body > main,
 .v200-card-nameplate {
   position: absolute;
   top: 67%;
-  left: 10%;
-  right: 10%;
-  height: 22px;
+  left: 8%;
+  right: 8%;
+  height: 7.5%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12757,7 +12760,7 @@ body > main,
 }
 
 .v200-card-name-text {
-  font-size: 11px;
+  font-size: 5.2cqw;
   font-weight: 1000;
   letter-spacing: 0.08em;
   color: #ffffff;
@@ -12766,6 +12769,7 @@ body > main,
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+  line-height: 1;
 }
 
 .v200-card-name-text.inferno {
@@ -12791,13 +12795,13 @@ body > main,
 /* 6 Attributes Grid */
 .v200-card-stats-row {
   position: absolute;
-  top: 75.5%;
-  left: 8%;
-  right: 8%;
-  bottom: 10%;
+  top: 75.2%;
+  left: 7.5%;
+  right: 7.5%;
+  height: 13.5%;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 2px;
+  gap: 1.5cqw;
   pointer-events: none;
 }
 
@@ -12806,21 +12810,24 @@ body > main,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0px;
+  height: 100%;
+  text-align: center;
 }
 
 .v200-stat-lbl {
-  font-size: 7px;
+  font-size: 3.2cqw;
   font-weight: 900;
   letter-spacing: 0.04em;
-  color: #94a3b8;
+  color: #cbd5e1;
   line-height: 1;
+  opacity: 0.9;
 }
 
 .v200-stat-val {
-  font-size: 10px;
+  font-size: 5.6cqw;
   font-weight: 1000;
-  line-height: 1.1;
+  line-height: 1;
+  margin-top: 0.6cqw;
   color: #ffffff;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }

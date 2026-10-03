@@ -281,10 +281,10 @@ export default function CollectibleCard3D({
 
   // Exact card dimensions
   const dim = {
-    sm: { w: 140, h: 220 },
-    md: { w: 190, h: 295 },
-    lg: { w: 250, h: 390 },
-    xl: { w: 320, h: 495 }
+    sm: { w: 135, h: 220 },
+    md: { w: 185, h: 300 },
+    lg: { w: 245, h: 400 },
+    xl: { w: 315, h: 515 }
   }[size];
 
   // Template image for this card tier
