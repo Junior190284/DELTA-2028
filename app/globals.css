@@ -12599,17 +12599,17 @@ body > main,
 
 .v200-card-top-left-badge {
   position: absolute;
-  top: 9%;
-  left: 8.5%;
+  top: 7%;
+  left: 7%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5cqw;
+  gap: 0.4cqw;
   pointer-events: none;
 }
 
 .v200-card-ovr {
-  font-size: 10.5cqw;
+  font-size: 8.5cqw;
   font-weight: 1000;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -12638,37 +12638,37 @@ body > main,
 }
 
 .v200-card-pos {
-  font-size: 4.8cqw;
+  font-size: 4.2cqw;
   font-weight: 900;
   letter-spacing: 0.04em;
   color: #cbd5e1;
   text-transform: uppercase;
   line-height: 1;
-  margin-top: 0.5cqw;
+  margin-top: 0.3cqw;
 }
 
 .v200-card-flag {
-  font-size: 5.6cqw;
-  margin-top: 0.6cqw;
+  font-size: 4.8cqw;
+  margin-top: 0.4cqw;
   line-height: 1;
   display: block;
 }
 
 .v200-card-mini-crest {
-  width: 7.2cqw;
-  height: 7.2cqw;
+  width: 6.5cqw;
+  height: 6.5cqw;
   object-fit: contain;
-  margin-top: 0.5cqw;
+  margin-top: 0.4cqw;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
 /* Center Player Area */
 .v200-card-player-center {
   position: absolute;
-  top: 10%;
-  left: 14%;
-  right: 14%;
-  bottom: 34%;
+  top: 8%;
+  left: 12%;
+  right: 12%;
+  bottom: 44%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12702,8 +12702,8 @@ body > main,
 
 .v200-silhouette-glow {
   position: absolute;
-  width: 38cqw;
-  height: 38cqw;
+  width: 34cqw;
+  height: 34cqw;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
   filter: blur(8px);
@@ -12727,18 +12727,18 @@ body > main,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5cqw;
+  gap: 0.4cqw;
 }
 
 .v200-silhouette-crest {
-  width: 16cqw;
-  height: 16cqw;
+  width: 14cqw;
+  height: 14cqw;
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
 }
 
 .v200-silhouette-number {
-  font-size: 7.5cqw;
+  font-size: 6.8cqw;
   font-weight: 1000;
   color: #ffffff;
   letter-spacing: -0.02em;
@@ -12748,9 +12748,9 @@ body > main,
 /* Nameplate Banner */
 .v200-card-nameplate {
   position: absolute;
-  top: 67%;
-  left: 8%;
-  right: 8%;
+  top: 56.5%;
+  left: 6%;
+  right: 6%;
   height: 7.5%;
   display: flex;
   align-items: center;
@@ -12760,7 +12760,7 @@ body > main,
 }
 
 .v200-card-name-text {
-  font-size: 5.2cqw;
+  font-size: 4.6cqw;
   font-weight: 1000;
   letter-spacing: 0.08em;
   color: #ffffff;
@@ -12795,13 +12795,13 @@ body > main,
 /* 6 Attributes Grid */
 .v200-card-stats-row {
   position: absolute;
-  top: 75.2%;
-  left: 7.5%;
-  right: 7.5%;
-  height: 13.5%;
+  top: 66%;
+  left: 5%;
+  right: 5%;
+  height: 20%;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 1.5cqw;
+  gap: 1cqw;
   pointer-events: none;
 }
 
@@ -12809,27 +12809,36 @@ body > main,
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   height: 100%;
+  padding: 1cqw 0 1.5cqw 0;
+  box-sizing: border-box;
   text-align: center;
 }
 
 .v200-stat-lbl {
-  font-size: 3.2cqw;
+  font-size: 2.8cqw;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   color: #cbd5e1;
   line-height: 1;
-  opacity: 0.9;
+  opacity: 0.95;
+  height: 3.5cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .v200-stat-val {
-  font-size: 5.6cqw;
+  font-size: 4.8cqw;
   font-weight: 1000;
   line-height: 1;
-  margin-top: 0.6cqw;
   color: #ffffff;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  height: 5.5cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .v200-stat-val.inferno {

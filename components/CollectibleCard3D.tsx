@@ -279,12 +279,12 @@ export default function CollectibleCard3D({
     }
   }
 
-  // Exact card dimensions
+  // Exact card dimensions (1:1.70 standard aspect ratio)
   const dim = {
-    sm: { w: 135, h: 220 },
-    md: { w: 185, h: 300 },
-    lg: { w: 245, h: 400 },
-    xl: { w: 315, h: 515 }
+    sm: { w: 130, h: 221 },
+    md: { w: 180, h: 306 },
+    lg: { w: 240, h: 408 },
+    xl: { w: 300, h: 510 }
   }[size];
 
   // Template image for this card tier
