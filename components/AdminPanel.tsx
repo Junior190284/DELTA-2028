@@ -91,6 +91,7 @@ export default function AdminPanel(props:{
   const [trainingFeedback,setTrainingFeedback]=useState<string>("");
   const [parentLinks,setParentLinks]=useState(props.initialParentLinks);
   const [permissions,setPermissions]=useState<PermissionRow[]>(props.initialPermissions);
+  const [allProfiles,setAllProfiles]=useState<Profile[]>(props.allProfiles);
   const [selectedMatchId,setSelectedMatchId]=useState(matches[0]?.id||"");
   const selectedMatch=matches.find(m=>m.id===selectedMatchId)||null;
   const activePlayers=players.filter(p=>p.active!==false);
@@ -149,7 +150,7 @@ export default function AdminPanel(props:{
   }, [players, playerFilterTab, playerSearchQuery]);
   // Zawodnika można przypisać do dowolnego zalogowanego konta, także administratora.
   // Funkcja rodzica to powiązanie z zawodnikiem, nie zamiana uprawnień admina.
-  const parentCandidates=props.allProfiles.filter(p=>["parent","admin","coach"].includes(p.role));
+  const parentCandidates=allProfiles.filter(p=>["parent","admin","coach"].includes(p.role));
   const selectedTraining=trainingSessions.find(s=>s.id===selectedTrainingId)||null;
   const trainingGamesForSelected=trainingGames.filter(g=>g.training_id===selectedTrainingId);
   const selectedTrainingGame=trainingGamesForSelected.find(g=>g.id===selectedTrainingGameId)||trainingGamesForSelected[0]||null;
@@ -517,15 +518,41 @@ export default function AdminPanel(props:{
   }
 
   async function addParentLink(parentId:string,playerId:string){
-    const {error}=await supabase.from("parent_players").upsert({parent_id:parentId,player_id:playerId},{onConflict:"parent_id,player_id"});
-    if(error)return alert(error.message);
-    setParentLinks(prev=>[...prev.filter(x=>!(x.parent_id===parentId&&x.player_id===playerId)),{parent_id:parentId,player_id:playerId}]);
+    try {
+      const res = await fetch("/api/admin/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_parent_link",
+          parent_id: parentId,
+          player_id: playerId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd przypisywania");
+      setParentLinks(prev=>[...prev.filter(x=>!(x.parent_id===parentId&&x.player_id===playerId)),{parent_id:parentId,player_id:playerId}]);
+    } catch (e: any) {
+      alert(`Nie udało się przypisać zawodnika: ${e.message}`);
+    }
   }
 
   async function removeParentLink(parentId:string,playerId:string){
-    const {error}=await supabase.from("parent_players").delete().eq("parent_id",parentId).eq("player_id",playerId);
-    if(error)return alert(error.message);
-    setParentLinks(prev=>prev.filter(x=>!(x.parent_id===parentId&&x.player_id===playerId)));
+    try {
+      const res = await fetch("/api/admin/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "remove_parent_link",
+          parent_id: parentId,
+          player_id: playerId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd usuwania");
+      setParentLinks(prev=>prev.filter(x=>!(x.parent_id===parentId&&x.player_id===playerId)));
+    } catch (e: any) {
+      alert(`Nie udało się usunąć powiązania: ${e.message}`);
+    }
   }
 
   function permissionFor(userId:string):PermissionRow{
@@ -534,30 +561,73 @@ export default function AdminPanel(props:{
 
   async function setAssistantPreset(userId:string,enable:boolean){
     if(!isAdmin)return alert("Tylko administrator może nadawać dodatkowe uprawnienia.");
-    const account=props.allProfiles.find(p=>p.id===userId);
+    const account=allProfiles.find(p=>p.id===userId);
     if(!account||account.role!=="parent")return alert("Pakiet pomocnika można nadać tylko kontu rodzica.");
     if(!window.confirm(enable
       ?"Nadać temu rodzicowi rolę Pomocnik strony i prawa do kalendarza oraz aktualności?"
       :"Cofnąć WSZYSTKIE delegowane uprawnienia temu rodzicowi i ustawić rolę Rodzic?"))return;
-    const current=permissionFor(userId);
-    const next:PermissionRow={...current,user_id:userId,
-      role_label:enable?"Pomocnik strony":"Rodzic",
-      can_manage_matches:false,can_edit_match_events:false,
-      can_manage_training:false,can_manage_training_attendance:false,
-      can_manage_calendar:enable,can_manage_news:enable,can_manage_players:false,
-      updated_by:props.currentUser.id,updated_at:new Date().toISOString()};
-    const {error}=await supabase.from("user_permissions").upsert(next,{onConflict:"user_id"});
-    if(error)return alert(`Nie zapisano uprawnień: ${error.message}`);
-    setPermissions(prev=>[...prev.filter(x=>x.user_id!==userId),next]);
+    try {
+      const res = await fetch("/api/admin/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set_preset",
+          user_id: userId,
+          enable
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd zapisu uprawnień");
+      setPermissions(prev=>[...prev.filter(x=>x.user_id!==userId),data.permissions]);
+    } catch (e: any) {
+      alert(`Błąd: ${e.message}`);
+    }
   }
 
   async function updatePermission(userId:string,key:keyof UserPermissions,value:boolean|string){
     if(!isAdmin)return alert("Tylko administrator może nadawać uprawnienia.");
     const current=permissionFor(userId);
-    const next={...current,[key]:value,user_id:userId,updated_by:props.currentUser.id,updated_at:new Date().toISOString()};
-    const {error}=await supabase.from("user_permissions").upsert(next,{onConflict:"user_id"});
-    if(error)return alert(error.message.includes("user_permissions")?"Najpierw uruchom SQL v7_permissions_megapack.sql w Supabase.":error.message);
-    setPermissions(prev=>[...prev.filter(x=>x.user_id!==userId),next]);
+    const updated={...current,[key]:value};
+    try {
+      const res = await fetch("/api/admin/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_permission",
+          user_id: userId,
+          permissions: updated
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd zapisu uprawnień");
+      setPermissions(prev=>[...prev.filter(x=>x.user_id!==userId),data.permissions]);
+    } catch (e: any) {
+      alert(`Błąd zapisu uprawnień: ${e.message}`);
+    }
+  }
+
+  async function changeSystemRole(targetUserId: string, newRole: "parent" | "coach" | "admin") {
+    if (!isAdmin) return alert("Tylko administrator może zmieniać role systemowe.");
+    if (targetUserId === props.currentUser.id && newRole !== "admin") {
+      if (!confirm("Ostrzeżenie: Zmieniasz własną rolę administratora! Czy na pewno chcesz to zrobić?")) return;
+    }
+    try {
+      const res = await fetch("/api/admin/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "change_system_role",
+          target_user_id: targetUserId,
+          new_role: newRole
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd zmiany roli");
+      setAllProfiles(prev => prev.map(p => p.id === targetUserId ? { ...p, role: newRole } : p));
+      alert("Rola użytkownika została zaktualizowana!");
+    } catch (e: any) {
+      alert(`Błąd zmiany roli: ${e.message}`);
+    }
   }
 
   async function sendPush(){
@@ -1388,8 +1458,26 @@ export default function AdminPanel(props:{
         <p className="muted">Rola „Pomocnik strony” daje wybranym rodzicom prawo do edycji kalendarza i aktualności. Możesz osobno zaznaczyć inne uprawnienia. Sama nazwa roli nie daje dostępu — decydują zaznaczone uprawnienia.</p>
         <div className="parent-grid">
           {parentCandidates.map(account=><div className="admin-subcard" key={account.id}>
-            <h3>{account.display_name||"Użytkownik"} {account.id===props.currentUser.id?"(Twoje konto)":""}</h3>
-            <p className="muted">Rola systemowa: <strong>{account.role==="admin"?"Administrator":account.role==="coach"?"Trener":"Rodzic"}</strong> • Powiązanych zawodników: {parentLinks.filter(x=>x.parent_id===account.id).length}</p>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+              <h3 style={{margin:0}}>{account.display_name||"Użytkownik"} {account.id===props.currentUser.id?"(Twoje konto)":""}</h3>
+              {account.id===props.currentUser.id && <span style={{fontSize:11,background:"#0369a1",color:"#fff",padding:"2px 8px",borderRadius:999}}>Ty</span>}
+            </div>
+
+            <div style={{display:"flex",alignItems:"center",gap:8,margin:"10px 0 14px 0",flexWrap:"wrap"}}>
+              <span className="muted" style={{fontSize:13}}>Rola w systemie:</span>
+              <select
+                value={account.role}
+                disabled={!isAdmin}
+                onChange={e=>changeSystemRole(account.id, e.target.value as "parent"|"coach"|"admin")}
+                style={{padding:"4px 8px",borderRadius:6,background:"#1e293b",color:"#38bdf8",fontWeight:"bold",border:"1px solid #334155",fontSize:13,cursor:isAdmin?"pointer":"not-allowed"}}
+              >
+                <option value="parent">Rodzic (standard)</option>
+                <option value="coach">Trener (dostęp trenerski)</option>
+                <option value="admin">Administrator (pełny dostęp)</option>
+              </select>
+              <span className="muted" style={{fontSize:12}}>• Powiązanych zawodników: {parentLinks.filter(x=>x.parent_id===account.id).length}</span>
+            </div>
+
             {account.role==="parent"&&<div className="v10-parent-role">
               <label>Rola dodatkowa / opis
                 <select value={permissionFor(account.id).role_label} disabled={!isAdmin} onChange={e=>updatePermission(account.id,"role_label",e.target.value)}>
@@ -1412,8 +1500,9 @@ export default function AdminPanel(props:{
                 ] as [keyof UserPermissions,string][]).map(([key,label])=><label key={key} className="v10-permission-check"><input type="checkbox" disabled={!isAdmin} checked={Boolean(permissionFor(account.id)[key])} onChange={e=>updatePermission(account.id,key,e.target.checked)}/><span>{label}</span></label>)}
               </div>
             </div>}
-            {account.role!=="parent"&&<p className="muted">To konto zachowuje uprawnienia {account.role==="admin"?"administratora":"trenera"}. Poniżej możesz niezależnie przypisać mu zawodnika.</p>}
-            <h4>Powiązanie z zawodnikiem</h4>
+            {account.role!=="parent"&&<p className="muted">To konto zachowuje pełne uprawnienia roli <strong>{account.role==="admin"?"Administrator":"Trener"}</strong>. Poniżej możesz niezależnie powiązać je z zawodnikiem.</p>}
+            
+            <h4 style={{marginTop:16}}>Powiązanie z zawodnikiem</h4>
             {activePlayers.map(player=>{
               const linked=parentLinks.some(x=>x.parent_id===account.id&&x.player_id===player.id);
               return <label className="parent-check" key={player.id}>
