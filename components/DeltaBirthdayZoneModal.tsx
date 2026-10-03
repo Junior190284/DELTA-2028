@@ -81,6 +81,21 @@ export default function DeltaBirthdayZoneModal({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      const origOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = origOverflow;
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [isOpen, onClose]);
+
   // Compute upcoming birthdays
   const birthdayList: BirthdayPlayer[] = useMemo(() => {
     if (!players || players.length === 0) {
@@ -167,7 +182,12 @@ export default function DeltaBirthdayZoneModal({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="v200-modal-overlay animate-fadeIn">
+    <div 
+      className="v200-modal-overlay animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {celebrating && <CanvasParticles theme="gold" active={true} />}
 
       <div className="v200-birthday-modal animate-scaleUp">

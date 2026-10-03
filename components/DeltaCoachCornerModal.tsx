@@ -139,6 +139,21 @@ export default function DeltaCoachCornerModal({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      const origOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = origOverflow;
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [isOpen, onClose]);
+
   // Submit Skill Record after successful attempt with coach
   const handleSubmitRecord = (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,7 +213,12 @@ export default function DeltaCoachCornerModal({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="v200-modal-overlay animate-fadeIn">
+    <div 
+      className="v200-modal-overlay animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {celebrating && <CanvasParticles theme="gold" active={true} />}
 
       <div className="v200-coach-modal animate-scaleUp">
