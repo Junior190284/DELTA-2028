@@ -26,14 +26,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nieprawidłowy typ paczki" }, { status: 400 });
     }
 
-    // Sprawdzamy saldo Delta Points z tabeli user_delta_points (zarówno points_balance jak i points)
-    const { data: pointsRecord } = await supabase
+    // Sprawdzamy saldo Delta Points z tabeli user_delta_points
+    const { data: pointsRecord, error: pErr } = await supabase
       .from("user_delta_points")
-      .select("points_balance, total_earned, points")
+      .select("points_balance, total_earned")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const currentPoints = pointsRecord?.points_balance ?? pointsRecord?.points ?? 0;
+    if (pErr) {
+      console.error("Error reading points balance:", pErr);
+    }
+
+    const currentPoints = pointsRecord?.points_balance || 0;
 
     if (currentPoints < price) {
       return NextResponse.json({ 
@@ -43,12 +47,14 @@ export async function POST(req: Request) {
 
     // Odejmujemy punkty
     const newPoints = currentPoints - price;
+    const totalEarned = pointsRecord?.total_earned ?? currentPoints;
+
     await supabase
       .from("user_delta_points")
       .upsert({
         user_id: user.id,
         points_balance: newPoints,
-        points: newPoints,
+        total_earned: totalEarned,
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id" });
 

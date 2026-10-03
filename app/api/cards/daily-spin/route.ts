@@ -30,11 +30,11 @@ export async function POST(req: Request) {
       // Pobieramy aktualne punkty
       const { data: pointsRecord } = await supabase
         .from("user_delta_points")
-        .select("points_balance, total_earned, points")
+        .select("points_balance, total_earned")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const currentPoints = pointsRecord?.points_balance ?? pointsRecord?.points ?? 0;
+      const currentPoints = pointsRecord?.points_balance || 0;
       const currentTotal = pointsRecord?.total_earned ?? currentPoints;
       updatedPoints = currentPoints + reward.amount;
 
@@ -43,7 +43,6 @@ export async function POST(req: Request) {
         .upsert({
           user_id: user.id,
           points_balance: updatedPoints,
-          points: updatedPoints,
           total_earned: currentTotal + reward.amount,
           updated_at: new Date().toISOString()
         }, { onConflict: "user_id" });
@@ -69,11 +68,11 @@ export async function POST(req: Request) {
       // Pobieramy saldo punktów
       const { data: pointsRecord } = await supabase
         .from("user_delta_points")
-        .select("points_balance, points")
+        .select("points_balance")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      updatedPoints = pointsRecord?.points_balance ?? pointsRecord?.points ?? 0;
+      updatedPoints = pointsRecord?.points_balance || 0;
     }
 
     return NextResponse.json({
