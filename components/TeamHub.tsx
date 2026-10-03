@@ -18,6 +18,7 @@ import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
 import DeltaTyperModal from "./DeltaTyperModal";
 import PlayerRecordsView from "./PlayerRecordsView";
+import SpotlightCard from "./SpotlightCard";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -1420,8 +1421,11 @@ export default function TeamHub(props:{
         </section>
 
         {nextMatch&&<><section className="v105-home-command-grid">
-          <article className="v8-match-card devil-card v101-logged-match">
-            <div className="v8-section-label"><CalendarDays size={17}/> NAJBLIŻSZY MECZ <span>Kolejka {nextMatch.round_no||"—"}</span></div>
+          <SpotlightCard className="v8-match-card devil-card v101-logged-match v200-match-hero" glowColor="gold" enableTilt={true}>
+            <div className="v8-section-label">
+              <span className="v200-live-pill-badge"><CalendarDays size={13}/> NAJBLIŻSZY MECZ</span>
+              <span style={{ color: "#f6c952", fontWeight: 900, fontSize: "11px" }}>Kolejka {nextMatch.round_no||"—"}</span>
+            </div>
             <div className="v8-match-stage">
               <div className="v8-team">
                 <Logo team={nextMatch.home_team} size={76}/>
@@ -1430,7 +1434,7 @@ export default function TeamHub(props:{
               </div>
               <div className="v8-vs">
                 <strong>VS</strong>
-                <span>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"—"}</span>
+                <span>{datePL(nextMatch.match_date)} • {(nextMatch.match_time||"").slice(0, 5)||"—"}</span>
                 <small>{nextMatch.venue||"Miejsce do ustalenia"}</small>
               </div>
               <div className="v8-team">
@@ -1444,7 +1448,7 @@ export default function TeamHub(props:{
               <div className="v891-match-clock">
                 <span>DO MECZU</span>
                 <b>{nextMatchCountdown}</b>
-                <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time||"godzina do ustalenia"}</small>
+                <small>{datePL(nextMatch.match_date)} • {(nextMatch.match_time||"").slice(0, 5)||"godzina do ustalenia"}</small>
               </div>
 
               <button type="button" className="v891-attendance-mini" onClick={()=>openMatch(nextMatch,"attendance","home")}>
@@ -1456,7 +1460,7 @@ export default function TeamHub(props:{
             </div>
 
             <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary","home")}>CENTRUM MECZU <ChevronRight size={17}/></button>
-          </article>
+          </SpotlightCard>
           {(nextTeamEvent||importantTeamEvent)&&<div className="v105-command-side">
           {nextTeamEvent&&<article className={`v891-team-clock devil-card event-${nextTeamEvent.kind||"other"}`} onClick={()=>setTab("calendar")}>
             <div className="v891-clock-icon"><CalendarDays size={22}/></div>
@@ -1492,20 +1496,44 @@ export default function TeamHub(props:{
 
         <section className="v8-stats-row">
           {[
-            ["MECZE",teamSummary.played,Target],["WYGRANE",teamSummary.wins,Trophy],["REMISY",teamSummary.draws,Shield],
-            ["PORAŻKI",teamSummary.losses,X],["BRAMKI",teamSummary.goals,Goal],["ASYSTY",teamSummary.assists,Star]
-          ].map(([label,val,Icon]:any)=><div className="v8-stat devil-tile" key={label}><Icon size={25}/><b>{val}</b><span>{label}</span></div>)}
+            ["MECZE",teamSummary.played,Target,"gold",[3,5,4,6,teamSummary.played]],
+            ["WYGRANE",teamSummary.wins,Trophy,"emerald",[1,2,2,3,teamSummary.wins]],
+            ["REMISY",teamSummary.draws,Shield,"blue",[0,1,0,1,teamSummary.draws]],
+            ["PORAŻKI",teamSummary.losses,X,"red",[1,0,1,0,teamSummary.losses]],
+            ["BRAMKI",teamSummary.goals,Goal,"gold",[4,8,12,15,teamSummary.goals]],
+            ["ASYSTY",teamSummary.assists,Star,"gold",[3,6,9,11,teamSummary.assists]]
+          ].map(([label,val,Icon,glow,bars]:any)=>(
+            <SpotlightCard className="v8-stat devil-tile v200-stat-sparkle" glowColor={glow} enableTilt={true} key={label}>
+              <Icon size={25}/>
+              <div>
+                <b>{val}</b>
+                <div className="v200-sparklines-row" aria-hidden="true">
+                  {bars.map((h:number, i:number) => (
+                    <span key={i} className="v200-sparkline-bar" style={{ height: `${Math.max(20, Math.min(100, (h / Math.max(1, val)) * 100))}%` }} />
+                  ))}
+                </div>
+              </div>
+              <span>{label}</span>
+            </SpotlightCard>
+          ))}
         </section>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:10,margin:"12px 0 16px 0"}}>
-          <button type="button" className="v151-home-entry devil-card" onClick={()=>setTab("teamcenter")}>
-            <span><UserCheck size={23}/><b>CENTRUM DRUŻYNY</b><small>Moje sprawy · najbliższe wydarzenie · sezon</small></span>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,margin:"14px 0 18px 0"}}>
+          <SpotlightCard className="v151-home-entry devil-card" glowColor="red" enableTilt={true} onClick={()=>setTab("teamcenter")} style={{cursor:"pointer"}}>
+            <span><UserCheck size={24}/><b>CENTRUM DRUŻYNY</b><small>Moje sprawy · najbliższe wydarzenie · sezon</small></span>
             <ChevronRight size={22}/>
-          </button>
-          <button type="button" className="v151-home-entry devil-card" style={{border:"1px solid rgba(245,158,11,0.35)",background:"linear-gradient(135deg,rgba(245,158,11,0.1),rgba(0,0,0,0.4))"}} onClick={()=>setTyperModalOpen(true)}>
-            <span><Target size={23} style={{color:"#f59e0b"}}/><b>KLUBOWY TYPER MECZOWY</b><small>Typuj wynik meczu i wygrywaj punkty DP na paczki!</small></span>
-            <ChevronRight size={22}/>
-          </button>
+          </SpotlightCard>
+          <SpotlightCard className="v151-home-entry devil-card v200-typer-vip-tile" glowColor="gold" enableTilt={true} onClick={()=>setTyperModalOpen(true)} style={{cursor:"pointer"}}>
+            <span>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                <Crown size={22} style={{color:"#f59e0b",filter:"drop-shadow(0 0 8px rgba(245,158,11,0.6))"}}/>
+                <span className="v200-drawer-card-tag gold">ZGARNIAJ DP</span>
+              </div>
+              <b>KLUBOWY TYPER MECZOWY</b>
+              <small>Typuj wynik meczu i wygrywaj punkty DP na paczki kart!</small>
+            </span>
+            <ChevronRight size={22} style={{color:"#f59e0b"}}/>
+          </SpotlightCard>
         </div>
         <div className="v104-league-feature">
         <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
@@ -1593,7 +1621,7 @@ export default function TeamHub(props:{
 
 
         <section className="v87-season-grid">
-          <article className="v87-leaders devil-card v885-season-best v113-season-podium-panel">
+          <SpotlightCard className="v87-leaders devil-card v885-season-best v113-season-podium-panel" glowColor="gold" enableTilt={true}>
             <div className="v8-panel-title"><Medal size={18}/> PODIUM SEZONU <span>DELTA 2018 GM</span></div>
             <div className="v142-gala-tabs" role="group" aria-label="Wybierz kategorię podium sezonu">
               {([['goals','Strzelcy bramek',Goal],['assists','Asysty',Star],['mvp','MVP',Trophy]] as const).map(([metric,label,Icon])=><button key={metric} type="button" className={homePodiumMetric===metric?'active':''} aria-pressed={homePodiumMetric===metric} onClick={()=>setHomePodiumMetric(metric)}><Icon size={17}/>{label}</button>)}
@@ -1601,9 +1629,9 @@ export default function TeamHub(props:{
             <div className="v142-gala-caption"><span>{homePodiumMetric==='goals'?'STRZELCY BRAMEK':homePodiumMetric==='assists'?'ASYSTY':'MVP'}</span><small>Wybierz kartę zawodnika, aby otworzyć jego profil</small></div>
             <PremiumPodium players={players} stats={stats} metric={homePodiumMetric} onOpen={openPlayerProfile}/>
             <button type="button" className="v142-hall-link" onClick={()=>setTab('hall')}>PRZEJDŹ DO HALL OF FAME <ChevronRight size={16}/></button>
-          </article>
+          </SpotlightCard>
 
-          <article className="v877-club-home devil-card">
+          <SpotlightCard className="v877-club-home devil-card" glowColor="blue" enableTilt={true}>
             <div className="v8-panel-title"><Shield size={18}/> Z KLUBU <span>DELTA SYNC</span></div>
             {clubUpdates.length>0?<>
               <div className="v877-club-home-list">
@@ -1615,21 +1643,26 @@ export default function TeamHub(props:{
               </div>
               <button className="v877-club-all" type="button" onClick={()=>setTab("club")}>WSZYSTKIE INFORMACJE Z KLUBU <ChevronRight size={14}/></button>
             </>:<div className="v877-club-home-empty"><Shield size={24}/><div><b>DELTA Sync</b><span>Uruchom synchronizację w panelu Admin.</span></div></div>}
-          </article>
+          </SpotlightCard>
 
-          <article className="v87-team-goal devil-card">
+          <SpotlightCard className="v87-team-goal devil-card" glowColor="gold" enableTilt={true}>
             <div className="v8-panel-title"><Target size={18}/> CEL DRUŻYNY</div>
             <div className="v87-goal-number"><b>{teamSummary.goals}</b><span>/ {teamGoalTarget}</span></div>
             <h3>50 BRAMEK W SEZONIE</h3>
             <p>Każdy gol przybliża Diabełki do wspólnego celu.</p>
-            <div className="v87-goal-track"><i style={{width:`${teamGoalProgress}%`}}><em>{teamGoalProgress}%</em></i></div>
+            <div className="v87-goal-track v200-flame-meter">
+              <i style={{width:`${teamGoalProgress}%`}}>
+                <em>{teamGoalProgress}%</em>
+                <span className="v200-flame-tip"><Flame size={14} color="#ff202b"/></span>
+              </i>
+            </div>
             <small>Do celu pozostało {Math.max(0,teamGoalTarget-teamSummary.goals)} bramek</small>
-          </article>
+          </SpotlightCard>
 
-          <article className="v87-streak devil-card">
+          <SpotlightCard className="v87-streak devil-card" glowColor="red" enableTilt={true}>
             <div className="v8-panel-title"><TrendingUp size={18}/> SERIA DRUŻYNY</div>
             <div className="v87-streak-main">
-              <Zap size={30}/>
+              <Zap size={32} style={{color:"#ff202b",filter:"drop-shadow(0 0 10px rgba(255,32,43,0.7))"}}/>
               <div>
                 <b>{currentWinStreak>0?currentWinStreak:currentUnbeatenStreak}</b>
                 <span>{currentWinStreak>0?(currentWinStreak===1?"WYGRANA Z RZĘDU":"WYGRANE Z RZĘDU"):(currentUnbeatenStreak>0?"MECZE BEZ PORAŻKI":"NOWA SERIA CZEKA")}</span>
@@ -1639,7 +1672,7 @@ export default function TeamHub(props:{
               {recentMatches.map(m=><i key={m.id} className={`form-${recentResult(m).toLowerCase()}`}>{recentResult(m)}</i>)}
               {recentMatches.length===0&&<small>Pierwszy wynik uruchomi serię.</small>}
             </div>
-          </article>
+          </SpotlightCard>
         </section>
 
         <section className="v8-bottom-grid">
