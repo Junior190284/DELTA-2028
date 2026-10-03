@@ -11557,14 +11557,14 @@ body > main,
 .v104-open-modal {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: 9999999;
   background: rgba(3, 5, 8, 0.96);
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
+  padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 20px) 16px;
   box-sizing: border-box;
   overflow-y: auto;
   user-select: none;
@@ -12026,13 +12026,14 @@ body > main,
 .v104-walkout-stage {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  z-index: 10000000;
   background: transparent;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 20px) 16px;
   box-sizing: border-box;
   user-select: none;
 }
@@ -12613,6 +12614,65 @@ body > main,
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
   margin-top: 4px;
   animation: pulse 2s infinite;
+}
+
+/* ================= MOBILE OPTIMIZATIONS FOR PACK OPENING & WALKOUT ================= */
+@media (max-width: 640px), (max-height: 780px) {
+  .v104-open-modal {
+    padding: 12px 10px calc(env(safe-area-inset-bottom, 0px) + 16px) 10px !important;
+  }
+  .v104-walkout-stage {
+    padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 16px) 10px !important;
+  }
+  .v104-walkout-slam-container {
+    gap: 4px !important;
+    padding: 4px !important;
+    max-height: 100% !important;
+    justify-content: space-evenly !important;
+  }
+  .v200-walkout-card-stage {
+    padding: 2px !important;
+  }
+  .v200-walkout-card-stage .v104-cc-wrap {
+    transform: scale(0.74) !important;
+    transform-origin: center center !important;
+    margin: -38px 0 !important;
+  }
+  .v200-walkout-ribbon {
+    font-size: 10px !important;
+    padding: 5px 14px !important;
+    gap: 6px !important;
+    margin-bottom: 0 !important;
+  }
+  .v104-walkout-details {
+    padding: 4px 16px !important;
+    gap: 2px !important;
+  }
+  .v104-walkout-player-title {
+    font-size: 9px !important;
+  }
+  .v104-walkout-player-name {
+    font-size: 17px !important;
+  }
+  .v104-walkout-continue-btn {
+    min-width: 220px !important;
+    padding: 11px 22px !important;
+    font-size: 11px !important;
+    margin-top: 4px !important;
+    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
+    z-index: 50 !important;
+    position: relative !important;
+  }
+  .v104-open-stage .v104-cc-wrap {
+    transform: scale(0.82) !important;
+    transform-origin: center center !important;
+    margin: -25px 0 !important;
+  }
+  .v104-open-card-controls {
+    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
+    z-index: 50 !important;
+    position: relative !important;
+  }
 }
 
 /* ================= EA FC 25 CUSTOM TEMPLATE CARD OVERLAYS ================= */

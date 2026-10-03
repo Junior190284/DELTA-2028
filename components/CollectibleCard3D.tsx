@@ -356,6 +356,8 @@ export default function CollectibleCard3D({
           <img 
             src={frameTemplateUrl} 
             alt={card.card_name}
+            loading="eager"
+            decoding="sync"
             className="v200-card-frame-img"
             style={{
               position: "absolute",
@@ -488,6 +490,8 @@ export default function CollectibleCard3D({
                 <img 
                   src={cutoutImage} 
                   alt={playerName}
+                  loading="eager"
+                  decoding="sync"
                   className="v200-card-cutout-img"
                 />
               </div>
@@ -578,6 +582,8 @@ export default function CollectibleCard3D({
           <img 
             src={reverseTemplateUrl} 
             alt="Delta Card Back"
+            loading="eager"
+            decoding="sync"
             style={{
               position: "absolute",
               inset: 0,

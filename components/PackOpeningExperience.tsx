@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   Flame, 
   Sparkles, 
@@ -45,6 +46,7 @@ export default function PackOpeningExperience({
   onOpenAnother,
   unopenedCount = 0
 }: PackOpeningExperienceProps) {
+  const [mounted, setMounted] = useState(false);
   const [stage, setStage] = useState<Stage>("sealed");
   const [loading, setLoading] = useState(false);
   const [openingResult, setOpeningResult] = useState<PackOpeningResult | null>(null);
@@ -53,9 +55,36 @@ export default function PackOpeningExperience({
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
   const [screenShake, setScreenShake] = useState(false);
 
+  // Preload core templates on mount so there is zero asset popping/delay during reveal
+  useEffect(() => {
+    setMounted(true);
+
+    const preloadUrls = [
+      "/assets/cards/templates/frame_base.png",
+      "/assets/cards/templates/frame_inferno.png",
+      "/assets/cards/templates/frame_legend.png",
+      "/assets/cards/templates/frame_gold.png",
+      "/assets/cards/templates/frame_matchday.png",
+      "/assets/cards/templates/reverse_base.png",
+      "/assets/cards/templates/reverse_inferno.png",
+      "/assets/cards/templates/reverse_legend.png",
+      "/assets/cards/templates/reverse_gold.png",
+      "/assets/cards/templates/reverse_matchday.png",
+      "/teamlogos/gm.png",
+      "/assets/players/ryszard-inferno.png",
+      "/assets/players/ryszard-gold.png",
+      "/assets/players/ryszard-legend.png"
+    ];
+
+    preloadUrls.forEach(url => {
+      const img = new Image();
+      img.src = url;
+    });
+  }, []);
+
   // 3D Hover tilt for sealed pack
-  const [packTilt, setPackTilt] = useState({ x: 0, y: 0 });
   const packRef = useRef<HTMLDivElement | null>(null);
+  const [packTilt, setPackTilt] = useState({ x: 0, y: 0 });
 
   const handlePackMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!packRef.current || stage !== "sealed") return;
@@ -93,6 +122,18 @@ export default function PackOpeningExperience({
       const data: PackOpeningResult = await res.json();
       setOpeningResult(data);
       setRevealedCards(new Array(data.cards.length).fill(false));
+
+      // Instantly preload all card artwork and player photos from this pack
+      data.cards.forEach(item => {
+        if (item.card.artwork_url) {
+          const img = new Image();
+          img.src = item.card.artwork_url;
+        }
+        if (item.card.player?.photo_path) {
+          const img = new Image();
+          img.src = item.card.player.photo_path;
+        }
+      });
 
       // Rank cards to find the star card
       const rarityRank: Record<string, number> = {
@@ -275,7 +316,11 @@ export default function PackOpeningExperience({
           : MEDIA.packOpening.bgGold)
       : undefined;
 
-  return (
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  const modalContent = (
     <div className={`v104-open-modal ${screenShake ? "v104-screen-shake" : ""}`}>
       {/* FLASH TRANSITION OVERLAY */}
       {stage === "flash" && (
@@ -728,4 +773,6 @@ export default function PackOpeningExperience({
       )}
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
