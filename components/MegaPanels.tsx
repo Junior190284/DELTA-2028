@@ -34,45 +34,7 @@ function TeamBadge({team}:{team:string}){
   return <span className="v108-team-badge v108-team-fallback">{team.split(/\s+/).map(part=>part[0]).join("").slice(0,3)}</span>;
 }
 
-export function MyChildCenter(props:{
-  players:Player[];parentPlayerIds:string[];stats:Record<string,Stat>;trainingStats:Record<string,TrainingStat>;
-  matches:Match[];attendance:Attendance[];events:Event[];trainingSessions:TrainingSession[];trainingAttendance:TrainingAttendance[];
-  chemistry:Pair[];onOpenMatch:(m:Match,tab:"summary"|"attendance")=>void;onOpenPlayer:(p:Player)=>void;
-}){
-  const children=props.players.filter(p=>props.parentPlayerIds.includes(p.id));
-  const next=props.matches.filter(m=>m.status==="scheduled").slice().sort((a,b)=>a.match_date.localeCompare(b.match_date))[0]||null;
-  if(!children.length)return <section className="section v10-my-child"><div className="v10-empty devil-card"><UserCheck size={32}/><h2>Moje dziecko</h2><p>Administrator nie przypisał jeszcze zawodnika do tego konta.</p></div></section>;
-
-  return <section className="section v10-my-child">
-    <div className="v10-page-hero devil-card"><div><span className="eyebrow gold">STREFA RODZICA</span><h2>MOJE <em>DZIECKO</em></h2><p>Najważniejsze informacje, obecność, forma, treningi i osiągnięcia w jednym miejscu.</p></div><UserCheck size={54}/></div>
-    {children.map(p=>{
-      const s=props.stats[p.id]||{m:0,starts:0,captain:0,g:0,a:0,mvp:0};
-      const t=props.trainingStats[p.id]||{sessions:0,goals:0,assists:0,ga:0,attendanceStreak:0,games:0,wins:0};
-      const pair=props.chemistry.find(x=>x.a.id===p.id||x.b.id===p.id);
-      const partner=pair?(pair.a.id===p.id?pair.b:pair.a):null;
-      const rsvp=next?props.attendance.find(a=>a.match_id===next.id&&a.player_id===p.id)?.status||"":null;
-      return <article className="v10-child-card devil-card" key={p.id}>
-        <button className="v10-child-id" onClick={()=>props.onOpenPlayer(p)}><Avatar p={p}/><div><small>DELTA 2018 GM</small><h3>{p.display_name}</h3><span>{p.position||"Zawodnik"}</span></div><ChevronRight/></button>
-        <div className="v10-child-kpis">
-          <div><b>{s.m}</b><span>MECZE</span></div><div><b>{s.g+s.a}</b><span>G+A</span></div><div><b>{s.mvp}</b><span>MVP</span></div><div><b>{t.sessions}</b><span>TRENINGI</span></div><div><b>{t.ga}</b><span>G+A TRENING</span></div><div><b>{t.attendanceStreak}</b><span>SERIA OBECNOŚCI</span></div>
-        </div>
-        <div className="v10-player-form">
-          <span>FORMA — OSTATNIE MECZE</span>
-          <div>{props.matches.filter(m=>m.status==="played").slice().sort((a,b)=>b.match_date.localeCompare(a.match_date)).slice(0,5).map(m=>{
-            const g=props.events.filter(e=>e.match_id===m.id&&e.event_type==="goal"&&e.player_id===p.id).length;
-            const result=ours(m)>opp(m)?"W":ours(m)===opp(m)?"R":"P";
-            return <i key={m.id} className={`form-${result.toLowerCase()}`}>{g?`⚽${g}`:result}</i>;
-          })}</div>
-          <div className="v10-training-challenges"><b>Wyzwania treningowe:</b><span className={t.sessions>=5?"done":""}>5 treningów</span><span className={t.sessions>=10?"done":""}>10 treningów</span><span className={t.ga>=5?"done":""}>5 G+A</span><span className={t.attendanceStreak>=3?"done":""}>3 z rzędu</span></div>
-        </div>
-        <div className="v10-child-bottom">
-          <div className="v10-next-rsvp"><CalendarDays size={18}/><div><small>NAJBLIŻSZY MECZ</small><b>{next?`${fmt(next.match_date)} • ${opponent(next)}`:"Brak zaplanowanego meczu"}</b><span>{next?(rsvp==="yes"?"✓ Potwierdzono obecność":rsvp==="no"?"Nieobecny":rsvp==="maybe"?"Do potwierdzenia":"Brak odpowiedzi"):"—"}</span></div>{next&&<button onClick={()=>props.onOpenMatch(next,"attendance")}>POTWIERDŹ <ChevronRight size={12}/></button>}</div>
-          <div className="v10-chem-mini"><Zap size={18}/><div><small>NAJLEPSZA CHEMIA TRENINGOWA</small><b>{partner?partner.display_name:"Jeszcze brak danych"}</b><span>{pair?`${pair.score}% • ${pair.games} wspólnych gier`:"Pojawi się po grach kontrolnych"}</span></div></div>
-        </div>
-      </article>;
-    })}
-  </section>;
-}
+export { MyChildCenter } from "./MyChildCenter";
 
 export function MatchDayMode(props:{match:Match|null;players:Player[];attendance:Attendance[];lineup:Lineup[];events:Event[];canManage:boolean;canEvents:boolean;onOpen:(m:Match,tab:"summary"|"attendance"|"lineup"|"events"|"mvp")=>void}){
   if(!props.match)return <section className="section v10-matchday"><div className="v10-empty devil-card"><CalendarDays size={32}/><h2>Match Day</h2><p>Brak zaplanowanego meczu.</p></div></section>;
