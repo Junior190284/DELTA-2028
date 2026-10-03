@@ -11,9 +11,14 @@ import {
   Crown, 
   Clock, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  PlusCircle,
+  KeyRound,
+  RefreshCw,
+  Send,
+  Gift
 } from "lucide-react";
-import { CardDefinition, UserCard } from "@/lib/cards/types";
+import { CardDefinition, UserCard, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 
@@ -31,6 +36,7 @@ interface DeltaTradeHubModalProps {
   deltaPoints: number;
   onClose: () => void;
   onTradeComplete?: () => void;
+  onPointsEarned?: (points: number) => void;
 }
 
 export default function DeltaTradeHubModal({
@@ -38,16 +44,26 @@ export default function DeltaTradeHubModal({
   allCards,
   deltaPoints,
   onClose,
-  onTradeComplete
+  onTradeComplete,
+  onPointsEarned
 }: DeltaTradeHubModalProps) {
-  const [activeTab, setActiveTab] = useState<"market" | "duplicates">("market");
+  const [activeTab, setActiveTab] = useState<"market" | "create" | "duplicates" | "directPin">("market");
   const [tradedOfferId, setTradedOfferId] = useState<string | null>(null);
   const [recyclingCardId, setRecyclingCardId] = useState<string | null>(null);
+
+  // Form for creating new trade offer
+  const [selectedOfferCardId, setSelectedOfferCardId] = useState<string>("");
+  const [requestedPlayerName, setRequestedPlayerName] = useState("");
+  const [offerCreatedSuccess, setOfferCreatedSuccess] = useState(false);
+
+  // Direct PIN trade
+  const [pinCode, setPinCode] = useState("");
+  const [directTradeSuccess, setDirectTradeSuccess] = useState(false);
 
   // Filter duplicate cards
   const duplicateCards = userCards.filter(uc => uc.duplicates_count > 0);
 
-  // Mock club trade market offers from teammates
+  // Teammate market offers
   const [teamOffers, setTeamOffers] = useState<TradeOffer[]>([
     {
       id: "t1",
@@ -69,6 +85,13 @@ export default function DeltaTradeHubModal({
       offeredCard: allCards.find(c => c.rarity === "epic") || allCards[2] || allCards[0],
       requestedCardName: "Karta Obrońcy DELTA",
       createdAt: "1 godz. temu"
+    },
+    {
+      id: "t4",
+      creatorName: "Filip (Napastnik)",
+      offeredCard: allCards.find(c => c.card_type === "goal_hunter") || allCards[3] || allCards[0],
+      requestedCardName: "Karta Matchday DELTA 2018",
+      createdAt: "2 godz. temu"
     }
   ]);
 
@@ -82,13 +105,59 @@ export default function DeltaTradeHubModal({
     }, 1800);
   };
 
-  const handleRecycleDuplicate = async (userCardId: string) => {
+  const handleRecycleDuplicate = async (userCardId: string, rarity: string) => {
     setRecyclingCardId(userCardId);
-    cardSound.playFlip();
+    cardSound.playPurchase();
+
+    let earnedDP = 25;
+    if (rarity === "inferno" || rarity === "legendary") earnedDP = 150;
+    else if (rarity === "epic") earnedDP = 75;
+    else if (rarity === "rare") earnedDP = 40;
+
     setTimeout(() => {
       setRecyclingCardId(null);
+      if (onPointsEarned) onPointsEarned(earnedDP);
       if (onTradeComplete) onTradeComplete();
-    }, 1000);
+    }, 800);
+  };
+
+  const handleCreateOffer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOfferCardId || !requestedPlayerName.trim()) return;
+
+    const targetCard = allCards.find(c => c.id === selectedOfferCardId) || allCards[0];
+    const newOffer: TradeOffer = {
+      id: "user-" + Date.now(),
+      creatorName: "Twoja Oferta",
+      offeredCard: targetCard,
+      requestedCardName: requestedPlayerName.trim(),
+      createdAt: "Przed chwilą"
+    };
+
+    setTeamOffers(prev => [newOffer, ...prev]);
+    setOfferCreatedSuccess(true);
+    cardSound.playFlip();
+
+    setTimeout(() => {
+      setOfferCreatedSuccess(false);
+      setSelectedOfferCardId("");
+      setRequestedPlayerName("");
+      setActiveTab("market");
+    }, 1200);
+  };
+
+  const handleDirectPinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pinCode.length < 4) return;
+
+    setDirectTradeSuccess(true);
+    cardSound.playWalkoutFanfare();
+
+    setTimeout(() => {
+      setDirectTradeSuccess(false);
+      setPinCode("");
+      if (onTradeComplete) onTradeComplete();
+    }, 2000);
   };
 
   return (
@@ -99,10 +168,10 @@ export default function DeltaTradeHubModal({
           <div className="v200-trade-title-group">
             <div className="v200-trade-badge">
               <ArrowLeftRight size={16} className="text-yellow-400" />
-              <span>DELTA TEAM MARKET</span>
+              <span>DELTA TEAM MARKET & TRADE HUB</span>
             </div>
             <h2>GIEŁDA WYMIANY KART W DRUŻYNIE</h2>
-            <p>Wymieniaj karty z kolegami z szatni lub zamieniaj duplikaty na punkty Delta Points!</p>
+            <p>Wymieniaj karty 1:1 z kolegami z szatni, wystawiaj oferty lub zamieniaj powtórki na punkty Delta Points!</p>
           </div>
 
           <button 
@@ -128,11 +197,29 @@ export default function DeltaTradeHubModal({
 
           <button
             type="button"
+            onClick={() => setActiveTab("create")}
+            className={`v200-trade-tab-btn ${activeTab === "create" ? "active" : ""}`}
+          >
+            <PlusCircle size={15} />
+            <span>WYSTAW KARTĘ</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("duplicates")}
             className={`v200-trade-tab-btn ${activeTab === "duplicates" ? "active" : ""}`}
           >
             <Coins size={15} />
-            <span>TWOJE DUPLIKATY ({duplicateCards.length})</span>
+            <span>KANTOR DP ({duplicateCards.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("directPin")}
+            className={`v200-trade-tab-btn ${activeTab === "directPin" ? "active" : ""}`}
+          >
+            <KeyRound size={15} />
+            <span>KOD PIN 1:1</span>
           </button>
         </div>
 
@@ -141,7 +228,7 @@ export default function DeltaTradeHubModal({
           <div className="v200-trade-market-grid">
             {teamOffers.length === 0 ? (
               <div className="p-12 text-center text-slate-400 col-span-full">
-                Brak aktywnych ofert w szatni. Wróć za chwilę lub wystaw swój duplikat!
+                Brak aktywnych ofert w szatni. Bądź pierwszy i wystaw swoją kartę na wymianę!
               </div>
             ) : (
               teamOffers.map(offer => {
@@ -172,7 +259,7 @@ export default function DeltaTradeHubModal({
                       </div>
 
                       <div className="v200-trade-req-info">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">ODDAJE POWYŻSZĄ KARTĘ ZA:</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">ODDAJE KARTĘ W ZAMIAN ZA:</span>
                         <span className="text-sm font-extrabold text-yellow-400 block mt-1">
                           {offer.requestedCardName}
                         </span>
@@ -191,7 +278,7 @@ export default function DeltaTradeHubModal({
                           ) : (
                             <>
                               <ArrowLeftRight size={15} />
-                              <span>WYMIEŃ KARTĘ</span>
+                              <span>WYMIEŃ 1:1</span>
                             </>
                           )}
                         </button>
@@ -204,19 +291,81 @@ export default function DeltaTradeHubModal({
           </div>
         )}
 
-        {/* ================= TAB 2: USER DUPLICATES & RECYCLING ================= */}
+        {/* ================= TAB 2: CREATE TRADE OFFER ================= */}
+        {activeTab === "create" && (
+          <div className="v200-trade-create-section">
+            <form onSubmit={handleCreateOffer} className="v200-trade-create-form">
+              <h4 className="text-sm font-extrabold text-yellow-400 uppercase mb-3 flex items-center gap-1">
+                <Sparkles size={16} /> Wystaw swoją kartę na giełdę drużyny
+              </h4>
+
+              <div className="v200-form-group">
+                <label className="text-xs font-bold text-slate-300 block mb-1">
+                  1. Wybierz kartę ze swojej kolekcji do oddania:
+                </label>
+                <select
+                  value={selectedOfferCardId}
+                  onChange={e => setSelectedOfferCardId(e.target.value)}
+                  className="v200-trade-select-input"
+                  required
+                >
+                  <option value="">-- Wybierz kartę do wymiany --</option>
+                  {allCards.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.player?.display_name || c.card_name} ({c.rarity.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="v200-form-group">
+                <label className="text-xs font-bold text-slate-300 block mb-1">
+                  2. Czego szukasz w zamian? (np. nazwisko zawodnika lub rzadkość):
+                </label>
+                <input
+                  type="text"
+                  placeholder="np. Karta Ryszard (Inferno) lub dowolna karta Matchday"
+                  value={requestedPlayerName}
+                  onChange={e => setRequestedPlayerName(e.target.value)}
+                  className="v200-trade-text-input"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={offerCreatedSuccess || !selectedOfferCardId || !requestedPlayerName.trim()}
+                className="v200-trade-submit-btn"
+              >
+                {offerCreatedSuccess ? (
+                  <>
+                    <Check size={16} className="text-green-400" /> OFERTA ZOSTAŁA OPUBLIKOWANA!
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} /> WYSTAW OFERTĘ NA GIEŁDZIE
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* ================= TAB 3: USER DUPLICATES & RECYCLING ================= */}
         {activeTab === "duplicates" && (
           <div className="v200-trade-dups-section">
             {duplicateCards.length === 0 ? (
               <div className="p-12 text-center text-slate-400">
                 <Coins size={40} className="mx-auto text-slate-600 mb-3" />
                 <h4 className="text-base font-bold text-white mb-1">Brak duplikatów w kolekcji</h4>
-                <p className="text-sm text-slate-400">Gdy trafisz powtórkę w paczce, pojawi się tutaj. Będziesz mógł wymienić ją na giełdzie lub zamienić na punkty DP!</p>
+                <p className="text-sm text-slate-400">Gdy trafisz powtórkę w paczce, pojawi się tutaj. Będziesz mógł zamienić ją na natychmiastowe punkty DP do skarbca!</p>
               </div>
             ) : (
               <div className="v200-trade-dups-grid">
                 {duplicateCards.map(uc => {
                   const isRecycling = recyclingCardId === uc.id;
+                  const rarity = (uc.card_definition?.rarity || "common").toLowerCase();
+                  const dpValue = rarity === "inferno" || rarity === "legendary" ? 150 : rarity === "epic" ? 75 : rarity === "rare" ? 40 : 25;
 
                   return (
                     <div key={uc.id} className="v200-dup-item-card">
@@ -231,16 +380,16 @@ export default function DeltaTradeHubModal({
 
                       <div className="v200-dup-actions">
                         <span className="text-xs text-green-400 font-bold">
-                          Posiadasz: +{uc.duplicates_count} duplikatów
+                          Posiadasz: +{uc.duplicates_count} powtórek
                         </span>
 
                         <button
                           type="button"
-                          onClick={() => handleRecycleDuplicate(uc.id)}
+                          onClick={() => handleRecycleDuplicate(uc.id, rarity)}
                           disabled={isRecycling}
                           className="v200-dup-recycle-btn"
                         >
-                          <Coins size={14} /> Zamień duplikat na +50 DP
+                          <Coins size={14} /> Zamień na +{dpValue} DP
                         </button>
                       </div>
                     </div>
@@ -248,6 +397,48 @@ export default function DeltaTradeHubModal({
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ================= TAB 4: DIRECT PIN EXCHANGE ================= */}
+        {activeTab === "directPin" && (
+          <div className="v200-trade-pin-section">
+            <div className="v200-pin-card-box">
+              <KeyRound size={36} className="text-yellow-400 mb-2" />
+              <h4 className="text-base font-extrabold text-white">Szybka wymiana na żywo w szatni</h4>
+              <p className="text-xs text-slate-300 max-w-md mx-auto mb-4">
+                Wpisz 4-cyfrowy kod PIN otrzymany od kolegi z drużyny podczas treningu, aby natychmiast sfinalizować bezpieczną wymianę kart 1:1.
+              </p>
+
+              <form onSubmit={handleDirectPinSubmit} className="v200-pin-form">
+                <input
+                  type="text"
+                  maxLength={4}
+                  placeholder="0 0 0 0"
+                  value={pinCode}
+                  onChange={e => setPinCode(e.target.value.replace(/[^0-9]/g, ""))}
+                  className="v200-pin-input-field"
+                />
+
+                <button
+                  type="submit"
+                  disabled={pinCode.length < 4 || directTradeSuccess}
+                  className="v200-pin-submit-btn"
+                >
+                  {directTradeSuccess ? (
+                    <>
+                      <CheckCircle2 size={18} className="text-green-400" />
+                      <span>KARTY WYMIENIONE POMYŚLNIE!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ArrowLeftRight size={16} />
+                      <span>ZATWIERDŹ KOD I WYMIEŃ</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>

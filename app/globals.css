@@ -16166,11 +16166,236 @@ body > main,
   border-radius: 999px 0 0 999px;
 }
 
+.v200-metric-bar-dual .bar-left.gold { background: #fde047; }
+.v200-metric-bar-dual .bar-left.cyan { background: #38bdf8; }
+.v200-metric-bar-dual .bar-left.emerald { background: #34d399; }
+.v200-metric-bar-dual .bar-left.slate { background: #94a3b8; }
+.v200-metric-bar-dual .bar-left.red { background: #ef4444; }
+
 .v200-metric-bar-dual .bar-right {
   height: 100%;
   background: #38bdf8;
   margin-right: auto;
   border-radius: 0 999px 999px 0;
+}
+
+.v200-metric-bar-dual .bar-right.gold { background: #fde047; }
+.v200-metric-bar-dual .bar-right.cyan { background: #38bdf8; }
+.v200-metric-bar-dual .bar-right.emerald { background: #34d399; }
+.v200-metric-bar-dual .bar-right.slate { background: #94a3b8; }
+.v200-metric-bar-dual .bar-right.red { background: #ef4444; }
+
+/* ================= EA FC 3v3 BATTLE MODES ================= */
+.v200-battle-modes-row {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.v200-battle-mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v200-battle-mode-tab.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000000;
+  border-color: #fde047;
+}
+
+.v200-battle-3v3-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.v200-scoreboard-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  border-radius: 18px;
+  padding: 14px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+.v200-score-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v200-score-board {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 6px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.v200-lineup-match-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.v200-lineup-col {
+  background: rgba(10, 14, 24, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.v200-lineup-cards-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.v200-lineup-card-slot {
+  transform: scale(0.92);
+  transform-origin: center center;
+}
+
+.v200-match-commentary-box {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 16px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.v200-commentary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.v200-commentary-item {
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.v200-match-bottom-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.v200-start-match-btn {
+  padding: 12px 32px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fde047, #f59e0b, #d97706);
+  border: 1px solid #fef08a;
+  color: #000000;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
+  transition: all 0.2s ease;
+}
+
+.v200-start-match-btn:hover {
+  transform: scale(1.04);
+}
+
+.v200-match-running-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fde047;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.v200-match-result-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.v200-match-win-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.v200-claim-dp-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fde047, #ca8a04);
+  color: #000000;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v200-match-lose-banner {
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  text-align: center;
+  width: 100%;
+}
+
+.v200-restart-match-btn {
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ================= 4. DELTA TRADE HUB MODAL ================= */
@@ -16242,13 +16467,14 @@ body > main,
   gap: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .v200-trade-tab-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -16326,37 +16552,438 @@ body > main,
   color: #ffffff;
 }
 
-.v200-trade-dups-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 14px;
-}
-
-.v200-dup-item-card {
+/* Create trade form & PIN */
+.v200-trade-create-section, .v200-trade-pin-section {
   background: rgba(18, 24, 38, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
+  padding: 18px;
+}
+
+.v200-form-group {
+  margin-bottom: 14px;
+}
+
+.v200-trade-select-input, .v200-trade-text-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.v200-trade-submit-btn {
+  width: 100%;
   padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fde047, #ca8a04);
+  border: 1px solid #fef08a;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.v200-pin-card-box {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+}
+
+.v200-pin-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.v200-pin-input-field {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #f59e0b;
+  color: #fde047;
+  font-size: 24px;
+  font-weight: 1000;
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+
+.v200-pin-submit-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  border: 1px solid #7dd3fc;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
-.v200-dup-recycle-btn {
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(241, 201, 92, 0.15);
-  border: 1px solid rgba(241, 201, 92, 0.3);
-  color: #f1c95c;
+/* ================= 5. PANINI SQUAD STICKER ALBUM ================= */
+.v200-collection-view-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.v200-view-mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: rgba(18, 24, 38, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v200-view-mode-tab.active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(220, 38, 38, 0.25) 100%);
+  border-color: #fde047;
+  color: #fde047;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
+}
+
+.v200-panini-album-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.v200-panini-banner-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 28px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 10% 20%, rgba(245, 158, 11, 0.15) 0%, rgba(10, 14, 24, 0.95) 70%);
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+  flex-wrap: wrap;
+}
+
+.v200-panini-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.v200-panini-gold-shield {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1.5px solid #fde047;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+  flex-shrink: 0;
+}
+
+.v200-panini-eyebrow {
   font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #fde047;
+  text-transform: uppercase;
+}
+
+.v200-panini-title {
+  font-size: 22px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 2px 0 4px;
+}
+
+.v200-panini-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.v200-panini-banner-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.v200-panini-kpi-box {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v200-panini-kpi-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.v200-panini-kpi-labels b {
+  color: #fde047;
+  font-size: 11px;
+}
+
+.v200-panini-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v200-panini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #22c55e);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.v200-panini-rate-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: right;
+}
+
+.v200-panini-reward-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.v200-panini-reward-btn.ready {
+  background: linear-gradient(135deg, #fde047, #ca8a04);
+  color: #000000;
+  border: 1px solid #fef08a;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.5);
+}
+
+.v200-panini-reward-btn.locked {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.v200-panini-claimed-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+
+/* Panini 16-player sticker grid */
+.v200-panini-stickers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.v200-panini-sticker-slot {
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.v200-panini-sticker-slot.collected {
+  background: radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.12) 0%, rgba(10, 14, 24, 0.95) 80%);
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(245, 158, 11, 0.15);
+}
+
+.v200-panini-sticker-slot.collected:hover {
+  transform: translateY(-5px);
+  border-color: #fde047;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8), 0 0 25px rgba(245, 158, 11, 0.35);
+}
+
+.v200-panini-sticker-slot.empty {
+  background: rgba(12, 16, 26, 0.7);
+  border: 1.5px dashed rgba(255, 255, 255, 0.14);
+}
+
+.v200-panini-sticker-slot.empty:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-3px);
+}
+
+.v200-panini-collected-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.v200-panini-card-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.v200-panini-collected-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+
+.v200-panini-badge-collected {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #22c55e;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.v200-panini-owned-sub {
+  font-size: 9.5px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.v200-panini-missing-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.v200-panini-silhouette-box {
+  width: 150px;
+  height: 220px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+}
+
+.v200-panini-jersey-num {
+  font-size: 42px;
+  font-weight: 1000;
+  color: rgba(255, 255, 255, 0.15);
+  letter-spacing: -0.04em;
+}
+
+.v200-panini-crest-faint {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  opacity: 0.3;
+}
+
+.v200-panini-pos-faint {
+  font-size: 9px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.v200-panini-missing-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+.v200-panini-missing-name {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+}
+
+.v200-panini-badge-missing {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.v200-panini-find-btn {
+  margin-top: 4px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fde047;
+  font-size: 9.5px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 4px;
-  text-align: center;
 }
+
 
 /* ================= 5. 2.0 GAMING NAVIGATION RIBBON ================= */
 .v200-collection-gaming-ribbon {
