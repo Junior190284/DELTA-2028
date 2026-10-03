@@ -24,6 +24,7 @@ import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
 import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
 import DeltaSeasonPassModal from "./DeltaSeasonPassModal";
 import DeltaPhotoBoothModal from "./DeltaPhotoBoothModal";
+import DeltaBirthdayZoneModal from "./DeltaBirthdayZoneModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
@@ -34,7 +35,7 @@ import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/pu
 import { decodeHtmlEntities } from "@/lib/text";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -193,6 +194,7 @@ export default function TeamHub(props:{
   const [trainingKingModalOpen, setTrainingKingModalOpen] = useState(false);
   const [seasonPassModalOpen, setSeasonPassModalOpen] = useState(false);
   const [photoBoothModalOpen, setPhotoBoothModalOpen] = useState(false);
+  const [birthdayModalOpen, setBirthdayModalOpen] = useState(false);
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
@@ -1206,6 +1208,7 @@ export default function TeamHub(props:{
       Icon: Shield,
       items: [
         { id: "photobooth-modal", label: "Foto-Budka DELTA", desc: "Twórz profesjonalne grafiki i relacje Instagram / WhatsApp", Icon: Camera, badge: "HD STUDIO", isGoldTag: true, isAction: "photobooth" },
+        { id: "birthday-modal", label: "Strefa Urodzin", desc: "Świętujemy urodziny zawodników, życzenia i prezenty", Icon: Cake, badge: "ŚWIĘTUJEMY", isGoldTag: true, isAction: "birthday" },
         { id: "news", label: "Aktualności", desc: "Wiadomości z życia drużyny i ogłoszenia", Icon: Newspaper },
         { id: "club", label: "Z Klubu", desc: "Oficjalny feed ze strony głównej DELTA", Icon: Shield },
       ]
@@ -1339,6 +1342,9 @@ export default function TeamHub(props:{
                       setActiveDrawerCategory(null);
                     } else if ((item as any).isAction === "photobooth") {
                       setPhotoBoothModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "birthday") {
+                      setBirthdayModalOpen(true);
                       setActiveDrawerCategory(null);
                     } else {
                       setTab(item.id as any);
@@ -1694,6 +1700,24 @@ export default function TeamHub(props:{
             </div>
             <div className="v200-feature-cta gold">
               <span>STWÓRZ PLAKAT</span>
+              <ChevronRight size={18}/>
+            </div>
+          </SpotlightCard>
+
+          <SpotlightCard className="v200-feature-banner birthday-vip" glowColor="gold" enableTilt={true} onClick={()=>setBirthdayModalOpen(true)}>
+            <div className="v200-feature-avatar gold">
+              <Cake size={26}/>
+            </div>
+            <div className="v200-feature-content">
+              <div className="v200-feature-badge gold">
+                <Cake size={12}/>
+                <span>ŚWIĘTUJEMY RAZEM</span>
+              </div>
+              <h3>STREFA URODZIN DRUŻYNY 🎉</h3>
+              <p>Składaj sportowe życzenia kolegom, świętuj urodziny i odbieraj prezenty w kartach!</p>
+            </div>
+            <div className="v200-feature-cta gold">
+              <span>ŻYCZENIA</span>
               <ChevronRight size={18}/>
             </div>
           </SpotlightCard>
@@ -3256,6 +3280,15 @@ export default function TeamHub(props:{
         onClose={() => setPhotoBoothModalOpen(false)}
         players={players}
         defaultPlayerName={props.profile.display_name || "ZAWODNIK DELTA"}
+      />
+    )}
+
+    {birthdayModalOpen && (
+      <DeltaBirthdayZoneModal
+        isOpen={birthdayModalOpen}
+        onClose={() => setBirthdayModalOpen(false)}
+        players={players}
+        currentUserName={props.profile.display_name || "Kibic DELTY"}
       />
     )}
   </div>;
