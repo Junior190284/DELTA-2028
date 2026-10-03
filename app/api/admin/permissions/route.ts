@@ -63,6 +63,11 @@ export async function POST(req: Request) {
 
       if (error) {
         console.error("Błąd zapisu uprawnień:", error);
+        if (error.message?.includes("user_permissions") || error.message?.includes("schema cache")) {
+          return NextResponse.json({ 
+            error: "Brakuje tabeli uprawnień w bazie Supabase. Uruchom plik 'supabase/v7_permissions_megapack.sql' w Supabase SQL Editor." 
+          }, { status: 500 });
+        }
         return NextResponse.json({ error: `Błąd bazy danych: ${error.message}` }, { status: 500 });
       }
 
@@ -102,6 +107,11 @@ export async function POST(req: Request) {
 
       if (error) {
         console.error("Błąd zapisu pakietu:", error);
+        if (error.message?.includes("user_permissions") || error.message?.includes("schema cache")) {
+          return NextResponse.json({ 
+            error: "Brakuje tabeli uprawnień w bazie Supabase. Uruchom plik 'supabase/v7_permissions_megapack.sql' w Supabase SQL Editor." 
+          }, { status: 500 });
+        }
         return NextResponse.json({ error: `Błąd zapisu: ${error.message}` }, { status: 500 });
       }
 
