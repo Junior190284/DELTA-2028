@@ -494,7 +494,7 @@ export default function CollectibleCard3D({
             )}
           </div>
 
-          {/* 5. NAMEPLATE BANNER */}
+          {/* 5. NAMEPLATE BANNER (FRONT) */}
           <div 
             className="v200-card-nameplate" 
             style={{ 
@@ -514,7 +514,7 @@ export default function CollectibleCard3D({
             <span 
               className={`v200-card-name-text ${rarity}`}
               style={{
-                fontSize: `${Math.max(7, Math.round(dim.w * 0.044))}px`,
+                fontSize: `${Math.max(8, Math.round(dim.w * 0.048))}px`,
                 fontWeight: 1000,
                 letterSpacing: "0.08em",
                 lineHeight: 1,
@@ -527,69 +527,24 @@ export default function CollectibleCard3D({
             </span>
           </div>
 
-          {/* 6. 6 FIFA ATTRIBUTE BOXES (PAC, SHO, PAS, DRI, DEF, PHY) */}
-          <div 
-            className="v200-card-stats-row" 
-            style={{ 
+          {/* FRONT BOTTOM BRAND ACCENT */}
+          <div
+            style={{
               position: "absolute",
-              top: `${Math.round(dim.h * 0.758)}px`,
-              left: `${Math.round(dim.w * 0.055)}px`,
-              right: `${Math.round(dim.w * 0.055)}px`,
-              height: `${Math.round(dim.h * 0.112)}px`,
-              display: "grid",
-              gridTemplateColumns: "repeat(6, 1fr)",
-              gap: "2px",
+              bottom: `${Math.round(dim.h * 0.04)}px`,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 5,
               pointerEvents: "none",
-              zIndex: 5 
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              opacity: 0.85
             }}
           >
-            {[
-              { lbl: "PAC", val: fifaStats.pac },
-              { lbl: "SHO", val: fifaStats.sho },
-              { lbl: "PAS", val: fifaStats.pas },
-              { lbl: "DRI", val: fifaStats.dri },
-              { lbl: "DEF", val: fifaStats.def },
-              { lbl: "PHY", val: fifaStats.phy }
-            ].map(stat => (
-              <div 
-                key={stat.lbl}
-                className="v200-stat-col"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "space-around",
-                  height: "100%",
-                  padding: "1px 0",
-                  boxSizing: "border-box",
-                  textAlign: "center"
-                }}
-              >
-                <span 
-                  className="v200-stat-lbl"
-                  style={{
-                    fontSize: `${Math.max(5.5, Math.round(dim.w * 0.027))}px`,
-                    fontWeight: 900,
-                    letterSpacing: "0.03em",
-                    color: "#cbd5e1",
-                    lineHeight: 1,
-                    opacity: 0.95
-                  }}
-                >
-                  {stat.lbl}
-                </span>
-                <span 
-                  className={`v200-stat-val ${rarity}`}
-                  style={{
-                    fontSize: `${Math.max(8, Math.round(dim.w * 0.050))}px`,
-                    fontWeight: 1000,
-                    lineHeight: 1
-                  }}
-                >
-                  {isLocked ? "--" : stat.val}
-                </span>
-              </div>
-            ))}
+            <span style={{ fontSize: `${Math.max(6, Math.round(dim.w * 0.026))}px`, fontWeight: 900, letterSpacing: "0.15em", color: config.color, textTransform: "uppercase" }}>
+              DELTA 2018 GM
+            </span>
           </div>
 
           {/* FLIP BUTTON HELPER (TOP RIGHT) */}
@@ -615,12 +570,13 @@ export default function CollectibleCard3D({
           )}
         </div>
 
-        {/* ================= REVERSE SIDE (LORE, STATS, OFFICIAL CLUB STAMP) ================= */}
+        {/* ================= REVERSE SIDE (DETAILED FIFA STATS & LORE) ================= */}
         <div 
           className="v104-cc-face reverse"
           style={{
             borderColor: config.borderGlow,
-            boxShadow: `0 8px 24px -4px ${config.borderGlow}, inset 0 0 16px -4px ${config.borderGlow}`
+            boxShadow: `0 8px 24px -4px ${config.borderGlow}, inset 0 0 16px -4px ${config.borderGlow}`,
+            padding: `${Math.max(6, Math.round(dim.w * 0.05))}px`
           }}
         >
           {/* Dynamic Specular Sheen on Reverse */}
@@ -633,58 +589,102 @@ export default function CollectibleCard3D({
           />
 
           {/* Top Bar on Reverse */}
-          <div className="v104-cc-reverse-top">
-            <div className="v104-cc-brand">
+          <div className="v104-cc-reverse-top" style={{ paddingBottom: "4px" }}>
+            <div className="v104-cc-brand" style={{ gap: "4px" }}>
               <img 
                 src="/teamlogos/gm.png" 
                 alt="DELTA" 
-                width={16}
-                height={16}
+                width={14}
+                height={14}
                 className="v104-cc-brand-logo" 
               />
-              <span className="v104-cc-brand-text">DELTA GM</span>
+              <span className="v104-cc-brand-text" style={{ fontSize: `${Math.max(7, Math.round(dim.w * 0.038))}px` }}>
+                DELTA GM
+              </span>
             </div>
-            <span style={{ color: "#f1c95c", fontFamily: "monospace", fontSize: "8.5px", fontWeight: 800 }}>
-              #{String(card.card_number || 1).padStart(3, '0')}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: `${Math.max(7, Math.round(dim.w * 0.036))}px`, fontWeight: 1000, color: config.color }}>
+                {fifaStats.ovr} OVR
+              </span>
+              <span style={{ color: "#f1c95c", fontFamily: "monospace", fontSize: `${Math.max(7, Math.round(dim.w * 0.034))}px`, fontWeight: 800 }}>
+                #{String(card.card_number || 1).padStart(3, '0')}
+              </span>
+            </div>
           </div>
 
-          {/* Middle: Lore Story & Player Facts */}
-          <div className="v104-cc-reverse-body">
+          {/* Middle: FIFA Stats + Lore Story + Match Stats */}
+          <div className="v104-cc-reverse-body" style={{ margin: "4px 0", gap: "5px" }}>
             <div>
-              <span style={{ fontSize: "7.5px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", fontWeight: 800, display: "block" }}>
-                EDYCJA KOLEKCJONERSKA
+              <span style={{ fontSize: `${Math.max(6, Math.round(dim.w * 0.028))}px`, textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", fontWeight: 800, display: "block" }}>
+                {isLocked ? "KARTA DO ODKRYCIA" : `${playerName} ${shirtNum}`}
               </span>
-              <span style={{ fontSize: "10.5px", fontWeight: 900, color: config.color }}>
+              <span style={{ fontSize: `${Math.max(8.5, Math.round(dim.w * 0.045))}px`, fontWeight: 900, color: config.color }}>
                 {card.title || typeConfig.name}
               </span>
             </div>
 
+            {/* 6 FIFA ATTRIBUTES GRID (PAC, SHO, PAS, DRI, DEF, PHY) */}
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "repeat(3, 1fr)", 
+              gap: "3px",
+              background: "rgba(0,0,0,0.5)", 
+              padding: "4px", 
+              borderRadius: "8px", 
+              border: "1px solid rgba(255,255,255,0.08)" 
+            }}>
+              {[
+                { lbl: "PAC", full: "TEMPO", val: fifaStats.pac, col: "#38bdf8" },
+                { lbl: "SHO", full: "STRZAŁ", val: fifaStats.sho, col: "#f87171" },
+                { lbl: "PAS", full: "PODANIA", val: fifaStats.pas, col: "#fbbf24" },
+                { lbl: "DRI", full: "DRYBLING", val: fifaStats.dri, col: "#c084fc" },
+                { lbl: "DEF", full: "OBRONA", val: fifaStats.def, col: "#4ade80" },
+                { lbl: "PHY", full: "FIZYCZNOŚĆ", val: fifaStats.phy, col: "#fb923c" }
+              ].map(st => (
+                <div key={st.lbl} style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "space-between", 
+                  padding: "2px 4px", 
+                  background: "rgba(255,255,255,0.04)", 
+                  borderRadius: "4px" 
+                }}>
+                  <span style={{ fontSize: `${Math.max(6, Math.round(dim.w * 0.030))}px`, fontWeight: 900, color: "#94a3b8" }}>
+                    {st.lbl}
+                  </span>
+                  <strong style={{ fontSize: `${Math.max(7.5, Math.round(dim.w * 0.040))}px`, fontWeight: 1000, color: isLocked ? "#64748b" : st.col }}>
+                    {isLocked ? "--" : st.val}
+                  </strong>
+                </div>
+              ))}
+            </div>
+
+            {/* Match Stats Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "3px", textAlign: "center" }}>
+              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: `${Math.max(5.5, Math.round(dim.w * 0.026))}px`, color: "#94a3b8", display: "block", fontWeight: 800 }}>MECZE</span>
+                <strong style={{ fontSize: `${Math.max(8, Math.round(dim.w * 0.042))}px`, color: "#fff", fontWeight: 900 }}>{stats?.matches || (userCard ? 8 : 0)}</strong>
+              </div>
+              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: `${Math.max(5.5, Math.round(dim.w * 0.026))}px`, color: "#94a3b8", display: "block", fontWeight: 800 }}>GOLE</span>
+                <strong style={{ fontSize: `${Math.max(8, Math.round(dim.w * 0.042))}px`, color: "#f1c95c", fontWeight: 900 }}>{stats?.goals || (userCard ? 4 : 0)}</strong>
+              </div>
+              <div style={{ padding: "3px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: `${Math.max(5.5, Math.round(dim.w * 0.026))}px`, color: "#94a3b8", display: "block", fontWeight: 800 }}>ASYSTY</span>
+                <strong style={{ fontSize: `${Math.max(8, Math.round(dim.w * 0.042))}px`, color: "#38bdf8", fontWeight: 900 }}>{stats?.assists || (userCard ? 3 : 0)}</strong>
+              </div>
+            </div>
+
+            {/* Lore Story */}
             {card.lore || card.description ? (
-              <div className="v104-cc-reverse-lore">
+              <div className="v104-cc-reverse-lore" style={{ fontSize: `${Math.max(6.5, Math.round(dim.w * 0.033))}px`, padding: "4px 6px" }}>
                 "{card.lore || card.description}"
               </div>
             ) : (
-              <div className="v104-cc-reverse-lore" style={{ color: "#cbd5e1" }}>
-                Oficjalna karta DELTA 2018 GM zawodnika {card.player?.display_name || "DELTA GM"}. Sezon {card.season || "2026/27"}.
+              <div className="v104-cc-reverse-lore" style={{ color: "#cbd5e1", fontSize: `${Math.max(6.5, Math.round(dim.w * 0.033))}px`, padding: "4px 6px" }}>
+                Oficjalna karta DELTA 2018 GM: {card.player?.display_name || "DELTA GM"}. Sezon {card.season || "2026/27"}.
               </div>
             )}
-
-            {/* Quick Stats Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", paddingTop: "2px", textAlign: "center" }}>
-              <div style={{ padding: "4px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>MECZE</span>
-                <strong style={{ fontSize: "10px", color: "#fff", fontWeight: 900 }}>{stats?.matches || (userCard ? 8 : 0)}</strong>
-              </div>
-              <div style={{ padding: "4px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>GOLE</span>
-                <strong style={{ fontSize: "10px", color: "#f1c95c", fontWeight: 900 }}>{stats?.goals || (userCard ? 4 : 0)}</strong>
-              </div>
-              <div style={{ padding: "4px 2px", borderRadius: "6px", background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <span style={{ fontSize: "7px", color: "#94a3b8", display: "block", fontWeight: 800 }}>ASYSTY</span>
-                <strong style={{ fontSize: "10px", color: "#38bdf8", fontWeight: 900 }}>{stats?.assists || (userCard ? 3 : 0)}</strong>
-              </div>
-            </div>
           </div>
 
           {/* Bottom Stamp & Certificate */}
