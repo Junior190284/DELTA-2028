@@ -308,53 +308,91 @@ export default function DeltaCollectionAlbum({
 
   return (
     <section className="section v8-section-page v104-collection-page animate-fadeIn">
-      {/* ================= HERO & COMPLETION BANNER ================= */}
-      <div className="v104-collection-hero devil-card">
-        <div className="v104-collection-hero-main">
-          <div className="v104-collection-hero-text">
-            <span className="eyebrow gold"><Sparkles size={14} className="inline mr-1" /> OFICJALNY KLASER KART KLUBOWYCH</span>
-            <h2>DELTA <em>COLLECTION</em></h2>
-            <p>
-              Zbieraj unikalne cyfrowe karty zawodników DELTA Warszawa 2018 GM. Otwieraj paczki za mecze, treningi i osiągnięcia lub wymieniaj punkty Delta Points!
+      {/* ================= HERO & VIP ULTIMATE SHOWCASE ================= */}
+      <div className="v200-collection-vip-hero">
+        <div className="v200-hero-backdrop-glow" />
+        
+        {/* Top Header Row */}
+        <div className="v200-hero-main-row">
+          <div className="v200-hero-branding">
+            <div className="v200-vip-badge">
+              <Sparkles size={14} className="text-yellow-400 animate-spin" />
+              <span>OFICJALNY KLASER KART KLUBOWYCH 2026</span>
+            </div>
+            <h2 className="v200-hero-title">
+              DELTA <span className="v200-gold-text">COLLECTION</span>
+            </h2>
+            <p className="v200-hero-subtitle">
+              Zbieraj unikalne cyfrowe karty zawodników DELTA Warszawa 2018 GM. Otwieraj paczki za mecze, treningi i osiągnięcia, graj w pojedynki i wymieniaj punkty Delta Points!
             </p>
           </div>
 
-          {/* KPI COUNTERS */}
-          <div className="v104-collection-kpis">
-            {/* Completion Box */}
-            <div className="v104-kpi-card">
-              <span className="v104-kpi-label">POSTĘP KOLEKCJI</span>
-              <div className="v104-kpi-val">
-                <b>{ownedCount}</b>
-                <small>/ {totalCount} kart</small>
+          {/* Luxury 3D Stat Cards */}
+          <div className="v200-hero-stats-grid">
+            {/* Completion Rate KPI */}
+            <div className="v200-stat-card album-progress">
+              <div className="v200-stat-card-header">
+                <span className="v200-stat-label">POSTĘP KOLEKCJI</span>
+                <span className="v200-tier-badge">
+                  {completionPercentage >= 100 ? "👑 MISTRZ" : completionPercentage >= 50 ? "🥈 ZAAWANSOWANY" : "🥉 POCZĄTKUJĄCY"}
+                </span>
               </div>
-              <div className="v104-progress-bar">
-                <i style={{ width: `${completionPercentage}%` }} />
+              <div className="v200-stat-number-row">
+                <span className="v200-stat-huge">{ownedCount}</span>
+                <span className="v200-stat-sub">/ {totalCount} KART</span>
+              </div>
+              <div className="v200-progress-track">
+                <div 
+                  className="v200-progress-fill" 
+                  style={{ width: `${completionPercentage}%` }} 
+                />
+              </div>
+              <div className="v200-stat-footer-txt">
+                <span>{completionPercentage}% zebranych kart w klaserze</span>
               </div>
             </div>
 
-            {/* Delta Points Box */}
-            <div className="v104-kpi-card">
-              <span className="v104-kpi-label gold"><Coins size={13} /> DELTA POINTS</span>
-              <div className="v104-kpi-val">
-                <b className="text-gold">{deltaPoints}</b>
-                <small>DP</small>
+            {/* Delta Points DP KPI */}
+            <div className="v200-stat-card delta-points">
+              <div className="v200-stat-card-header">
+                <span className="v200-stat-label gold"><Coins size={14} className="inline mr-1" /> SKARBIEC DP</span>
+                <button 
+                  type="button"
+                  onClick={handleSyncRewards}
+                  disabled={syncing}
+                  className="v200-sync-btn"
+                  title="Sprawdź i odbierz nagrody za ostatnie mecze i treningi"
+                >
+                  <RefreshCw size={12} className={syncing ? "animate-spin" : ""} />
+                  <span>{syncing ? "SPRAWDZAM..." : "SYNCHRONIZUJ"}</span>
+                </button>
               </div>
-              <span className="v104-kpi-hint">Wymieniaj na booster packs</span>
+              <div className="v200-stat-number-row">
+                <span className="v200-stat-huge text-gold">{deltaPoints}</span>
+                <span className="v200-stat-sub">DP</span>
+              </div>
+              <div className="v200-dp-quick-actions">
+                <span className="v200-dp-hint">Wymieniaj punkty na booster packi i karty legend!</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* UNOPENED PACKS BANNER */}
+        {/* UNOPENED PACKS HIGH-PRIORITY ALERT BANNER */}
         {unopenedPacks.length > 0 && (
-          <div className="v104-collection-unopened-banner">
-            <div>
-              <span className="v104-unopened-title">
-                🎁 Masz nieotwarte paczki kart ({unopenedPacks.length})!
-              </span>
-              <p className="v104-unopened-sub">
-                Otwórz je teraz, aby zdobyć nowe karty do swojego oficjalnego klasera!
-              </p>
+          <div className="v200-unopened-alert-card animate-pulseGlow">
+            <div className="v200-unopened-left">
+              <div className="v200-gift-icon-bubble">
+                <Gift size={24} className="text-yellow-300 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="v200-unopened-heading">
+                  🎁 Masz nieotwarte paczki kart ({unopenedPacks.length})!
+                </h4>
+                <p className="v200-unopened-text">
+                  Czekają na Ciebie nowe karty piłkarskie do odblokowania w klaserze!
+                </p>
+              </div>
             </div>
             <button
               type="button"
@@ -363,90 +401,124 @@ export default function DeltaCollectionAlbum({
                 const packDef = packDefinitions.find(p => p.id === firstPack.pack_type_id) || packDefinitions[0];
                 setActivePackToOpen(packDef);
               }}
-              className="v104-open-pack-btn"
+              className="v200-unopened-open-btn"
             >
-              <Sparkles size={16} /> OTWÓRZ PACZKĘ ({unopenedPacks.length})
+              <Sparkles size={18} />
+              <span>OTWÓRZ PACZKĘ ({unopenedPacks.length})</span>
             </button>
           </div>
         )}
 
-        {/* ================= 2.0 GAMING NAVIGATION RIBBON ================= */}
-        <div className="v200-collection-gaming-ribbon">
+        {/* ================= LUXURY 3D ACTION CARDS HUB ================= */}
+        <div className="v200-gaming-vip-grid">
+          {/* Tile 1: Daily Spin */}
           <button
             type="button"
             onClick={() => setShowDailySpin(true)}
-            className="v200-gaming-nav-btn spin"
+            className="v200-vip-action-tile tile-spin"
           >
-            <Flame size={20} className="text-red-500 animate-pulse flex-shrink-0" />
-            <div className="text-left">
-              <span className="v200-gbtn-kicker">CODZIENNY BONUS</span>
-              <strong className="v200-gbtn-title">KOŁO FORTUNY 🔥</strong>
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box spin-glow">
+              <Flame size={26} className="text-red-500 animate-pulse" />
             </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag tag-fire">DARMOWY BONUS DNIA</div>
+              <h3 className="v200-tile-title">KOŁO FORTUNY 🔥</h3>
+              <p className="v200-tile-desc">Zakręć kołem i zdobywaj codzienne nagrody, paczki oraz DP!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
           </button>
 
+          {/* Tile 2: Squad Builder 3D */}
           <button
             type="button"
             onClick={() => setShowSquadBuilder(true)}
-            className="v200-gaming-nav-btn squad"
+            className="v200-vip-action-tile tile-squad"
           >
-            <Users size={20} className="text-yellow-400 flex-shrink-0" />
-            <div className="text-left">
-              <span className="v200-gbtn-kicker">MURAWA 3D</span>
-              <strong className="v200-gbtn-title">MOJA DRUŻYNA</strong>
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box squad-glow">
+              <Users size={26} className="text-emerald-400" />
             </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag tag-squad">MURAWA 3D</div>
+              <h3 className="v200-tile-title">MOJA DRUŻYNA</h3>
+              <p className="v200-tile-desc">Ustaw wyjściowy skład ze swoich kart w formacji 1-2-3-1!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
           </button>
 
+          {/* Tile 3: Trade Hub */}
           <button
             type="button"
             onClick={() => setShowTradeHub(true)}
-            className="v200-gaming-nav-btn trade"
+            className="v200-vip-action-tile tile-trade"
           >
-            <ArrowLeftRight size={20} className="text-cyan-400 flex-shrink-0" />
-            <div className="text-left">
-              <span className="v200-gbtn-kicker">SZATNIA DELTA</span>
-              <strong className="v200-gbtn-title">GIEŁDA WYMIANY</strong>
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box trade-glow">
+              <ArrowLeftRight size={26} className="text-cyan-400" />
             </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag tag-trade">SZATNIA DELTA</div>
+              <h3 className="v200-tile-title">GIEŁDA WYMIANY</h3>
+              <p className="v200-tile-desc">Wymieniaj dublety kart ze swoimi kolegami z zespołu!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
           </button>
 
+          {/* Tile 4: Card Battle */}
           <button
             type="button"
             onClick={() => setShowBattleCompare(true)}
-            className="v200-gaming-nav-btn battle"
+            className="v200-vip-action-tile tile-battle"
           >
-            <Swords size={20} className="text-purple-400 flex-shrink-0" />
-            <div className="text-left">
-              <span className="v200-gbtn-kicker">HEAD-TO-HEAD</span>
-              <strong className="v200-gbtn-title">POJEDYNEK KART</strong>
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box battle-glow">
+              <Swords size={26} className="text-purple-400" />
             </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag tag-battle">HEAD-TO-HEAD</div>
+              <h3 className="v200-tile-title">POJEDYNEK KART</h3>
+              <p className="v200-tile-desc">Porównuj statystyki OVR i rozgrywaj emocjonujące starcia!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
           </button>
 
+          {/* Tile 5: Achievements */}
           <button
             type="button"
             onClick={() => setShowAchievements(true)}
-            className="v200-gaming-nav-btn achievements"
-            style={{ borderColor: "rgba(245, 158, 11, 0.4)", background: "rgba(245, 158, 11, 0.12)" }}
+            className="v200-vip-action-tile tile-achievements"
           >
-            <Trophy size={20} className="text-amber-400 flex-shrink-0 animate-bounce" />
-            <div className="text-left">
-              <span className="v200-gbtn-kicker">WYZWANIA & DP</span>
-              <strong className="v200-gbtn-title">ODZNAKI & NAGRODY</strong>
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box ach-glow">
+              <Trophy size={26} className="text-yellow-400 animate-bounce" />
             </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag tag-gold">WYZWANIA & MISJE</div>
+              <h3 className="v200-tile-title">ODZNAKI & NAGRODY</h3>
+              <p className="v200-tile-desc">Odbieraj Delta Points za mecze, treningi oraz osiągnięcia!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
           </button>
         </div>
 
         {/* ================= 3D BOOSTER PACKS VAULT ================= */}
-        <div className="v104-vault-section">
-          <div className="v104-vault-header">
+        <div className="v200-vault-section">
+          <div className="v200-vault-header">
             <div>
-              <span className="eyebrow gold"><Gift size={13} className="inline mr-1" /> SKARBIEC PACZEK DELTA</span>
-              <h3 className="v104-vault-title">RODZAJE PACZEK & BOOSTERÓW</h3>
+              <div className="v200-vault-eyebrow">
+                <Gift size={14} className="text-yellow-400 inline mr-1" />
+                OFICJALNY SKARBIEC BOOSTERÓW
+              </div>
+              <h3 className="v200-vault-title">PACZKI KART DELTA WARSZAWA</h3>
             </div>
-            <span className="v104-vault-subhint">
-              Paczki zdobywasz za obecność na treningach, mecze ligowe, turnieje oraz wyzwania!
-            </span>
+            <div className="v200-vault-info-pill">
+              <Sparkles size={13} className="text-yellow-400 mr-1" />
+              <span>Zdobywaj paczki za aktywność lub wymieniaj za DP</span>
+            </div>
           </div>
 
-          <div className="v104-vault-grid">
+          <div className="v200-vault-grid">
             {packDefinitions.map(pack => {
               const packCount = unopenedPacks.filter(p => p.pack_type_id === pack.id).length;
               const isInferno = pack.id === "inferno_booster" || pack.theme === "inferno";
@@ -454,15 +526,25 @@ export default function DeltaCollectionAlbum({
               const isMatchday = pack.id === "matchday_booster" || pack.theme === "matchday";
               const isGold = pack.id === "gold_booster" || pack.theme === "gold";
               const packImg = pack.image_url || getPackImageUrl(pack.id, pack.theme);
+              const price = PACK_PRICES[pack.id] || 100;
+              const canAfford = deltaPoints >= price;
 
               return (
                 <div 
                   key={pack.id} 
-                  className={`v104-booster-pack-card ${isInferno ? "pack-inferno" : isLegend ? "pack-legend" : isMatchday ? "pack-matchday" : isGold ? "pack-gold" : "pack-standard"}`}
+                  className={`v200-pack-card ${isInferno ? "theme-inferno" : isLegend ? "theme-legend" : isMatchday ? "theme-matchday" : isGold ? "theme-gold" : "theme-standard"}`}
                 >
-                  {/* 3D Realistic Foil Booster Pack Visual */}
+                  {/* Top Foil Header */}
+                  <div className="v200-pack-top-foil">
+                    <span className="v200-pack-edition-tag">
+                      {isInferno ? "🔥 EDYCJA INFERNO" : isLegend ? "👑 EDYCJA LEGEND" : isMatchday ? "⚡ MATCHDAY" : isGold ? "🌟 GOLD SPECIAL" : "📦 STANDARD"}
+                    </span>
+                    <span className="v200-pack-cards-badge">{pack.cards_count} KART</span>
+                  </div>
+
+                  {/* 3D Pack Foil Visual */}
                   <div 
-                    className="v104-booster-pack-preview"
+                    className="v200-pack-visual-wrap"
                     onClick={() => {
                       if (packCount > 0) setActivePackToOpen(pack);
                     }}
@@ -471,58 +553,54 @@ export default function DeltaCollectionAlbum({
                     <img 
                       src={packImg} 
                       alt={pack.name} 
-                      className="v104-booster-pack-img" 
+                      className="v200-pack-img" 
                     />
-                    <div className="v104-booster-pack-glare" />
+                    <div className="v200-pack-hologram-sheen" />
 
+                    {/* Stock status indicator */}
                     {packCount > 0 ? (
-                      <span className="v104-booster-owned-badge active">
-                        <Sparkles size={11} /> {packCount} DOSTĘPNE
-                      </span>
+                      <div className="v200-pack-stock-badge available">
+                        <Sparkles size={12} className="animate-spin" />
+                        <span>{packCount} W POSIADANIU</span>
+                      </div>
                     ) : (
-                      <span className="v104-booster-owned-badge">0 W ZASOBACH</span>
+                      <div className="v200-pack-stock-badge empty">
+                        <span>0 W ZASOBACH</span>
+                      </div>
                     )}
                   </div>
 
-                  {/* Pack Metadata & Actions */}
-                  <div className="v104-booster-pack-meta">
-                    <div className="v104-booster-title-row">
-                      <h4 className="v104-booster-name">{pack.name}</h4>
-                      <span className="v104-booster-cards-count">{pack.cards_count} KART</span>
-                    </div>
-
-                    <p className="v104-booster-desc">{pack.description}</p>
+                  {/* Pack Details */}
+                  <div className="v200-pack-body">
+                    <h4 className="v200-pack-name">{pack.name}</h4>
+                    <p className="v200-pack-desc">{pack.description}</p>
                     
+                    {/* Action button */}
                     {packCount > 0 ? (
                       <button
                         type="button"
                         onClick={() => setActivePackToOpen(pack)}
-                        className="v104-booster-action-btn active"
+                        className="v200-pack-btn-open"
                       >
-                        <Sparkles size={14} /> OTWÓRZ TERAZ ({packCount})
+                        <Sparkles size={16} />
+                        <span>OTWÓRZ TERAZ ({packCount})</span>
                       </button>
                     ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div className="v200-pack-buy-box">
                         <button
                           type="button"
                           onClick={() => handleBuyPack(pack.id)}
-                          disabled={buyingPackId === pack.id || deltaPoints < (PACK_PRICES[pack.id] || 100)}
-                          className={`v104-booster-action-btn ${deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "active" : ""}`}
-                          style={{
-                            background: deltaPoints >= (PACK_PRICES[pack.id] || 100) 
-                              ? "linear-gradient(135deg, #f1c95c, #ca8a04)" 
-                              : "rgba(255,255,255,0.06)",
-                            color: deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "#000" : "#94a3b8",
-                            border: deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "1px solid #fde047" : "1px solid rgba(255,255,255,0.1)",
-                            cursor: deltaPoints >= (PACK_PRICES[pack.id] || 100) ? "pointer" : "default"
-                          }}
+                          disabled={buyingPackId === pack.id || !canAfford}
+                          className={`v200-pack-btn-buy ${canAfford ? "can-buy" : "locked"}`}
                         >
-                          <Coins size={13} /> {buyingPackId === pack.id ? "KUPUJĘ..." : `KUP ZA ${PACK_PRICES[pack.id] || 100} DP`}
+                          <Coins size={15} />
+                          <span>
+                            {buyingPackId === pack.id ? "ODBLOKOWYWANIE..." : `KUP ZA ${price} DP`}
+                          </span>
                         </button>
-
-                        <div className="v104-booster-earn-hint">
-                          <span>LUB ZDOBĄDŹ ZA MECZE / TRENINGI</span>
-                        </div>
+                        <span className="v200-pack-earn-subtext">
+                          LUB ZDOBĄDŹ DARMOWĄ ZA MECZE
+                        </span>
                       </div>
                     )}
                   </div>

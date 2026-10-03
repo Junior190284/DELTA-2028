@@ -12,7 +12,9 @@ import {
   X, 
   RotateCw,
   Zap,
-  Calendar
+  Calendar,
+  Star,
+  ShieldAlert
 } from "lucide-react";
 import { cardSound } from "@/lib/cards/audio";
 import CanvasParticles from "./CanvasParticles";
@@ -21,24 +23,25 @@ import { PackDefinition, getPackImageUrl } from "@/lib/cards/types";
 interface WheelSegment {
   id: string;
   name: string;
+  shortName: string;
   type: "points" | "pack";
   amount?: number;
   packTypeId?: string;
-  color: string;
+  gradientId: string;
   textColor: string;
   icon: string;
   weight: number;
 }
 
 const WHEEL_SEGMENTS: WheelSegment[] = [
-  { id: "s1", name: "+50 DP", type: "points", amount: 50, color: "#eab308", textColor: "#000", icon: "🪙", weight: 28 },
-  { id: "s2", name: "Paczka Standardowa", type: "pack", packTypeId: "standard_pack", color: "#dc2626", textColor: "#fff", icon: "📦", weight: 20 },
-  { id: "s3", name: "+100 DP", type: "points", amount: 100, color: "#ca8a04", textColor: "#000", icon: "💰", weight: 15 },
-  { id: "s4", name: "Matchday Booster", type: "pack", packTypeId: "matchday_booster", color: "#0284c7", textColor: "#fff", icon: "⚡", weight: 12 },
-  { id: "s5", name: "+25 DP", type: "points", amount: 25, color: "#64748b", textColor: "#fff", icon: "🪙", weight: 30 },
-  { id: "s6", name: "👑 Gold Booster", type: "pack", packTypeId: "gold_booster", color: "#f59e0b", textColor: "#000", icon: "👑", weight: 8 },
-  { id: "s7", name: "🔥 Bilet Inferno (+200 DP)", type: "points", amount: 200, color: "#991b1b", textColor: "#fff", icon: "🔥", weight: 4 },
-  { id: "s8", name: "👑 Legend Pack", type: "pack", packTypeId: "legend_pack", color: "#7e22ce", textColor: "#fff", icon: "🌟", weight: 2 }
+  { id: "s1", name: "+50 DELTA POINTS", shortName: "+50 DP", type: "points", amount: 50, gradientId: "grad-gold", textColor: "#000000", icon: "🪙", weight: 28 },
+  { id: "s2", name: "PACZKA STANDARDOWA", shortName: "PACZKA STD", type: "pack", packTypeId: "standard_pack", gradientId: "grad-crimson", textColor: "#ffffff", icon: "📦", weight: 20 },
+  { id: "s3", name: "+100 DELTA POINTS", shortName: "+100 DP", type: "points", amount: 100, gradientId: "grad-amber", textColor: "#000000", icon: "💰", weight: 15 },
+  { id: "s4", name: "MATCHDAY BOOSTER", shortName: "MATCHDAY", type: "pack", packTypeId: "matchday_booster", gradientId: "grad-blue", textColor: "#ffffff", icon: "⚡", weight: 12 },
+  { id: "s5", name: "+25 DELTA POINTS", shortName: "+25 DP", type: "points", amount: 25, gradientId: "grad-slate", textColor: "#ffffff", icon: "🪙", weight: 30 },
+  { id: "s6", name: "👑 GOLD BOOSTER", shortName: "GOLD PACK", type: "pack", packTypeId: "gold_booster", gradientId: "grad-yellow", textColor: "#000000", icon: "👑", weight: 8 },
+  { id: "s7", name: "🔥 INFERNO (+200 DP)", shortName: "+200 DP 🔥", type: "points", amount: 200, gradientId: "grad-inferno", textColor: "#ffffff", icon: "🔥", weight: 4 },
+  { id: "s8", name: "🌟 LEGEND PACK", shortName: "LEGEND PACK", type: "pack", packTypeId: "legend_pack", gradientId: "grad-legend", textColor: "#ffffff", icon: "🌟", weight: 2 }
 ];
 
 const STREAK_DAYS = [
@@ -105,7 +108,7 @@ export default function DailyInfernoSpin({
     const targetAngle = extraTurns + (360 - segmentCenterAngle);
 
     // Add current rotation to keep spinning forward
-    const finalRotation = rotation + targetAngle + (Math.random() * (arcSize * 0.7) - arcSize * 0.35);
+    const finalRotation = rotation + targetAngle + (Math.random() * (arcSize * 0.6) - arcSize * 0.3);
     setRotation(finalRotation);
 
     // Tick sounds during spin
@@ -113,8 +116,8 @@ export default function DailyInfernoSpin({
     const tickInterval = setInterval(() => {
       tickCount++;
       cardSound.playHover();
-      if (tickCount > 25) clearInterval(tickInterval);
-    }, 140);
+      if (tickCount > 28) clearInterval(tickInterval);
+    }, 130);
 
     // Landing on prize
     setTimeout(async () => {
@@ -166,6 +169,17 @@ export default function DailyInfernoSpin({
     }
   };
 
+  // Generate 24 perimeter LED bulb coordinates around the rim
+  const rimBulbs = Array.from({ length: 24 }).map((_, i) => {
+    const angle = (i * 15) * (Math.PI / 180);
+    const r = 240;
+    return {
+      x: 250 + r * Math.cos(angle),
+      y: 250 + r * Math.sin(angle),
+      id: i
+    };
+  });
+
   return (
     <div className="v200-spin-modal-backdrop">
       {/* Dynamic Celebration Particles */}
@@ -173,13 +187,13 @@ export default function DailyInfernoSpin({
         <CanvasParticles theme="gold" active={true} />
       )}
 
-      <div className="v200-spin-modal-container">
+      <div className="v200-spin-modal-container vip-wheel-container">
         {/* Header Bar */}
         <div className="v200-spin-header">
           <div className="v200-spin-title-group">
             <div className="v200-spin-badge">
-              <Flame size={14} className="text-red-500 animate-pulse" />
-              <span>DELTA INFERNO WHEEL</span>
+              <Flame size={15} className="text-red-500 animate-pulse" />
+              <span>DELTA CASINO & WHEEL VIP</span>
             </div>
             <h2>CODZIENNE KOŁO FORTUNY</h2>
             <p>Zakręć kołem i zdobywaj codzienne nagrody, paczki oraz punkty Delta!</p>
@@ -192,7 +206,7 @@ export default function DailyInfernoSpin({
               className="v200-spin-close-btn"
               aria-label="Zamknij"
             >
-              <X size={20} />
+              <X size={22} />
             </button>
           )}
         </div>
@@ -201,11 +215,11 @@ export default function DailyInfernoSpin({
         <div className="v200-streak-bar">
           <div className="v200-streak-header">
             <span className="v200-streak-title">
-              <Calendar size={13} className="text-yellow-400 inline mr-1" />
+              <Calendar size={14} className="text-yellow-400 inline mr-1.5" />
               SERIA LOGOWANIA (DZIEŃ 3 Z 7)
             </span>
             <span className="v200-streak-boost">
-              Dzień 7: 👑 Gwarantowany Gold Booster!
+              Dzień 7: 👑 <strong>Gwarantowany Gold Booster!</strong>
             </span>
           </div>
 
@@ -217,9 +231,9 @@ export default function DailyInfernoSpin({
               >
                 <div className="v200-streak-circle">
                   {s.claimed ? (
-                    <CheckCircle2 size={13} className="text-green-400" />
+                    <CheckCircle2 size={15} className="text-green-400" />
                   ) : s.big ? (
-                    <Crown size={13} className="text-yellow-400" />
+                    <Crown size={15} className="text-yellow-400 animate-bounce" />
                   ) : (
                     <span>{s.day}</span>
                   )}
@@ -230,15 +244,16 @@ export default function DailyInfernoSpin({
           </div>
         </div>
 
-        {/* ================= WHEEL STAGE ================= */}
-        <div className="v200-wheel-stage">
+        {/* ================= MEGA WHEEL STAGE ================= */}
+        <div className="v200-wheel-stage mega-wheel">
           {/* Top Flapper Pointer */}
-          <div className="v200-wheel-pointer">
+          <div className="v200-wheel-pointer mega-flapper">
+            <div className="v200-pointer-gem" />
             <div className="v200-pointer-arrow" />
           </div>
 
           {/* Glowing Outer Wheel Rim */}
-          <div className="v200-wheel-outer-rim">
+          <div className="v200-wheel-outer-rim mega-rim">
             <div 
               className="v200-wheel-disk"
               style={{
@@ -247,71 +262,177 @@ export default function DailyInfernoSpin({
               }}
             >
               {/* SVG Segments */}
-              <svg viewBox="0 0 400 400" className="v200-wheel-svg">
+              <svg viewBox="0 0 500 500" className="v200-wheel-svg">
                 <defs>
+                  {/* High Quality Radial / Linear Gradients for Slices */}
+                  <linearGradient id="grad-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#fde047" />
+                    <stop offset="50%" stopColor="#eab308" />
+                    <stop offset="100%" stopColor="#ca8a04" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-crimson" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ef4444" />
+                    <stop offset="50%" stopColor="#dc2626" />
+                    <stop offset="100%" stopColor="#991b1b" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="50%" stopColor="#d97706" />
+                    <stop offset="100%" stopColor="#b45309" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#38bdf8" />
+                    <stop offset="50%" stopColor="#0284c7" />
+                    <stop offset="100%" stopColor="#0369a1" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-slate" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#94a3b8" />
+                    <stop offset="50%" stopColor="#64748b" />
+                    <stop offset="100%" stopColor="#475569" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-yellow" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#fef08a" />
+                    <stop offset="50%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#b45309" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-inferno" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#dc2626" />
+                    <stop offset="50%" stopColor="#7f1d1d" />
+                    <stop offset="100%" stopColor="#450a0a" />
+                  </linearGradient>
+
+                  <linearGradient id="grad-legend" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#c084fc" />
+                    <stop offset="50%" stopColor="#9333ea" />
+                    <stop offset="100%" stopColor="#581c87" />
+                  </linearGradient>
+
                   <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" />
-                    <stop offset="100%" stopColor="#78350f" stopOpacity="0.95" />
+                    <stop offset="0%" stopColor="#fef08a" />
+                    <stop offset="40%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#78350f" />
                   </radialGradient>
+
+                  <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.9" />
+                  </filter>
                 </defs>
 
+                {/* Outer Wheel Background Ring */}
+                <circle cx="250" cy="250" r="248" fill="#111827" stroke="#f59e0b" strokeWidth="4" />
+
+                {/* Segments */}
                 {WHEEL_SEGMENTS.map((seg, idx) => {
                   const startAngle = (idx * arcSize - 90) * (Math.PI / 180);
                   const endAngle = ((idx + 1) * arcSize - 90) * (Math.PI / 180);
-                  const radius = 195;
-                  const x1 = 200 + radius * Math.cos(startAngle);
-                  const y1 = 200 + radius * Math.sin(startAngle);
-                  const x2 = 200 + radius * Math.cos(endAngle);
-                  const y2 = 200 + radius * Math.sin(endAngle);
+                  const radius = 238;
+                  const x1 = 250 + radius * Math.cos(startAngle);
+                  const y1 = 250 + radius * Math.sin(startAngle);
+                  const x2 = 250 + radius * Math.cos(endAngle);
+                  const y2 = 250 + radius * Math.sin(endAngle);
 
-                  const pathData = `M 200 200 L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} Z`;
+                  const pathData = `M 250 250 L ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2} Z`;
                   const textAngle = idx * arcSize + arcSize / 2;
 
                   return (
                     <g key={seg.id}>
+                      {/* Sector Slice */}
                       <path 
                         d={pathData} 
-                        fill={seg.color}
-                        stroke="#1e293b"
-                        strokeWidth="2.5"
+                        fill={`url(#${seg.gradientId})`}
+                        stroke="#0f172a"
+                        strokeWidth="3.5"
                       />
-                      {/* Segment Label rotated */}
-                      <g transform={`rotate(${textAngle}, 200, 200)`}>
+
+                      {/* Radial Content rotated to bisector */}
+                      <g transform={`rotate(${textAngle}, 250, 250)`}>
+                        {/* Outer Icon */}
                         <text
-                          x="200"
-                          y="65"
-                          fill={seg.textColor}
-                          fontSize="12"
-                          fontWeight="900"
+                          x="250"
+                          y="62"
+                          fontSize="24"
                           textAnchor="middle"
-                          transform="rotate(90, 200, 65)"
-                          style={{ letterSpacing: "0.04em", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
-                        >
-                          {seg.name}
-                        </text>
-                        <text
-                          x="200"
-                          y="105"
-                          fontSize="16"
-                          textAnchor="middle"
+                          dominantBaseline="central"
+                          style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))" }}
                         >
                           {seg.icon}
                         </text>
+
+                        {/* Large Clear Prize Name */}
+                        <text
+                          x="250"
+                          y="110"
+                          fill={seg.textColor}
+                          fontSize="15"
+                          fontWeight="900"
+                          letterSpacing="0.05em"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          transform="rotate(90, 250, 110)"
+                          style={{
+                            fontFamily: "system-ui, -apple-system, sans-serif",
+                            textShadow: seg.textColor === "#ffffff" ? "0 2px 6px rgba(0,0,0,0.9)" : "0 1px 2px rgba(255,255,255,0.4)"
+                          }}
+                        >
+                          {seg.shortName}
+                        </text>
+
+                        {/* Tiny decorative divider line */}
+                        <line 
+                          x1="250" 
+                          y1="165" 
+                          x2="250" 
+                          y2="190" 
+                          stroke="rgba(255,255,255,0.25)" 
+                          strokeWidth="2" 
+                          strokeDasharray="2,2" 
+                        />
                       </g>
                     </g>
                   );
                 })}
+
+                {/* Perimeter Golden LED Bulbs */}
+                {rimBulbs.map(b => (
+                  <circle
+                    key={b.id}
+                    cx={b.x}
+                    cy={b.y}
+                    r={b.id % 2 === 0 ? "4" : "3"}
+                    fill={b.id % 2 === 0 ? "#fef08a" : "#f59e0b"}
+                    stroke="#78350f"
+                    strokeWidth="1"
+                    className="v200-wheel-led"
+                  />
+                ))}
               </svg>
 
               {/* Center Club Hub Button */}
-              <div className="v200-wheel-center-hub">
-                <img 
-                  src="/teamlogos/gm.png" 
-                  alt="DELTA" 
-                  className="v200-hub-logo" 
-                />
+              <button 
+                type="button"
+                onClick={handleSpin}
+                disabled={spinning}
+                className="v200-wheel-center-hub mega-hub"
+                title="Kliknij, aby zakręcić!"
+              >
+                <div className="v200-hub-inner">
+                  <img 
+                    src="/teamlogos/gm.png" 
+                    alt="DELTA" 
+                    className="v200-hub-logo" 
+                  />
+                  <span className="v200-hub-spin-txt">
+                    {spinning ? "..." : "SPIN"}
+                  </span>
+                </div>
                 <div className="v200-hub-ring" />
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -322,17 +443,17 @@ export default function DailyInfernoSpin({
             type="button"
             onClick={handleSpin}
             disabled={spinning}
-            className={`v200-spin-launch-btn ${spinning ? "spinning" : ""}`}
+            className={`v200-spin-launch-btn mega-launch-btn ${spinning ? "spinning" : ""}`}
           >
             {spinning ? (
               <>
-                <RotateCw size={20} className="animate-spin" />
-                <span>LOSOWANIE NAGRODY...</span>
+                <RotateCw size={22} className="animate-spin" />
+                <span>LOSOWANIE NAGRODY W TOKU...</span>
               </>
             ) : (
               <>
-                <Zap size={20} className="text-black" />
-                <span>ZAKRĘĆ KOŁEM (DARMOWY SPIN)</span>
+                <Zap size={22} className="text-black fill-black" />
+                <span>ZAKRĘĆ KOŁEM (DARMOWY SPIN DNIA)</span>
               </>
             )}
           </button>
@@ -343,6 +464,7 @@ export default function DailyInfernoSpin({
           <div className="v200-spin-win-modal animate-slamZoom">
             <div className="v200-win-glow" />
             <div className="v200-win-content">
+              <div className="v200-win-icon-burst">{winningSegment.icon}</div>
               <span className="v200-win-kicker">🎉 GRATULACJE! WYGRYWASZ:</span>
               <h3 className="v200-win-prize-title">{winningSegment.name}</h3>
 
@@ -358,13 +480,13 @@ export default function DailyInfernoSpin({
                     onClick={handleOpenWonPack}
                     className="v200-win-open-pack-btn"
                   >
-                    <Sparkles size={16} /> OTWÓRZ TĘ PACZKĘ TERAZ!
+                    <Sparkles size={18} /> OTWÓRZ TĘ PACZKĘ TERAZ!
                   </button>
                 </div>
               ) : (
                 <div className="v200-win-points-badge">
-                  <Coins size={22} className="text-yellow-400" />
-                  <span>+{winningSegment.amount} DP dodane do Twojego konta!</span>
+                  <Coins size={26} className="text-yellow-400" />
+                  <span>+{winningSegment.amount} DP dodane do Twojego konta Delta!</span>
                 </div>
               )}
 
@@ -373,7 +495,7 @@ export default function DailyInfernoSpin({
                 onClick={() => setShowWinCelebration(false)}
                 className="v200-win-dismiss-btn"
               >
-                Świetnie, zbieram dalej!
+                Super, zbieram dalej!
               </button>
             </div>
           </div>
