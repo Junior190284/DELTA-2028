@@ -35,6 +35,7 @@ import DailyInfernoSpin from "./DailyInfernoSpin";
 import SquadBuilder3D from "./SquadBuilder3D";
 import CardBattleCompareModal from "./CardBattleCompareModal";
 import DeltaTradeHubModal from "./DeltaTradeHubModal";
+import AchievementsModal from "./AchievementsModal";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -82,6 +83,7 @@ export default function DeltaCollectionAlbum({
   const [showSquadBuilder, setShowSquadBuilder] = useState(false);
   const [showTradeHub, setShowTradeHub] = useState(false);
   const [showBattleCompare, setShowBattleCompare] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
 
   const getCardUnlockCondition = (card: CardDefinition): string => {
     const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
@@ -415,6 +417,19 @@ export default function DeltaCollectionAlbum({
             <div className="text-left">
               <span className="v200-gbtn-kicker">HEAD-TO-HEAD</span>
               <strong className="v200-gbtn-title">POJEDYNEK KART</strong>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowAchievements(true)}
+            className="v200-gaming-nav-btn achievements"
+            style={{ borderColor: "rgba(245, 158, 11, 0.4)", background: "rgba(245, 158, 11, 0.12)" }}
+          >
+            <Trophy size={20} className="text-amber-400 flex-shrink-0 animate-bounce" />
+            <div className="text-left">
+              <span className="v200-gbtn-kicker">WYZWANIA & DP</span>
+              <strong className="v200-gbtn-title">ODZNAKI & NAGRODY</strong>
             </div>
           </button>
         </div>
@@ -907,6 +922,15 @@ export default function DeltaCollectionAlbum({
           deltaPoints={deltaPoints}
           onClose={() => setShowTradeHub(false)}
           onTradeComplete={() => fetchCollection()}
+        />
+      )}
+
+      {/* ================= 5. ACHIEVEMENTS & BADGES MODAL ================= */}
+      {showAchievements && (
+        <AchievementsModal
+          isOpen={showAchievements}
+          onClose={() => setShowAchievements(false)}
+          onPointsUpdated={(newPts) => setDeltaPoints(p => p + newPts)}
         />
       )}
     </section>

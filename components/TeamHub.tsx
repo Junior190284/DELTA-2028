@@ -15,6 +15,7 @@ import PackOpeningModal from "./PackOpeningModal";
 import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
 import DeltaLiveBar from "./DeltaLiveBar";
 import AchievementsHub from "./AchievementsHub";
+import AchievementsModal from "./AchievementsModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
@@ -172,6 +173,8 @@ export default function TeamHub(props:{
   const [pushMessage,setPushMessage]=useState<string>("");
   const [selectedPlayer,setSelectedPlayer]=useState<Player|null>(null);
   const [selectedBadgeDetail, setSelectedBadgeDetail] = useState<BadgeDetail | null>(null);
+  const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
+  const [achievementsTargetPlayer, setAchievementsTargetPlayer] = useState<Player | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
@@ -2041,6 +2044,24 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="achievements"&&<section className="section v8-section-page v108-achievements-page v114-trophy-room">
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:12}}>
+          <div>
+            <span className="eyebrow gold"><Trophy size={14} className="inline mr-1"/> SYSTEM NAGRÓD & PROGRESU 2.0</span>
+            <h2 style={{fontSize:22,margin:"4px 0 0 0"}}>KLUBOWE <em>OSIĄGNIĘCIA I ODZNAKI</em></h2>
+          </div>
+          <button 
+            type="button" 
+            onClick={()=>{
+              setAchievementsTargetPlayer(primaryPlayer || null);
+              setAchievementsModalOpen(true);
+            }}
+            className="btn gold-btn shadow-lg"
+            style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 20px",fontWeight:900,fontSize:13,borderRadius:12,cursor:"pointer"}}
+          >
+            <Sparkles size={16}/> OTWÓRZ CENTRUM ODZNAK & ODBIERZ NAGRODY
+          </button>
+        </div>
+
         <AchievementsHub 
           playerAchievements={allPlayerAchievements}
           playerName={primaryPlayer?.display_name || "Zawodnik DELTA"}
@@ -2591,6 +2612,15 @@ export default function TeamHub(props:{
         onUnlockCard={(unlockedTheme) => {
           handleUnlockTheme(selectedPlayer.id, unlockedTheme);
         }}
+      />
+    )}
+
+    {achievementsModalOpen && (
+      <AchievementsModal
+        isOpen={achievementsModalOpen}
+        onClose={() => setAchievementsModalOpen(false)}
+        playerId={achievementsTargetPlayer?.id || null}
+        playerName={achievementsTargetPlayer?.display_name || undefined}
       />
     )}
   </div>;
