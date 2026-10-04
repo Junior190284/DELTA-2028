@@ -247,6 +247,8 @@ export default function PlayerCard({
     }
   };
 
+  const isBackFace = useMemo(() => (Math.abs(Math.round(internalRotateY / 180)) % 2) === 1, [internalRotateY]);
+
   const handlePointerUp = () => {
     if (!isDragging) return;
     setIsDragging(false);
@@ -300,7 +302,14 @@ export default function PlayerCard({
         {/* ========================================================================= */}
         {/* FACE 1: FRONT (5 DECOUPLED ARCHITECTURAL LAYERS)                          */}
         {/* ========================================================================= */}
-        <div className={`v200-card-face front-face theme-${templateKey} player-card`}>
+        <div 
+          className={`v200-card-face front-face theme-${templateKey} player-card`}
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            pointerEvents: isBackFace ? "none" : "auto"
+          }}
+        >
           
           {/* ------------------------------------------------------------- */}
           {/* LAYER 1: BASE BACKGROUND / DYNAMIC BACKGROUND                 */}
@@ -501,7 +510,15 @@ export default function PlayerCard({
         {/* ========================================================================= */}
         {/* FACE 2: REVERSE / BACK (5-LAYER MATCHING COLLECTOR DOSSIER)               */}
         {/* ========================================================================= */}
-        <div className={`v200-card-face back-face theme-${templateKey} player-card`}>
+        <div 
+          className={`v200-card-face back-face theme-${templateKey} player-card`}
+          style={{
+            transform: "rotateY(180deg)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            pointerEvents: isBackFace ? "auto" : "none"
+          }}
+        >
           
           {/* ------------------------------------------------------------- */}
           {/* LAYER 1: BASE BACK BACKGROUND                                 */}
