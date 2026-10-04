@@ -23,6 +23,7 @@ export default function StadiumFX({
   const [mounted, setMounted] = useState(false);
   const [showClassicIntro, setShowClassicIntro] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function StadiumFX({
 
   // Płynne zamknięcie kinowego intro
   const handleClose = () => {
+    cardSound.stopDeltaChant();
     setIsFadingOut(true);
     setTimeout(() => {
       setIsFadingOut(false);
@@ -58,10 +60,14 @@ export default function StadiumFX({
 
   // Reakcja na montowanie / aktywację kinowego intro
   useEffect(() => {
-    if (!cinematicIntro) return;
+    if (!cinematicIntro) {
+      cardSound.stopDeltaChant();
+      return;
+    }
     setIsFadingOut(false);
+    setIsMuted(false);
 
-    // Dźwięk klubowego okrzyku i fanfary stadionowej
+    // Dźwięk klubowego okrzyku - odtwarzany domyślnie z pełnym dźwiękiem
     try {
       cardSound.playDeltaChant(0.95);
     } catch {}
@@ -94,6 +100,7 @@ export default function StadiumFX({
     return () => {
       clearTimeout(timer);
       window.removeEventListener("keydown", onKey);
+      cardSound.stopDeltaChant();
     };
   }, [cinematicIntro]);
 
@@ -138,13 +145,16 @@ export default function StadiumFX({
         />
       </div>
 
-      {/* Przycisk Ponów / Zagraj Okrzyk */}
+      {/* Przycisk Kontroli Dźwięku (Domyślnie WŁĄCZONY z opcją wyciszenia) */}
       <button
         type="button"
         onClick={() => {
-          try {
-            cardSound.playDeltaChant(1.0);
-          } catch {}
+          const next = !isMuted;
+          setIsMuted(next);
+          cardSound.setDeltaChantMuted(next);
+          if (!next) {
+            cardSound.playDeltaChant(0.95);
+          }
         }}
         className="v101-cinematic-sound-btn"
         style={{
@@ -152,21 +162,23 @@ export default function StadiumFX({
           top: "24px",
           left: "24px",
           zIndex: 10,
-          background: "rgba(0, 0, 0, 0.65)",
-          border: "1px solid rgba(241, 201, 92, 0.5)",
+          background: isMuted ? "rgba(220, 38, 38, 0.25)" : "rgba(0, 0, 0, 0.65)",
+          border: isMuted ? "1px solid rgba(239, 68, 68, 0.6)" : "1px solid rgba(241, 201, 92, 0.5)",
           borderRadius: "30px",
           padding: "8px 16px",
-          color: "#f1c95c",
+          color: isMuted ? "#fca5a5" : "#f1c95c",
           fontSize: "12px",
           fontWeight: 800,
           display: "flex",
           alignItems: "center",
           gap: "8px",
           cursor: "pointer",
-          backdropFilter: "blur(8px)"
+          backdropFilter: "blur(8px)",
+          transition: "all 0.2s"
         }}
+        aria-label={isMuted ? "Włącz dźwięk" : "Wycisz dźwięk"}
       >
-        <span>🔊 OKRZYK DELTA</span>
+        <span>{isMuted ? "🔇 DŹWIĘK WYCISZONY" : "🔊 DŹWIĘK WŁĄCZONY (WYCISZ)"}</span>
       </button>
 
       <button
