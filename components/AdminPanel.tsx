@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserPermissions } from "@/lib/permissions";
 import { EMPTY_PERMISSIONS } from "@/lib/permissions";
 import PlayerPhoto from "./PlayerPhoto";
+import CardLayoutEditor from "./CardLayoutEditor";
 import { 
   ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, 
   Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice, Edit3, 
-  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame 
+  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame, Sliders 
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -133,6 +134,7 @@ export default function AdminPanel(props:{
   const [userManagedCards, setUserManagedCards] = useState<any[]>([]);
   const [loadingUserCards, setLoadingUserCards] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+  const [cardsSubTab, setCardsSubTab] = useState<"editor" | "grant" | "manage">("editor");
 
   const filteredAdminPlayers = useMemo(() => {
     return players.filter(p => {
@@ -1568,16 +1570,63 @@ export default function AdminPanel(props:{
         <div className="admin-card-head">
           <div>
             <h2><Sparkles size={20} className="inline mr-1 text-amber-400" /> DELTA CARDS & COLLECTION — ZARZĄDZANIE</h2>
-            <p className="muted">Przyznawaj paczki kart rodzicom i zawodnikom, dodawaj karty specjalne oraz zarządzaj punktami Delta Points.</p>
+            <p className="muted">Wizualny edytor układu kart 3D, przyznawanie boosterów oraz zarządzanie kolekcjami i punktami DP.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* PRZYZNAWANIE PACZEK KART */}
-          <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase">
-              <Gift size={18} /> Przyznaj paczkę kart
-            </div>
+        {/* SUB-TAB NAVIGATION */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setCardsSubTab("editor")}
+            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+              cardsSubTab === "editor"
+                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg"
+                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <Sliders size={14} /> 🎨 Wizualny Edytor Kart (Layout Editor)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCardsSubTab("grant")}
+            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+              cardsSubTab === "grant"
+                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg"
+                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <Gift size={14} /> 🎁 Przyznaj Paczki & Punkty DP
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCardsSubTab("manage")}
+            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+              cardsSubTab === "manage"
+                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg"
+                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <Trash2 size={14} /> 🗑️ Zarządzanie Kolekcjami Użytkowników
+          </button>
+        </div>
+
+        {/* SUB-TAB 1: VISUAL CARD LAYOUT EDITOR */}
+        {cardsSubTab === "editor" && (
+          <CardLayoutEditor players={players} />
+        )}
+
+        {/* SUB-TAB 2: GRANTING PACKS & POINTS & CREATING SPECIAL CARDS */}
+        {cardsSubTab === "grant" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* PRZYZNAWANIE PACZEK KART */}
+              <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
+                <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase">
+                  <Gift size={18} /> Przyznaj paczkę kart
+                </div>
             <p className="text-xs text-slate-400">
               Wyślij paczki z kartami do otwarcia dla konkretnego rodzica lub wszystkich użytkowników w klubie.
             </p>
@@ -1793,132 +1842,138 @@ export default function AdminPanel(props:{
           >
             <Plus size={15} /> {savingCardDef ? "Tworzenie..." : "Utwórz kartę w katalogu"}
           </button>
-        </div>
-
-        {/* ================= ZARZĄDZANIE KOLEKCJAMI I USUWANIE KART ================= */}
-        <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 text-rose-400 font-black text-sm uppercase">
-              <Trash2 size={18} /> Zarządzanie kartami w kolekcjach & Kasowanie
-            </div>
-            <button
-              type="button"
-              onClick={handleGlobalResetCards}
-              className="px-3 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-700 text-rose-200 text-xs font-bold transition flex items-center gap-1.5"
-            >
-              <AlertCircle size={14} /> ⚠️ Reset kolekcji wszystkich użytkowników
-            </button>
           </div>
-
-          <p className="text-xs text-slate-400">
-            Wybierz użytkownika, aby podejrzeć jego karty, usunąć pojedyncze karty lub całkowicie wyczyścić jego klaser.
-          </p>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="block text-xs font-bold text-slate-300 flex-1 min-w-[240px]">
-              Wybierz użytkownika do podglądu kolekcji:
-              <select 
-                value={manageCardsUserId} 
-                onChange={e => setManageCardsUserId(e.target.value)}
-                className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white"
-              >
-                {props.allProfiles.map(p => (
-                  <option key={p.id} value={p.id}>{p.display_name || "Użytkownik"} ({p.role})</option>
-                ))}
-              </select>
-            </label>
-
-            <div className="flex items-end gap-2 mt-5">
-              <button
-                type="button"
-                onClick={() => fetchUserCards(manageCardsUserId)}
-                disabled={loadingUserCards}
-                className="px-3.5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1.5"
-              >
-                <RefreshCw size={14} className={loadingUserCards ? "animate-spin" : ""} /> Odśwież
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleClearUserCards(manageCardsUserId)}
-                disabled={loadingUserCards || userManagedCards.length === 0}
-                className="px-3.5 py-2.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 border border-rose-600 text-rose-100 text-xs font-bold transition flex items-center gap-1.5"
-              >
-                <Trash2 size={14} /> Wyczyść całą kolekcję tego użytkownika
-              </button>
-            </div>
           </div>
+        )}
 
-          {/* LISTA KART WYBRANEGO UŻYTKOWNIKA */}
-          <div className="mt-4 pt-4 border-t border-slate-800">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-300">
-                Zdobyte karty użytkownika ({userManagedCards.length}):
-              </span>
-            </div>
-
-            {loadingUserCards ? (
-              <div className="py-8 text-center text-xs text-slate-400">Ładowanie kolekcji...</div>
-            ) : userManagedCards.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500 bg-black/20 rounded-xl border border-slate-800/60">
-                Ten użytkownik nie posiada jeszcze żadnych kart w swojej kolekcji.
+        {/* SUB-TAB 3: USER COLLECTIONS MANAGEMENT */}
+        {cardsSubTab === "manage" && (
+          <div className="space-y-6">
+            <div className="admin-subcard p-5 rounded-2xl bg-black/40 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2 text-rose-400 font-black text-sm uppercase">
+                  <Trash2 size={18} /> Zarządzanie kartami w kolekcjach & Kasowanie
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGlobalResetCards}
+                  className="px-3 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-700 text-rose-200 text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <AlertCircle size={14} /> ⚠️ Reset kolekcji wszystkich użytkowników
+                </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[420px] overflow-y-auto p-1">
-                {userManagedCards.map(uc => {
-                  const cardDef = uc.card_definition;
-                  const rarity = cardDef?.rarity || "common";
-                  const isInferno = rarity === "inferno";
-                  const isLegend = rarity === "legendary";
-                  const isEpic = rarity === "epic";
-                  const isRare = rarity === "rare";
 
-                  return (
-                    <div 
-                      key={uc.id} 
-                      className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between gap-2.5 transition hover:border-slate-700"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                            isInferno ? "bg-red-950 text-red-400 border-red-700" :
-                            isLegend ? "bg-purple-950 text-purple-300 border-purple-700" :
-                            isEpic ? "bg-indigo-950 text-indigo-300 border-indigo-700" :
-                            isRare ? "bg-blue-950 text-blue-300 border-blue-700" :
-                            "bg-slate-800 text-slate-300 border-slate-700"
-                          }`}>
-                            {rarity}
-                          </span>
-                          {uc.duplicates_count > 0 && (
-                            <span className="text-[10px] font-black text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded">
-                              +{uc.duplicates_count} dup
-                            </span>
-                          )}
-                        </div>
+              <p className="text-xs text-slate-400">
+                Wybierz użytkownika, aby podejrzeć jego karty, usunąć pojedyncze karty lub całkowicie wyczyścić jego klaser.
+              </p>
 
-                        <div className="font-bold text-xs text-white truncate">
-                          {cardDef?.title || cardDef?.card_name || "Karta DELTA"}
-                        </div>
-                        <div className="text-[11px] text-slate-400 truncate">
-                          {cardDef?.player?.display_name || "Zawodnik"} (#{cardDef?.player?.shirt_number || "—"})
-                        </div>
-                      </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="block text-xs font-bold text-slate-300 flex-1 min-w-[240px]">
+                  Wybierz użytkownika do podglądu kolekcji:
+                  <select 
+                    value={manageCardsUserId} 
+                    onChange={e => setManageCardsUserId(e.target.value)}
+                    className="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white"
+                  >
+                    {props.allProfiles.map(p => (
+                      <option key={p.id} value={p.id}>{p.display_name || "Użytkownik"} ({p.role})</option>
+                    ))}
+                  </select>
+                </label>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteUserCard(uc.id)}
-                        disabled={deletingCardId === uc.id}
-                        className="w-full py-1.5 px-2 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 text-[11px] font-bold transition flex items-center justify-center gap-1.5"
-                      >
-                        <Trash2 size={12} /> {deletingCardId === uc.id ? "Usuwanie..." : "Usuń tę kartę"}
-                      </button>
-                    </div>
-                  );
-                })}
+                <div className="flex items-end gap-2 mt-5">
+                  <button
+                    type="button"
+                    onClick={() => fetchUserCards(manageCardsUserId)}
+                    disabled={loadingUserCards}
+                    className="px-3.5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition flex items-center gap-1.5"
+                  >
+                    <RefreshCw size={14} className={loadingUserCards ? "animate-spin" : ""} /> Odśwież
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleClearUserCards(manageCardsUserId)}
+                    disabled={loadingUserCards || userManagedCards.length === 0}
+                    className="px-3.5 py-2.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 border border-rose-600 text-rose-100 text-xs font-bold transition flex items-center gap-1.5"
+                  >
+                    <Trash2 size={14} /> Wyczyść całą kolekcję tego użytkownika
+                  </button>
+                </div>
               </div>
-            )}
+
+              {/* LISTA KART WYBRANEGO UŻYTKOWNIKA */}
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-300">
+                    Zdobyte karty użytkownika ({userManagedCards.length}):
+                  </span>
+                </div>
+
+                {loadingUserCards ? (
+                  <div className="py-8 text-center text-xs text-slate-400">Ładowanie kolekcji...</div>
+                ) : userManagedCards.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-500 bg-black/20 rounded-xl border border-slate-800/60">
+                    Ten użytkownik nie posiada jeszcze żadnych kart w swojej kolekcji.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[420px] overflow-y-auto p-1">
+                    {userManagedCards.map(uc => {
+                      const cardDef = uc.card_definition;
+                      const rarity = cardDef?.rarity || "common";
+                      const isInferno = rarity === "inferno";
+                      const isLegend = rarity === "legendary";
+                      const isEpic = rarity === "epic";
+                      const isRare = rarity === "rare";
+
+                      return (
+                        <div 
+                          key={uc.id} 
+                          className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between gap-2.5 transition hover:border-slate-700"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                isInferno ? "bg-red-950 text-red-400 border-red-700" :
+                                isLegend ? "bg-purple-950 text-purple-300 border-purple-700" :
+                                isEpic ? "bg-indigo-950 text-indigo-300 border-indigo-700" :
+                                isRare ? "bg-blue-950 text-blue-300 border-blue-700" :
+                                "bg-slate-800 text-slate-300 border-slate-700"
+                              }`}>
+                                {rarity}
+                              </span>
+                              {uc.duplicates_count > 0 && (
+                                <span className="text-[10px] font-black text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded">
+                                  +{uc.duplicates_count} dup
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="font-bold text-xs text-white truncate">
+                              {cardDef?.title || cardDef?.card_name || "Karta DELTA"}
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate">
+                              {cardDef?.player?.display_name || "Zawodnik"} (#{cardDef?.player?.shirt_number || "—"})
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUserCard(uc.id)}
+                            disabled={deletingCardId === uc.id}
+                            className="w-full py-1.5 px-2 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 text-rose-300 text-[11px] font-bold transition flex items-center justify-center gap-1.5"
+                          >
+                            <Trash2 size={12} /> {deletingCardId === uc.id ? "Usuwanie..." : "Usuń tę kartę"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </section>}
     </main>
 

@@ -202,3 +202,39 @@ export const CARD_TYPES_CONFIG: Record<string, {
     description: "Opaska kapitańska i wyprowadzenie drużyny DELTY na murawę."
   }
 };
+
+export type CardTemplateKey = "base" | "matchday" | "gold" | "legend" | "inferno" | "panini";
+
+export interface CardLayoutConfig {
+  scale: number; // 0.5 to 2.5
+  translateX: number; // percentage (-50% to +50%)
+  translateY: number; // percentage (-50% to +50%)
+  rotate?: number; // degrees (-45 to +45)
+  brightness?: number; // 0.5 to 1.5
+  contrast?: number; // 0.5 to 1.5
+  photoUrl?: string | null;
+}
+
+export interface PlayerCardLayoutRow {
+  id?: string;
+  player_id: string;
+  template_key: string;
+  photo_url?: string | null;
+  scale: number;
+  translate_x: number;
+  translate_y: number;
+  rotate?: number;
+  brightness?: number;
+  contrast?: number;
+  updated_at?: string;
+}
+
+export const DEFAULT_TEMPLATE_LAYOUTS: Record<CardTemplateKey, CardLayoutConfig> = {
+  base: { scale: 1.0, translateX: 0, translateY: 0, rotate: 0, brightness: 1.0, contrast: 1.0 },
+  matchday: { scale: 1.05, translateX: 0, translateY: -2, rotate: 0, brightness: 1.05, contrast: 1.05 },
+  gold: { scale: 1.08, translateX: 0, translateY: -4, rotate: 0, brightness: 1.1, contrast: 1.08 },
+  legend: { scale: 1.12, translateX: 0, translateY: -5, rotate: 0, brightness: 1.12, contrast: 1.1 },
+  inferno: { scale: 1.15, translateX: 0, translateY: -6, rotate: 0, brightness: 1.15, contrast: 1.15 },
+  panini: { scale: 0.95, translateX: 0, translateY: 2, rotate: 0, brightness: 1.0, contrast: 1.0 }
+};
+
