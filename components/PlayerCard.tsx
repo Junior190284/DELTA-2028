@@ -284,12 +284,12 @@ export default function PlayerCard({
         {/* ========================================================================= */}
         {/* FACE 1: FRONT (5 DECOUPLED ARCHITECTURAL LAYERS)                          */}
         {/* ========================================================================= */}
-        <div className={`v200-card-face front-face theme-${templateKey}`}>
+        <div className={`v200-card-face front-face theme-${templateKey} player-card`}>
           
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 1: DYNAMIC BACKGROUND                                   */}
+          {/* LAYER 1: CURRENT DYNAMIC BACKGROUND                           */}
           {/* ------------------------------------------------------------- */}
-          <div className="v200-layer-1-background">
+          <div className="card-background v200-layer-1-background">
             <div className={`v200-bg-gradient theme-${templateKey}`} />
             <div className="v200-bg-stadium-lights" />
             <div className={`v200-bg-particles theme-${templateKey}`} />
@@ -297,9 +297,9 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 2: PLAYER TRANSPARENT CUTOUT (SILHOUETTE)               */}
+          {/* LAYER 2: PLAYER ARTWORK / CUTOUT SILHOUETTE                   */}
           {/* ------------------------------------------------------------- */}
-          <div className="v200-layer-2-player">
+          <div className="player-art v200-layer-2-player">
             {isLocked ? (
               <div className="v200-card-locked-silhouette">
                 <Lock size={32} className="text-slate-400 animate-pulse" />
@@ -341,9 +341,31 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 3: DYNAMIC PLAYER / CARD DATA (HTML/CSS ONLY)           */}
+          {/* LAYER 3: BASE FRAME (800x1200 PNG WITH TRANSPARENCY)          */}
           {/* ------------------------------------------------------------- */}
-          <div className="v200-layer-3-data">
+          {templateKey === "base" ? (
+            <img 
+              src="/assets/cards/base/base-frame.png" 
+              alt="" 
+              className="card-frame"
+              loading="eager"
+              decoding="sync"
+            />
+          ) : (
+            <div className={`v200-layer-4-frame theme-${templateKey}`}>
+              <div className="v200-outer-border-trim" />
+              <div className="v200-inner-bezel" />
+              <div className="v200-corner-cut top-left" />
+              <div className="v200-corner-cut top-right" />
+              <div className="v200-corner-cut bottom-left" />
+              <div className="v200-corner-cut bottom-right" />
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* LAYER 4: ALL EXISTING CARD UI & DYNAMIC DATA                  */}
+          {/* ------------------------------------------------------------- */}
+          <div className="card-ui v200-layer-3-data">
             {/* Top Left: EA FC FIFA Badge (OVR, POS, FLAG, CREST) */}
             {!isLocked && (
               <div className="v200-fifa-top-badge">
@@ -417,20 +439,18 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 4: FOREGROUND FRAME (METALLIC BEZEL & BORDER ACCENTS)   */}
+          {/* LAYER 5: BASE FX & SPECULAR HOLOGRAPHIC SHEEN                 */}
           {/* ------------------------------------------------------------- */}
-          <div className={`v200-layer-4-frame theme-${templateKey}`}>
-            <div className="v200-outer-border-trim" />
-            <div className="v200-inner-bezel" />
-            <div className="v200-corner-cut top-left" />
-            <div className="v200-corner-cut top-right" />
-            <div className="v200-corner-cut bottom-left" />
-            <div className="v200-corner-cut bottom-right" />
-          </div>
+          {templateKey === "base" && (
+            <img 
+              src="/assets/cards/base/base-fx.png" 
+              alt="" 
+              className="card-fx"
+              loading="eager"
+              decoding="sync"
+            />
+          )}
 
-          {/* ------------------------------------------------------------- */}
-          {/* LAYER 5: VISUAL FX & HOLOGRAPHIC SPECULAR SHEEN               */}
-          {/* ------------------------------------------------------------- */}
           <div className="v200-layer-5-fx">
             <div 
               className={`v200-hologram-sheen theme-${templateKey}`}

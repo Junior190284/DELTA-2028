@@ -24492,6 +24492,39 @@ body > main,
 /* V200 — 5-LAYER DECOUPLED PLAYER CARD SYSTEM & 3D ENGINE                   */
 /* ========================================================================= */
 
+.player-card {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: visible;
+}
+
+.card-frame,
+.card-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.card-frame {
+  z-index: 20;
+}
+
+.card-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+.card-fx {
+  z-index: 40;
+  opacity: 0.7;
+  mix-blend-mode: screen;
+}
+
 .v200-player-card-wrapper {
   position: relative;
   perspective: 1200px;
@@ -24547,6 +24580,7 @@ body > main,
 /* ------------------------------------------------------------------------- */
 /* LAYER 1: DYNAMIC BACKGROUND                                               */
 /* ------------------------------------------------------------------------- */
+.card-background,
 .v200-layer-1-background {
   position: absolute;
   inset: 0;
@@ -24558,6 +24592,7 @@ body > main,
 
 .v200-bg-gradient {
   position: absolute;
+
   inset: 0;
 }
 .v200-bg-gradient.theme-base {
