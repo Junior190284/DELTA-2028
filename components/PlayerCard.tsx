@@ -124,6 +124,12 @@ export const CARD_THEME_ASSETS: Record<CardTemplateKey, {
     fx: "/assets/cards/inferno-ultra/inferno-ultra-fx.png",
     backBg: "/assets/cards/inferno-ultra/inferno-ultra-back-bg.png"
   },
+  training: {
+    background: "/assets/cards/training-hero/training-hero-background.png",
+    frame: "/assets/cards/training-hero/training-hero-frame.png",
+    fx: "/assets/cards/training-hero/training-hero-fx.png",
+    backBg: "/assets/cards/training-hero/training-hero-back-bg.png"
+  },
   panini: {
     background: "/assets/cards/base/base-background.png",
     frame: "/assets/cards/base/base-frame.png",
@@ -180,6 +186,7 @@ export default function PlayerCard({
     if (templateOverride) return templateOverride;
     const r = (card?.rarity || "common").toLowerCase();
     const t = (card?.card_type || "").toLowerCase();
+    if (t.includes("training") || t.includes("warrior")) return "training";
     if (r === "inferno" || t.includes("inferno")) return "inferno";
     if (r === "legendary" || t.includes("legend")) return "legend";
     if (r === "epic" || t.includes("gold") || t.includes("mvp")) return "gold";
@@ -224,8 +231,8 @@ export default function PlayerCard({
   const cardType = (card?.card_type || "").toLowerCase();
 
   const seriesInfo = useMemo(() => {
-    if (cardType === "training_warrior") {
-      return { badge: "⚔️ WARRIOR", seriesName: "TRAINING WARRIOR", code: "WAR" };
+    if (cardType === "training_warrior" || templateKey === "training") {
+      return { badge: "⚔️ WARRIOR", seriesName: "TRAINING HERO", code: "TRN" };
     }
     if (cardType === "goal_hunter") {
       return { badge: "🎯 HUNTER", seriesName: "GOAL HUNTER", code: "HNT" };

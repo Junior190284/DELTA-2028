@@ -203,7 +203,7 @@ export const CARD_TYPES_CONFIG: Record<string, {
   }
 };
 
-export type CardTemplateKey = "base" | "matchday" | "gold" | "legend" | "inferno" | "panini";
+export type CardTemplateKey = "base" | "matchday" | "gold" | "legend" | "inferno" | "panini" | "training";
 
 export interface CardLayoutConfig {
   scale: number; // 0.5 to 2.5
@@ -235,6 +235,7 @@ export const DEFAULT_TEMPLATE_LAYOUTS: Record<CardTemplateKey, CardLayoutConfig>
   gold: { scale: 1.08, translateX: 0, translateY: -4, rotate: 0, brightness: 1.1, contrast: 1.08 },
   legend: { scale: 1.12, translateX: 0, translateY: -5, rotate: 0, brightness: 1.12, contrast: 1.1 },
   inferno: { scale: 1.15, translateX: 0, translateY: -6, rotate: 0, brightness: 1.15, contrast: 1.15 },
-  panini: { scale: 0.95, translateX: 0, translateY: 2, rotate: 0, brightness: 1.0, contrast: 1.0 }
+  panini: { scale: 0.95, translateX: 0, translateY: 2, rotate: 0, brightness: 1.0, contrast: 1.0 },
+  training: { scale: 1.05, translateX: 0, translateY: -2, rotate: 0, brightness: 1.05, contrast: 1.05 }
 };
 

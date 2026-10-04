@@ -24765,6 +24765,7 @@ body > main,
 .v200-badge-ovr.theme-inferno { color: #fca5a5; text-shadow: 0 0 12px rgba(239, 68, 68, 0.8); }
 .v200-badge-ovr.theme-legend { color: #e9d5ff; text-shadow: 0 0 12px rgba(192, 132, 252, 0.8); }
 .v200-badge-ovr.theme-matchday { color: #bae6fd; text-shadow: 0 0 12px rgba(56, 189, 248, 0.7); }
+.v200-badge-ovr.theme-training { color: #bbf7d0; text-shadow: 0 0 12px rgba(74, 222, 128, 0.7); }
 
 .v200-badge-pos {
   font-size: 11px;
@@ -24810,6 +24811,7 @@ body > main,
 .v200-edition-pill.theme-legend { border-color: #c084fc; color: #f3e8ff; }
 .v200-edition-pill.theme-gold { border-color: #facc15; color: #fef08a; }
 .v200-edition-pill.theme-matchday { border-color: #38bdf8; color: #e0f2fe; }
+.v200-edition-pill.theme-training { border-color: #4ade80; color: #dcfce7; }
 
 .v200-flip-trigger-btn {
   pointer-events: auto;
@@ -24862,6 +24864,7 @@ body > main,
 .v200-player-name-text.theme-gold { color: #fef08a; }
 .v200-player-name-text.theme-inferno { color: #fee2e2; text-shadow: 0 0 10px rgba(239, 68, 68, 0.9); }
 .v200-player-name-text.theme-legend { color: #faf5ff; }
+.v200-player-name-text.theme-training { color: #dcfce7; text-shadow: 0 0 10px rgba(74, 222, 128, 0.8); }
 
 .v200-shirt-number-tag {
   font-size: 11px;
@@ -24930,6 +24933,10 @@ body > main,
 .v200-layer-4-frame.theme-matchday {
   border-color: rgba(56, 189, 248, 0.75);
   box-shadow: inset 0 0 16px rgba(56, 189, 248, 0.25);
+}
+.v200-layer-4-frame.theme-training {
+  border-color: rgba(74, 222, 128, 0.75);
+  box-shadow: inset 0 0 16px rgba(74, 222, 128, 0.25);
 }
 
 .v200-outer-border-trim {
@@ -25146,6 +25153,10 @@ body > main,
 .theme-inferno .v200-back-meta-cell { border-color: rgba(239, 68, 68, 0.4); background: rgba(185, 28, 28, 0.24); }
 .theme-inferno .v200-back-meta-cell .val { color: #f87171; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
 .theme-inferno .v200-back-player-sub { color: #f87171; }
+
+.theme-training .v200-back-meta-cell { border-color: rgba(74, 222, 128, 0.35); background: rgba(22, 101, 52, 0.22); }
+.theme-training .v200-back-meta-cell .val { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.5); }
+.theme-training .v200-back-player-sub { color: #4ade80; }
 
 /* ========================================================================= */
 /* V200 — VISUAL CARD LAYOUT EDITOR                                          */
