@@ -1914,6 +1914,7 @@ export default function TeamHub(props:{
       {tab==="collection"&&<DeltaCollectionAlbum
         currentUserId={props.profile.id}
         players={players}
+        matches={matches}
         onOpenPlayerProfile={(pid)=>{
           const p=players.find(x=>x.id===pid);
           if(p)openPlayerProfile(p);

@@ -5,18 +5,16 @@ import { createPortal } from "react-dom";
 import { 
   Trophy, 
   Tv, 
-  Flame, 
-  Crown, 
   Sparkles, 
   X, 
   Target, 
   Zap, 
-  Shield, 
-  Award,
-  ChevronRight
+  Crown,
+  Shield
 } from "lucide-react";
 import { CardDefinition } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
+import { BASE_LEAGUE_SCHEDULE } from "@/components/LeagueCenter";
 
 interface PlayerRankItem {
   id: string;
@@ -32,13 +30,45 @@ interface BroadcastLeaderboardProps {
   cards: CardDefinition[];
   players?: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null }[];
   playerStats?: Record<string, { goals: number; assists: number; attendancePercent: number; mvp: number }>;
+  matches?: any[];
   onClose: () => void;
+}
+
+function getPlayerInitials(name: string): string {
+  if (!name) return "GM";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
+function resolvePlayerPhoto(
+  name: string, 
+  photoUrl?: string, 
+  tab?: "goals" | "assists" | "training" | "mvp"
+): string | null {
+  const norm = (name || "").toLowerCase();
+  const isRyszard = norm.includes("ryszard") || norm.includes("rybacki");
+  
+  if (isRyszard) {
+    if (tab === "assists") return "/assets/players/ryszard-gold.png";
+    if (tab === "training") return "/assets/players/ryszard-inferno.png";
+    if (tab === "mvp") return "/assets/players/ryszard-legend.png";
+    return "/assets/players/ryszard-rybacki.png";
+  }
+
+  // Dla pozostałych zawodników: TYLKO jeśli mają własne dedykowane zdjęcie
+  if (photoUrl && !photoUrl.toLowerCase().includes("ryszard")) {
+    return photoUrl;
+  }
+
+  return null;
 }
 
 export default function BroadcastLeaderboard({
   cards,
   players = [],
   playerStats = {},
+  matches = [],
   onClose
 }: BroadcastLeaderboardProps) {
   const [mounted, setMounted] = useState(false);
@@ -90,6 +120,7 @@ export default function BroadcastLeaderboard({
       .map(p => {
         const stats = playerStats?.[p.id];
         const val = stats ? stats.goals : 0;
+        const photo = resolvePlayerPhoto(p.name, p.photoUrl, "goals");
         return {
           id: p.id,
           name: p.name,
@@ -97,7 +128,7 @@ export default function BroadcastLeaderboard({
           val,
           label: "GOLI",
           rarity: val >= 10 ? "inferno" : val >= 5 ? "legendary" : val >= 1 ? "epic" : "common",
-          photoUrl: p.photoUrl || "/assets/players/ryszard-rybacki.png"
+          photoUrl: photo || undefined
         };
       })
       .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
@@ -109,6 +140,7 @@ export default function BroadcastLeaderboard({
       .map(p => {
         const stats = playerStats?.[p.id];
         const val = stats ? stats.assists : 0;
+        const photo = resolvePlayerPhoto(p.name, p.photoUrl, "assists");
         return {
           id: p.id,
           name: p.name,
@@ -116,7 +148,7 @@ export default function BroadcastLeaderboard({
           val,
           label: "ASYST",
           rarity: val >= 8 ? "legendary" : val >= 4 ? "epic" : val >= 1 ? "rare" : "common",
-          photoUrl: p.photoUrl || "/assets/players/ryszard-gold.png"
+          photoUrl: photo || undefined
         };
       })
       .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
@@ -128,6 +160,7 @@ export default function BroadcastLeaderboard({
       .map(p => {
         const stats = playerStats?.[p.id];
         const val = stats ? stats.attendancePercent : 100;
+        const photo = resolvePlayerPhoto(p.name, p.photoUrl, "training");
         return {
           id: p.id,
           name: p.name,
@@ -135,7 +168,7 @@ export default function BroadcastLeaderboard({
           val,
           label: "% FREKWENCJI",
           rarity: val >= 95 ? "inferno" : val >= 85 ? "epic" : "rare",
-          photoUrl: p.photoUrl || "/assets/players/ryszard-inferno.png"
+          photoUrl: photo || undefined
         };
       })
       .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
@@ -147,6 +180,7 @@ export default function BroadcastLeaderboard({
       .map(p => {
         const stats = playerStats?.[p.id];
         const val = stats ? stats.mvp : 0;
+        const photo = resolvePlayerPhoto(p.name, p.photoUrl, "mvp");
         return {
           id: p.id,
           name: p.name,
@@ -154,7 +188,7 @@ export default function BroadcastLeaderboard({
           val,
           label: "TYTUŁÓW MVP",
           rarity: val >= 3 ? "legendary" : val >= 1 ? "epic" : "rare",
-          photoUrl: p.photoUrl || "/assets/players/ryszard-legend.png"
+          photoUrl: photo || undefined
         };
       })
       .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
@@ -173,7 +207,7 @@ export default function BroadcastLeaderboard({
     val: 0,
     label: "PUNKTÓW",
     rarity: "common",
-    photoUrl: "/teamlogos/gm.png"
+    photoUrl: undefined
   };
 
   const getCategoryMeta = () => {
@@ -190,6 +224,34 @@ export default function BroadcastLeaderboard({
   };
 
   const meta = getCategoryMeta();
+
+  // Dynamiczny ticker z prawdziwego terminarza
+  const tickerText = useMemo(() => {
+    if (matches && matches.length > 0) {
+      const scheduled = matches
+        .filter(m => m.status === "scheduled")
+        .sort((a, b) => (a.match_date || "").localeCompare(b.match_date || ""));
+      if (scheduled.length > 0) {
+        const nm = scheduled[0];
+        const dateFormatted = nm.match_date ? new Date(nm.match_date).toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" }) : "";
+        const timeFormatted = nm.match_time ? `• ${nm.match_time.slice(0, 5)}` : "";
+        return `★ NAJBLIŻSZY MECZ LIGOWY: ${nm.home_team.toUpperCase()} vs ${nm.away_team.toUpperCase()} • ${dateFormatted.toUpperCase()} ${timeFormatted} ★`;
+      }
+    }
+
+    // Terminarz domyślny DELTA GM
+    const deltaSchedule = BASE_LEAGUE_SCHEDULE.filter(f => 
+      (f.home.toLowerCase().includes("gm") || f.away.toLowerCase().includes("gm")) && !f.result
+    );
+    if (deltaSchedule.length > 0) {
+      const fix = deltaSchedule[0];
+      const d = new Date(fix.date);
+      const dateFormatted = !isNaN(d.getTime()) ? d.toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" }) : fix.date;
+      return `★ NAJBLIŻSZY MECZ LIGOWY (KOLEJKA ${fix.round}): ${fix.home.toUpperCase()} vs ${fix.away.toUpperCase()} • ${dateFormatted.toUpperCase()} ★`;
+    }
+
+    return "★ K.S. DELTA WARSZAWA 2018 GM • SEZON LIGOWY 2026/2027 • OFICJALNE STUDIO DELTA TV SPORTS ★";
+  }, [matches]);
 
   if (!mounted || typeof document === "undefined") return null;
 
@@ -449,31 +511,104 @@ export default function BroadcastLeaderboard({
               <Trophy size={11} /> LIDER RANKINGU #1
             </div>
 
-            {/* Framed Photo */}
+            {/* Framed Photo OR Dynamic Club Avatar Spotlight */}
             <div 
               style={{
                 width: "140px",
                 height: "170px",
                 margin: "18px 0 12px 0",
                 borderRadius: "14px",
-                border: "2px solid rgba(241, 201, 92, 0.7)",
+                border: `2px solid ${topPlayer.photoUrl ? "rgba(241, 201, 92, 0.7)" : meta.color}`,
                 overflow: "hidden",
                 background: "radial-gradient(circle, #1e293b 0%, #020617 100%)",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.8), 0 0 20px rgba(241, 201, 92, 0.2)",
+                boxShadow: `0 10px 25px rgba(0,0,0,0.8), 0 0 20px ${meta.color}33`,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
+                justifyContent: "center",
+                position: "relative"
               }}
             >
-              <img 
-                src={topPlayer?.photoUrl || "/teamlogos/gm.png"} 
-                alt={topPlayer?.name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain"
-                }}
-              />
+              {topPlayer.photoUrl ? (
+                <img 
+                  src={topPlayer.photoUrl} 
+                  alt={topPlayer.name}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain"
+                  }}
+                />
+              ) : (
+                /* Dynamic Personalized Player Avatar & Crest Graphic */
+                <div 
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                    background: "radial-gradient(circle at 50% 35%, rgba(56, 189, 248, 0.15) 0%, rgba(3, 10, 24, 0.95) 100%)",
+                    padding: "12px"
+                  }}
+                >
+                  <img 
+                    src="/teamlogos/gm.png" 
+                    alt="DELTA" 
+                    style={{
+                      position: "absolute",
+                      width: "110px",
+                      height: "110px",
+                      opacity: 0.12,
+                      filter: "grayscale(100%)",
+                      pointerEvents: "none"
+                    }}
+                  />
+
+                  {/* Player Initials Badge */}
+                  <div 
+                    style={{
+                      width: "68px",
+                      height: "68px",
+                      borderRadius: "50%",
+                      background: `linear-gradient(135deg, ${meta.color}33 0%, rgba(15, 23, 42, 0.9) 100%)`,
+                      border: `2px solid ${meta.color}`,
+                      boxShadow: `0 0 16px ${meta.color}44`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: "8px",
+                      position: "relative"
+                    }}
+                  >
+                    <span style={{ fontSize: "22px", fontWeight: 900, color: "#ffffff", letterSpacing: "1px" }}>
+                      {getPlayerInitials(topPlayer.name)}
+                    </span>
+                    <span 
+                      style={{
+                        position: "absolute",
+                        bottom: "-5px",
+                        right: "-5px",
+                        background: "#0f172a",
+                        border: `1px solid ${meta.color}`,
+                        borderRadius: "10px",
+                        padding: "1px 5px",
+                        fontSize: "9px",
+                        fontWeight: 900,
+                        color: meta.color,
+                        fontFamily: "monospace"
+                      }}
+                    >
+                      #{topPlayer.shirtNumber}
+                    </span>
+                  </div>
+
+                  <span style={{ fontSize: "10px", fontWeight: 900, color: meta.color, letterSpacing: "1px", textTransform: "uppercase" }}>
+                    DELTA 2018 GM
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Player Info */}
@@ -576,7 +711,7 @@ export default function BroadcastLeaderboard({
           </div>
         </div>
 
-        {/* ================= 4. TV BOTTOM TICKER ================= */}
+        {/* ================= 4. TV BOTTOM TICKER (DYNAMICZNY Z TERMINARZA) ================= */}
         <div 
           style={{
             padding: "10px 20px",
@@ -604,7 +739,7 @@ export default function BroadcastLeaderboard({
               TICKER
             </span>
             <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              ★ NAJBLIŻSZY MECZ LIGOWY: SEMP URSYNÓW vs K.S. DELTA 2018 GM • SOBOTA 10:00 ★
+              {tickerText}
             </span>
           </div>
 

@@ -60,12 +60,14 @@ const PACK_PRICES: Record<string, number> = {
 interface DeltaCollectionAlbumProps {
   currentUserId?: string;
   players?: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null }[];
+  matches?: any[];
   onOpenPlayerProfile?: (playerId: string) => void;
 }
 
 export default function DeltaCollectionAlbum({
   currentUserId,
   players = [],
+  matches = [],
   onOpenPlayerProfile
 }: DeltaCollectionAlbumProps) {
   const [loading, setLoading] = useState(true);
@@ -1395,6 +1397,7 @@ export default function DeltaCollectionAlbum({
           cards={allCards}
           players={realPlayers}
           playerStats={playerStats}
+          matches={matches}
           onClose={() => setShowBroadcast(false)}
         />
       )}
