@@ -790,7 +790,8 @@ export default function DeltaCollectionAlbum({
                               setCinematicCardToUnlock(card);
                             }}
                           >
-                            <Sparkles size={11} /> ZOBACZ REVEAL 3D
+                            <Sparkles size={13} className="sparkle-anim" />
+                            <span>KINOWY REVEAL 3D</span>
                           </button>
                         </div>
                       ) : (
