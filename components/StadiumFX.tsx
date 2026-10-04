@@ -30,7 +30,33 @@ export default function StadiumFX({
     setMounted(true);
   }, []);
 
-  // Klasyczna animacja ognia (dla panelu dashboardu lub gdy wyłączone wideo)
+  // Helper do bezpiecznego odtwarzania z obejściem blokady przeglądarek (Autoplay Policy)
+  const startChantWithAutoplayFallback = (volume: number = 0.95) => {
+    try {
+      const audio = cardSound.playDeltaChant(volume);
+      if (audio) {
+        const p = audio.play();
+        if (p !== undefined) {
+          p.catch(() => {
+            // Przeglądarka zablokowała unmuted autoplay przed interakcją
+            const unlockOnInteraction = () => {
+              cardSound.playDeltaChant(volume);
+              window.removeEventListener("pointerdown", unlockOnInteraction);
+              window.removeEventListener("keydown", unlockOnInteraction);
+              window.removeEventListener("touchstart", unlockOnInteraction);
+              window.removeEventListener("click", unlockOnInteraction);
+            };
+            window.addEventListener("pointerdown", unlockOnInteraction, { once: true });
+            window.addEventListener("keydown", unlockOnInteraction, { once: true });
+            window.addEventListener("touchstart", unlockOnInteraction, { once: true });
+            window.addEventListener("click", unlockOnInteraction, { once: true });
+          });
+        }
+      }
+    } catch {}
+  };
+
+  // Klasyczna animacja ognia i herbu na dzień dobry
   useEffect(() => {
     if (!intro || cinematicIntro) return;
     try {
@@ -38,12 +64,14 @@ export default function StadiumFX({
       if (sessionStorage.getItem(key) !== "1") {
         setShowClassicIntro(true);
         sessionStorage.setItem(key, "1");
-        const timer = window.setTimeout(() => setShowClassicIntro(false), 2400);
+        startChantWithAutoplayFallback(0.95);
+        const timer = window.setTimeout(() => setShowClassicIntro(false), 3000);
         return () => window.clearTimeout(timer);
       }
     } catch {
       setShowClassicIntro(true);
-      const timer = window.setTimeout(() => setShowClassicIntro(false), 2400);
+      startChantWithAutoplayFallback(0.95);
+      const timer = window.setTimeout(() => setShowClassicIntro(false), 3000);
       return () => window.clearTimeout(timer);
     }
   }, [intro, cinematicIntro]);
@@ -68,9 +96,7 @@ export default function StadiumFX({
     setIsMuted(false);
 
     // Dźwięk klubowego okrzyku - odtwarzany domyślnie z pełnym dźwiękiem
-    try {
-      cardSound.playDeltaChant(0.95);
-    } catch {}
+    startChantWithAutoplayFallback(0.95);
 
     // Klawisz Escape do natychmiastowego pominięcia
     const onKey = (e: KeyboardEvent) => {
