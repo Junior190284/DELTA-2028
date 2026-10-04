@@ -10,16 +10,14 @@ import {
   X, 
   Check, 
   Gift, 
-  ShieldCheck, 
   Coins, 
-  ArrowRight,
   Zap,
   Layers,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from "lucide-react";
-import { CardDefinition, UserCard, PackDefinition, RARITY_CONFIG } from "@/lib/cards/types";
+import { CardDefinition, UserCard } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
-import CollectibleCard3D from "./CollectibleCard3D";
 
 interface SBCChallenge {
   id: string;
@@ -95,6 +93,13 @@ interface DeltaSBCModalProps {
   onOpenPackDirectly?: (packId: string) => void;
 }
 
+function getInitials(name?: string): string {
+  if (!name) return "GM";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
 export default function DeltaSBCModal({
   userCards,
   allCards,
@@ -112,6 +117,7 @@ export default function DeltaSBCModal({
     setMounted(true);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    cardSound.playHover();
     return () => {
       document.body.style.overflow = prevOverflow;
     };
@@ -120,7 +126,7 @@ export default function DeltaSBCModal({
   // Map owned cards
   const cardsMap = new Map<string, CardDefinition>(allCards.map(c => [c.id, c]));
 
-  // Eligible cards for selected challenge (prefer duplicates or owned cards)
+  // Eligible cards for selected challenge
   const eligibleCards = userCards
     .map(uc => ({ userCard: uc, card: cardsMap.get(uc.card_id) }))
     .filter((item): item is { userCard: UserCard; card: CardDefinition } => {
@@ -148,7 +154,6 @@ export default function DeltaSBCModal({
     cardSound.playHaptic("heavy");
 
     try {
-      // Send exchange request to API
       const res = await fetch("/api/cards/sbc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -161,33 +166,43 @@ export default function DeltaSBCModal({
       });
 
       if (!res.ok) {
-        // Fallback simulate local fulfillment
         console.warn("SBC API completed in offline/demo mode");
       }
 
       setCompletedSuccess(true);
       cardSound.playWalkoutFanfare();
       onRewardClaimed?.(selectedChallenge.rewardPackId, selectedChallenge.rewardPoints);
-    } catch (e) {
+    } catch {
       setCompletedSuccess(true);
+      cardSound.playWalkoutFanfare();
       onRewardClaimed?.(selectedChallenge.rewardPackId, selectedChallenge.rewardPoints);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const getThemeColor = (theme: string) => {
+    switch (theme) {
+      case "inferno": return "#ff4d5a";
+      case "legend": return "#f1c95c";
+      case "matchday": return "#38bdf8";
+      default: return "#eab308";
+    }
+  };
+
+  const themeColor = getThemeColor(selectedChallenge.theme);
+
   if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
     <div 
-      className="v200-picker-backdrop"
       style={{
         position: "fixed",
         inset: 0,
         width: "100vw",
         height: "100dvh",
         zIndex: 9999999,
-        background: "rgba(3, 5, 8, 0.96)",
+        background: "rgba(3, 5, 8, 0.95)",
         backdropFilter: "blur(14px)",
         display: "flex",
         alignItems: "center",
@@ -198,53 +213,135 @@ export default function DeltaSBCModal({
       onClick={onClose}
     >
       <div 
-        className="v200-sbc-modal max-w-4xl w-full flex flex-col"
         style={{
+          width: "100%",
+          maxWidth: "920px",
           maxHeight: "92dvh",
-          background: "linear-gradient(160deg, #0e1626, #070a10)",
-          border: "1px solid rgba(241, 201, 92, 0.3)",
+          display: "flex",
+          flexDirection: "column",
+          background: "radial-gradient(ellipse at 50% 0%, #0d1b38 0%, #060d1d 55%, #02050b 100%)",
+          border: "1px solid rgba(241, 201, 92, 0.35)",
           borderRadius: "24px",
-          boxShadow: "0 30px 80px -20px rgba(0,0,0,0.95), 0 0 40px rgba(241, 201, 92, 0.1)",
-          color: "#fff",
+          boxShadow: "0 30px 90px -20px rgba(0,0,0,0.98), 0 0 50px rgba(241, 201, 92, 0.15)",
+          color: "#ffffff",
           overflow: "hidden"
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-inner">
-              <RefreshCw size={20} className="animate-spin-slow" />
+        {/* ================= 1. MODAL TOP HEADER ================= */}
+        <div 
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px 24px",
+            background: "linear-gradient(90deg, #091329 0%, #0c1c3d 50%, #091329 100%)",
+            borderBottom: "1px solid rgba(241, 201, 92, 0.25)"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div 
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "12px",
+                background: "rgba(241, 201, 92, 0.15)",
+                border: "1px solid rgba(241, 201, 92, 0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#f1c95c",
+                boxShadow: "0 0 16px rgba(241, 201, 92, 0.2)"
+              }}
+            >
+              <RefreshCw size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-white tracking-wide">SBC • WYZWANIA BUDOWANIA SKŁADU</h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-amber-500 to-yellow-400 text-black">
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h2 style={{ fontSize: "16px", fontWeight: 900, letterSpacing: "0.5px", margin: 0, color: "#f8fafc" }}>
+                  SBC • WYZWANIA BUDOWANIA SKŁADU
+                </h2>
+                <span 
+                  style={{
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    background: "linear-gradient(90deg, #f1c95c, #eab308)",
+                    color: "#000000",
+                    fontSize: "10px",
+                    fontWeight: 900,
+                    letterSpacing: "0.5px"
+                  }}
+                >
                   WYMIANA KART
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Oddawaj duplikaty i niepotrzebne karty, aby zdobyć gwarantowane paczki specjalne!</p>
+              <p style={{ margin: "3px 0 0 0", fontSize: "11px", color: "#94a3b8" }}>
+                Oddawaj duplikaty i niepotrzebne karty, aby zdobyć gwarantowane paczki specjalne!
+              </p>
             </div>
           </div>
+
           <button 
             type="button" 
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#cbd5e1",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            aria-label="Zamknij"
           >
             <X size={18} />
           </button>
         </div>
 
+        {/* ================= 2. MODAL BODY ================= */}
         {completedSuccess ? (
-          <div className="p-8 flex flex-col items-center justify-center text-center gap-4 my-auto">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/20 animate-bounce">
-              <Check size={40} />
+          <div 
+            style={{
+              padding: "48px 24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              gap: "16px"
+            }}
+          >
+            <div 
+              style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                background: "rgba(52, 211, 153, 0.15)",
+                border: "2px solid #34d399",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#34d399",
+                boxShadow: "0 0 30px rgba(52, 211, 153, 0.3)"
+              }}
+            >
+              <Check size={44} />
             </div>
-            <h3 className="text-2xl font-black text-white tracking-wide">WYZWANIE SBC UKOŃCZONE!</h3>
-            <p className="text-sm text-slate-300 max-w-md">
-              Karty zostały pomyślnie przetopione! Nagroda <b className="text-amber-400">{selectedChallenge.rewardPackName}</b> została dodana do Twojej kolekcji!
+
+            <h3 style={{ fontSize: "24px", fontWeight: 900, margin: 0, color: "#ffffff", letterSpacing: "0.5px" }}>
+              WYZWANIE SBC UKOŃCZONE!
+            </h3>
+
+            <p style={{ maxWidth: "460px", fontSize: "13px", color: "#cbd5e1", lineHeight: "1.6", margin: 0 }}>
+              Karty zostały pomyślnie przetopione! Nagroda <b style={{ color: "#f1c95c" }}>{selectedChallenge.rewardPackName}</b> została dodana do Twojego ekwipunku!
             </p>
-            <div className="flex items-center gap-3 mt-4">
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
               {selectedChallenge.rewardPackId && onOpenPackDirectly && (
                 <button
                   type="button"
@@ -252,30 +349,75 @@ export default function DeltaSBCModal({
                     onClose();
                     onOpenPackDirectly(selectedChallenge.rewardPackId!);
                   }}
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-xs flex items-center gap-2 hover:brightness-110 shadow-lg shadow-amber-500/30"
+                  style={{
+                    padding: "12px 24px",
+                    borderRadius: "14px",
+                    background: "linear-gradient(90deg, #f1c95c, #eab308)",
+                    border: "none",
+                    color: "#000000",
+                    fontWeight: 900,
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 18px rgba(241, 201, 92, 0.4)"
+                  }}
                 >
                   <Gift size={16} /> OTWÓRZ PACZKĘ TERAZ
                 </button>
               )}
+
               <button
                 type="button"
                 onClick={() => {
                   setCompletedSuccess(false);
                   setSelectedCardIds([]);
                 }}
-                className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
+                style={{
+                  padding: "12px 20px",
+                  borderRadius: "14px",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: "12px",
+                  cursor: "pointer"
+                }}
               >
                 KOLEJNE WYZWANIE
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
+          <div 
+            style={{
+              display: "grid",
+              gridTemplateColumns: "300px 1fr",
+              minHeight: "440px",
+              maxHeight: "calc(92dvh - 80px)",
+              overflow: "hidden"
+            }}
+          >
             {/* Left Column: Challenge Selector */}
-            <div className="md:col-span-4 p-4 border-r border-white/10 flex flex-col gap-2.5 overflow-y-auto bg-black/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1">Dostępne Wyzwania</span>
+            <div 
+              style={{
+                padding: "16px",
+                borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                overflowY: "auto",
+                background: "rgba(0, 0, 0, 0.35)"
+              }}
+            >
+              <span style={{ fontSize: "10px", fontWeight: 900, color: "#64748b", letterSpacing: "1px", textTransform: "uppercase" }}>
+                Dostępne Wyzwania
+              </span>
+
               {SBC_CHALLENGES.map(ch => {
                 const isActive = selectedChallenge.id === ch.id;
+                const col = getThemeColor(ch.theme);
                 return (
                   <button
                     key={ch.id}
@@ -285,115 +427,306 @@ export default function DeltaSBCModal({
                       setSelectedCardIds([]);
                       cardSound.playHover();
                     }}
-                    className={`p-3 rounded-xl text-left transition-all border ${
-                      isActive 
-                        ? ch.theme === "inferno" 
-                          ? "bg-red-950/40 border-red-500/80 shadow-md shadow-red-900/30" 
-                          : ch.theme === "legend"
-                          ? "bg-yellow-950/40 border-amber-400/80 shadow-md shadow-amber-900/30"
-                          : "bg-blue-950/40 border-cyan-400/80 shadow-md shadow-cyan-900/30"
-                        : "bg-white/[0.03] border-white/5 hover:bg-white/[0.08]"
-                    }`}
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: "14px",
+                      textAlign: "left",
+                      background: isActive 
+                        ? `linear-gradient(135deg, ${col}25 0%, rgba(10, 16, 28, 0.9) 100%)` 
+                        : "rgba(255, 255, 255, 0.03)",
+                      border: isActive 
+                        ? `1.5px solid ${col}` 
+                        : "1px solid rgba(255, 255, 255, 0.07)",
+                      boxShadow: isActive ? `0 4px 18px ${col}33` : "none",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-black text-xs text-white">{ch.title}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-slate-300">
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 900, color: "#ffffff" }}>
+                        {ch.title}
+                      </span>
+                      <span 
+                        style={{
+                          fontSize: "9px",
+                          fontFamily: "monospace",
+                          fontWeight: 900,
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          background: isActive ? col : "rgba(255, 255, 255, 0.1)",
+                          color: isActive ? "#000000" : "#cbd5e1"
+                        }}
+                      >
                         {ch.requiredCount}x {ch.requiredRarity.toUpperCase()}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-snug">{ch.subtitle}</p>
+                    <p style={{ margin: 0, fontSize: "10px", color: "#94a3b8" }}>
+                      {ch.subtitle}
+                    </p>
                   </button>
                 );
               })}
             </div>
 
             {/* Right Column: Card Slot Grid & Submission */}
-            <div className="md:col-span-8 p-5 flex flex-col overflow-y-auto justify-between">
+            <div 
+              style={{
+                padding: "20px 24px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                overflowY: "auto"
+              }}
+            >
               <div>
                 {/* Challenge Info Banner */}
-                <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 mb-4 flex items-center justify-between">
+                <div 
+                  style={{
+                    padding: "14px 18px",
+                    borderRadius: "16px",
+                    background: `linear-gradient(90deg, ${themeColor}15 0%, rgba(15, 23, 42, 0.5) 100%)`,
+                    border: `1px solid ${themeColor}44`,
+                    marginBottom: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "16px"
+                  }}
+                >
                   <div>
-                    <h4 className="text-sm font-bold text-amber-400">{selectedChallenge.title}</h4>
-                    <p className="text-xs text-slate-300 mt-0.5">{selectedChallenge.description}</p>
+                    <h4 style={{ fontSize: "14px", fontWeight: 900, color: themeColor, margin: "0 0 3px 0" }}>
+                      {selectedChallenge.title}
+                    </h4>
+                    <p style={{ margin: 0, fontSize: "11px", color: "#cbd5e1", lineHeight: "1.4" }}>
+                      {selectedChallenge.description}
+                    </p>
                   </div>
-                  <div className="text-right pl-4">
-                    <span className="text-[10px] text-slate-400 block uppercase">NAGRODA:</span>
-                    <span className="text-xs font-black text-amber-300">{selectedChallenge.rewardPackName}</span>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <span style={{ fontSize: "9px", color: "#64748b", fontWeight: 800, textTransform: "uppercase", display: "block" }}>
+                      NAGRODA:
+                    </span>
+                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#f1c95c" }}>
+                      {selectedChallenge.rewardPackName}
+                    </span>
                   </div>
                 </div>
 
-                {/* Selected Slots Preview */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-300">
-                      Wybierz karty do przetopienia ({selectedCardIds.length}/{selectedChallenge.requiredCount}):
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      Dostępne karty: {eligibleCards.length}
-                    </span>
-                  </div>
+                {/* Selected Slots Header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 800, color: "#f8fafc" }}>
+                    Wybierz karty do przetopienia ({selectedCardIds.length}/{selectedChallenge.requiredCount}):
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#94a3b8", fontFamily: "monospace" }}>
+                    Dostępne karty: {eligibleCards.length}
+                  </span>
+                </div>
 
-                  {eligibleCards.length === 0 ? (
-                    <div className="p-8 rounded-xl border border-dashed border-white/10 text-center text-slate-500 text-xs">
-                      Brak wymaganych kart o rzadkości {selectedChallenge.requiredRarity.toUpperCase()} w Twojej kolekcji. Otwórz paczki, aby zdobyć duplikaty!
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-52 overflow-y-auto p-1">
-                      {eligibleCards.map(({ userCard, card }) => {
-                        const isSelected = selectedCardIds.includes(card.id);
-                        return (
-                          <div
-                            key={`${userCard.id}-${card.id}`}
-                            onClick={() => toggleSelectCard(card.id)}
-                            className={`relative p-2 rounded-xl border cursor-pointer transition-all flex flex-col items-center ${
-                              isSelected 
-                                ? "bg-amber-500/20 border-amber-400 shadow-md shadow-amber-500/20 scale-[1.02]" 
-                                : "bg-black/40 border-white/10 hover:border-white/30"
-                            }`}
+                {/* Eligible Cards Grid */}
+                {eligibleCards.length === 0 ? (
+                  <div 
+                    style={{
+                      padding: "36px 20px",
+                      borderRadius: "16px",
+                      border: "1px dashed rgba(255, 255, 255, 0.15)",
+                      textAlign: "center",
+                      color: "#64748b",
+                      fontSize: "12px"
+                    }}
+                  >
+                    Brak wymaganych kart o rzadkości <b style={{ color: themeColor }}>{selectedChallenge.requiredRarity.toUpperCase()}</b> w Twojej kolekcji. Otwórz paczki, aby zdobyć karty!
+                  </div>
+                ) : (
+                  <div 
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+                      gap: "10px",
+                      maxHeight: "220px",
+                      overflowY: "auto",
+                      padding: "4px"
+                    }}
+                  >
+                    {eligibleCards.map(({ userCard, card }) => {
+                      const isSelected = selectedCardIds.includes(card.id);
+                      const isRyszard = (card.player?.display_name || card.card_name).toLowerCase().includes("ryszard");
+                      const photoSrc = isRyszard 
+                        ? "/assets/players/ryszard-rybacki.png" 
+                        : (card.player?.photo_path || null);
+
+                      return (
+                        <div
+                          key={`${userCard.id}-${card.id}`}
+                          onClick={() => toggleSelectCard(card.id)}
+                          style={{
+                            padding: "8px",
+                            borderRadius: "14px",
+                            border: isSelected 
+                              ? "2px solid #f1c95c" 
+                              : "1px solid rgba(255, 255, 255, 0.1)",
+                            background: isSelected 
+                              ? "rgba(241, 201, 92, 0.2)" 
+                              : "rgba(0, 0, 0, 0.4)",
+                            boxShadow: isSelected 
+                              ? "0 0 16px rgba(241, 201, 92, 0.3)" 
+                              : "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            position: "relative",
+                            transition: "all 0.15s"
+                          }}
+                        >
+                          {/* Mini Photo / Avatar Container */}
+                          <div 
+                            style={{
+                              width: "48px",
+                              height: "60px",
+                              borderRadius: "8px",
+                              background: "radial-gradient(circle, #1e293b 0%, #020617 100%)",
+                              border: "1px solid rgba(255, 255, 255, 0.15)",
+                              overflow: "hidden",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginBottom: "6px"
+                            }}
                           >
-                            <div className="w-12 h-16 rounded mb-1.5 flex items-center justify-center overflow-hidden bg-black/60">
+                            {photoSrc ? (
                               <img 
-                                src={card.player?.photo_path || "/teamlogos/gm.png"} 
+                                src={photoSrc} 
                                 alt={card.player?.display_name || card.card_name}
-                                className="w-full h-full object-contain"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "contain"
+                                }}
                               />
-                            </div>
-                            <span className="text-[10px] font-bold text-white text-center truncate w-full">
-                              {card.player?.display_name?.split(" ")[0] || card.card_name}
-                            </span>
-                            <span className="text-[9px] text-amber-400 uppercase font-mono">
-                              {card.rarity}
-                            </span>
-                            {isSelected && (
-                              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center text-[10px] font-bold">
-                                ✓
+                            ) : (
+                              <div 
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  justifyContent: "center"
+                                }}
+                              >
+                                <span style={{ fontSize: "14px", fontWeight: 900, color: "#f1c95c" }}>
+                                  {getInitials(card.player?.display_name || card.card_name)}
+                                </span>
+                                <span style={{ fontSize: "8px", color: "#64748b", fontFamily: "monospace" }}>
+                                  #{card.player?.shirt_number || "GM"}
+                                </span>
                               </div>
                             )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+
+                          <span 
+                            style={{
+                              fontSize: "10px",
+                              fontWeight: 800,
+                              color: "#ffffff",
+                              textAlign: "center",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              width: "100%"
+                            }}
+                          >
+                            {card.player?.display_name?.split(" ")[0] || card.card_name}
+                          </span>
+
+                          <span 
+                            style={{
+                              fontSize: "8px",
+                              color: "#f1c95c",
+                              fontWeight: 900,
+                              textTransform: "uppercase",
+                              fontFamily: "monospace"
+                            }}
+                          >
+                            {card.rarity}
+                          </span>
+
+                          {isSelected && (
+                            <div 
+                              style={{
+                                position: "absolute",
+                                top: "4px",
+                                right: "4px",
+                                width: "16px",
+                                height: "16px",
+                                borderRadius: "50%",
+                                background: "#f1c95c",
+                                color: "#000000",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "10px",
+                                fontWeight: 900
+                              }}
+                            >
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {/* Submit Button */}
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-slate-400">
-                  ⚠️ Wybrane karty zostaną trwale wymienione na nagrodę.
-                </span>
+              {/* Submit Action Bar */}
+              <div 
+                style={{
+                  paddingTop: "14px",
+                  borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  marginTop: "12px"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#94a3b8", fontSize: "11px" }}>
+                  <AlertCircle size={14} style={{ color: "#f1c95c", flexShrink: 0 }} />
+                  <span>Wybrane karty zostaną trwale wymienione na nagrodę.</span>
+                </div>
+
                 <button
                   type="button"
                   onClick={handleCompleteSBC}
                   disabled={selectedCardIds.length < selectedChallenge.requiredCount || submitting}
-                  className={`px-6 py-3 rounded-xl font-black text-xs flex items-center gap-2 transition-all ${
-                    selectedCardIds.length >= selectedChallenge.requiredCount && !submitting
-                      ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black hover:brightness-110 shadow-lg shadow-amber-500/30"
-                      : "bg-white/10 text-slate-500 cursor-not-allowed"
-                  }`}
+                  style={{
+                    padding: "12px 24px",
+                    borderRadius: "14px",
+                    border: "none",
+                    background: selectedCardIds.length >= selectedChallenge.requiredCount && !submitting
+                      ? "linear-gradient(90deg, #f1c95c, #eab308)"
+                      : "rgba(255, 255, 255, 0.08)",
+                    color: selectedCardIds.length >= selectedChallenge.requiredCount && !submitting
+                      ? "#000000"
+                      : "#64748b",
+                    fontWeight: 900,
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: selectedCardIds.length >= selectedChallenge.requiredCount && !submitting
+                      ? "pointer"
+                      : "not-allowed",
+                    boxShadow: selectedCardIds.length >= selectedChallenge.requiredCount && !submitting
+                      ? "0 4px 18px rgba(241, 201, 92, 0.4)"
+                      : "none",
+                    transition: "all 0.2s"
+                  }}
                 >
                   <RefreshCw size={15} className={submitting ? "animate-spin" : ""} />
-                  {submitting ? "PRZETAPIANIE KART..." : "WYMIEŃ I ODBIERZ NAGRODĘ"}
+                  <span>
+                    {submitting 
+                      ? "PRZETAPIANIE KART..." 
+                      : `WYMIEŃ I ODBIERZ NAGRODĘ (${selectedCardIds.length}/${selectedChallenge.requiredCount})`}
+                  </span>
                 </button>
               </div>
             </div>
