@@ -187,10 +187,10 @@ export default function PlayerCard({
     const pName = (playerObj?.display_name || card?.card_name || "").toLowerCase();
     const isRyszard = pName.includes("ryszard") || pName.includes("rybacki");
     if (isRyszard) {
-      if (templateKey === "inferno") return "/assets/players/ryszard-inferno.png";
-      if (templateKey === "legend") return "/assets/players/ryszard-legend.png";
-      if (templateKey === "gold") return "/assets/players/ryszard-gold.png";
-      return "/assets/players/ryszard-rybacki.png";
+      if (templateKey === "inferno") return "/assets/players/ryszard-inferno.png?v=20261004b";
+      if (templateKey === "legend") return "/assets/players/ryszard-legend.png?v=20261004b";
+      if (templateKey === "gold") return "/assets/players/ryszard-gold.png?v=20261004b";
+      return "/assets/players/ryszard-rybacki.png?v=20261004b";
     }
 
     if (playerObj?.photo_path) return playerObj.photo_path;
@@ -308,7 +308,7 @@ export default function PlayerCard({
           <div className="card-background v200-layer-1-background">
             {templateKey === "base" ? (
               <img 
-                src="/assets/cards/base/base-background.png" 
+                src="/assets/cards/base/base-background.png?v=20261004b" 
                 alt="" 
                 className="v200-bg-img"
                 style={{
@@ -379,7 +379,7 @@ export default function PlayerCard({
           {/* ------------------------------------------------------------- */}
           {templateKey === "base" ? (
             <img 
-              src="/assets/cards/base/base-frame.png" 
+              src="/assets/cards/base/base-frame.png?v=20261004b" 
               alt="" 
               className="card-frame"
               loading="eager"
@@ -477,7 +477,7 @@ export default function PlayerCard({
           {/* ------------------------------------------------------------- */}
           {templateKey === "base" && (
             <img 
-              src="/assets/cards/base/base-fx.png" 
+              src="/assets/cards/base/base-fx.png?v=20261004b" 
               alt="" 
               className="card-fx"
               loading="eager"
@@ -509,7 +509,7 @@ export default function PlayerCard({
           <div className="card-background v200-layer-1-background">
             {templateKey === "base" ? (
               <img 
-                src="/assets/cards/base/base-back-bg.png" 
+                src="/assets/cards/base/base-back-bg.png?v=20261004b" 
                 alt="" 
                 className="v200-bg-img"
                 style={{
@@ -549,7 +549,7 @@ export default function PlayerCard({
             }}
           >
             <img 
-              src="/teamlogos/gm.png" 
+              src="/teamlogos/gm.png?v=20261004b" 
               alt="DELTA" 
               style={{ width: "100%", height: "100%", objectFit: "contain", filter: "grayscale(30%) brightness(1.2)" }} 
             />
@@ -560,7 +560,7 @@ export default function PlayerCard({
           {/* ------------------------------------------------------------- */}
           {templateKey === "base" ? (
             <img 
-              src="/assets/cards/base/base-frame.png" 
+              src="/assets/cards/base/base-frame.png?v=20261004b" 
               alt="" 
               className="card-frame"
               loading="eager"
@@ -578,7 +578,7 @@ export default function PlayerCard({
             {/* Top Bar: Club Badge & Flip */}
             <div className="v200-back-top-bar">
               <div className="v200-back-club-tag">
-                <img src="/teamlogos/gm.png" alt="DELTA" className="w-3.5 h-3.5 object-contain" />
+                <img src="/teamlogos/gm.png?v=20261004b" alt="DELTA" className="w-3.5 h-3.5 object-contain" />
                 <span>DELTA 2018 GM</span>
               </div>
               
@@ -651,7 +651,7 @@ export default function PlayerCard({
           {/* ------------------------------------------------------------- */}
           {templateKey === "base" && (
             <img 
-              src="/assets/cards/base/base-fx.png" 
+              src="/assets/cards/base/base-fx.png?v=20261004b" 
               alt="" 
               className="card-fx"
               loading="eager"
