@@ -102,13 +102,43 @@ class CardSoundEngine {
     }
   }
 
+  private currentChantAudio: HTMLAudioElement | null = null;
+
   // Official Club Chant: "DELTA, DELTA, GÓRNY MOKOTÓW!"
-  playDeltaChant(volume: number = 0.95) {
+  playDeltaChant(volume: number = 0.95): HTMLAudioElement | null {
     try {
-      this.playSample("delta_chant", volume, 1.0);
+      if (this.currentChantAudio) {
+        this.currentChantAudio.pause();
+        this.currentChantAudio.currentTime = 0;
+      }
+      const cached = this.audioCache.get("delta_chant");
+      const audio = cached ? (cached.cloneNode() as HTMLAudioElement) : new Audio("/sounds/delta_chant.mp3");
+      audio.volume = Math.max(0, Math.min(1, volume));
+      audio.play().catch(() => {});
+      this.currentChantAudio = audio;
+      return audio;
     } catch {
       this.playWalkoutFanfare();
+      return null;
     }
+  }
+
+  stopDeltaChant() {
+    try {
+      if (this.currentChantAudio) {
+        this.currentChantAudio.pause();
+        this.currentChantAudio.currentTime = 0;
+        this.currentChantAudio = null;
+      }
+    } catch {}
+  }
+
+  setDeltaChantMuted(muted: boolean) {
+    try {
+      if (this.currentChantAudio) {
+        this.currentChantAudio.muted = muted;
+      }
+    } catch {}
   }
 
   // Walkout Grand Victory Fanfare & Crowd Roar
