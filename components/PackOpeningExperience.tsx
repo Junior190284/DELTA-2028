@@ -60,16 +60,11 @@ export default function PackOpeningExperience({
     setMounted(true);
 
     const preloadUrls = [
-      "/assets/cards/templates/frame_base.png",
-      "/assets/cards/templates/frame_inferno.png",
-      "/assets/cards/templates/frame_legend.png",
-      "/assets/cards/templates/frame_gold.png",
-      "/assets/cards/templates/frame_matchday.png",
-      "/assets/cards/templates/reverse_base.png",
-      "/assets/cards/templates/reverse_inferno.png",
-      "/assets/cards/templates/reverse_legend.png",
-      "/assets/cards/templates/reverse_gold.png",
-      "/assets/cards/templates/reverse_matchday.png",
+      "/assets/cards/base/base-frame.png",
+      "/assets/cards/base/base-fx.png",
+      "/assets/cards/base/base-background.png",
+      "/assets/cards/base/base-back-bg.png",
+      "/assets/players/ryszard-rybacki.png",
       "/teamlogos/gm.png",
       "/assets/players/ryszard-inferno.png",
       "/assets/players/ryszard-gold.png",

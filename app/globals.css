@@ -24571,11 +24571,8 @@ body > main,
 
 .v200-card-face.back-face {
   transform: rotateY(180deg);
-  background: radial-gradient(circle at 50% 30%, #151c28, #07090e 85%);
-  border: 1.5px solid rgba(246, 201, 82, 0.4);
-  padding: 12px;
+  background: #090d16;
   color: #ffffff;
-  justify-content: space-between;
 }
 
 /* ------------------------------------------------------------------------- */
