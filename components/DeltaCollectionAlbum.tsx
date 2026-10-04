@@ -76,6 +76,8 @@ export default function DeltaCollectionAlbum({
   const [unopenedPacks, setUnopenedPacks] = useState<UserUnopenedPack[]>([]);
   const [packDefinitions, setPackDefinitions] = useState<PackDefinition[]>([]);
   const [deltaPoints, setDeltaPoints] = useState(0);
+  const [realPlayers, setRealPlayers] = useState<any[]>(players || []);
+  const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number; attendancePercent: number; mvp: number }>>({});
 
   // View Modes: "panini" (Team Squad Album), "roster" (Player Albums), "allCards" (Grid)
   const [activeViewTab, setActiveViewTab] = useState<"panini" | "roster" | "allCards">("panini");
@@ -141,6 +143,8 @@ export default function DeltaCollectionAlbum({
         setUnopenedPacks(data.unopenedPacks || []);
         setPackDefinitions(data.packDefinitions || []);
         setDeltaPoints(data.deltaPoints || 0);
+        if (data.players && data.players.length > 0) setRealPlayers(data.players);
+        if (data.playerStats) setPlayerStats(data.playerStats);
       }
     } catch (e) {
       console.error("Error loading collection:", e);
@@ -1389,6 +1393,8 @@ export default function DeltaCollectionAlbum({
       {showBroadcast && (
         <BroadcastLeaderboard
           cards={allCards}
+          players={realPlayers}
+          playerStats={playerStats}
           onClose={() => setShowBroadcast(false)}
         />
       )}

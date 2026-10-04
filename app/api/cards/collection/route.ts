@@ -8,13 +8,47 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // 1. Pobieramy wszystkich zawodników
-    const { data: players } = await supabase
-      .from("players")
-      .select("id, display_name, shirt_number, position, photo_path, active")
-      .order("display_name");
+    // 1. Pobieramy wszystkich zawodników oraz ich statystyki meczowe i treningowe
+    const [
+      { data: players },
+      { data: matchEvents },
+      { data: matchAttendance },
+      { data: trainingAttendance }
+    ] = await Promise.all([
+      supabase
+        .from("players")
+        .select("id, display_name, shirt_number, position, photo_path, active")
+        .order("display_name"),
+      supabase
+        .from("match_events")
+        .select("id, match_id, event_type, player_id, assist_player_id"),
+      supabase
+        .from("match_attendance")
+        .select("match_id, player_id, status"),
+      supabase
+        .from("training_attendance")
+        .select("training_id, player_id, status")
+    ]);
 
     const activePlayers = (players || []).filter(p => p.active !== false);
+
+    // Compute real statistics per player
+    const playerStatsMap: Record<string, { goals: number; assists: number; attendancePercent: number; mvp: number }> = {};
+    activePlayers.forEach(p => {
+      const pGoals = (matchEvents || []).filter(e => e.player_id === p.id && e.event_type === "goal").length;
+      const pAssists = (matchEvents || []).filter(e => e.assist_player_id === p.id || (e.player_id === p.id && e.event_type === "assist")).length;
+      const pMvp = (matchEvents || []).filter(e => e.player_id === p.id && e.event_type === "mvp").length;
+      const totalSessions = (trainingAttendance || []).filter(a => a.player_id === p.id).length;
+      const presentSessions = (trainingAttendance || []).filter(a => a.player_id === p.id && ["present", "yes"].includes(String(a.status))).length;
+      const attPercent = totalSessions > 0 ? Math.round((presentSessions / totalSessions) * 100) : 100;
+
+      playerStatsMap[p.id] = {
+        goals: pGoals,
+        assists: pAssists,
+        attendancePercent: attPercent,
+        mvp: pMvp
+      };
+    });
 
     // Domyślne paczki w razie braku tabeli pack_definitions w DB
     const defaultPacks: PackDefinition[] = [
@@ -259,7 +293,9 @@ export async function GET() {
       userCards,
       unopenedPacks,
       deltaPoints,
-      packDefinitions: packDefs
+      packDefinitions: packDefs,
+      players: activePlayers,
+      playerStats: playerStatsMap
     });
   } catch (error: any) {
     console.error("Błąd pobierania kolekcji:", error);
