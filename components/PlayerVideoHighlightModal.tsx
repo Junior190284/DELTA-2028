@@ -36,6 +36,7 @@ export default function PlayerVideoHighlightModal({
     setMounted(true);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    cardSound.playDeltaChant();
     cardSound.playWalkoutFanfare();
     return () => {
       document.body.style.overflow = prevOverflow;

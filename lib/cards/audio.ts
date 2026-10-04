@@ -13,6 +13,7 @@ class CardSoundEngine {
       this.preloadAudio("walkout_fanfare", "/sounds/walkout_fanfare.mp3");
       this.preloadAudio("stadium_cheer", "/sounds/stadium_cheer.mp3");
       this.preloadAudio("card_flip", "/sounds/card_flip.mp3");
+      this.preloadAudio("delta_chant", "/sounds/delta_chant.mp3");
     }
   }
 
@@ -98,6 +99,15 @@ class CardSoundEngine {
       this.playSample("teaser_hit", 0.9, rate);
     } catch {
       this.playSyntheticTeaserHit(step);
+    }
+  }
+
+  // Official Club Chant: "DELTA, DELTA, GÓRNY MOKOTÓW!"
+  playDeltaChant(volume: number = 0.95) {
+    try {
+      this.playSample("delta_chant", volume, 1.0);
+    } catch {
+      this.playWalkoutFanfare();
     }
   }
 
