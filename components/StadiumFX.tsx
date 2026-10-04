@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MEDIA } from "@/lib/media";
+import { cardSound } from "@/lib/cards/audio";
 
 type Props = {
   intro?: boolean;
@@ -59,6 +60,11 @@ export default function StadiumFX({
   useEffect(() => {
     if (!cinematicIntro) return;
     setIsFadingOut(false);
+
+    // Dźwięk klubowego okrzyku i fanfary stadionowej
+    try {
+      cardSound.playDeltaChant(0.95);
+    } catch {}
 
     // Klawisz Escape do natychmiastowego pominięcia
     const onKey = (e: KeyboardEvent) => {
@@ -131,6 +137,37 @@ export default function StadiumFX({
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </div>
+
+      {/* Przycisk Ponów / Zagraj Okrzyk */}
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            cardSound.playDeltaChant(1.0);
+          } catch {}
+        }}
+        className="v101-cinematic-sound-btn"
+        style={{
+          position: "absolute",
+          top: "24px",
+          left: "24px",
+          zIndex: 10,
+          background: "rgba(0, 0, 0, 0.65)",
+          border: "1px solid rgba(241, 201, 92, 0.5)",
+          borderRadius: "30px",
+          padding: "8px 16px",
+          color: "#f1c95c",
+          fontSize: "12px",
+          fontWeight: 800,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          cursor: "pointer",
+          backdropFilter: "blur(8px)"
+        }}
+      >
+        <span>🔊 OKRZYK DELTA</span>
+      </button>
 
       <button
         type="button"
