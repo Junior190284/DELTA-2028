@@ -47,6 +47,7 @@ import DeltaSBCModal from "./DeltaSBCModal";
 import BroadcastLeaderboard from "./BroadcastLeaderboard";
 import PlayerVideoHighlightModal from "./PlayerVideoHighlightModal";
 import DigitalSignatureModal from "./DigitalSignatureModal";
+import PlayerCardsCircular3DCarousel from "./PlayerCardsCircular3DCarousel";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -829,124 +830,15 @@ export default function DeltaCollectionAlbum({
             </div>
           </div>
 
-          {/* Player Cards Horizontal 3D Carousel */}
+          {/* Player Cards 3D Circular Revolving Carousel */}
           <div className="v104-album-carousel-section">
-            <div className="v104-carousel-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-              <div>
-                <span className="eyebrow gold"><Layers size={14} className="inline mr-1" /> KARTY W TEJ KOLEKCJI ({currentAlbum.cards.length})</span>
-                <p className="v104-carousel-sub">
-                  Przewijaj karuzelę, aby obejrzeć wszystkie 6 edycji karty. Kliknij kartę, aby powiększyć i obejrzeć rewers!
-                </p>
-              </div>
-
-              {/* Carousel Navigation Arrows */}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button
-                  type="button"
-                  onClick={() => scrollCarousel("left")}
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    border: "1px solid rgba(241, 201, 92, 0.4)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#f1c95c",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.5)"
-                  }}
-                  aria-label="Poprzednia karta"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollCarousel("right")}
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    border: "1px solid rgba(241, 201, 92, 0.4)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#f1c95c",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.5)"
-                  }}
-                  aria-label="Następna karta"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div ref={carouselTrackRef} className="v104-player-carousel-track">
-              {currentAlbum.cards.map(card => {
-                const userCard = ownedCardsMap.get(card.id) || null;
-                const isLocked = !userCard;
-
-                return (
-                  <div key={card.id} className="v104-carousel-card-item">
-                    <CollectibleCard3D
-                      card={card}
-                      userCard={userCard}
-                      isLocked={isLocked}
-                      size="md"
-                      interactive={true}
-                      showFlip={true}
-                      onClick={() => setInspectCard({ card, userCard })}
-                    />
-
-                    <div className="v104-carousel-card-footer">
-                      {!isLocked ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                            <span className="v104-status-tag owned">
-                              <CheckCircle2 size={12} /> ODBLOKOWANA
-                              {userCard?.duplicates_count ? ` (+${userCard.duplicates_count})` : ""}
-                            </span>
-                            <span className="v104-card-rarity-pill">
-                              {card.rarity.toUpperCase()}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="v200-test-reveal-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCinematicCardToUnlock(card);
-                            }}
-                          >
-                            <Sparkles size={13} className="sparkle-anim" />
-                            <span>KINOWY REVEAL 3D</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                            <span className="v104-status-tag locked">
-                              <Lock size={12} /> ZABLOKOWANA
-                            </span>
-                            <span className="v104-card-rarity-pill">
-                              {card.rarity.toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="v200-card-condition-hint">
-                            <small>{getCardUnlockCondition(card)}</small>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <PlayerCardsCircular3DCarousel
+              cards={currentAlbum.cards}
+              ownedCardsMap={ownedCardsMap}
+              onInspectCard={(card, userCard) => setInspectCard({ card, userCard })}
+              onCinematicReveal={(card) => setCinematicCardToUnlock(card)}
+              getCardUnlockCondition={getCardUnlockCondition}
+            />
           </div>
         </div>
       ) : (
