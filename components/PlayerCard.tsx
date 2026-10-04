@@ -88,6 +88,50 @@ export function getCardFIFAStats(card?: CardDefinition, player?: any, stats?: an
   return { ovr, posCode, pac, sho, pas, dri, def, phy };
 }
 
+export const CARD_THEME_ASSETS: Record<CardTemplateKey, {
+  background: string;
+  frame: string;
+  fx: string;
+  backBg: string;
+}> = {
+  base: {
+    background: "/assets/cards/base/base-background.png",
+    frame: "/assets/cards/base/base-frame.png",
+    fx: "/assets/cards/base/base-fx.png",
+    backBg: "/assets/cards/base/base-back-bg.png"
+  },
+  matchday: {
+    background: "/assets/cards/matchday-hero/matchday-hero-background.png",
+    frame: "/assets/cards/matchday-hero/matchday-hero-frame.png",
+    fx: "/assets/cards/matchday-hero/matchday-hero-fx.png",
+    backBg: "/assets/cards/matchday-hero/matchday-hero-back-bg.png"
+  },
+  gold: {
+    background: "/assets/cards/gold-master/gold-master-background.png",
+    frame: "/assets/cards/gold-master/gold-master-frame.png",
+    fx: "/assets/cards/gold-master/gold-master-fx.png",
+    backBg: "/assets/cards/gold-master/gold-master-back-bg.png"
+  },
+  legend: {
+    background: "/assets/cards/delta-icon/delta-icon-background.png",
+    frame: "/assets/cards/delta-icon/delta-icon-frame.png",
+    fx: "/assets/cards/delta-icon/delta-icon-fx.png",
+    backBg: "/assets/cards/delta-icon/delta-icon-back-bg.png"
+  },
+  inferno: {
+    background: "/assets/cards/inferno-ultra/inferno-ultra-background.png",
+    frame: "/assets/cards/inferno-ultra/inferno-ultra-frame.png",
+    fx: "/assets/cards/inferno-ultra/inferno-ultra-fx.png",
+    backBg: "/assets/cards/inferno-ultra/inferno-ultra-back-bg.png"
+  },
+  panini: {
+    background: "/assets/cards/base/base-background.png",
+    frame: "/assets/cards/base/base-frame.png",
+    fx: "/assets/cards/base/base-fx.png",
+    backBg: "/assets/cards/base/base-back-bg.png"
+  }
+};
+
 export default function PlayerCard({
   card,
   player: propPlayer,
@@ -143,6 +187,10 @@ export default function PlayerCard({
     if (t.includes("panini")) return "panini";
     return "base";
   }, [templateOverride, card]);
+
+  const themeAssets = useMemo(() => {
+    return CARD_THEME_ASSETS[templateKey] || CARD_THEME_ASSETS.base;
+  }, [templateKey]);
 
   // Compute final layout configuration (Default template layout + overrides)
   const layout: CardLayoutConfig = useMemo(() => {
@@ -315,25 +363,21 @@ export default function PlayerCard({
           {/* LAYER 1: BASE BACKGROUND / DYNAMIC BACKGROUND                 */}
           {/* ------------------------------------------------------------- */}
           <div className="card-background v200-layer-1-background">
-            {templateKey === "base" ? (
-              <img 
-                src="/assets/cards/base/base-background.png?v=20261004b" 
-                alt="" 
-                className="v200-bg-img"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center 20%"
-                }}
-                loading="eager"
-                decoding="sync"
-              />
-            ) : (
-              <div className={`v200-bg-gradient theme-${templateKey}`} />
-            )}
+            <img 
+              src={`${themeAssets.background}?v=20261004c`} 
+              alt="" 
+              className="v200-bg-img"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 20%"
+              }}
+              loading="eager"
+              decoding="sync"
+            />
             <div className="v200-bg-stadium-lights" />
             <div className={`v200-bg-particles theme-${templateKey}`} />
             <div className="v200-bg-radial-halo" />
@@ -384,26 +428,15 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 3: BASE FRAME (800x1200 PNG WITH TRANSPARENCY)          */}
+          {/* LAYER 3: FRAME (800x1200 PNG WITH TRANSPARENCY)               */}
           {/* ------------------------------------------------------------- */}
-          {templateKey === "base" ? (
-            <img 
-              src="/assets/cards/base/base-frame.png?v=20261004b" 
-              alt="" 
-              className="card-frame"
-              loading="eager"
-              decoding="sync"
-            />
-          ) : (
-            <div className={`v200-layer-4-frame theme-${templateKey}`}>
-              <div className="v200-outer-border-trim" />
-              <div className="v200-inner-bezel" />
-              <div className="v200-corner-cut top-left" />
-              <div className="v200-corner-cut top-right" />
-              <div className="v200-corner-cut bottom-left" />
-              <div className="v200-corner-cut bottom-right" />
-            </div>
-          )}
+          <img 
+            src={`${themeAssets.frame}?v=20261004c`} 
+            alt="" 
+            className="card-frame"
+            loading="eager"
+            decoding="sync"
+          />
 
           {/* ------------------------------------------------------------- */}
           {/* LAYER 4: ALL EXISTING CARD UI & DYNAMIC DATA                  */}
@@ -482,17 +515,15 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 5: BASE FX & SPECULAR HOLOGRAPHIC SHEEN                 */}
+          {/* LAYER 5: FX & SPECULAR HOLOGRAPHIC SHEEN                       */}
           {/* ------------------------------------------------------------- */}
-          {templateKey === "base" && (
-            <img 
-              src="/assets/cards/base/base-fx.png?v=20261004b" 
-              alt="" 
-              className="card-fx"
-              loading="eager"
-              decoding="sync"
-            />
-          )}
+          <img 
+            src={`${themeAssets.fx}?v=20261004c`} 
+            alt="" 
+            className="card-fx"
+            loading="eager"
+            decoding="sync"
+          />
 
           <div className="v200-layer-5-fx">
             <div 
@@ -521,28 +552,24 @@ export default function PlayerCard({
         >
           
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 1: BASE BACK BACKGROUND                                 */}
+          {/* LAYER 1: BACK BACKGROUND                                      */}
           {/* ------------------------------------------------------------- */}
           <div className="card-background v200-layer-1-background">
-            {templateKey === "base" ? (
-              <img 
-                src="/assets/cards/base/base-back-bg.png?v=20261004b" 
-                alt="" 
-                className="v200-bg-img"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center"
-                }}
-                loading="eager"
-                decoding="sync"
-              />
-            ) : (
-              <div className={`v200-bg-gradient theme-${templateKey}`} />
-            )}
+            <img 
+              src={`${themeAssets.backBg}?v=20261004c`} 
+              alt="" 
+              className="v200-bg-img"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center"
+              }}
+              loading="eager"
+              decoding="sync"
+            />
           </div>
 
           {/* ------------------------------------------------------------- */}
@@ -573,19 +600,15 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 3: MATCHING BASE FRAME (800x1200 PNG)                   */}
+          {/* LAYER 3: MATCHING FRAME (800x1200 PNG)                         */}
           {/* ------------------------------------------------------------- */}
-          {templateKey === "base" ? (
-            <img 
-              src="/assets/cards/base/base-frame.png?v=20261004b" 
-              alt="" 
-              className="card-frame"
-              loading="eager"
-              decoding="sync"
-            />
-          ) : (
-            <div className={`v200-layer-4-frame theme-${templateKey}`} />
-          )}
+          <img 
+            src={`${themeAssets.frame}?v=20261004c`} 
+            alt="" 
+            className="card-frame"
+            loading="eager"
+            decoding="sync"
+          />
 
           {/* ------------------------------------------------------------- */}
           {/* LAYER 4: DYNAMIC DOSSIER & CARD DATA (HTML/CSS)               */}
@@ -664,17 +687,15 @@ export default function PlayerCard({
           </div>
 
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 5: MATCHING BASE FX & SPECULAR GLOW                     */}
+          {/* LAYER 5: MATCHING FX & SPECULAR GLOW                           */}
           {/* ------------------------------------------------------------- */}
-          {templateKey === "base" && (
-            <img 
-              src="/assets/cards/base/base-fx.png?v=20261004b" 
-              alt="" 
-              className="card-fx"
-              loading="eager"
-              decoding="sync"
-            />
-          )}
+          <img 
+            src={`${themeAssets.fx}?v=20261004c`} 
+            alt="" 
+            className="card-fx"
+            loading="eager"
+            decoding="sync"
+          />
 
           <div className="v200-layer-5-fx">
             <div 
