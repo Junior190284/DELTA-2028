@@ -25130,6 +25130,23 @@ body > main,
   color: #facc15;
 }
 
+/* Theme-specific dossier accents */
+.theme-matchday .v200-back-meta-cell { border-color: rgba(56, 189, 248, 0.32); background: rgba(3, 105, 161, 0.22); }
+.theme-matchday .v200-back-meta-cell .val { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+.theme-matchday .v200-back-player-sub { color: #38bdf8; }
+
+.theme-gold .v200-back-meta-cell { border-color: rgba(250, 204, 21, 0.35); background: rgba(161, 98, 7, 0.22); }
+.theme-gold .v200-back-meta-cell .val { color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.5); }
+.theme-gold .v200-back-player-sub { color: #facc15; }
+
+.theme-legend .v200-back-meta-cell { border-color: rgba(192, 132, 252, 0.35); background: rgba(107, 33, 168, 0.22); }
+.theme-legend .v200-back-meta-cell .val { color: #d8b4fe; text-shadow: 0 0 10px rgba(192, 132, 252, 0.5); }
+.theme-legend .v200-back-player-sub { color: #d8b4fe; }
+
+.theme-inferno .v200-back-meta-cell { border-color: rgba(239, 68, 68, 0.4); background: rgba(185, 28, 28, 0.24); }
+.theme-inferno .v200-back-meta-cell .val { color: #f87171; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
+.theme-inferno .v200-back-player-sub { color: #f87171; }
+
 /* ========================================================================= */
 /* V200 — VISUAL CARD LAYOUT EDITOR                                          */
 /* ========================================================================= */

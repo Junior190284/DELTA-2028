@@ -221,11 +221,43 @@ export default function PlayerCard({
     return parts[0]?.slice(0, 2).toUpperCase() || "RR";
   }, [playerName]);
 
+  const cardType = (card?.card_type || "").toLowerCase();
+
+  const seriesInfo = useMemo(() => {
+    if (cardType === "training_warrior") {
+      return { badge: "⚔️ WARRIOR", seriesName: "TRAINING WARRIOR", code: "WAR" };
+    }
+    if (cardType === "goal_hunter") {
+      return { badge: "🎯 HUNTER", seriesName: "GOAL HUNTER", code: "HNT" };
+    }
+    if (cardType === "mvp") {
+      return { badge: "👑 MVP", seriesName: "MVP EDITION", code: "MVP" };
+    }
+    if (cardType === "hat_trick_hero") {
+      return { badge: "⚽ HAT-TRICK", seriesName: "HAT-TRICK HERO", code: "HAT" };
+    }
+    if (cardType === "captain") {
+      return { badge: "🎖️ CAPTAIN", seriesName: "CAPTAIN SERIES", code: "CPT" };
+    }
+    if (templateKey === "inferno") {
+      return { badge: "🔥 INFERNO", seriesName: "INFERNO ULTRA", code: "INFR" };
+    }
+    if (templateKey === "legend") {
+      return { badge: "👑 ICON", seriesName: "DELTA ICON", code: "ICON" };
+    }
+    if (templateKey === "gold") {
+      return { badge: "🌟 GOLD", seriesName: "GOLD MASTER", code: "GOLD" };
+    }
+    if (templateKey === "matchday") {
+      return { badge: "⚡ MATCHDAY", seriesName: "MATCHDAY HERO", code: "MTCH" };
+    }
+    return { badge: "📦 BASE", seriesName: "BASE SERIES", code: "BASE" };
+  }, [cardType, templateKey]);
+
   const dynamicCardId = useMemo(() => {
-    const tpl = templateKey.toUpperCase();
     const num = String(card?.card_number || 1).padStart(3, "0");
-    return `${tpl}-26-${initials}-${num}`;
-  }, [templateKey, initials, card?.card_number]);
+    return `${seriesInfo.code}-26-${initials}-${num}`;
+  }, [seriesInfo.code, initials, card?.card_number]);
 
   // Cutout Photo Determination - ONLY assign Ryszard photo to Ryszard's card!
   const cutoutUrl = useMemo(() => {
@@ -468,11 +500,7 @@ export default function PlayerCard({
             {/* Top Right: Edition Tag & Flip Button */}
             <div className="v200-top-right-meta">
               <span className={`v200-edition-pill theme-${templateKey}`}>
-                {templateKey === "inferno" ? "🔥 INFERNO" :
-                 templateKey === "legend" ? "👑 LEGEND" :
-                 templateKey === "gold" ? "🌟 GOLD" :
-                 templateKey === "matchday" ? "⚡ MATCHDAY" :
-                 templateKey === "panini" ? "📖 PANINI" : "📦 BASE"}
+                {seriesInfo.badge}
               </span>
 
               {showFlip && (
@@ -644,11 +672,7 @@ export default function PlayerCard({
               
               <div className="flex items-center gap-1.5">
                 <span className={`v200-edition-pill theme-${templateKey}`}>
-                  {templateKey === "inferno" ? "🔥 INFERNO" :
-                   templateKey === "legend" ? "👑 LEGEND" :
-                   templateKey === "gold" ? "🌟 GOLD" :
-                   templateKey === "matchday" ? "⚡ MATCHDAY" :
-                   templateKey === "panini" ? "📖 PANINI" : "📦 BASE"}
+                  {seriesInfo.badge}
                 </span>
 
                 {showFlip && (
@@ -686,7 +710,7 @@ export default function PlayerCard({
                 </div>
                 <div className="v200-back-meta-cell">
                   <span className="lbl">SERIA</span>
-                  <span className="val">{templateKey === "base" ? "BASE" : templateKey.toUpperCase()}</span>
+                  <span className="val">{seriesInfo.seriesName}</span>
                 </div>
                 <div className="v200-back-meta-cell">
                   <span className="lbl">RARITY</span>
