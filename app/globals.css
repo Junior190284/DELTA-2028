@@ -24686,6 +24686,68 @@ body > main,
   color: #ffffff;
 }
 
+/* Mobile-safe card renderer.
+   Chromium on Android can split the layered PNG/filter composition into
+   rectangular tiles during preserve-3d rotation. On touch devices we keep
+   the same artwork and front/back interaction, but swap the faces in 2D. */
+@media (max-width: 759px), (hover: none) and (pointer: coarse) {
+  .v200-player-card-wrapper {
+    perspective: none !important;
+    contain: layout paint;
+  }
+
+  .v200-player-card-wrapper .v200-card-inner-3d {
+    transform: none !important;
+    transform-style: flat !important;
+    -webkit-transform-style: flat !important;
+    will-change: auto !important;
+    transition: none !important;
+  }
+
+  .v200-player-card-wrapper .v200-card-face {
+    transform: none !important;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+    isolation: isolate;
+    contain: paint;
+    transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+  }
+
+  .v200-player-card-wrapper .v200-card-face.front-face {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .v200-player-card-wrapper.is-front .v200-card-face.front-face {
+    transition-delay: 0s;
+  }
+
+  .v200-player-card-wrapper .v200-card-face.back-face {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none !important;
+  }
+
+  .v200-player-card-wrapper.is-back .v200-card-face.front-face {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none !important;
+  }
+
+  .v200-player-card-wrapper.is-back .v200-card-face.back-face {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto !important;
+    transition-delay: 0s;
+  }
+
+  .v200-player-card-wrapper .card-fx,
+  .v200-player-card-wrapper .v200-hologram-sheen {
+    display: none !important;
+  }
+}
+
 /* ------------------------------------------------------------------------- */
 /* LAYER 1: DYNAMIC BACKGROUND                                               */
 /* ------------------------------------------------------------------------- */

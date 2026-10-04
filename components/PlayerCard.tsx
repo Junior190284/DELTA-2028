@@ -312,6 +312,10 @@ export default function PlayerCard({
   // 3D Pointer Events
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive) return;
+    // Android browsers split the many transparent card layers while a
+    // preserve-3d transform is moving. Keep free 3D dragging mouse-only;
+    // touch devices use the stable front/back controls instead.
+    if (e.pointerType !== "mouse") return;
     if ((e.target as HTMLElement).closest("button")) return;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     dragStartRef.current = {
@@ -325,6 +329,7 @@ export default function PlayerCard({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive) return;
+    if (e.pointerType !== "mouse") return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -360,7 +365,7 @@ export default function PlayerCard({
 
   return (
     <div 
-      className={`v200-player-card-wrapper ${interactive ? "interactive" : ""} ${isDragging ? "dragging" : ""} ${className}`}
+      className={`v200-player-card-wrapper ${interactive ? "interactive" : ""} ${isDragging ? "dragging" : ""} ${isBackFace ? "is-back" : "is-front"} ${className}`}
       style={{
         width: `${dim.w}px`,
         height: `${dim.h}px`,
