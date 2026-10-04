@@ -159,8 +159,8 @@ export default function PlayerCard({
   }, [templateKey, layoutOverride, customPhotoUrl]);
 
   const playerObj = propPlayer || card?.player;
-  const playerName = (playerObj?.display_name || card?.card_name || "ZAWODNIK DELTA").toUpperCase();
-  const shirtNum = playerObj?.shirt_number ? `#${playerObj.shirt_number}` : "";
+  const playerName = (playerObj?.display_name || card?.card_name || "RYSZARD RYBACKI").toUpperCase();
+  const shirtNum = playerObj?.shirt_number ? `#${playerObj.shirt_number}` : "#7";
   const rarity = (card?.rarity || (templateKey === "inferno" ? "inferno" : templateKey === "legend" ? "legendary" : templateKey === "gold" ? "epic" : templateKey === "matchday" ? "rare" : "common")) as CardRarity;
   const config = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
   const fifaStats = useMemo(() => getCardFIFAStats(card, playerObj, stats), [card, playerObj, stats]);
@@ -170,16 +170,17 @@ export default function PlayerCard({
     if (layout.photoUrl) return layout.photoUrl;
     if (card?.artwork_url) return card.artwork_url;
 
-    const pName = (playerObj?.display_name || "").toLowerCase();
-    if (pName.includes("ryszard") && pName.includes("rybacki")) {
+    const pName = (playerObj?.display_name || card?.card_name || "").toLowerCase();
+    if (pName.includes("ryszard") || pName.includes("rybacki") || !pName || pName === "delta") {
       if (templateKey === "inferno") return "/assets/players/ryszard-inferno.png";
       if (templateKey === "legend") return "/assets/players/ryszard-legend.png";
-      return "/assets/players/ryszard-gold.png";
+      if (templateKey === "gold") return "/assets/players/ryszard-gold.png";
+      return "/assets/players/ryszard-rybacki.png";
     }
 
     if (playerObj?.photo_path) return playerObj.photo_path;
-    return null;
-  }, [layout.photoUrl, card?.artwork_url, playerObj, templateKey]);
+    return "/assets/players/ryszard-rybacki.png";
+  }, [layout.photoUrl, card?.artwork_url, card?.card_name, playerObj, templateKey]);
 
   // Flip Action
   const flipCard = useCallback((e?: React.MouseEvent) => {
@@ -287,10 +288,28 @@ export default function PlayerCard({
         <div className={`v200-card-face front-face theme-${templateKey} player-card`}>
           
           {/* ------------------------------------------------------------- */}
-          {/* LAYER 1: CURRENT DYNAMIC BACKGROUND                           */}
+          {/* LAYER 1: BASE BACKGROUND / DYNAMIC BACKGROUND                 */}
           {/* ------------------------------------------------------------- */}
           <div className="card-background v200-layer-1-background">
-            <div className={`v200-bg-gradient theme-${templateKey}`} />
+            {templateKey === "base" ? (
+              <img 
+                src="/assets/cards/base/base-background.png" 
+                alt="" 
+                className="v200-bg-img"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "center 20%"
+                }}
+                loading="eager"
+                decoding="sync"
+              />
+            ) : (
+              <div className={`v200-bg-gradient theme-${templateKey}`} />
+            )}
             <div className="v200-bg-stadium-lights" />
             <div className={`v200-bg-particles theme-${templateKey}`} />
             <div className="v200-bg-radial-halo" />
@@ -305,37 +324,21 @@ export default function PlayerCard({
                 <Lock size={32} className="text-slate-400 animate-pulse" />
                 <span>KARTA ZABLOKOWANA</span>
               </div>
-            ) : cutoutUrl ? (
+            ) : (
               <div 
                 className="v200-player-cutout-transform"
                 style={{
                   transform: `translate(${layout.translateX}%, ${layout.translateY}%) scale(${layout.scale}) rotate(${layout.rotate || 0}deg)`,
-                  filter: `brightness(${layout.brightness || 1}) contrast(${layout.contrast || 1}) drop-shadow(0 8px 18px rgba(0,0,0,0.85))`
+                  filter: `brightness(${layout.brightness || 1}) contrast(${layout.contrast || 1})`
                 }}
               >
                 <img 
-                  src={cutoutUrl} 
+                  src={cutoutUrl || "/assets/players/ryszard-rybacki.png"} 
                   alt={playerName}
                   className="v200-player-cutout-img"
                   loading="eager"
                   decoding="sync"
                 />
-              </div>
-            ) : (
-              /* High-tech Futuristic Neon Silhouette */
-              <div 
-                className="v200-player-cutout-transform"
-                style={{
-                  transform: `translate(${layout.translateX}%, ${layout.translateY}%) scale(${layout.scale}) rotate(${layout.rotate || 0}deg)`
-                }}
-              >
-                <div className={`v200-neon-silhouette theme-${templateKey}`}>
-                  <div className="v200-neon-body" />
-                  <div className="v200-neon-crest">
-                    <img src="/teamlogos/gm.png" alt="DELTA" />
-                    <span>{playerObj?.shirt_number || "GM"}</span>
-                  </div>
-                </div>
               </div>
             )}
           </div>

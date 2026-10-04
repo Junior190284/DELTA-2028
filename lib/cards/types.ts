@@ -230,7 +230,7 @@ export interface PlayerCardLayoutRow {
 }
 
 export const DEFAULT_TEMPLATE_LAYOUTS: Record<CardTemplateKey, CardLayoutConfig> = {
-  base: { scale: 1.0, translateX: 0, translateY: 0, rotate: 0, brightness: 1.0, contrast: 1.0 },
+  base: { scale: 1.15, translateX: 0, translateY: 4, rotate: 0, brightness: 1.0, contrast: 1.0 },
   matchday: { scale: 1.05, translateX: 0, translateY: -2, rotate: 0, brightness: 1.05, contrast: 1.05 },
   gold: { scale: 1.08, translateX: 0, translateY: -4, rotate: 0, brightness: 1.1, contrast: 1.08 },
   legend: { scale: 1.12, translateX: 0, translateY: -5, rotate: 0, brightness: 1.12, contrast: 1.1 },

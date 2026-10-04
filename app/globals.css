@@ -24671,11 +24671,16 @@ body > main,
 }
 
 .v200-player-cutout-img {
-  width: 82%;
-  height: 82%;
+  width: 98%;
+  height: 98%;
   object-fit: contain;
-  object-position: center 30%;
+  object-position: center 20%;
   pointer-events: none;
+  filter: 
+    drop-shadow(-3.5px 0 8px rgba(239, 68, 68, 0.45))
+    drop-shadow(3.5px 0 8px rgba(56, 189, 248, 0.35))
+    drop-shadow(0 14px 24px rgba(0, 0, 0, 0.92));
+  transition: filter 0.3s ease, transform 0.2s ease;
 }
 
 .v200-card-locked-silhouette {
