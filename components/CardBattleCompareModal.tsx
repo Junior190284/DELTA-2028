@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Swords, 
   Crown, 
@@ -10,13 +11,13 @@ import {
   ChevronRight, 
   Trophy, 
   ShieldCheck, 
-  Zap,
-  Play,
-  RotateCcw,
-  Award,
-  Coins,
-  Shield,
-  CheckCircle2
+  Zap, 
+  Play, 
+  RotateCcw, 
+  Award, 
+  Coins, 
+  Shield, 
+  CheckCircle2 
 } from "lucide-react";
 import { CardDefinition, UserCard, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -39,7 +40,17 @@ export default function CardBattleCompareModal({
   onClose,
   onRewardClaimed
 }: CardBattleCompareModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [battleMode, setBattleMode] = useState<"1v1" | "match3v3">("1v1");
+
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   // 1v1 State
   const [cardA, setCardA] = useState<CardDefinition>(initialCardA || cards[0]);
@@ -206,8 +217,25 @@ export default function CardBattleCompareModal({
     }, 1400);
   };
 
-  return (
-    <div className="v200-battle-backdrop" onClick={onClose}>
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  const modalContent = (
+    <div 
+      className="v200-battle-backdrop" 
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100dvh",
+        zIndex: 9999999,
+        background: "#030508",
+        overflow: "hidden",
+        isolation: "isolate"
+      }}
+      onClick={onClose}
+    >
       <div className="v200-battle-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="v200-battle-header">
@@ -602,4 +630,6 @@ export default function CardBattleCompareModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

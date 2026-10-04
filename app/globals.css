@@ -10778,15 +10778,20 @@ body > main,
 }
 
 .v104-inspect-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.94);
-  backdrop-filter: blur(16px);
-  display: flex;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .v104-inspect-modal-content {
@@ -10867,7 +10872,9 @@ body > main,
 @media (max-width: 640px) {
   .v104-inspect-modal-backdrop {
     padding: 12px;
-    z-index: 9999999;
+    z-index: 9999999 !important;
+    background: #030508 !important;
+    height: 100dvh !important;
   }
   .v104-inspect-modal-content {
     gap: 8px;
@@ -11583,20 +11590,22 @@ body > main,
 
 /* ================= PACK OPENING EXPERIENCE (PURE CSS) ================= */
 .v104-open-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 9999999;
-  background: rgba(3, 5, 8, 0.96);
-  backdrop-filter: blur(20px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 20px) 16px;
   box-sizing: border-box;
   overflow-y: auto;
   user-select: none;
-  animation: fadeIn 0.3s ease;
+  isolation: isolate !important;
 }
 
 .v104-open-ambient {
@@ -15005,15 +15014,20 @@ body > main,
    ========================================================================== */
 
 .v200-reveal-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 100000;
-  background: #030508;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .v200-screen-shake {
@@ -15189,16 +15203,20 @@ body > main,
 
 /* ================= 1. DAILY INFERNO SPIN (WHEEL OF FORTUNE) - ENLARGED & VIP 3D ================= */
 .v200-spin-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(3, 5, 8, 0.96);
-  backdrop-filter: blur(24px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 16px;
   overflow-y: auto;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .vip-wheel-container {
@@ -15972,15 +15990,19 @@ body > main,
 
 /* Picker modal */
 .v200-picker-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(12px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 16px;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .v200-picker-modal {
@@ -16051,16 +16073,20 @@ body > main,
 
 /* ================= 3. CARD BATTLE & COMPARE MODAL ================= */
 .v200-battle-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(3, 5, 8, 0.95);
-  backdrop-filter: blur(16px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 16px;
   overflow-y: auto;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .v200-battle-modal {
@@ -16478,16 +16504,20 @@ body > main,
 
 /* ================= 4. DELTA TRADE HUB MODAL ================= */
 .v200-trade-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(3, 5, 8, 0.95);
-  backdrop-filter: blur(16px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 16px;
   overflow-y: auto;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .v200-trade-modal {
@@ -23760,18 +23790,21 @@ body > main,
 
 /* ================= DELTA SKILL ARENA & MINI-GAMES MODAL ================= */
 .v200-skill-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(4, 7, 13, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 9999999 !important;
+  background: #030508 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   padding: 16px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  isolation: isolate !important;
+  touch-action: none;
 }
 
 .v200-skill-modal {

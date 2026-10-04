@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { 
   Target, 
   ShieldAlert, 
@@ -12,12 +13,12 @@ import {
   Flame, 
   Coins, 
   CheckCircle2, 
-  Zap,
-  Award,
-  ChevronRight,
-  ArrowRight,
-  Crown,
-  Lock
+  Zap, 
+  Award, 
+  ChevronRight, 
+  ArrowRight, 
+  Crown, 
+  Lock 
 } from "lucide-react";
 import { cardSound } from "@/lib/cards/audio";
 
@@ -127,10 +128,20 @@ export default function DeltaSkillMiniGamesModal({
   onClose,
   onPointsEarned
 }: DeltaSkillMiniGamesModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [activeMode, setActiveMode] = useState<GameMode>("free_kicks");
   const [currentLevelIdx, setCurrentLevelIdx] = useState<number>(0);
   const [unlockedMaxLevel, setUnlockedMaxLevel] = useState<number>(1);
   
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   const [gameState, setGameState] = useState<"level_select" | "playing" | "level_completed" | "game_over">("level_select");
   const [timeLeft, setTimeLeft] = useState<number>(25);
   const [score, setScore] = useState<number>(0);
@@ -403,8 +414,25 @@ export default function DeltaSkillMiniGamesModal({
     }
   };
 
-  return (
-    <div className="v200-skill-backdrop" onClick={onClose}>
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  const modalContent = (
+    <div 
+      className="v200-skill-backdrop" 
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100dvh",
+        zIndex: 9999999,
+        background: "#030508",
+        overflow: "hidden",
+        isolation: "isolate"
+      }}
+      onClick={onClose}
+    >
       <div className="v200-skill-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="v200-skill-header">
@@ -749,4 +777,6 @@ export default function DeltaSkillMiniGamesModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

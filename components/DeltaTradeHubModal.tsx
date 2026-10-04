@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   ArrowLeftRight, 
   Sparkles, 
@@ -11,12 +12,12 @@ import {
   Crown, 
   Clock, 
   CheckCircle2, 
-  AlertCircle,
-  PlusCircle,
-  KeyRound,
-  RefreshCw,
-  Send,
-  Gift
+  AlertCircle, 
+  PlusCircle, 
+  KeyRound, 
+  RefreshCw, 
+  Send, 
+  Gift 
 } from "lucide-react";
 import { CardDefinition, UserCard, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -47,9 +48,19 @@ export default function DeltaTradeHubModal({
   onTradeComplete,
   onPointsEarned
 }: DeltaTradeHubModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"market" | "create" | "duplicates" | "directPin">("market");
   const [tradedOfferId, setTradedOfferId] = useState<string | null>(null);
   const [recyclingCardId, setRecyclingCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   // Form for creating new trade offer
   const [selectedOfferCardId, setSelectedOfferCardId] = useState<string>("");
@@ -164,8 +175,25 @@ export default function DeltaTradeHubModal({
     }, 2000);
   };
 
-  return (
-    <div className="v200-trade-backdrop" onClick={onClose}>
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  const modalContent = (
+    <div 
+      className="v200-trade-backdrop" 
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100dvh",
+        zIndex: 9999999,
+        background: "#030508",
+        overflow: "hidden",
+        isolation: "isolate"
+      }}
+      onClick={onClose}
+    >
       <div className="v200-trade-modal" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="v200-trade-header">
@@ -448,4 +476,6 @@ export default function DeltaTradeHubModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

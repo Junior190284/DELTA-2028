@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { 
   Sparkles, 
   Gift, 
@@ -136,6 +137,17 @@ export default function DeltaCollectionAlbum({
       setLoading(false);
     }
   };
+
+  // Lock document scroll during inspect / modal overlays
+  useEffect(() => {
+    if (inspectCard || showSquadBuilder) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [inspectCard, showSquadBuilder]);
 
   // Sync automated activity rewards
   const handleSyncRewards = async () => {
@@ -1095,9 +1107,19 @@ export default function DeltaCollectionAlbum({
       )}
 
       {/* ================= FULL-SCREEN 3D CARD INSPECT MODAL ================= */}
-      {inspectCard && (
+      {inspectCard && typeof document !== "undefined" && createPortal(
         <div 
           className="v104-inspect-modal-backdrop"
+          style={{
+            position: "fixed",
+            inset: 0,
+            width: "100vw",
+            height: "100dvh",
+            zIndex: 9999999,
+            background: "#030508",
+            overflow: "hidden",
+            isolation: "isolate"
+          }}
           onClick={() => {
             setInspectCard(null);
             setInspectFlipped(false);
@@ -1144,7 +1166,8 @@ export default function DeltaCollectionAlbum({
               <span>✋</span> Chwyć kartę myszką lub palcem i obracaj w 3D • Kliknij, aby szybko odwrócić
             </span>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ================= PACK OPENING EXPERIENCE MODAL ================= */}
@@ -1203,8 +1226,21 @@ export default function DeltaCollectionAlbum({
       )}
 
       {/* ================= 2. SQUAD BUILDER 3D MODAL ================= */}
-      {showSquadBuilder && (
-        <div className="v200-picker-backdrop" onClick={() => setShowSquadBuilder(false)}>
+      {showSquadBuilder && typeof document !== "undefined" && createPortal(
+        <div 
+          className="v200-picker-backdrop" 
+          style={{
+            position: "fixed",
+            inset: 0,
+            width: "100vw",
+            height: "100dvh",
+            zIndex: 9999999,
+            background: "#030508",
+            overflow: "hidden",
+            isolation: "isolate"
+          }}
+          onClick={() => setShowSquadBuilder(false)}
+        >
           <div className="v200-picker-modal max-w-4xl" onClick={e => e.stopPropagation()}>
             <SquadBuilder3D
               ownedCards={ownedCardsList}
@@ -1212,7 +1248,8 @@ export default function DeltaCollectionAlbum({
               onClose={() => setShowSquadBuilder(false)}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ================= 3. CARD BATTLE & COMPARE MODAL ================= */}

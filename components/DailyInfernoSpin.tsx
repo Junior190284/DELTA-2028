@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Sparkles, 
   Flame, 
@@ -10,11 +11,11 @@ import {
   Trophy, 
   CheckCircle2, 
   X, 
-  RotateCw,
-  Zap,
-  Calendar,
-  Star,
-  ShieldAlert
+  RotateCw, 
+  Zap, 
+  Calendar, 
+  Star, 
+  ShieldAlert 
 } from "lucide-react";
 import { cardSound } from "@/lib/cards/audio";
 import CanvasParticles from "./CanvasParticles";
@@ -67,12 +68,22 @@ export default function DailyInfernoSpin({
   onOpenPack,
   packDefinitions = []
 }: DailyInfernoSpinProps) {
+  const [mounted, setMounted] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [winningSegment, setWinningSegment] = useState<WheelSegment | null>(null);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [hasSpunToday, setHasSpunToday] = useState(false);
   const [savingReward, setSavingReward] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   const numSegments = WHEEL_SEGMENTS.length;
   const arcSize = 360 / numSegments;
@@ -180,8 +191,24 @@ export default function DailyInfernoSpin({
     };
   });
 
-  return (
-    <div className="v200-spin-modal-backdrop">
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  const modalContent = (
+    <div 
+      className="v200-spin-modal-backdrop"
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100dvh",
+        zIndex: 9999999,
+        background: "#030508",
+        overflow: "hidden",
+        isolation: "isolate"
+      }}
+    >
       {/* Dynamic Celebration Particles */}
       {showWinCelebration && (
         <CanvasParticles theme="gold" active={true} />
@@ -503,4 +530,6 @@ export default function DailyInfernoSpin({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

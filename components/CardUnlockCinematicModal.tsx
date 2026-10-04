@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   Flame, 
   Sparkles, 
@@ -33,6 +34,7 @@ export default function CardUnlockCinematicModal({
   onAddToCollection,
   onViewProfile
 }: CardUnlockCinematicModalProps) {
+  const [mounted, setMounted] = useState(false);
   // Sekwencja etapów: 
   // 1: "blackout" 
   // 2: "floodlights" 
@@ -47,6 +49,15 @@ export default function CardUnlockCinematicModal({
   const isInferno = card.rarity === "inferno";
   const isLegend = card.rarity === "legendary";
   const playerDisplayName = card.player?.display_name || card.title || "Zawodnik DELTA GM";
+
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     // Sprawdzenie ustawień dostępności użytkownika
@@ -120,8 +131,24 @@ export default function CardUnlockCinematicModal({
     ? MEDIA.packOpening.bgMatchday 
     : MEDIA.packOpening.bgGold;
 
-  return (
-    <div className={`v200-reveal-modal ${screenShake ? "v200-screen-shake" : ""}`}>
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  const modalContent = (
+    <div 
+      className={`v200-reveal-modal ${screenShake ? "v200-screen-shake" : ""}`}
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100dvh",
+        zIndex: 9999999,
+        background: "#030508",
+        overflow: "hidden",
+        isolation: "isolate"
+      }}
+    >
       {/* TŁO WIDEO / FX */}
       {step >= 3 && !reducedMotion && (
         <video
@@ -217,4 +244,6 @@ export default function CardUnlockCinematicModal({
       )}
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
