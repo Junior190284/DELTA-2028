@@ -239,3 +239,161 @@ export const DEFAULT_TEMPLATE_LAYOUTS: Record<CardTemplateKey, CardLayoutConfig>
   training: { scale: 1.05, translateX: 0, translateY: -2, rotate: 0, brightness: 1.05, contrast: 1.05 }
 };
 
+export const CARD_THEME_ASSETS: Record<CardTemplateKey, {
+  background: string;
+  frame: string;
+  fx: string;
+  backBg: string;
+}> = {
+  base: {
+    background: "/assets/cards/base/base-background.png",
+    frame: "/assets/cards/base/base-frame.png",
+    fx: "/assets/cards/base/base-fx.png",
+    backBg: "/assets/cards/base/base-back-bg.png"
+  },
+  matchday: {
+    background: "/assets/cards/matchday-hero/matchday-hero-background.png",
+    frame: "/assets/cards/matchday-hero/matchday-hero-frame.png",
+    fx: "/assets/cards/matchday-hero/matchday-hero-fx.png",
+    backBg: "/assets/cards/matchday-hero/matchday-hero-back-bg.png"
+  },
+  gold: {
+    background: "/assets/cards/gold-master/gold-master-background.png",
+    frame: "/assets/cards/gold-master/gold-master-frame.png",
+    fx: "/assets/cards/gold-master/gold-master-fx.png",
+    backBg: "/assets/cards/gold-master/gold-master-back-bg.png"
+  },
+  legend: {
+    background: "/assets/cards/delta-icon/delta-icon-background.png",
+    frame: "/assets/cards/delta-icon/delta-icon-frame.png",
+    fx: "/assets/cards/delta-icon/delta-icon-fx.png",
+    backBg: "/assets/cards/delta-icon/delta-icon-back-bg.png"
+  },
+  inferno: {
+    background: "/assets/cards/inferno-ultra/inferno-ultra-background.png",
+    frame: "/assets/cards/inferno-ultra/inferno-ultra-frame.png",
+    fx: "/assets/cards/inferno-ultra/inferno-ultra-fx.png",
+    backBg: "/assets/cards/inferno-ultra/inferno-ultra-back-bg.png"
+  },
+  training: {
+    background: "/assets/cards/training-hero/training-hero-background.png",
+    frame: "/assets/cards/training-hero/training-hero-frame.png",
+    fx: "/assets/cards/training-hero/training-hero-fx.png",
+    backBg: "/assets/cards/training-hero/training-hero-back-bg.png"
+  },
+  panini: {
+    background: "/assets/cards/base/base-background.png",
+    frame: "/assets/cards/base/base-frame.png",
+    fx: "/assets/cards/base/base-fx.png",
+    backBg: "/assets/cards/base/base-back-bg.png"
+  }
+};
+
+export function resolveCardTemplateKey(card?: CardDefinition, templateOverride?: CardTemplateKey): CardTemplateKey {
+  if (templateOverride) return templateOverride;
+  const r = (card?.rarity || "common").toLowerCase();
+  const t = (card?.card_type || "").toLowerCase();
+  if (t.includes("training") || t.includes("warrior")) return "training";
+  if (r === "inferno" || t.includes("inferno")) return "inferno";
+  if (r === "legendary" || t.includes("legend")) return "legend";
+  if (r === "epic" || t.includes("gold") || t.includes("mvp")) return "gold";
+  if (r === "rare" || t.includes("matchday")) return "matchday";
+  if (t.includes("panini")) return "panini";
+  return "base";
+}
+
+export function getCardAllAssetUrls(card?: CardDefinition, templateOverride?: CardTemplateKey): string[] {
+  const key = resolveCardTemplateKey(card, templateOverride);
+  const theme = CARD_THEME_ASSETS[key] || CARD_THEME_ASSETS.base;
+  const urls: string[] = [
+    theme.background,
+    theme.frame,
+    theme.fx,
+    theme.backBg,
+    "/teamlogos/gm.png"
+  ];
+
+  if (card?.artwork_url) urls.push(card.artwork_url);
+  if (card?.player?.photo_path) urls.push(card.player.photo_path);
+
+  const pName = (card?.player?.display_name || card?.card_name || "").toLowerCase();
+  if (pName.includes("ryszard") || pName.includes("rybacki")) {
+    if (key === "inferno") urls.push("/assets/players/ryszard-inferno.png");
+    else if (key === "legend") urls.push("/assets/players/ryszard-legend.png");
+    else if (key === "gold") urls.push("/assets/players/ryszard-gold.png");
+    else urls.push("/assets/players/ryszard-rybacki.png");
+  }
+
+  return urls.filter(Boolean);
+}
+
+export async function preloadCardAssets(card?: CardDefinition, templateOverride?: CardTemplateKey): Promise<void> {
+  if (typeof window === "undefined") return;
+  const urls = getCardAllAssetUrls(card, templateOverride);
+  
+  const promises = urls.map(url => {
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.src = url;
+      if (img.complete) {
+        if ("decode" in img) {
+          img.decode().then(resolve).catch(resolve);
+        } else {
+          resolve();
+        }
+      } else {
+        img.onload = () => {
+          if ("decode" in img) {
+            img.decode().then(resolve).catch(resolve);
+          } else {
+            resolve();
+          }
+        };
+        img.onerror = () => resolve();
+      }
+    });
+  });
+
+  await Promise.all(promises);
+}
+
+export async function preloadAllCardThemes(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const allUrls: string[] = [
+    "/teamlogos/gm.png",
+    "/assets/players/ryszard-rybacki.png",
+    "/assets/players/ryszard-inferno.png",
+    "/assets/players/ryszard-gold.png",
+    "/assets/players/ryszard-legend.png"
+  ];
+
+  Object.values(CARD_THEME_ASSETS).forEach(theme => {
+    allUrls.push(theme.background, theme.frame, theme.fx, theme.backBg);
+  });
+
+  const promises = allUrls.map(url => {
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.src = url;
+      if (img.complete) {
+        if ("decode" in img) {
+          img.decode().then(resolve).catch(resolve);
+        } else {
+          resolve();
+        }
+      } else {
+        img.onload = () => {
+          if ("decode" in img) {
+            img.decode().then(resolve).catch(resolve);
+          } else {
+            resolve();
+          }
+        };
+        img.onerror = () => resolve();
+      }
+    });
+  });
+
+  await Promise.all(promises);
+}
+

@@ -29,7 +29,7 @@ import {
   Shield,
   Target
 } from "lucide-react";
-import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
+import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl, preloadAllCardThemes, preloadCardAssets } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
@@ -201,6 +201,7 @@ export default function DeltaCollectionAlbum({
   };
 
   useEffect(() => {
+    preloadAllCardThemes();
     fetchCollection();
 
     // Auto sync match/training rewards on mount

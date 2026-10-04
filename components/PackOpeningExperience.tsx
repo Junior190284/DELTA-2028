@@ -16,7 +16,7 @@ import {
   Shield,
   Award
 } from "lucide-react";
-import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG, getPackImageUrl } from "@/lib/cards/types";
+import { PackDefinition, PackOpeningResult, CardDefinition, RARITY_CONFIG, getPackImageUrl, preloadAllCardThemes, preloadCardAssets } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import { MEDIA, getCardTierBackgroundVideo } from "@/lib/media";
 import CollectibleCard3D from "./CollectibleCard3D";
@@ -55,26 +55,10 @@ export default function PackOpeningExperience({
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
   const [screenShake, setScreenShake] = useState(false);
 
-  // Preload core templates on mount so there is zero asset popping/delay during reveal
+  // Preload all core card templates and textures on mount so there is zero asset popping/delay
   useEffect(() => {
     setMounted(true);
-
-    const preloadUrls = [
-      "/assets/cards/base/base-frame.png",
-      "/assets/cards/base/base-fx.png",
-      "/assets/cards/base/base-background.png",
-      "/assets/cards/base/base-back-bg.png",
-      "/assets/players/ryszard-rybacki.png",
-      "/teamlogos/gm.png",
-      "/assets/players/ryszard-inferno.png",
-      "/assets/players/ryszard-gold.png",
-      "/assets/players/ryszard-legend.png"
-    ];
-
-    preloadUrls.forEach(url => {
-      const img = new Image();
-      img.src = url;
-    });
+    preloadAllCardThemes();
   }, []);
 
   // 3D Hover tilt for sealed pack
@@ -118,17 +102,9 @@ export default function PackOpeningExperience({
       setOpeningResult(data);
       setRevealedCards(new Array(data.cards.length).fill(false));
 
-      // Instantly preload all card artwork and player photos from this pack
-      data.cards.forEach(item => {
-        if (item.card.artwork_url) {
-          const img = new Image();
-          img.src = item.card.artwork_url;
-        }
-        if (item.card.player?.photo_path) {
-          const img = new Image();
-          img.src = item.card.player.photo_path;
-        }
-      });
+      // Instantly preload and decode all card artwork, textures, and cutouts into GPU memory
+      preloadAllCardThemes();
+      Promise.all(data.cards.map(item => preloadCardAssets(item.card)));
 
       // Rank cards to find the star card
       const rarityRank: Record<string, number> = {

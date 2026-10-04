@@ -15,7 +15,7 @@ import {
   Zap, 
   Goal 
 } from "lucide-react";
-import { CardDefinition, RARITY_CONFIG } from "@/lib/cards/types";
+import { CardDefinition, RARITY_CONFIG, preloadCardAssets } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import { MEDIA } from "@/lib/media";
 import CollectibleCard3D from "./CollectibleCard3D";
@@ -52,12 +52,13 @@ export default function CardUnlockCinematicModal({
 
   useEffect(() => {
     setMounted(true);
+    preloadCardAssets(card);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, []);
+  }, [card]);
 
   useEffect(() => {
     // Sprawdzenie ustawień dostępności użytkownika

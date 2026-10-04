@@ -274,10 +274,10 @@ export default function PlayerCard({
     const pName = (playerObj?.display_name || card?.card_name || "").toLowerCase();
     const isRyszard = pName.includes("ryszard") || pName.includes("rybacki");
     if (isRyszard) {
-      if (templateKey === "inferno") return "/assets/players/ryszard-inferno.png?v=20261004b";
-      if (templateKey === "legend") return "/assets/players/ryszard-legend.png?v=20261004b";
-      if (templateKey === "gold") return "/assets/players/ryszard-gold.png?v=20261004b";
-      return "/assets/players/ryszard-rybacki.png?v=20261004b";
+      if (templateKey === "inferno") return "/assets/players/ryszard-inferno.png";
+      if (templateKey === "legend") return "/assets/players/ryszard-legend.png";
+      if (templateKey === "gold") return "/assets/players/ryszard-gold.png";
+      return "/assets/players/ryszard-rybacki.png";
     }
 
     if (playerObj?.photo_path) return playerObj.photo_path;
@@ -403,7 +403,7 @@ export default function PlayerCard({
           {/* ------------------------------------------------------------- */}
           <div className="card-background v200-layer-1-background">
             <img 
-              src={`${themeAssets.background}?v=20261004c`} 
+              src={themeAssets.background} 
               alt="" 
               className="v200-bg-img"
               style={{
@@ -476,7 +476,7 @@ export default function PlayerCard({
           {/* LAYER 3: FRAME (800x1200 PNG WITH TRANSPARENCY)               */}
           {/* ------------------------------------------------------------- */}
           <img 
-            src={`${themeAssets.frame}?v=20261004c`} 
+            src={themeAssets.frame} 
             alt="" 
             className="card-frame"
             loading="eager"
@@ -566,7 +566,7 @@ export default function PlayerCard({
           {/* LAYER 5: FX & SPECULAR HOLOGRAPHIC SHEEN                       */}
           {/* ------------------------------------------------------------- */}
           <img 
-            src={`${themeAssets.fx}?v=20261004c`} 
+            src={themeAssets.fx} 
             alt="" 
             className="card-fx"
             loading="eager"
@@ -604,7 +604,7 @@ export default function PlayerCard({
           {/* ------------------------------------------------------------- */}
           <div className="card-background v200-layer-1-background">
             <img 
-              src={`${themeAssets.backBg}?v=20261004c`} 
+              src={themeAssets.backBg} 
               alt="" 
               className="v200-bg-img"
               style={{
@@ -641,7 +641,7 @@ export default function PlayerCard({
             }}
           >
             <img 
-              src="/teamlogos/gm.png?v=20261004b" 
+              src="/teamlogos/gm.png" 
               alt="DELTA" 
               style={{ width: "100%", height: "100%", objectFit: "contain", filter: "grayscale(30%) brightness(1.2)" }} 
             />
@@ -651,7 +651,7 @@ export default function PlayerCard({
           {/* LAYER 3: MATCHING FRAME (800x1200 PNG)                         */}
           {/* ------------------------------------------------------------- */}
           <img 
-            src={`${themeAssets.frame}?v=20261004c`} 
+            src={themeAssets.frame} 
             alt="" 
             className="card-frame"
             loading="eager"
@@ -667,7 +667,7 @@ export default function PlayerCard({
             <div className="v200-back-top-bar">
               <div className="v200-back-club-tag">
                 <img 
-                  src="/teamlogos/gm.png?v=20261004c" 
+                  src="/teamlogos/gm.png" 
                   alt="DELTA" 
                   width={14} 
                   height={14} 
@@ -741,7 +741,7 @@ export default function PlayerCard({
           {/* LAYER 5: MATCHING FX & SPECULAR GLOW                           */}
           {/* ------------------------------------------------------------- */}
           <img 
-            src={`${themeAssets.fx}?v=20261004c`} 
+            src={themeAssets.fx} 
             alt="" 
             className="card-fx"
             loading="eager"
