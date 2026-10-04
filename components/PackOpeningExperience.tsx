@@ -160,6 +160,7 @@ export default function PackOpeningExperience({
                   setStage("walkout_slam");
                   setScreenShake(true);
                   cardSound.playPyroBurst();
+                  cardSound.playDeltaChant();
 
                   if (isInferno) {
                     cardSound.playReveal("inferno");

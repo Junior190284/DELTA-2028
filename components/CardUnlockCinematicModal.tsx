@@ -99,6 +99,7 @@ export default function CardUnlockCinematicModal({
     const t4 = setTimeout(() => {
       setStep(5);
       try {
+        cardSound.playDeltaChant();
         if (isInferno || isLegend) {
           cardSound.playWalkoutFanfare();
         } else {
