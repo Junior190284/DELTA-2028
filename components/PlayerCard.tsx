@@ -161,13 +161,26 @@ export default function PlayerCard({
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [glarePos, setGlarePos] = useState({ x: 50, y: 50, opacity: 0 });
+  const rotationRef = useRef({ x: 0, y: controlledFlipped ? 180 : 0 });
+  const dragStartRef = useRef<{ startX: number; startY: number; startRotY: number; startRotX: number } | null>(null);
+  const cardIdentity = card?.id || propPlayer?.id || card?.card_name || "delta-card";
 
-  // Sync external flipped state
+  const applyRotation = useCallback((x: number, y: number) => {
+    rotationRef.current = { x, y };
+    setInternalRotateX(x);
+    setInternalRotateY(y);
+  }, []);
+
+  // A different card (or the locked/revealed version of the same card) must
+  // always start in a stable, front-facing position. Without this reset React
+  // reused the previous card's mid-drag rotation in the pack-opening sequence.
   useEffect(() => {
-    if (controlledFlipped !== undefined) {
-      setInternalRotateY(controlledFlipped ? 180 : 0);
-    }
-  }, [controlledFlipped]);
+    applyRotation(0, controlledFlipped ? 180 : 0);
+    setIsDragging(false);
+    setIsHovered(false);
+    dragStartRef.current = null;
+    setGlarePos({ x: 50, y: 50, opacity: 0 });
+  }, [cardIdentity, isLocked, controlledFlipped, applyRotation]);
 
   // Dimensions based on 2:3 ratio
   const dim = useMemo(() => {
@@ -287,27 +300,25 @@ export default function PlayerCard({
   // Flip Action
   const flipCard = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const curFace = Math.round(internalRotateY / 180);
+    const curFace = Math.round(rotationRef.current.y / 180);
     const nextSnapY = (Math.abs(curFace) % 2 === 0) ? curFace * 180 + 180 : curFace * 180 - 180;
-    setInternalRotateY(nextSnapY);
-    setInternalRotateX(0);
+    applyRotation(0, nextSnapY);
     const isBack = Math.abs((nextSnapY / 180) % 2) === 1;
     cardSound.playFlip();
     cardSound.playHaptic("light");
     onFlipChange?.(isBack);
-  }, [internalRotateY, onFlipChange]);
+  }, [applyRotation, onFlipChange]);
 
   // 3D Pointer Events
-  const dragStartRef = useRef<{ startX: number; startY: number; startRotY: number; startRotX: number } | null>(null);
-
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive) return;
+    if ((e.target as HTMLElement).closest("button")) return;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     dragStartRef.current = {
       startX: e.clientX,
       startY: e.clientY,
-      startRotY: internalRotateY,
-      startRotX: internalRotateX
+      startRotY: rotationRef.current.y,
+      startRotX: rotationRef.current.x
     };
     setIsDragging(true);
   };
@@ -321,28 +332,30 @@ export default function PlayerCard({
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setGlarePos({ x, y, opacity: isDragging ? 0.75 : 0.45 });
 
-    if (isDragging && dragStartRef.current) {
+    if (dragStartRef.current) {
       const deltaX = e.clientX - dragStartRef.current.startX;
       const deltaY = e.clientY - dragStartRef.current.startY;
-      setInternalRotateY(dragStartRef.current.startRotY + deltaX * 0.7);
-      setInternalRotateX(Math.max(-25, Math.min(25, dragStartRef.current.startRotX - deltaY * 0.4)));
-    } else if (isHovered) {
+      applyRotation(
+        Math.max(-25, Math.min(25, dragStartRef.current.startRotX - deltaY * 0.4)),
+        dragStartRef.current.startRotY + deltaX * 0.7
+      );
+    } else if (isHovered && e.pointerType === "mouse") {
       const rotY = ((e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)) * 14;
       const rotX = -((e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)) * 14;
-      setInternalRotateY(rotY);
-      setInternalRotateX(rotX);
+      applyRotation(rotX, rotY);
     }
   };
 
   const isBackFace = useMemo(() => (Math.abs(Math.round(internalRotateY / 180)) % 2) === 1, [internalRotateY]);
 
-  const handlePointerUp = () => {
-    if (!isDragging) return;
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStartRef.current) return;
     setIsDragging(false);
     dragStartRef.current = null;
-    const nearestFace = Math.round(internalRotateY / 180) * 180;
-    setInternalRotateY(nearestFace);
-    setInternalRotateX(0);
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    const nearestFace = Math.round(rotationRef.current.y / 180) * 180;
+    applyRotation(0, nearestFace);
+    onFlipChange?.(Math.abs((nearestFace / 180) % 2) === 1);
   };
 
   return (
@@ -356,19 +369,21 @@ export default function PlayerCard({
         minHeight: `${dim.h}px`,
         maxHeight: `${dim.h}px`,
         aspectRatio: "2/3",
-        touchAction: interactive ? "none" : "auto",
+        touchAction: interactive ? "pan-y" : "auto",
         cursor: !interactive ? "default" : isDragging ? "grabbing" : "grab"
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      onPointerEnter={() => setIsHovered(true)}
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse") setIsHovered(true);
+      }}
       onPointerLeave={() => {
         setIsHovered(false);
         if (!isDragging) {
-          setInternalRotateX(0);
-          setInternalRotateY(Math.round(internalRotateY / 180) * 180);
+          const nearestFace = Math.round(rotationRef.current.y / 180) * 180;
+          applyRotation(0, nearestFace);
           setGlarePos(prev => ({ ...prev, opacity: 0 }));
         }
       }}

@@ -514,6 +514,7 @@ export default function PackOpeningExperience({
               {/* 3D Grand Card Showcase with High-Contrast Stage */}
               <div className="v200-walkout-card-stage">
                 <CollectibleCard3D
+                  key={`walkout-${walkoutItem.card.id}`}
                   card={walkoutItem.card}
                   userCard={undefined}
                   isLocked={false}
@@ -619,11 +620,12 @@ export default function PackOpeningExperience({
             return (
               <div className="v104-open-card-wrapper animate-fadeIn">
                 <CollectibleCard3D
+                  key={`pack-${currentCardIndex}-${currentItem.card.id}-${isRevealed ? "revealed" : "locked"}`}
                   card={currentItem.card}
                   userCard={undefined}
                   isLocked={!isRevealed}
                   size="xl"
-                  interactive={true}
+                  interactive={isRevealed}
                   showFlip={isRevealed}
                   onFlipChange={(flipped) => {
                     if (flipped) {
