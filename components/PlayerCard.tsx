@@ -159,19 +159,20 @@ export default function PlayerCard({
   }, [templateKey, layoutOverride, customPhotoUrl]);
 
   const playerObj = propPlayer || card?.player;
-  const playerName = (playerObj?.display_name || card?.card_name || "RYSZARD RYBACKI").toUpperCase();
-  const shirtNum = playerObj?.shirt_number ? `#${playerObj.shirt_number}` : "#7";
+  const playerName = (playerObj?.display_name || card?.card_name || "ZAWODNIK DELTA").toUpperCase();
+  const shirtNum = playerObj?.shirt_number ? `#${playerObj.shirt_number}` : "";
   const rarity = (card?.rarity || (templateKey === "inferno" ? "inferno" : templateKey === "legend" ? "legendary" : templateKey === "gold" ? "epic" : templateKey === "matchday" ? "rare" : "common")) as CardRarity;
   const config = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
   const fifaStats = useMemo(() => getCardFIFAStats(card, playerObj, stats), [card, playerObj, stats]);
 
-  // Cutout Photo Determination
+  // Cutout Photo Determination - ONLY assign Ryszard photo to Ryszard's card!
   const cutoutUrl = useMemo(() => {
     if (layout.photoUrl) return layout.photoUrl;
     if (card?.artwork_url) return card.artwork_url;
 
     const pName = (playerObj?.display_name || card?.card_name || "").toLowerCase();
-    if (pName.includes("ryszard") || pName.includes("rybacki") || !pName || pName === "delta") {
+    const isRyszard = pName.includes("ryszard") || pName.includes("rybacki");
+    if (isRyszard) {
       if (templateKey === "inferno") return "/assets/players/ryszard-inferno.png";
       if (templateKey === "legend") return "/assets/players/ryszard-legend.png";
       if (templateKey === "gold") return "/assets/players/ryszard-gold.png";
@@ -179,7 +180,7 @@ export default function PlayerCard({
     }
 
     if (playerObj?.photo_path) return playerObj.photo_path;
-    return "/assets/players/ryszard-rybacki.png";
+    return null; // Return null so other boys without photo display their personalized neon silhouette!
   }, [layout.photoUrl, card?.artwork_url, card?.card_name, playerObj, templateKey]);
 
   // Flip Action

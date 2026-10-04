@@ -24495,7 +24495,8 @@ body > main,
 .player-card {
   position: relative;
   aspect-ratio: 2 / 3;
-  overflow: visible;
+  overflow: hidden;
+  border-radius: 18px;
 }
 
 .card-frame,
