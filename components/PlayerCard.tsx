@@ -325,7 +325,7 @@ export default function PlayerCard({
                 <Lock size={32} className="text-slate-400 animate-pulse" />
                 <span>KARTA ZABLOKOWANA</span>
               </div>
-            ) : (
+            ) : cutoutUrl ? (
               <div 
                 className="v200-player-cutout-transform"
                 style={{
@@ -334,12 +334,28 @@ export default function PlayerCard({
                 }}
               >
                 <img 
-                  src={cutoutUrl || "/assets/players/ryszard-rybacki.png"} 
+                  src={cutoutUrl} 
                   alt={playerName}
                   className="v200-player-cutout-img"
                   loading="eager"
                   decoding="sync"
                 />
+              </div>
+            ) : (
+              /* High-tech Futuristic Neon Silhouette for players without a cutout yet */
+              <div 
+                className="v200-player-cutout-transform"
+                style={{
+                  transform: `translate(${layout.translateX}%, ${layout.translateY}%) scale(${layout.scale}) rotate(${layout.rotate || 0}deg)`
+                }}
+              >
+                <div className={`v200-neon-silhouette theme-${templateKey}`}>
+                  <div className="v200-neon-body" />
+                  <div className="v200-neon-crest">
+                    <img src="/teamlogos/gm.png" alt="DELTA" />
+                    <span>{playerObj?.shirt_number || "GM"}</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
