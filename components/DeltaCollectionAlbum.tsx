@@ -27,7 +27,10 @@ import {
   ArrowLeftRight,
   Swords,
   Shield,
-  Target
+  Target,
+  PenTool,
+  Play,
+  Tv
 } from "lucide-react";
 import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl, preloadAllCardThemes, preloadCardAssets } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -40,6 +43,10 @@ import CardBattleCompareModal from "./CardBattleCompareModal";
 import DeltaTradeHubModal from "./DeltaTradeHubModal";
 import AchievementsModal from "./AchievementsModal";
 import DeltaSkillMiniGamesModal from "./DeltaSkillMiniGamesModal";
+import DeltaSBCModal from "./DeltaSBCModal";
+import BroadcastLeaderboard from "./BroadcastLeaderboard";
+import PlayerVideoHighlightModal from "./PlayerVideoHighlightModal";
+import DigitalSignatureModal from "./DigitalSignatureModal";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -93,6 +100,10 @@ export default function DeltaCollectionAlbum({
   const [showBattleCompare, setShowBattleCompare] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showSkillGames, setShowSkillGames] = useState(false);
+  const [showSBC, setShowSBC] = useState(false);
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [videoHighlightCard, setVideoHighlightCard] = useState<CardDefinition | null>(null);
+  const [signatureCard, setSignatureCard] = useState<CardDefinition | null>(null);
 
   const getCardUnlockCondition = (card: CardDefinition): string => {
     const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
@@ -566,6 +577,51 @@ export default function DeltaCollectionAlbum({
               <div className="v200-tile-tag tag-skill">MINI-GRY 3D (+DP)</div>
               <h3 className="v200-tile-title">TRENING CELNOŚCI 🎯</h3>
               <p className="v200-tile-desc">Rzuty wolne w okienko i refleks bramkarza! Zdobywaj punkty DP!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
+          </button>
+
+          {/* Tile 7: SBC Challenges */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowSBC(true);
+              cardSound.playFlip();
+              cardSound.playHaptic("heavy");
+            }}
+            className="v200-vip-action-tile tile-sbc"
+            style={{ border: "1px solid rgba(241, 201, 92, 0.4)", background: "linear-gradient(135deg, rgba(241, 201, 92, 0.1), rgba(0,0,0,0.6))" }}
+          >
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box" style={{ background: "rgba(241, 201, 92, 0.2)", border: "1px solid rgba(241, 201, 92, 0.5)", color: "#f1c95c" }}>
+              <RefreshCw size={26} className="text-amber-400 animate-spin-slow" />
+            </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag" style={{ background: "#f1c95c", color: "#000", fontWeight: "bold" }}>WYMIANA DUPLIKATÓW</div>
+              <h3 className="v200-tile-title">WYZWANIA SBC 🔄</h3>
+              <p className="v200-tile-desc">Przetapiaj niepotrzebne karty na gwarantowane paczki specjalne!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
+          </button>
+
+          {/* Tile 8: TV Broadcast Leaderboard */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowBroadcast(true);
+              cardSound.playCinematicBoom();
+            }}
+            className="v200-vip-action-tile tile-broadcast"
+            style={{ border: "1px solid rgba(56, 189, 248, 0.4)", background: "linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(0,0,0,0.6))" }}
+          >
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box" style={{ background: "rgba(56, 189, 248, 0.2)", border: "1px solid rgba(56, 189, 248, 0.5)", color: "#38bdf8" }}>
+              <Tv size={26} className="text-sky-400 animate-pulse" />
+            </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag" style={{ background: "#38bdf8", color: "#000", fontWeight: "bold" }}>TRANSMISJA TV HD</div>
+              <h3 className="v200-tile-title">TABLICA REKORDÓW 📺</h3>
+              <p className="v200-tile-desc">Belki telewizyjne Canal+, Król Strzelców, Asysty i Liderzy Miesiąca!</p>
             </div>
             <div className="v200-tile-chevron">→</div>
           </button>
@@ -1152,7 +1208,7 @@ export default function DeltaCollectionAlbum({
               onFlipChange={setInspectFlipped}
             />
 
-            <div className="v104-inspect-toolbar">
+            <div className="v104-inspect-toolbar" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
               <button
                 type="button"
                 className="v104-inspect-flip-btn"
@@ -1160,6 +1216,26 @@ export default function DeltaCollectionAlbum({
               >
                 <RefreshCw size={13} />
                 {inspectFlipped ? "OBRÓĆ NA AWERS" : "OBRÓĆ NA REWERS"}
+              </button>
+
+              <button
+                type="button"
+                className="v104-inspect-flip-btn"
+                style={{ background: "rgba(241, 201, 92, 0.15)", border: "1px solid rgba(241, 201, 92, 0.4)", color: "#f1c95c" }}
+                onClick={() => setSignatureCard(inspectCard.card)}
+              >
+                <PenTool size={13} />
+                PODPISZ KARTĘ
+              </button>
+
+              <button
+                type="button"
+                className="v104-inspect-flip-btn"
+                style={{ background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.4)", color: "#38bdf8" }}
+                onClick={() => setVideoHighlightCard(inspectCard.card)}
+              >
+                <Play size={13} />
+                WIDEO INTRO
               </button>
             </div>
 
@@ -1289,6 +1365,53 @@ export default function DeltaCollectionAlbum({
         <DeltaSkillMiniGamesModal
           onClose={() => setShowSkillGames(false)}
           onPointsEarned={(pts) => setDeltaPoints(p => p + pts)}
+        />
+      )}
+
+      {/* ================= 7. SQUAD BUILDING CHALLENGES (SBC) MODAL ================= */}
+      {showSBC && (
+        <DeltaSBCModal
+          userCards={userCards}
+          allCards={allCards}
+          onClose={() => setShowSBC(false)}
+          onRewardClaimed={(packId, pts) => {
+            if (pts) setDeltaPoints(p => p + pts);
+            fetchCollection();
+          }}
+          onOpenPackDirectly={(packId) => {
+            const def = packDefinitions.find(p => p.id === packId) || packDefinitions[0];
+            setActivePackToOpen(def);
+          }}
+        />
+      )}
+
+      {/* ================= 8. TV BROADCAST LEADERBOARD MODAL ================= */}
+      {showBroadcast && (
+        <BroadcastLeaderboard
+          cards={allCards}
+          onClose={() => setShowBroadcast(false)}
+        />
+      )}
+
+      {/* ================= 9. VIDEO HIGHLIGHT / INTRO MODAL ================= */}
+      {videoHighlightCard && (
+        <PlayerVideoHighlightModal
+          card={videoHighlightCard}
+          onClose={() => setVideoHighlightCard(null)}
+        />
+      )}
+
+      {/* ================= 10. DIGITAL SIGNATURE MODAL ================= */}
+      {signatureCard && (
+        <DigitalSignatureModal
+          card={signatureCard}
+          onClose={() => setSignatureCard(null)}
+          onSaved={() => {
+            // Force re-render of inspect card to see new signature
+            if (inspectCard) {
+              setInspectCard({ ...inspectCard });
+            }
+          }}
         />
       )}
     </section>

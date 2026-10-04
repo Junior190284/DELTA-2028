@@ -15,11 +15,14 @@ import {
   Save, 
   RotateCcw,
   Trophy,
-  ArrowRight
+  ArrowRight,
+  Shirt,
+  LayoutGrid
 } from "lucide-react";
 import { CardDefinition, UserCard, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
+import LockerRoom3D from "./LockerRoom3D";
 
 interface PositionSlot {
   id: string;
@@ -80,6 +83,7 @@ export default function SquadBuilder3D({
   userCardsMap,
   onClose
 }: SquadBuilder3DProps) {
+  const [viewMode, setViewMode] = useState<"pitch" | "lockerRoom">("pitch");
   const [selectedFormationKey, setSelectedFormationKey] = useState<string>("1-2-3-1");
   const [squadSlots, setSquadSlots] = useState<Record<string, CardDefinition>>({});
   const [captainSlotId, setCaptainSlotId] = useState<string>("st");
@@ -185,20 +189,43 @@ export default function SquadBuilder3D({
           <h2>SKŁAD MECZOWY DELTA 2018 GM</h2>
         </div>
 
-        {/* Tactical Formation Selector */}
-        <div className="v200-squad-formation-selector">
-          <span className="text-xs text-slate-400 font-bold uppercase">Formacja:</span>
-          <div className="flex gap-2">
-            {Object.entries(FORMATIONS).map(([key, form]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSelectedFormationKey(key)}
-                className={`v200-formation-tab ${selectedFormationKey === key ? "active" : ""}`}
-              >
-                {key}
-              </button>
-            ))}
+        {/* View Mode & Formation Selector */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex rounded-xl bg-black/40 border border-white/10 p-1">
+            <button
+              type="button"
+              onClick={() => { setViewMode("pitch"); cardSound.playHover(); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === "pitch" ? "bg-amber-500 text-black shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <LayoutGrid size={13} /> MURAWA 3D
+            </button>
+            <button
+              type="button"
+              onClick={() => { setViewMode("lockerRoom"); cardSound.playHover(); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === "lockerRoom" ? "bg-amber-500 text-black shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Shirt size={13} /> SZATNIA VIP
+            </button>
+          </div>
+
+          <div className="v200-squad-formation-selector">
+            <span className="text-xs text-slate-400 font-bold uppercase">Formacja:</span>
+            <div className="flex gap-2">
+              {Object.entries(FORMATIONS).map(([key, form]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedFormationKey(key)}
+                  className={`v200-formation-tab ${selectedFormationKey === key ? "active" : ""}`}
+                >
+                  {key}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -279,86 +306,96 @@ export default function SquadBuilder3D({
         </div>
       </div>
 
-      {/* ================= 3D TACTICAL PITCH VIEW ================= */}
-      <div className="v200-pitch-stage-wrapper">
-        <div className="v200-pitch-stadium-lights" />
+      {/* ================= 3D STAGE: PITCH OR LOCKER ROOM ================= */}
+      {viewMode === "lockerRoom" ? (
+        <LockerRoom3D
+          formationSlots={formation.slots}
+          squadSlots={squadSlots}
+          captainSlotId={captainSlotId}
+          onSlotClick={(slot) => setActivePickerSlot(slot)}
+          onSelectCaptain={(slotId) => setCaptainSlotId(slotId)}
+        />
+      ) : (
+        <div className="v200-pitch-stage-wrapper">
+          <div className="v200-pitch-stadium-lights" />
 
-        <div className="v200-pitch-field">
-          {/* Pitch Markings */}
-          <div className="v200-pitch-center-circle" />
-          <div className="v200-pitch-halfway-line" />
-          <div className="v200-pitch-penalty-area top" />
-          <div className="v200-pitch-penalty-area bottom" />
-          <div className="v200-pitch-corner tl" />
-          <div className="v200-pitch-corner tr" />
-          <div className="v200-pitch-corner bl" />
-          <div className="v200-pitch-corner br" />
+          <div className="v200-pitch-field">
+            {/* Pitch Markings */}
+            <div className="v200-pitch-center-circle" />
+            <div className="v200-pitch-halfway-line" />
+            <div className="v200-pitch-penalty-area top" />
+            <div className="v200-pitch-penalty-area bottom" />
+            <div className="v200-pitch-corner tl" />
+            <div className="v200-pitch-corner tr" />
+            <div className="v200-pitch-corner bl" />
+            <div className="v200-pitch-corner br" />
 
-          {/* Interactive Player Position Slots */}
-          {formation.slots.map(slot => {
-            const assignedCard = squadSlots[slot.id];
-            const isCaptain = captainSlotId === slot.id;
+            {/* Interactive Player Position Slots */}
+            {formation.slots.map(slot => {
+              const assignedCard = squadSlots[slot.id];
+              const isCaptain = captainSlotId === slot.id;
 
-            return (
-              <div
-                key={slot.id}
-                className={`v200-pitch-slot ${assignedCard ? "filled" : "empty"}`}
-                style={{
-                  left: `${slot.xPercent}%`,
-                  top: `${slot.yPercent}%`,
-                  transform: "translate(-50%, -50%)"
-                }}
-                onClick={() => setActivePickerSlot(slot)}
-              >
-                {assignedCard ? (
-                  <div className="v200-slot-card-preview">
-                    {/* Small 3D Card Miniature */}
-                    <CollectibleCard3D
-                      card={assignedCard}
-                      userCard={userCardsMap.get(assignedCard.id) || null}
-                      isLocked={false}
-                      size="sm"
-                      interactive={false}
-                      showFlip={false}
-                    />
+              return (
+                <div
+                  key={slot.id}
+                  className={`v200-pitch-slot ${assignedCard ? "filled" : "empty"}`}
+                  style={{
+                    left: `${slot.xPercent}%`,
+                    top: `${slot.yPercent}%`,
+                    transform: "translate(-50%, -50%)"
+                  }}
+                  onClick={() => setActivePickerSlot(slot)}
+                >
+                  {assignedCard ? (
+                    <div className="v200-slot-card-preview">
+                      {/* Small 3D Card Miniature */}
+                      <CollectibleCard3D
+                        card={assignedCard}
+                        userCard={userCardsMap.get(assignedCard.id) || null}
+                        isLocked={false}
+                        size="sm"
+                        interactive={false}
+                        showFlip={false}
+                      />
 
-                    {/* Captain Badge Toggle */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCaptainSlotId(slot.id);
-                      }}
-                      className={`v200-slot-captain-badge ${isCaptain ? "active" : ""}`}
-                      title={isCaptain ? "Kapitan zespołu" : "Ustaw jako kapitana"}
-                    >
-                      C
-                    </button>
+                      {/* Captain Badge Toggle */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCaptainSlotId(slot.id);
+                        }}
+                        className={`v200-slot-captain-badge ${isCaptain ? "active" : ""}`}
+                        title={isCaptain ? "Kapitan zespołu" : "Ustaw jako kapitana"}
+                      >
+                        C
+                      </button>
 
-                    {/* Remove Card Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleRemoveFromSlot(slot.id, e)}
-                      className="v200-slot-remove-btn"
-                      title="Zdejmij z boiska"
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="v200-slot-empty-placeholder">
-                    <div className="v200-slot-plus-circle">
-                      <Plus size={16} />
+                      {/* Remove Card Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveFromSlot(slot.id, e)}
+                        className="v200-slot-remove-btn"
+                        title="Zdejmij z boiska"
+                      >
+                        <X size={10} />
+                      </button>
                     </div>
-                    <span className="v200-slot-pos-badge">{slot.label}</span>
-                    <span className="v200-slot-role-name">{slot.role}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  ) : (
+                    <div className="v200-slot-empty-placeholder">
+                      <div className="v200-slot-plus-circle">
+                        <Plus size={16} />
+                      </div>
+                      <span className="v200-slot-pos-badge">{slot.label}</span>
+                      <span className="v200-slot-role-name">{slot.role}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Bottom Save & Share Bar */}
       <div className="v200-squad-bottom-bar">
