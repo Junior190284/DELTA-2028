@@ -24729,26 +24729,26 @@ body > main,
 }
 
 /* ------------------------------------------------------------------------- */
-/* LAYER 3: DYNAMIC PLAYER / CARD DATA (HTML/CSS ONLY)                       */
+/* LAYER 3 / 4: DYNAMIC PLAYER / CARD DATA (HTML/CSS ONLY)                   */
 /* ------------------------------------------------------------------------- */
+.card-ui,
 .v200-layer-3-data {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 30;
   pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 12px;
 }
 
 .v200-fifa-top-badge {
+  position: absolute;
+  top: 7.5%;
+  left: 8.5%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  width: 38px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.85);
+  width: 36px;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.9);
 }
 
 .v200-badge-ovr {
@@ -24784,8 +24784,8 @@ body > main,
 
 .v200-top-right-meta {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 7.5%;
+  right: 8.5%;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -24800,7 +24800,7 @@ body > main,
   letter-spacing: 0.08em;
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.65);
   color: #ffffff;
 }
 .v200-edition-pill.theme-inferno { border-color: #ef4444; color: #fca5a5; }
@@ -24813,7 +24813,7 @@ body > main,
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255,255,255,0.3);
   color: #f1f5f9;
   display: flex;
@@ -24831,15 +24831,17 @@ body > main,
 
 .v200-card-nameplate-box {
   position: absolute;
-  bottom: 58px;
-  left: 14px;
-  right: 14px;
+  bottom: 18%;
+  left: 8.5%;
+  right: 8.5%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 5px 8px;
-  background: linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.75) 20%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0));
+  background: linear-gradient(90deg, rgba(5,8,14,0.3), rgba(5,8,14,0.88) 20%, rgba(5,8,14,0.88) 80%, rgba(5,8,14,0.3));
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
   text-align: center;
 }
 
@@ -24867,15 +24869,15 @@ body > main,
 
 .v200-card-stats-matrix {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
+  bottom: 7%;
+  left: 8.5%;
+  right: 8.5%;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 3px;
   padding: 5px 6px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
+  background: rgba(5, 8, 14, 0.88);
+  backdrop-filter: blur(8px);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
