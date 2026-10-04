@@ -24988,83 +24988,136 @@ body > main,
 }
 
 /* ------------------------------------------------------------------------- */
-/* REVERSE / BACK FACE STYLES                                                */
+/* REVERSE / BACK FACE STYLES (5-LAYER MATCHING COLLECTOR DOSSIER)           */
 /* ------------------------------------------------------------------------- */
-.v200-reverse-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  padding-bottom: 8px;
-}
-
-.v200-reverse-body {
+.v200-back-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  padding: 6px 0;
+  justify-content: space-between;
+  padding: 7.5% 8.5%;
+  pointer-events: none;
 }
 
-.v200-reverse-meta-pills {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.v200-reverse-meta-pills .pill {
-  font-size: 8px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #cbd5e1;
-}
-
-.v200-reverse-records-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  text-align: center;
-}
-.v200-reverse-records-grid .rec-box {
-  padding: 5px 3px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.v200-reverse-records-grid .lbl {
-  display: block;
-  font-size: 7px;
-  font-weight: 800;
-  color: #94a3b8;
-}
-.v200-reverse-records-grid .val {
-  font-size: 13px;
-  font-weight: 1000;
-  color: #facc15;
-}
-
-.v200-reverse-lore {
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 8px;
-  border-radius: 8px;
-  font-size: 9px;
-  line-height: 1.4;
-  color: #e2e8f0;
-}
-
-.v200-reverse-footer {
+.v200-back-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 6px;
-  font-size: 8px;
-  color: #94a3b8;
-  font-weight: 800;
+  width: 100%;
 }
-.v200-reverse-footer .stamp {
+
+.v200-back-club-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  color: #e2e8f0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.v200-back-center-dossier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  width: 100%;
+  margin: auto 0;
+}
+
+.v200-back-name-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.v200-back-player-name {
+  font-size: 17px;
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 15px rgba(255,255,255,0.2);
+}
+
+.v200-back-player-sub {
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #f87171;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.v200-back-team-label {
+  font-size: 8.5px;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  color: #94a3b8;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.v200-back-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.v200-back-meta-cell {
+  background: rgba(5, 8, 14, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.v200-back-meta-cell .lbl {
+  font-size: 7px;
+  font-weight: 900;
+  color: #64748b;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.v200-back-meta-cell .val {
+  font-size: 11px;
+  font-weight: 1000;
+  color: #f1f5f9;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.v200-back-footer-stamp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 6px;
+}
+.v200-back-footer-stamp .stamp-text {
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+.v200-back-footer-stamp .stamp-code {
+  font-size: 7.5px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
   color: #facc15;
 }
 

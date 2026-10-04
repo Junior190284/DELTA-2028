@@ -165,6 +165,20 @@ export default function PlayerCard({
   const config = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
   const fifaStats = useMemo(() => getCardFIFAStats(card, playerObj, stats), [card, playerObj, stats]);
 
+  const initials = useMemo(() => {
+    const parts = playerName.split(" ").filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0]?.slice(0, 2).toUpperCase() || "RR";
+  }, [playerName]);
+
+  const dynamicCardId = useMemo(() => {
+    const tpl = templateKey.toUpperCase();
+    const num = String(card?.card_number || 1).padStart(3, "0");
+    return `${tpl}-26-${initials}-${num}`;
+  }, [templateKey, initials, card?.card_number]);
+
   // Cutout Photo Determination - ONLY assign Ryszard photo to Ryszard's card!
   const cutoutUrl = useMemo(() => {
     if (layout.photoUrl) return layout.photoUrl;
@@ -485,67 +499,174 @@ export default function PlayerCard({
         </div>
 
         {/* ========================================================================= */}
-        {/* FACE 2: REVERSE / BACK (OFFICIAL CLUB DOSSIER & RECORD STATS)             */}
+        {/* FACE 2: REVERSE / BACK (5-LAYER MATCHING COLLECTOR DOSSIER)               */}
         {/* ========================================================================= */}
-        <div className={`v200-card-face back-face theme-${templateKey}`}>
-          <div className="v200-reverse-header">
-            <img src="/teamlogos/gm.png" alt="DELTA" className="w-7 h-7 object-contain" />
-            <div>
-              <span className="eyebrow gold text-[8px] font-black">K.S. DELTA WARSZAWA GM</span>
-              <h4 className="text-[11px] font-black text-white leading-tight">{playerName}</h4>
-            </div>
-            {showFlip && (
-              <button
-                type="button"
-                onClick={flipCard}
-                className="v200-flip-trigger-btn ml-auto"
-                title="Wróć na awers"
-              >
-                <RotateCw size={12} />
-              </button>
+        <div className={`v200-card-face back-face theme-${templateKey} player-card`}>
+          
+          {/* ------------------------------------------------------------- */}
+          {/* LAYER 1: BASE BACK BACKGROUND                                 */}
+          {/* ------------------------------------------------------------- */}
+          <div className="card-background v200-layer-1-background">
+            {templateKey === "base" ? (
+              <img 
+                src="/assets/cards/base/base-back-bg.png" 
+                alt="" 
+                className="v200-bg-img"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "center"
+                }}
+                loading="eager"
+                decoding="sync"
+              />
+            ) : (
+              <div className={`v200-bg-gradient theme-${templateKey}`} />
             )}
           </div>
 
-          {/* Dossier Body */}
-          <div className="v200-reverse-body">
-            <div className="v200-reverse-meta-pills">
-              <span className="pill">POZYCJA: <b>{playerObj?.position || "ZAWODNIK"}</b></span>
-              <span className="pill">NUMER: <b>{playerObj?.shirt_number ? `#${playerObj.shirt_number}` : "DELTA"}</b></span>
-              <span className="pill">SEZON: <b>2026/27</b></span>
+          {/* ------------------------------------------------------------- */}
+          {/* LAYER 2: DELTA CLUB CREST WATERMARK (OPACITY ~12%)            */}
+          {/* ------------------------------------------------------------- */}
+          <div 
+            className="v200-back-watermark"
+            style={{
+              position: "absolute",
+              top: "16%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "60%",
+              height: "60%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: 0.12,
+              pointerEvents: "none",
+              zIndex: 10
+            }}
+          >
+            <img 
+              src="/teamlogos/gm.png" 
+              alt="DELTA" 
+              style={{ width: "100%", height: "100%", objectFit: "contain", filter: "grayscale(30%) brightness(1.2)" }} 
+            />
+          </div>
+
+          {/* ------------------------------------------------------------- */}
+          {/* LAYER 3: MATCHING BASE FRAME (800x1200 PNG)                   */}
+          {/* ------------------------------------------------------------- */}
+          {templateKey === "base" ? (
+            <img 
+              src="/assets/cards/base/base-frame.png" 
+              alt="" 
+              className="card-frame"
+              loading="eager"
+              decoding="sync"
+            />
+          ) : (
+            <div className={`v200-layer-4-frame theme-${templateKey}`} />
+          )}
+
+          {/* ------------------------------------------------------------- */}
+          {/* LAYER 4: DYNAMIC DOSSIER & CARD DATA (HTML/CSS)               */}
+          {/* ------------------------------------------------------------- */}
+          <div className="card-ui v200-layer-3-data v200-back-ui">
+            
+            {/* Top Bar: Club Badge & Flip */}
+            <div className="v200-back-top-bar">
+              <div className="v200-back-club-tag">
+                <img src="/teamlogos/gm.png" alt="DELTA" className="w-3.5 h-3.5 object-contain" />
+                <span>DELTA 2018 GM</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                <span className={`v200-edition-pill theme-${templateKey}`}>
+                  {templateKey === "inferno" ? "🔥 INFERNO" :
+                   templateKey === "legend" ? "👑 LEGEND" :
+                   templateKey === "gold" ? "🌟 GOLD" :
+                   templateKey === "matchday" ? "⚡ MATCHDAY" :
+                   templateKey === "panini" ? "📖 PANINI" : "📦 BASE"}
+                </span>
+
+                {showFlip && (
+                  <button
+                    type="button"
+                    onClick={flipCard}
+                    className="v200-flip-trigger-btn"
+                    title="Wróć na awers"
+                    aria-label="Wróć na awers"
+                  >
+                    <RotateCw size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Official Season Records */}
-            <div className="v200-reverse-records-grid">
-              <div className="rec-box">
-                <span className="lbl">MECZE</span>
-                <span className="val">{stats?.matches || (templateKey === "inferno" ? 18 : 12)}</span>
+            {/* Center: Player Name & Detailed Card Specs */}
+            <div className="v200-back-center-dossier">
+              <div className="v200-back-name-wrap">
+                <h3 className="v200-back-player-name">{playerName}</h3>
+                <span className="v200-back-player-sub">
+                  {shirtNum || "#7"} • {playerObj?.position || "POM"}
+                </span>
               </div>
-              <div className="rec-box">
-                <span className="lbl">GOLE</span>
-                <span className="val">{stats?.goals || (templateKey === "inferno" ? 14 : 6)}</span>
+
+              <div className="v200-back-team-label">
+                DELTA WARSZAWA 2018 GM
               </div>
-              <div className="rec-box">
-                <span className="lbl">ASYSTY</span>
-                <span className="val">{stats?.assists || (templateKey === "inferno" ? 9 : 4)}</span>
-              </div>
-              <div className="rec-box">
-                <span className="lbl">TRENINGI</span>
-                <span className="val">{stats?.trainings || (templateKey === "inferno" ? 32 : 24)}</span>
+
+              {/* 2x2 Meta Grid (SEZON, SERIA, RARITY, CARD ID) */}
+              <div className="v200-back-meta-grid">
+                <div className="v200-back-meta-cell">
+                  <span className="lbl">SEZON</span>
+                  <span className="val">2026/27</span>
+                </div>
+                <div className="v200-back-meta-cell">
+                  <span className="lbl">SERIA</span>
+                  <span className="val">{templateKey === "base" ? "BASE" : templateKey.toUpperCase()}</span>
+                </div>
+                <div className="v200-back-meta-cell">
+                  <span className="lbl">RARITY</span>
+                  <span className="val">{rarity.toUpperCase()}</span>
+                </div>
+                <div className="v200-back-meta-cell">
+                  <span className="lbl">CARD ID</span>
+                  <span className="val font-mono">{dynamicCardId}</span>
+                </div>
               </div>
             </div>
 
-            {/* Card Lore / Bio */}
-            <div className="v200-reverse-lore">
-              <p>
-                {card?.lore || card?.description || "Oficjalna karta kolekcjonerska rocznika 2018 K.S. Delta Warszawa GM. Pasja, rozwój i przyjaźń na każdym treningu."}
-              </p>
+            {/* Bottom Footer: Collector Stamp */}
+            <div className="v200-back-footer-stamp">
+              <span className="stamp-text">DELTA COLLECTOR SERIES</span>
+              <span className="stamp-code">★ OFFICIAL ★</span>
             </div>
           </div>
 
-          {/* Footer Card Stamp */}
-          <div className="v200-reverse-footer">
-            <span>DELTA COLLECTION 2026</span>
-            <span className="stamp font-mono">#DELTA-2018-GM</span>
+          {/* ------------------------------------------------------------- */}
+          {/* LAYER 5: MATCHING BASE FX & SPECULAR GLOW                     */}
+          {/* ------------------------------------------------------------- */}
+          {templateKey === "base" && (
+            <img 
+              src="/assets/cards/base/base-fx.png" 
+              alt="" 
+              className="card-fx"
+              loading="eager"
+              decoding="sync"
+            />
+          )}
+
+          <div className="v200-layer-5-fx">
+            <div 
+              className={`v200-hologram-sheen theme-${templateKey}`}
+              style={{
+                backgroundPosition: `${glarePos.x}% ${glarePos.y}%`,
+                opacity: glarePos.opacity > 0 ? glarePos.opacity : 0.25
+              }}
+            />
           </div>
         </div>
       </div>
