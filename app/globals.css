@@ -25016,6 +25016,18 @@ body > main,
   text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
+.v200-back-club-logo {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  max-width: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  object-fit: contain !important;
+  flex: 0 0 14px !important;
+  display: inline-block !important;
+}
+
 .v200-back-center-dossier {
   display: flex;
   flex-direction: column;

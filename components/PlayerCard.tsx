@@ -419,7 +419,13 @@ export default function PlayerCard({
                 <div className={`v200-neon-silhouette theme-${templateKey}`}>
                   <div className="v200-neon-body" />
                   <div className="v200-neon-crest">
-                    <img src="/teamlogos/gm.png" alt="DELTA" />
+                    <img 
+                      src="/teamlogos/gm.png" 
+                      alt="DELTA" 
+                      width={32}
+                      height={32}
+                      style={{ width: 32, height: 32, minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32, objectFit: "contain", flexShrink: 0 }}
+                    />
                     <span>{playerObj?.shirt_number || "GM"}</span>
                   </div>
                 </div>
@@ -448,7 +454,14 @@ export default function PlayerCard({
                 <span className={`v200-badge-ovr theme-${templateKey}`}>{fifaStats.ovr}</span>
                 <span className="v200-badge-pos">{fifaStats.posCode}</span>
                 <span className="v200-badge-flag" role="img" aria-label="Polska">🇵🇱</span>
-                <img src="/teamlogos/gm.png" alt="DELTA" className="v200-badge-crest" />
+                <img 
+                  src="/teamlogos/gm.png" 
+                  alt="DELTA" 
+                  width={18}
+                  height={18}
+                  className="v200-badge-crest" 
+                  style={{ width: 18, height: 18, minWidth: 18, maxWidth: 18, minHeight: 18, maxHeight: 18, objectFit: "contain", flexShrink: 0 }}
+                />
               </div>
             )}
 
@@ -618,7 +631,14 @@ export default function PlayerCard({
             {/* Top Bar: Club Badge & Flip */}
             <div className="v200-back-top-bar">
               <div className="v200-back-club-tag">
-                <img src="/teamlogos/gm.png?v=20261004b" alt="DELTA" className="w-3.5 h-3.5 object-contain" />
+                <img 
+                  src="/teamlogos/gm.png?v=20261004c" 
+                  alt="DELTA" 
+                  width={14} 
+                  height={14} 
+                  className="v200-back-club-logo" 
+                  style={{ width: 14, height: 14, minWidth: 14, maxWidth: 14, minHeight: 14, maxHeight: 14, objectFit: "contain", flexShrink: 0 }} 
+                />
                 <span>DELTA 2018 GM</span>
               </div>
               
