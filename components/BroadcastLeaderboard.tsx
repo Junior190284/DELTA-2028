@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { 
   Trophy, 
@@ -30,11 +30,15 @@ interface PlayerRankItem {
 
 interface BroadcastLeaderboardProps {
   cards: CardDefinition[];
+  players?: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null }[];
+  playerStats?: Record<string, { goals: number; assists: number; attendancePercent: number; mvp: number }>;
   onClose: () => void;
 }
 
 export default function BroadcastLeaderboard({
   cards,
+  players = [],
+  playerStats = {},
   onClose
 }: BroadcastLeaderboardProps) {
   const [mounted, setMounted] = useState(false);
@@ -50,61 +54,127 @@ export default function BroadcastLeaderboard({
     };
   }, []);
 
-  // Compute leaderboard categories based on players/cards
-  const goalScorers: PlayerRankItem[] = cards
-    .slice(0, 5)
-    .map((c, i) => ({
-      id: c.id,
-      name: c.player?.display_name || c.card_name || "Zawodnik DELTA",
-      shirtNumber: c.player?.shirt_number || String(7 + i),
-      val: 18 - i * 3,
-      label: "GOLI",
-      rarity: c.rarity || "common",
-      photoUrl: c.player?.photo_path || "/assets/players/ryszard-rybacki.png"
-    }));
+  // Consolidate unique squad players with photo, shirt number and name
+  const uniquePlayers = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; shirtNumber: string; photoUrl?: string }>();
 
-  const assistKings: PlayerRankItem[] = cards
-    .slice(0, 5)
-    .map((c, i) => ({
-      id: c.id,
-      name: c.player?.display_name || c.card_name || "Zawodnik DELTA",
-      shirtNumber: c.player?.shirt_number || String(10 + i),
-      val: 14 - i * 2,
-      label: "ASYST",
-      rarity: c.rarity || "rare",
-      photoUrl: c.player?.photo_path || "/assets/players/ryszard-gold.png"
-    }));
+    (players || []).forEach(p => {
+      if (p.id) {
+        map.set(p.id, {
+          id: p.id,
+          name: p.display_name,
+          shirtNumber: p.shirt_number || "GM",
+          photoUrl: p.photo_path || undefined
+        });
+      }
+    });
 
-  const trainingWarriors: PlayerRankItem[] = cards
-    .slice(0, 5)
-    .map((c, i) => ({
-      id: c.id,
-      name: c.player?.display_name || c.card_name || "Zawodnik DELTA",
-      shirtNumber: c.player?.shirt_number || String(4 + i),
-      val: 100 - i * 4,
-      label: "% FREKWENCJI",
-      rarity: "epic",
-      photoUrl: c.player?.photo_path || "/assets/players/ryszard-inferno.png"
-    }));
+    (cards || []).forEach(c => {
+      const p = c.player;
+      if (p?.id && !map.has(p.id)) {
+        map.set(p.id, {
+          id: p.id,
+          name: p.display_name || c.card_name,
+          shirtNumber: p.shirt_number || "GM",
+          photoUrl: p.photo_path || c.artwork_url || undefined
+        });
+      }
+    });
 
-  const mvpStars: PlayerRankItem[] = cards
-    .slice(0, 5)
-    .map((c, i) => ({
-      id: c.id,
-      name: c.player?.display_name || c.card_name || "Zawodnik DELTA",
-      shirtNumber: c.player?.shirt_number || String(9 + i),
-      val: 8 - i,
-      label: "TYTUŁÓW MVP",
-      rarity: "legendary",
-      photoUrl: c.player?.photo_path || "/assets/players/ryszard-legend.png"
-    }));
+    return Array.from(map.values());
+  }, [players, cards]);
+
+  // Compute live ranking lists without duplicates
+  const goalScorers = useMemo<PlayerRankItem[]>(() => {
+    return uniquePlayers
+      .map(p => {
+        const stats = playerStats?.[p.id];
+        const val = stats ? stats.goals : 0;
+        return {
+          id: p.id,
+          name: p.name,
+          shirtNumber: p.shirtNumber,
+          val,
+          label: "GOLI",
+          rarity: val >= 10 ? "inferno" : val >= 5 ? "legendary" : val >= 1 ? "epic" : "common",
+          photoUrl: p.photoUrl || "/assets/players/ryszard-rybacki.png"
+        };
+      })
+      .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
+      .slice(0, 5);
+  }, [uniquePlayers, playerStats]);
+
+  const assistKings = useMemo<PlayerRankItem[]>(() => {
+    return uniquePlayers
+      .map(p => {
+        const stats = playerStats?.[p.id];
+        const val = stats ? stats.assists : 0;
+        return {
+          id: p.id,
+          name: p.name,
+          shirtNumber: p.shirtNumber,
+          val,
+          label: "ASYST",
+          rarity: val >= 8 ? "legendary" : val >= 4 ? "epic" : val >= 1 ? "rare" : "common",
+          photoUrl: p.photoUrl || "/assets/players/ryszard-gold.png"
+        };
+      })
+      .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
+      .slice(0, 5);
+  }, [uniquePlayers, playerStats]);
+
+  const trainingWarriors = useMemo<PlayerRankItem[]>(() => {
+    return uniquePlayers
+      .map(p => {
+        const stats = playerStats?.[p.id];
+        const val = stats ? stats.attendancePercent : 100;
+        return {
+          id: p.id,
+          name: p.name,
+          shirtNumber: p.shirtNumber,
+          val,
+          label: "% FREKWENCJI",
+          rarity: val >= 95 ? "inferno" : val >= 85 ? "epic" : "rare",
+          photoUrl: p.photoUrl || "/assets/players/ryszard-inferno.png"
+        };
+      })
+      .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
+      .slice(0, 5);
+  }, [uniquePlayers, playerStats]);
+
+  const mvpStars = useMemo<PlayerRankItem[]>(() => {
+    return uniquePlayers
+      .map(p => {
+        const stats = playerStats?.[p.id];
+        const val = stats ? stats.mvp : 0;
+        return {
+          id: p.id,
+          name: p.name,
+          shirtNumber: p.shirtNumber,
+          val,
+          label: "TYTUŁÓW MVP",
+          rarity: val >= 3 ? "legendary" : val >= 1 ? "epic" : "rare",
+          photoUrl: p.photoUrl || "/assets/players/ryszard-legend.png"
+        };
+      })
+      .sort((a, b) => b.val - a.val || a.name.localeCompare(b.name, "pl"))
+      .slice(0, 5);
+  }, [uniquePlayers, playerStats]);
 
   const activeList = 
     activeTab === "goals" ? goalScorers :
     activeTab === "assists" ? assistKings :
     activeTab === "training" ? trainingWarriors : mvpStars;
 
-  const topPlayer = activeList[0];
+  const topPlayer = activeList[0] || {
+    id: "none",
+    name: "Zawodnik DELTA",
+    shirtNumber: "GM",
+    val: 0,
+    label: "PUNKTÓW",
+    rarity: "common",
+    photoUrl: "/teamlogos/gm.png"
+  };
 
   const getCategoryMeta = () => {
     switch (activeTab) {
@@ -448,7 +518,7 @@ export default function BroadcastLeaderboard({
               const isFirst = idx === 0;
               return (
                 <div 
-                  key={item.id}
+                  key={`${item.id}-${idx}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
