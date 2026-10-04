@@ -109,6 +109,16 @@ export default function DeltaCollectionAlbum({
   const [videoHighlightCard, setVideoHighlightCard] = useState<CardDefinition | null>(null);
   const [signatureCard, setSignatureCard] = useState<CardDefinition | null>(null);
 
+  const carouselTrackRef = React.useRef<HTMLDivElement | null>(null);
+
+  const scrollCarousel = (direction: "left" | "right") => {
+    if (carouselTrackRef.current) {
+      const scrollAmount = direction === "left" ? -280 : 280;
+      carouselTrackRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      cardSound.playHover();
+    }
+  };
+
   const getCardUnlockCondition = (card: CardDefinition): string => {
     const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
     const r = (card.rarity || "").toLowerCase();
@@ -821,14 +831,62 @@ export default function DeltaCollectionAlbum({
 
           {/* Player Cards Horizontal 3D Carousel */}
           <div className="v104-album-carousel-section">
-            <div className="v104-carousel-header">
-              <span className="eyebrow gold"><Layers size={14} className="inline mr-1" /> KARTY W TEJ KOLEKCJI ({currentAlbum.cards.length})</span>
-              <p className="v104-carousel-sub">
-                Kliknij kartę, aby powiększyć i obejrzeć historię na rewersie. Karty zablokowane zdobędziesz otwierając paczki!
-              </p>
+            <div className="v104-carousel-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+              <div>
+                <span className="eyebrow gold"><Layers size={14} className="inline mr-1" /> KARTY W TEJ KOLEKCJI ({currentAlbum.cards.length})</span>
+                <p className="v104-carousel-sub">
+                  Przewijaj karuzelę, aby obejrzeć wszystkie 6 edycji karty. Kliknij kartę, aby powiększyć i obejrzeć rewers!
+                </p>
+              </div>
+
+              {/* Carousel Navigation Arrows */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => scrollCarousel("left")}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "1px solid rgba(241, 201, 92, 0.4)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#f1c95c",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.5)"
+                  }}
+                  aria-label="Poprzednia karta"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCarousel("right")}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "1px solid rgba(241, 201, 92, 0.4)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#f1c95c",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.5)"
+                  }}
+                  aria-label="Następna karta"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
             </div>
 
-            <div className="v104-player-carousel-track">
+            <div ref={carouselTrackRef} className="v104-player-carousel-track">
               {currentAlbum.cards.map(card => {
                 const userCard = ownedCardsMap.get(card.id) || null;
                 const isLocked = !userCard;

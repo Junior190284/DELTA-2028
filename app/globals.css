@@ -13606,25 +13606,37 @@ body > main,
 
 .v104-player-carousel-track {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px 10px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 22px;
+  padding: 20px 12px 28px 12px;
   box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 201, 92, 0.4) rgba(0, 0, 0, 0.2);
 }
 
-@media (max-width: 900px) {
-  .v104-player-carousel-track {
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(241, 201, 92, 0.4) transparent;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 24px;
-  }
+.v104-player-carousel-track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.v104-player-carousel-track::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.v104-player-carousel-track::-webkit-scrollbar-thumb {
+  background: rgba(241, 201, 92, 0.4);
+  border-radius: 4px;
+}
+
+.v104-player-carousel-track::-webkit-scrollbar-thumb:hover {
+  background: rgba(241, 201, 92, 0.7);
 }
 
 .v104-carousel-card-item {
@@ -13633,11 +13645,13 @@ body > main,
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  width: 240px;
+  scroll-snap-align: center;
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .v104-carousel-card-item:hover {
-  transform: translateY(-8px) scale(1.03);
+  transform: translateY(-8px) scale(1.02);
 }
 
 .v104-carousel-card-footer {
