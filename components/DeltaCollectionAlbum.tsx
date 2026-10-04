@@ -1120,7 +1120,7 @@ export default function DeltaCollectionAlbum({
             <CollectibleCard3D
               card={inspectCard.card}
               userCard={inspectCard.userCard}
-              isLocked={!inspectCard.userCard}
+              isLocked={false}
               size="xl"
               interactive={true}
               showFlip={true}
