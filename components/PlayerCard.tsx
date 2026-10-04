@@ -297,6 +297,29 @@ export default function PlayerCard({
     return null; // Return null so other boys without photo display their personalized neon silhouette!
   }, [layout.photoUrl, card?.artwork_url, card?.card_name, playerObj, templateKey]);
 
+  // Digital Signature from local vault
+  const [digitalSignature, setDigitalSignature] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pKey = playerObj?.id || card?.player_id || card?.id;
+      if (pKey) {
+        const sig = localStorage.getItem(`delta_sig_${pKey}`);
+        if (sig) setDigitalSignature(sig);
+      }
+    }
+  }, [playerObj?.id, card?.player_id, card?.id]);
+
+  // Milestone Badge determination
+  const milestoneBadge = useMemo(() => {
+    const goals = stats?.goals ?? (templateKey === "inferno" ? 52 : templateKey === "legend" ? 35 : 12);
+    const trainings = stats?.trainings ?? (templateKey === "inferno" ? 99 : templateKey === "legend" ? 96 : 90);
+    if (templateKey === "inferno" || goals >= 50) return { label: "KLUB 50 GOLI", icon: "⚽", color: "#ff4d5a" };
+    if (trainings >= 95) return { label: "100% FREKWENCJI", icon: "⚡", color: "#38bdf8" };
+    if (templateKey === "legend" || cardType.includes("mvp")) return { label: "MVP SEZONU", icon: "👑", color: "#f1c95c" };
+    return null;
+  }, [stats, templateKey, cardType]);
+
   // Flip Action
   const flipCard = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -524,11 +547,31 @@ export default function PlayerCard({
               </div>
             )}
 
-            {/* Top Right: Edition Tag & Flip Button */}
+            {/* Top Right: Edition Tag, Milestone Badge & Flip Button */}
             <div className="v200-top-right-meta">
               <span className={`v200-edition-pill theme-${templateKey}`}>
                 {seriesInfo.badge}
               </span>
+
+              {milestoneBadge && (
+                <span 
+                  className="v200-milestone-pill"
+                  style={{
+                    fontSize: "8px",
+                    padding: "2px 5px",
+                    borderRadius: "4px",
+                    background: "rgba(0,0,0,0.6)",
+                    border: `1px solid ${milestoneBadge.color}`,
+                    color: milestoneBadge.color,
+                    fontWeight: "bold",
+                    backdropFilter: "blur(4px)",
+                    boxShadow: `0 0 8px ${milestoneBadge.color}40`
+                  }}
+                  title={milestoneBadge.label}
+                >
+                  {milestoneBadge.icon} {milestoneBadge.label}
+                </span>
+              )}
 
               {showFlip && (
                 <button
@@ -747,6 +790,23 @@ export default function PlayerCard({
                   <span className="lbl">CARD ID</span>
                   <span className="val font-mono">{dynamicCardId}</span>
                 </div>
+              </div>
+
+              {/* Digital Signature & Milestone Vault Section */}
+              <div className="v200-back-signature-box" style={{ margin: "6px 0", padding: "4px 8px", background: "rgba(0,0,0,0.4)", borderRadius: "8px", border: "1px dashed rgba(241,201,92,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: "8px", color: "rgba(241,201,92,0.8)", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "0.5px" }}>OFICJALNY PODPIS:</span>
+                  {digitalSignature ? (
+                    <img src={digitalSignature} alt="Autograf" style={{ height: "24px", maxWidth: "120px", objectFit: "contain", filter: "drop-shadow(0 0 4px rgba(241,201,92,0.6))" }} />
+                  ) : (
+                    <span style={{ fontSize: "10px", color: "#64748b", fontStyle: "italic" }}>Brak podpisu (Kliknij 'Podpisz')</span>
+                  )}
+                </div>
+                {milestoneBadge && (
+                  <span style={{ fontSize: "8px", padding: "2px 6px", borderRadius: "4px", background: "rgba(255,255,255,0.08)", color: milestoneBadge.color, border: `1px solid ${milestoneBadge.color}`, fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                    {milestoneBadge.icon} {milestoneBadge.label}
+                  </span>
+                )}
               </div>
             </div>
 
