@@ -58,7 +58,7 @@ export default function BroadcastLeaderboard({
       name: c.player?.display_name || c.card_name || "Zawodnik DELTA",
       shirtNumber: c.player?.shirt_number || String(7 + i),
       val: 18 - i * 3,
-      label: "BRAMEK",
+      label: "GOLI",
       rarity: c.rarity || "common",
       photoUrl: c.player?.photo_path || "/assets/players/ryszard-rybacki.png"
     }));
@@ -106,18 +106,32 @@ export default function BroadcastLeaderboard({
 
   const topPlayer = activeList[0];
 
+  const getCategoryMeta = () => {
+    switch (activeTab) {
+      case "goals":
+        return { title: "KLASYFIKACJA STRZELCÓW", sub: "Najlepsi snajperzy sezonu 2026/27", color: "#38bdf8", icon: "⚽" };
+      case "assists":
+        return { title: "KLASYFIKACJA ASYST", sub: "Królowie kluczowych podań", color: "#f1c95c", icon: "🎯" };
+      case "training":
+        return { title: "100% FREKWENCJI TRENINGOWEJ", sub: "Wojownicy treningu i systematyczności", color: "#34d399", icon: "⚡" };
+      case "mvp":
+        return { title: "KRÓL MVP MECZU", sub: "Najwięcej wyróżnień gracza meczu", color: "#c084fc", icon: "👑" };
+    }
+  };
+
+  const meta = getCategoryMeta();
+
   if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
     <div 
-      className="v200-picker-backdrop"
       style={{
         position: "fixed",
         inset: 0,
         width: "100vw",
         height: "100dvh",
         zIndex: 9999999,
-        background: "rgba(3, 5, 8, 0.96)",
+        background: "rgba(3, 5, 8, 0.94)",
         backdropFilter: "blur(14px)",
         display: "flex",
         alignItems: "center",
@@ -128,143 +142,405 @@ export default function BroadcastLeaderboard({
       onClick={onClose}
     >
       <div 
-        className="v200-broadcast-modal max-w-4xl w-full flex flex-col"
         style={{
+          width: "100%",
+          maxWidth: "880px",
           maxHeight: "92dvh",
-          background: "radial-gradient(circle at 50% 10%, #172554 0%, #080f1e 50%, #030712 100%)",
+          display: "flex",
+          flexDirection: "column",
+          background: "radial-gradient(ellipse at 50% 0%, #0d1b38 0%, #060d1d 55%, #02050b 100%)",
           border: "1px solid rgba(56, 189, 248, 0.4)",
           borderRadius: "24px",
-          boxShadow: "0 30px 80px -20px rgba(0,0,0,0.95), 0 0 50px rgba(56, 189, 248, 0.15)",
+          boxShadow: "0 30px 90px -20px rgba(0,0,0,0.98), 0 0 50px rgba(56, 189, 248, 0.2)",
           color: "#fff",
           overflow: "hidden"
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* TV Broadcast Top Bar */}
-        <div className="flex items-center justify-between px-6 py-3.5 bg-gradient-to-r from-blue-950 via-slate-900 to-blue-950 border-b border-sky-500/30">
-          <div className="flex items-center gap-3">
-            <div className="px-2.5 py-1 rounded bg-red-600 text-white font-black text-[11px] tracking-wider flex items-center gap-1.5 shadow-md shadow-red-600/50 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-white animate-ping" /> LIVE ON AIR
+        {/* ================= 1. TV BROADCAST TOP HEADER ================= */}
+        <div 
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 22px",
+            background: "linear-gradient(90deg, #091329 0%, #0c1c3d 50%, #091329 100%)",
+            borderBottom: "1px solid rgba(56, 189, 248, 0.3)"
+          }}
+        >
+          {/* Live On Air Indicator & Title */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div 
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                background: "#dc2626",
+                color: "#ffffff",
+                fontSize: "10px",
+                fontWeight: 900,
+                letterSpacing: "1px",
+                boxShadow: "0 0 12px rgba(220, 38, 38, 0.7)"
+              }}
+            >
+              <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#ffffff", display: "inline-block" }} />
+              LIVE ON AIR
             </div>
-            <div className="flex items-center gap-2">
-              <Tv size={18} className="text-sky-400" />
-              <span className="font-black text-xs tracking-wider text-white">DELTA TV SPORTS HD</span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Tv size={18} style={{ color: "#38bdf8" }} />
+              <span style={{ fontSize: "13px", fontWeight: 900, letterSpacing: "1px", color: "#f8fafc" }}>
+                DELTA TV SPORTS HD • STUDIO MECZOWE
+              </span>
             </div>
           </div>
+
+          {/* Close Button */}
           <button 
             type="button" 
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#cbd5e1",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            aria-label="Zamknij"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Categories Tab Bar */}
-        <div className="grid grid-cols-4 border-b border-white/10 bg-black/40 text-xs font-bold">
+        {/* ================= 2. CATEGORY TAB SWITCHER ================= */}
+        <div 
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            background: "rgba(0, 0, 0, 0.5)",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.1)"
+          }}
+        >
           <button
             type="button"
             onClick={() => { setActiveTab("goals"); cardSound.playHover(); }}
-            className={`py-3 flex items-center justify-center gap-2 transition-all ${
-              activeTab === "goals" ? "bg-sky-500/20 text-sky-300 border-b-2 border-sky-400 font-black" : "text-slate-400 hover:text-white"
-            }`}
+            style={{
+              padding: "12px 6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              background: activeTab === "goals" ? "rgba(56, 189, 248, 0.18)" : "transparent",
+              borderBottom: activeTab === "goals" ? "3px solid #38bdf8" : "3px solid transparent",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              color: activeTab === "goals" ? "#38bdf8" : "#94a3b8",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.5px",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
           >
-            <Target size={15} /> KRÓL STRZELCÓW
+            <Target size={14} /> KRÓL STRZELCÓW
           </button>
+
           <button
             type="button"
             onClick={() => { setActiveTab("assists"); cardSound.playHover(); }}
-            className={`py-3 flex items-center justify-center gap-2 transition-all ${
-              activeTab === "assists" ? "bg-amber-500/20 text-amber-300 border-b-2 border-amber-400 font-black" : "text-slate-400 hover:text-white"
-            }`}
+            style={{
+              padding: "12px 6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              background: activeTab === "assists" ? "rgba(241, 201, 92, 0.18)" : "transparent",
+              borderBottom: activeTab === "assists" ? "3px solid #f1c95c" : "3px solid transparent",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              color: activeTab === "assists" ? "#f1c95c" : "#94a3b8",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.5px",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
           >
-            <Sparkles size={15} /> KRÓL ASYST
+            <Sparkles size={14} /> KRÓL ASYST
           </button>
+
           <button
             type="button"
             onClick={() => { setActiveTab("training"); cardSound.playHover(); }}
-            className={`py-3 flex items-center justify-center gap-2 transition-all ${
-              activeTab === "training" ? "bg-emerald-500/20 text-emerald-300 border-b-2 border-emerald-400 font-black" : "text-slate-400 hover:text-white"
-            }`}
+            style={{
+              padding: "12px 6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              background: activeTab === "training" ? "rgba(52, 211, 153, 0.18)" : "transparent",
+              borderBottom: activeTab === "training" ? "3px solid #34d399" : "3px solid transparent",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              color: activeTab === "training" ? "#34d399" : "#94a3b8",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.5px",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
           >
-            <Zap size={15} /> 100% FREKWENCJI
+            <Zap size={14} /> 100% FREKWENCJI
           </button>
+
           <button
             type="button"
             onClick={() => { setActiveTab("mvp"); cardSound.playHover(); }}
-            className={`py-3 flex items-center justify-center gap-2 transition-all ${
-              activeTab === "mvp" ? "bg-purple-500/20 text-purple-300 border-b-2 border-purple-400 font-black" : "text-slate-400 hover:text-white"
-            }`}
+            style={{
+              padding: "12px 6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              background: activeTab === "mvp" ? "rgba(192, 132, 252, 0.18)" : "transparent",
+              borderBottom: activeTab === "mvp" ? "3px solid #c084fc" : "3px solid transparent",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              color: activeTab === "mvp" ? "#c084fc" : "#94a3b8",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.5px",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
           >
-            <Crown size={15} /> MVP MIESIĄCA
+            <Crown size={14} /> MVP MIESIĄCA
           </button>
         </div>
 
-        {/* Broadcast Body */}
-        <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 overflow-y-auto">
-          {/* Left: Star Player Spotlight (TV Studio Look) */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-b from-sky-950/40 to-black/60 border border-sky-500/30 relative overflow-hidden">
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-black tracking-wider flex items-center gap-1">
+        {/* ================= 3. BROADCAST BODY (STUDIO & TABLE) ================= */}
+        <div 
+          style={{
+            padding: "20px 24px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1.35fr",
+            gap: "24px",
+            overflowY: "auto",
+            alignItems: "center"
+          }}
+        >
+          {/* Left Column: Star Leader TV Spotlight */}
+          <div 
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px 16px",
+              borderRadius: "20px",
+              background: "linear-gradient(180deg, rgba(13, 37, 77, 0.6) 0%, rgba(3, 10, 24, 0.8) 100%)",
+              border: `1px solid ${meta.color}55`,
+              boxShadow: `0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px ${meta.color}15`,
+              position: "relative",
+              textAlign: "center"
+            }}
+          >
+            {/* Top Ribbon */}
+            <div 
+              style={{
+                position: "absolute",
+                top: "10px",
+                left: "12px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                background: "rgba(241, 201, 92, 0.2)",
+                border: "1px solid rgba(241, 201, 92, 0.5)",
+                color: "#f1c95c",
+                fontSize: "9px",
+                fontWeight: 900,
+                letterSpacing: "0.5px"
+              }}
+            >
               <Trophy size={11} /> LIDER RANKINGU #1
             </div>
 
-            <div className="w-36 h-48 my-3 rounded-xl overflow-hidden border-2 border-amber-400/60 shadow-2xl shadow-amber-500/20 relative flex items-center justify-center bg-black/60">
+            {/* Framed Photo */}
+            <div 
+              style={{
+                width: "140px",
+                height: "170px",
+                margin: "18px 0 12px 0",
+                borderRadius: "14px",
+                border: "2px solid rgba(241, 201, 92, 0.7)",
+                overflow: "hidden",
+                background: "radial-gradient(circle, #1e293b 0%, #020617 100%)",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.8), 0 0 20px rgba(241, 201, 92, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
               <img 
                 src={topPlayer?.photoUrl || "/teamlogos/gm.png"} 
                 alt={topPlayer?.name}
-                className="w-full h-full object-contain filter drop-shadow-lg transform hover:scale-105 transition-transform"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain"
+                }}
               />
             </div>
 
-            <div className="text-center w-full">
-              <span className="text-[11px] font-mono text-amber-400 font-bold">#{topPlayer?.shirtNumber} • DELTA WARSZAWA</span>
-              <h3 className="text-xl font-black text-white tracking-wide truncate">{topPlayer?.name}</h3>
-              <div className="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black text-sm shadow-lg shadow-amber-500/30">
-                <span>{topPlayer?.val}</span>
-                <span className="text-xs">{topPlayer?.label}</span>
-              </div>
+            {/* Player Info */}
+            <span style={{ fontSize: "10px", color: meta.color, fontWeight: "bold", fontFamily: "monospace" }}>
+              #{topPlayer?.shirtNumber} • K.S. DELTA WARSZAWA 2018 GM
+            </span>
+            <h3 style={{ fontSize: "17px", fontWeight: 900, color: "#ffffff", margin: "4px 0 8px 0", letterSpacing: "0.5px" }}>
+              {topPlayer?.name}
+            </h3>
+
+            {/* Stat Score Pill */}
+            <div 
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 16px",
+                borderRadius: "30px",
+                background: "linear-gradient(90deg, #f1c95c, #eab308)",
+                color: "#000000",
+                fontWeight: 900,
+                fontSize: "14px",
+                boxShadow: "0 4px 15px rgba(241, 201, 92, 0.4)"
+              }}
+            >
+              <span>{topPlayer?.val}</span>
+              <span style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{topPlayer?.label}</span>
             </div>
           </div>
 
-          {/* Right: TV Broadcast Lower-Third Ranking Table */}
-          <div className="md:col-span-7 flex flex-col gap-2 justify-center">
-            {activeList.map((item, idx) => (
-              <div 
-                key={item.id}
-                className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
-                  idx === 0 
-                    ? "bg-gradient-to-r from-amber-500/20 via-amber-500/5 to-transparent border-amber-400/60 shadow-md shadow-amber-500/10" 
-                    : "bg-white/[0.03] border-white/5 hover:bg-white/[0.08]"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                    idx === 0 ? "bg-amber-400 text-black shadow" : idx === 1 ? "bg-slate-300 text-black" : idx === 2 ? "bg-amber-700 text-white" : "text-slate-500"
-                  }`}>
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <h4 className="font-bold text-xs text-white tracking-wide">{item.name}</h4>
-                    <span className="text-[10px] text-slate-400 font-mono">#{item.shirtNumber} • K.S. DELTA</span>
+          {/* Right Column: TV Broadcast Lower-Third Table */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px", padding: "0 4px" }}>
+              <div>
+                <span style={{ fontSize: "13px", fontWeight: 900, color: "#f8fafc", letterSpacing: "0.5px" }}>{meta.title}</span>
+                <span style={{ display: "block", fontSize: "10px", color: "#94a3b8" }}>{meta.sub}</span>
+              </div>
+              <span style={{ fontSize: "10px", color: meta.color, fontWeight: "bold", fontFamily: "monospace" }}>TOP 5 ZAWODNIKÓW</span>
+            </div>
+
+            {activeList.map((item, idx) => {
+              const isFirst = idx === 0;
+              return (
+                <div 
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "9px 14px",
+                    borderRadius: "12px",
+                    background: isFirst 
+                      ? "linear-gradient(90deg, rgba(241, 201, 92, 0.18) 0%, rgba(241, 201, 92, 0.04) 100%)" 
+                      : "rgba(255, 255, 255, 0.03)",
+                    border: isFirst 
+                      ? "1px solid rgba(241, 201, 92, 0.5)" 
+                      : "1px solid rgba(255, 255, 255, 0.06)",
+                    boxShadow: isFirst ? "0 4px 14px rgba(241, 201, 92, 0.15)" : "none",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span 
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        fontWeight: 900,
+                        background: idx === 0 ? "#f1c95c" : idx === 1 ? "#cbd5e1" : idx === 2 ? "#b45309" : "rgba(255,255,255,0.08)",
+                        color: idx === 0 || idx === 1 ? "#000000" : "#ffffff"
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <h4 style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff", margin: 0 }}>
+                        {item.name}
+                      </h4>
+                      <span style={{ fontSize: "9px", color: "#64748b", fontFamily: "monospace" }}>
+                        #{item.shirtNumber} • DELTA 2018 GM
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 900, color: meta.color, fontFamily: "monospace" }}>
+                      {item.val}
+                    </span>
+                    <span style={{ fontSize: "9px", color: "#94a3b8", textTransform: "uppercase" }}>
+                      {item.label}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-sm text-sky-300 font-mono">{item.val}</span>
-                  <span className="text-[10px] text-slate-400 uppercase">{item.label}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* TV Bottom Ticker */}
-        <div className="py-2.5 px-6 bg-black/80 border-t border-sky-500/30 flex items-center justify-between text-[11px] font-mono text-sky-400/90 overflow-hidden">
-          <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 rounded bg-sky-500 text-black font-black text-[9px]">TICKER</span>
-            <span className="truncate">★ NAJBLIŻSZY MECZ: SEMP URSYNÓW vs K.S. DELTA 2018 GM • SOBOTA 10:00 ★</span>
+        {/* ================= 4. TV BOTTOM TICKER ================= */}
+        <div 
+          style={{
+            padding: "10px 20px",
+            background: "rgba(0, 0, 0, 0.75)",
+            borderTop: "1px solid rgba(56, 189, 248, 0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            fontFamily: "monospace",
+            color: "#38bdf8"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+            <span 
+              style={{
+                padding: "2px 6px",
+                borderRadius: "4px",
+                background: "#38bdf8",
+                color: "#000000",
+                fontWeight: 900,
+                fontSize: "9px"
+              }}
+            >
+              TICKER
+            </span>
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              ★ NAJBLIŻSZY MECZ LIGOWY: SEMP URSYNÓW vs K.S. DELTA 2018 GM • SOBOTA 10:00 ★
+            </span>
           </div>
-          <span className="text-slate-500 hidden sm:inline">SEZON 2026/27</span>
+
+          <span style={{ color: "#64748b", fontSize: "10px", flexShrink: 0 }}>
+            DELTA TV SPORTS HD • 2026/27
+          </span>
         </div>
       </div>
     </div>,
