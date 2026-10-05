@@ -14,21 +14,20 @@ import {
   VolumeX,
   Copy,
   Check,
-  Pause,
-  Maximize,
-  Eye,
-  Layers,
   Move,
-  LayoutTemplate
+  Layers,
+  Type,
+  LayoutTemplate,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Maximize2
 } from "lucide-react";
 
 type WalkoutStage = "intro" | "rarity" | "player" | "card" | "hero";
 
 export default function InfernoWalkoutDevPage() {
-  // Mode: "preview" (interactive studio / editor) or "cinematic" (fullscreen playback)
-  const [activeTab, setActiveTab] = useState<"editor" | "cinematic">("editor");
-
-  // Timeline & Stage
+  // Stage control: "intro" (0-3s), "rarity" (3-5s), "player" (5-7s), "card" (7-9s), "hero" (9s+)
   const [stage, setStage] = useState<WalkoutStage>("hero");
   const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(9.0);
@@ -36,16 +35,27 @@ export default function InfernoWalkoutDevPage() {
   const [isFlash, setIsFlash] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Position & Transform Sliders (Controlled Live)
-  const [playerX, setPlayerX] = useState<number>(-120);
-  const [playerY, setPlayerY] = useState<number>(0);
-  const [playerScale, setPlayerScale] = useState<number>(1.0);
+  // 1. RARITY INFERNO Typography Transforms
+  const [rarityX, setRarityX] = useState<number>(0);
+  const [rarityY, setRarityY] = useState<number>(-40);
+  const [rarityScale, setRarityScale] = useState<number>(1.0);
 
-  const [cardX, setCardX] = useState<number>(110);
+  // 2. PLAYER CUTOUT Transforms
+  const [playerX, setPlayerX] = useState<number>(-140);
+  const [playerY, setPlayerY] = useState<number>(0);
+  const [playerScale, setPlayerScale] = useState<number>(1.05);
+
+  // 3. 3D CARD Transforms
+  const [cardX, setCardX] = useState<number>(140);
   const [cardY, setCardY] = useState<number>(0);
   const [cardScale, setCardScale] = useState<number>(1.05);
 
-  // Card & Player Info
+  // 4. Active selection for dragging
+  const [activeLayer, setActiveLayer] = useState<"player" | "card" | "rarity">("player");
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const dragStartRef = useRef<{ x: number; y: number; origX: number; origY: number }>({ x: 0, y: 0, origX: 0, origY: 0 });
+
+  // Player metadata
   const [playerName, setPlayerName] = useState<string>("RYSIO");
   const [playerRating, setPlayerRating] = useState<number>(94);
   const [playerPosition, setPlayerPosition] = useState<string>("NAPASTNIK");
@@ -135,40 +145,62 @@ export default function InfernoWalkoutDevPage() {
     else if (newStage === "hero") setCurrentTime(9.5);
   };
 
-  const applyPreset = (preset: "classic" | "centered" | "cardFront" | "stacked") => {
-    if (preset === "classic") {
-      setPlayerX(-120);
-      setPlayerY(0);
-      setPlayerScale(1.0);
-      setCardX(110);
-      setCardY(0);
-      setCardScale(1.05);
-    } else if (preset === "centered") {
-      setPlayerX(0);
-      setPlayerY(0);
-      setPlayerScale(1.0);
-      setCardX(0);
-      setCardY(0);
-      setCardScale(1.05);
-    } else if (preset === "cardFront") {
-      setPlayerX(-80);
-      setPlayerY(-20);
-      setPlayerScale(0.95);
-      setCardX(70);
-      setCardY(20);
-      setCardScale(1.1);
-    } else if (preset === "stacked") {
-      setPlayerX(0);
-      setPlayerY(-40);
-      setPlayerScale(0.88);
-      setCardX(0);
-      setCardY(60);
-      setCardScale(1.0);
-    }
+  // Dragging logic directly in the viewport
+  const handleMouseDown = (e: React.MouseEvent, layer: "player" | "card" | "rarity") => {
+    e.stopPropagation();
+    setActiveLayer(layer);
+    setIsDragging(true);
+
+    let curX = 0, curY = 0;
+    if (layer === "player") { curX = playerX; curY = playerY; }
+    else if (layer === "card") { curX = cardX; curY = cardY; }
+    else if (layer === "rarity") { curX = rarityX; curY = rarityY; }
+
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      origX: curX,
+      origY: curY
+    };
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - dragStartRef.current.x;
+      const deltaY = e.clientY - dragStartRef.current.y;
+      const nextX = Math.round(dragStartRef.current.origX + deltaX);
+      const nextY = Math.round(dragStartRef.current.origY + deltaY);
+
+      if (activeLayer === "player") {
+        setPlayerX(nextX);
+        setPlayerY(nextY);
+      } else if (activeLayer === "card") {
+        setCardX(nextX);
+        setCardY(nextY);
+      } else if (activeLayer === "rarity") {
+        setRarityX(nextX);
+        setRarityY(nextY);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, activeLayer]);
 
   const copyConfig = () => {
     const data = JSON.stringify({
+      rarityTransform: { x: rarityX, y: rarityY, scale: rarityScale },
       playerTransform: { x: playerX, y: playerY, scale: playerScale },
       cardTransform: { x: cardX, y: cardY, scale: cardScale }
     }, null, 2);
@@ -178,7 +210,6 @@ export default function InfernoWalkoutDevPage() {
   };
 
   useEffect(() => {
-    // Start in Hero Shot stage so the user immediately sees the player and card and can move them
     setManualStage("hero");
     return () => clearTimers();
   }, []);
@@ -187,7 +218,7 @@ export default function InfernoWalkoutDevPage() {
     <div className="walkout-app-root">
       
       {/* ========================================================================= */}
-      {/* TOP BAR & NAVIGATION                                                     */}
+      {/* TOP NAVIGATION                                                           */}
       {/* ========================================================================= */}
       <header className="top-nav-bar">
         <div className="nav-left">
@@ -203,7 +234,6 @@ export default function InfernoWalkoutDevPage() {
         </div>
 
         <div className="nav-right">
-          {/* Main Action Triggers */}
           <button 
             type="button" 
             className={`tab-btn ${isPlayingAuto ? "tab-btn-active-play" : "tab-btn-primary"}`}
@@ -234,22 +264,22 @@ export default function InfernoWalkoutDevPage() {
       </header>
 
       {/* ========================================================================= */}
-      {/* MAIN STUDIO WORKSPACE (TWO COLUMNS: PREVIEW + DEV CONTROLS)              */}
+      {/* MAIN WORKSPACE                                                            */}
       {/* ========================================================================= */}
       <div className="studio-container">
         
-        {/* LEFT COLUMN: CINEMATIC SCREEN (THE REVEAL ITSELF) */}
+        {/* LEFT COLUMN: CINEMATIC SCREEN */}
         <div className="preview-screen-wrapper">
           
-          {/* Top Floating Stage Timeline Pills */}
+          {/* Stage selector bar */}
           <div className="stage-timeline-bar">
             <span className="timeline-label">KROK OSI CZASU:</span>
             {[
-              { id: "intro", label: "1. Intro (0-3s)", time: "0-3s" },
-              { id: "rarity", label: "2. Rarity INFERNO (3-5s)", time: "3-5s" },
-              { id: "player", label: "3. Zawodnik (5-7s)", time: "5-7s" },
-              { id: "card", label: "4. Karta 3D (7-9s)", time: "7-9s" },
-              { id: "hero", label: "5. Finał Hero (9s+)", time: "9s+" },
+              { id: "intro", label: "1. Intro (0-3s)" },
+              { id: "rarity", label: "2. Rarity INFERNO (3-5s)" },
+              { id: "player", label: "3. Zawodnik (5-7s)" },
+              { id: "card", label: "4. Karta 3D (7-9s)" },
+              { id: "hero", label: "5. Finał Hero (9s+)" },
             ].map(item => (
               <button
                 key={item.id}
@@ -265,7 +295,7 @@ export default function InfernoWalkoutDevPage() {
           {/* THE ACTUAL WALKOUT VIEWPORT */}
           <div className="cinematic-viewport">
             
-            {/* 1. CINEMATIC BACKGROUND VIDEO (inferno-bg.mp4) */}
+            {/* Background Video */}
             <video
               ref={videoRef}
               src={videoSrc}
@@ -282,15 +312,21 @@ export default function InfernoWalkoutDevPage() {
               }}
             />
 
-            {/* 2. Color grading vignette */}
+            {/* Dark & color grading overlays */}
             <div className="cinematic-overlay" />
-
-            {/* 3. Flash burst on card slam */}
             {isFlash && <div className="cinematic-flash" />}
 
-            {/* ================= STAGE 2: RARITY SLAM ================= */}
+            {/* STAGE 2: RARITY SLAM (INFERNO) — WITH FULL TRANSFORM CONTROLS */}
             {stage === "rarity" && (
-              <div className="rarity-slam-box">
+              <div 
+                className={`rarity-slam-box ${activeLayer === "rarity" ? "layer-selected" : ""}`}
+                onMouseDown={e => handleMouseDown(e, "rarity")}
+                style={{
+                  transform: `translate(${rarityX}px, ${rarityY}px) scale(${rarityScale})`,
+                  cursor: isDragging ? "grabbing" : "grab"
+                }}
+              >
+                <div className="drag-handle-hint">✥ Chwyć i przesuń napis</div>
                 <span className="rarity-kicker-text">ULTRA RARE WALKOUT</span>
                 <h1 className="rarity-huge-title">INFERNO</h1>
                 <div className="rarity-pills-row">
@@ -300,44 +336,51 @@ export default function InfernoWalkoutDevPage() {
               </div>
             )}
 
-            {/* ================= STAGES 3, 4, 5: HERO SCENE ================= */}
+            {/* STAGES 3, 4, 5: HERO SCENE (PLAYER & CARD) */}
             {(stage === "player" || stage === "card" || stage === "hero") && (
               <div className="hero-multiplane-scene">
                 
                 {/* Ground red ambient shadow */}
                 <div className="ground-glow-spotlight" />
 
-                {/* PLAYER CUTOUT PNG — FULLY ADJUSTABLE LIVE */}
+                {/* PLAYER CUTOUT PNG */}
                 <div 
-                  className="player-cutout-layer"
+                  className={`player-cutout-layer ${activeLayer === "player" ? "layer-selected" : ""}`}
+                  onMouseDown={e => handleMouseDown(e, "player")}
                   style={{
                     transform: `translate(${playerX}px, ${playerY}px) scale(${playerScale})`,
-                    zIndex: 10
+                    zIndex: 10,
+                    cursor: isDragging ? "grabbing" : "grab"
                   }}
                 >
+                  <div className="drag-handle-hint">✥ Zawodnik (X: {playerX}px, Y: {playerY}px)</div>
                   <img 
                     src={playerCutoutSrc} 
                     alt="Zawodnik Cutout" 
                     className="player-cutout-image"
+                    draggable={false}
                   />
-                  {/* Subtle red rim light reflection */}
                   <div className="player-rim-light" />
                 </div>
 
-                {/* INFERNO CARD — SHOWN IN STAGES 'card' AND 'hero' */}
+                {/* INFERNO CARD */}
                 {(stage === "card" || stage === "hero") && (
                   <div 
-                    className="card-3d-layer"
+                    className={`card-3d-layer ${activeLayer === "card" ? "layer-selected" : ""}`}
+                    onMouseDown={e => handleMouseDown(e, "card")}
                     style={{
                       transform: `translate(${cardX}px, ${cardY}px) scale(${cardScale})`,
-                      zIndex: 20
+                      zIndex: 20,
+                      cursor: isDragging ? "grabbing" : "grab"
                     }}
                   >
+                    <div className="drag-handle-hint">✥ Karta (X: {cardX}px, Y: {cardY}px)</div>
                     <div className="card-outer-box">
                       <img 
                         src={cardSrc} 
                         alt="Karta INFERNO" 
                         className="card-main-image"
+                        draggable={false}
                       />
                     </div>
                   </div>
@@ -388,101 +431,177 @@ export default function InfernoWalkoutDevPage() {
 
           </div>
 
-          {/* Quick status bar below preview */}
+          {/* Status info bar */}
           <div className="preview-status-bar">
             <div className="status-indicator">
               <span className="status-dot" />
-              <span>Plik wideo: <b>public/media/walkouts/inferno-bg.mp4</b></span>
+              <span>Wideo: <b>public/media/walkouts/inferno-bg.mp4</b></span>
             </div>
             <div className="status-timing">
-              Aktualny czas: <b>{currentTime.toFixed(1)}s</b> / Tryb: <b>{isPlayingAuto ? "Odtwarzanie sekwencji" : "Podgląd / Edycja pozycji"}</b>
+              💡 <b>Wskazówka:</b> Możesz przesuwać elementy <b>suwakami</b> po prawej lub <b>chwytając myszką</b> bezpośrednio na ekranie!
             </div>
           </div>
 
         </div>
 
-        {/* RIGHT COLUMN: DEDICATED DEV CONTROL PANEL */}
+        {/* RIGHT COLUMN: DEV CONTROL PANEL */}
         <aside className="dev-studio-sidebar">
           
           <div className="sidebar-header">
             <div className="sidebar-title">
               <Sliders size={18} color="#f1c95c" />
-              <span>DOPASOWANIE ZAWODNIKA I KARTY</span>
+              <span>STUDIO POZYCJI ELEMENTÓW</span>
             </div>
             <p className="sidebar-desc">
-              Przesuwaj suwaki, aby na żywo ustawić pozycję zawodnika (PNG) oraz karty na tle naszego filmu.
+              Dopasuj pozycję i wielkość napisu INFERNO, zawodnika oraz karty.
             </p>
           </div>
 
-          {/* PRESET TEMPLATES */}
-          <div className="panel-box preset-box">
-            <span className="panel-box-title">
-              <LayoutTemplate size={14} /> GOTOWE UKŁADY (PRESETY):
-            </span>
-            <div className="preset-grid">
-              <button type="button" className="preset-btn" onClick={() => applyPreset("classic")}>
-                Klasyczny (Zawodnik L / Karta P)
-              </button>
-              <button type="button" className="preset-btn" onClick={() => applyPreset("cardFront")}>
-                Karta na pierwszym planie
-              </button>
-              <button type="button" className="preset-btn" onClick={() => applyPreset("centered")}>
-                Oba na środku (0, 0)
-              </button>
-              <button type="button" className="preset-btn" onClick={() => applyPreset("stacked")}>
-                Zawodnik góra / Karta dół
-              </button>
-            </div>
-          </div>
-
-          {/* 1. PLAYER POSITION SLIDERS */}
-          <div className="panel-box player-box">
+          {/* 1. RARITY INFERNO SLIDERS */}
+          <div className="panel-box rarity-box">
             <div className="panel-header-row">
-              <span className="panel-box-title text-red">
-                <Move size={14} /> ZAWODNIK (player-cutout.png):
+              <span className="panel-box-title text-orange">
+                <Type size={14} /> 1. NAPIS RARITY (INFERNO):
               </span>
               <button 
                 type="button" 
                 className="reset-mini-btn"
-                onClick={() => { setPlayerX(-120); setPlayerY(0); setPlayerScale(1.0); }}
+                onClick={() => { setRarityX(0); setRarityY(-40); setRarityScale(1.0); }}
               >
                 Resetuj
               </button>
             </div>
 
-            {/* Slider X */}
+            {/* Rarity X */}
             <div className="control-group">
               <div className="control-label">
-                <span>Pozycja X (Lewo / Prawo):</span>
-                <span className="val-badge text-red">{playerX} px</span>
+                <span>Pozycja X (Lewo ⟷ Prawo):</span>
+                <div className="input-row">
+                  <input 
+                    type="number" 
+                    value={rarityX} 
+                    onChange={e => setRarityX(Number(e.target.value))}
+                    className="num-input"
+                  />
+                  <span className="unit">px</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                min="-600" 
+                max="600" 
+                value={rarityX} 
+                onChange={e => setRarityX(Number(e.target.value))}
+                className="range-input range-orange"
+              />
+            </div>
+
+            {/* Rarity Y */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Pozycja Y (Góra ⟷ Dół):</span>
+                <div className="input-row">
+                  <input 
+                    type="number" 
+                    value={rarityY} 
+                    onChange={e => setRarityY(Number(e.target.value))}
+                    className="num-input"
+                  />
+                  <span className="unit">px</span>
+                </div>
               </div>
               <input 
                 type="range" 
                 min="-400" 
                 max="400" 
+                value={rarityY} 
+                onChange={e => setRarityY(Number(e.target.value))}
+                className="range-input range-orange"
+              />
+            </div>
+
+            {/* Rarity Scale */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Skala napisu:</span>
+                <span className="val-badge text-orange">{rarityScale.toFixed(2)}x</span>
+              </div>
+              <input 
+                type="range" 
+                min="0.5" 
+                max="2.5" 
+                step="0.05"
+                value={rarityScale} 
+                onChange={e => setRarityScale(Number(e.target.value))}
+                className="range-input range-orange"
+              />
+            </div>
+          </div>
+
+          {/* 2. PLAYER POSITION SLIDERS */}
+          <div className="panel-box player-box">
+            <div className="panel-header-row">
+              <span className="panel-box-title text-red">
+                <Move size={14} /> 2. ZAWODNIK (player-cutout.png):
+              </span>
+              <button 
+                type="button" 
+                className="reset-mini-btn"
+                onClick={() => { setPlayerX(-140); setPlayerY(0); setPlayerScale(1.05); }}
+              >
+                Resetuj
+              </button>
+            </div>
+
+            {/* Player X */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Pozycja X (Lewo ⟷ Prawo):</span>
+                <div className="input-row">
+                  <input 
+                    type="number" 
+                    value={playerX} 
+                    onChange={e => setPlayerX(Number(e.target.value))}
+                    className="num-input"
+                  />
+                  <span className="unit">px</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                min="-800" 
+                max="800" 
                 value={playerX} 
                 onChange={e => setPlayerX(Number(e.target.value))}
                 className="range-input range-red"
               />
             </div>
 
-            {/* Slider Y */}
+            {/* Player Y */}
             <div className="control-group">
               <div className="control-label">
-                <span>Pozycja Y (Góra / Dół):</span>
-                <span className="val-badge text-red">{playerY} px</span>
+                <span>Pozycja Y (Góra ⟷ Dół):</span>
+                <div className="input-row">
+                  <input 
+                    type="number" 
+                    value={playerY} 
+                    onChange={e => setPlayerY(Number(e.target.value))}
+                    className="num-input"
+                  />
+                  <span className="unit">px</span>
+                </div>
               </div>
               <input 
                 type="range" 
-                min="-300" 
-                max="300" 
+                min="-500" 
+                max="500" 
                 value={playerY} 
                 onChange={e => setPlayerY(Number(e.target.value))}
                 className="range-input range-red"
               />
             </div>
 
-            {/* Slider Scale */}
+            {/* Player Scale */}
             <div className="control-group">
               <div className="control-label">
                 <span>Skala (Wielkość):</span>
@@ -490,7 +609,7 @@ export default function InfernoWalkoutDevPage() {
               </div>
               <input 
                 type="range" 
-                min="0.4" 
+                min="0.3" 
                 max="2.5" 
                 step="0.05"
                 value={playerScale} 
@@ -500,54 +619,70 @@ export default function InfernoWalkoutDevPage() {
             </div>
           </div>
 
-          {/* 2. CARD POSITION SLIDERS */}
+          {/* 3. CARD POSITION SLIDERS */}
           <div className="panel-box card-box">
             <div className="panel-header-row">
               <span className="panel-box-title text-gold">
-                <Layers size={14} /> KARTA (inferno-card.png):
+                <Layers size={14} /> 3. KARTA 3D (inferno-card.png):
               </span>
               <button 
                 type="button" 
                 className="reset-mini-btn"
-                onClick={() => { setCardX(110); setCardY(0); setCardScale(1.05); }}
+                onClick={() => { setCardX(140); setCardY(0); setCardScale(1.05); }}
               >
                 Resetuj
               </button>
             </div>
 
-            {/* Slider X */}
+            {/* Card X */}
             <div className="control-group">
               <div className="control-label">
-                <span>Pozycja X (Lewo / Prawo):</span>
-                <span className="val-badge text-gold">{cardX} px</span>
+                <span>Pozycja X (Lewo ⟷ Prawo):</span>
+                <div className="input-row">
+                  <input 
+                    type="number" 
+                    value={cardX} 
+                    onChange={e => setCardX(Number(e.target.value))}
+                    className="num-input"
+                  />
+                  <span className="unit">px</span>
+                </div>
               </div>
               <input 
                 type="range" 
-                min="-400" 
-                max="400" 
+                min="-800" 
+                max="800" 
                 value={cardX} 
                 onChange={e => setCardX(Number(e.target.value))}
                 className="range-input range-gold"
               />
             </div>
 
-            {/* Slider Y */}
+            {/* Card Y */}
             <div className="control-group">
               <div className="control-label">
-                <span>Pozycja Y (Góra / Dół):</span>
-                <span className="val-badge text-gold">{cardY} px</span>
+                <span>Pozycja Y (Góra ⟷ Dół):</span>
+                <div className="input-row">
+                  <input 
+                    type="number" 
+                    value={cardY} 
+                    onChange={e => setCardY(Number(e.target.value))}
+                    className="num-input"
+                  />
+                  <span className="unit">px</span>
+                </div>
               </div>
               <input 
                 type="range" 
-                min="-300" 
-                max="300" 
+                min="-500" 
+                max="500" 
                 value={cardY} 
                 onChange={e => setCardY(Number(e.target.value))}
                 className="range-input range-gold"
               />
             </div>
 
-            {/* Slider Scale */}
+            {/* Card Scale */}
             <div className="control-group">
               <div className="control-label">
                 <span>Skala (Wielkość):</span>
@@ -555,7 +690,7 @@ export default function InfernoWalkoutDevPage() {
               </div>
               <input 
                 type="range" 
-                min="0.4" 
+                min="0.3" 
                 max="2.5" 
                 step="0.05"
                 value={cardScale} 
@@ -568,14 +703,15 @@ export default function InfernoWalkoutDevPage() {
           {/* COPY CONFIG / EXPORT */}
           <button type="button" className="copy-config-btn" onClick={copyConfig}>
             {copied ? <Check size={16} color="#22c55e" /> : <Copy size={16} />}
-            <span>{copied ? "SKOPIOWANO WARTOŚCI JSON!" : "KOPIUJ POZYCJE (TRANSFORM JSON)"}</span>
+            <span>{copied ? "SKOPIOWANO WARTOŚCI JSON!" : "KOPIUJ WARTOŚCI TRANSFORMS"}</span>
           </button>
 
           {/* LIVE JSON READOUT */}
           <div className="json-readout-box">
-            <span className="readout-title">AKTUALNE WSPÓŁRZĘDNE:</span>
+            <span className="readout-title">WSPÓŁRZĘDNE (JSON):</span>
             <pre>
 {JSON.stringify({
+  rarity: { x: rarityX, y: rarityY, scale: rarityScale },
   player: { x: playerX, y: playerY, scale: playerScale },
   card: { x: cardX, y: cardY, scale: cardScale }
 }, null, 2)}
@@ -601,7 +737,7 @@ export default function InfernoWalkoutDevPage() {
           overflow-x: hidden;
         }
 
-        /* Top Navigation Header */
+        /* Top Navigation */
         .top-nav-bar {
           height: 60px;
           background: rgba(4, 8, 16, 0.95);
@@ -714,16 +850,16 @@ export default function InfernoWalkoutDevPage() {
         .studio-container {
           flex: 1;
           display: grid;
-          grid-template-columns: 1fr 390px;
+          grid-template-columns: 1fr 410px;
           padding: 20px;
           gap: 20px;
-          max-width: 1600px;
+          max-width: 1650px;
           margin: 0 auto;
           width: 100%;
           box-sizing: border-box;
         }
 
-        /* Left Column: Cinematic Preview Area */
+        /* Left Column */
         .preview-screen-wrapper {
           display: flex;
           flex-direction: column;
@@ -769,9 +905,9 @@ export default function InfernoWalkoutDevPage() {
           box-shadow: 0 0 12px rgba(255, 42, 59, 0.5);
         }
 
-        /* The Viewport Container */
+        /* Viewport */
         .cinematic-viewport {
-          height: 650px;
+          height: 660px;
           background: #000000;
           border-radius: 18px;
           border: 1px solid rgba(255, 255, 255, 0.15);
@@ -779,8 +915,9 @@ export default function InfernoWalkoutDevPage() {
           overflow: hidden;
           display: flex;
           align-items: center;
-          justifyContent: center;
+          justify-content: center;
           box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+          user-select: none;
         }
 
         .cinematic-bg-video {
@@ -816,7 +953,37 @@ export default function InfernoWalkoutDevPage() {
           100% { opacity: 0; }
         }
 
-        /* Stage 2 Rarity Typography */
+        /* Drag Handles and Selection Highlights */
+        .layer-selected {
+          outline: 2px dashed rgba(255, 255, 255, 0.6);
+          outline-offset: 4px;
+        }
+
+        .drag-handle-hint {
+          position: absolute;
+          top: -22px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: #f1c95c;
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 4px;
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .player-cutout-layer:hover .drag-handle-hint,
+        .card-3d-layer:hover .drag-handle-hint,
+        .rarity-slam-box:hover .drag-handle-hint {
+          opacity: 1;
+        }
+
+        /* Rarity Slam Box */
         .rarity-slam-box {
           position: absolute;
           z-index: 30;
@@ -824,8 +991,8 @@ export default function InfernoWalkoutDevPage() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          animation: slam-anim 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          pointer-events: none;
+          padding: 10px;
+          border-radius: 12px;
         }
 
         .rarity-kicker-text {
@@ -873,12 +1040,7 @@ export default function InfernoWalkoutDevPage() {
           font-weight: 950;
         }
 
-        @keyframes slam-anim {
-          0% { opacity: 0; transform: scale(2.2); filter: blur(10px); }
-          100% { opacity: 1; transform: scale(1); filter: blur(0); }
-        }
-
-        /* Hero Scene Container */
+        /* Hero Multiplane Scene */
         .hero-multiplane-scene {
           position: relative;
           z-index: 40;
@@ -886,14 +1048,14 @@ export default function InfernoWalkoutDevPage() {
           height: 100%;
           display: flex;
           align-items: center;
-          justifyContent: center;
+          justify-content: center;
           perspective: 1200px;
         }
 
         .ground-glow-spotlight {
           position: absolute;
           bottom: 110px;
-          width: 440px;
+          width: 460px;
           height: 80px;
           background: radial-gradient(ellipse, rgba(255, 42, 59, 0.5) 0%, rgba(0,0,0,0.85) 50%, transparent 70%);
           border-radius: 50%;
@@ -905,9 +1067,8 @@ export default function InfernoWalkoutDevPage() {
         /* Player Layer */
         .player-cutout-layer {
           position: absolute;
-          transition: transform 0.1s ease-out;
           filter: drop-shadow(0 0 40px rgba(255, 42, 59, 0.85)) drop-shadow(0 20px 30px rgba(0,0,0,0.9));
-          pointer-events: none;
+          border-radius: 12px;
         }
 
         .player-cutout-image {
@@ -915,14 +1076,15 @@ export default function InfernoWalkoutDevPage() {
           max-width: 380px;
           object-fit: contain;
           display: block;
+          pointer-events: none;
         }
 
-        /* Card 3D Layer */
+        /* Card Layer */
         .card-3d-layer {
           position: absolute;
-          transition: transform 0.1s ease-out;
           filter: drop-shadow(0 0 45px rgba(255, 42, 59, 0.95)) drop-shadow(0 25px 40px rgba(0,0,0,0.95));
           transform-style: preserve-3d;
+          border-radius: 18px;
         }
 
         .card-outer-box {
@@ -936,6 +1098,7 @@ export default function InfernoWalkoutDevPage() {
           display: flex;
           align-items: center;
           justifyContent: center;
+          pointer-events: none;
         }
 
         .card-main-image {
@@ -945,16 +1108,16 @@ export default function InfernoWalkoutDevPage() {
           display: block;
         }
 
-        /* Hero Bottom Details (9s+) */
+        /* Hero Details */
         .hero-bottom-details {
           position: absolute;
-          bottom: 24px;
+          bottom: 20px;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
           z-index: 60;
-          animation: fade-up 0.5s ease-out forwards;
+          pointer-events: auto;
         }
 
         .hero-badge {
@@ -969,7 +1132,7 @@ export default function InfernoWalkoutDevPage() {
         }
 
         .hero-title-name {
-          font-size: clamp(26px, 5vw, 38px);
+          font-size: clamp(26px, 5vw, 36px);
           font-weight: 950;
           letter-spacing: 2px;
           margin: 0;
@@ -984,7 +1147,7 @@ export default function InfernoWalkoutDevPage() {
           font-size: 12px;
           color: #94a3b8;
           font-weight: 700;
-          margin: 4px 0 16px 0;
+          margin: 4px 0 14px 0;
         }
 
         .hero-meta-subtitle .sep {
@@ -999,28 +1162,28 @@ export default function InfernoWalkoutDevPage() {
         .hero-btn-row {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
 
         .hero-btn-collect {
-          padding: 12px 24px;
-          border-radius: 14px;
+          padding: 11px 22px;
+          border-radius: 12px;
           background: linear-gradient(90deg, #ff2a3b, #ff8400);
           border: none;
           color: #000000;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 950;
           letter-spacing: 0.5px;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 7px;
           cursor: pointer;
           box-shadow: 0 6px 20px rgba(255, 42, 59, 0.5);
         }
 
         .hero-btn-repeat {
-          padding: 12px 18px;
-          border-radius: 14px;
+          padding: 11px 16px;
+          border-radius: 12px;
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #ffffff;
@@ -1031,11 +1194,6 @@ export default function InfernoWalkoutDevPage() {
           gap: 6px;
           cursor: pointer;
           backdrop-filter: blur(8px);
-        }
-
-        @keyframes fade-up {
-          0% { opacity: 0; transform: translateY(15px); }
-          100% { opacity: 1; transform: translateY(0); }
         }
 
         .preview-status-bar {
@@ -1063,71 +1221,51 @@ export default function InfernoWalkoutDevPage() {
           box-shadow: 0 0 8px #22c55e;
         }
 
-        /* Right Column: DEV Studio Controls */
+        /* Sidebar Controls */
         .dev-studio-sidebar {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 12px;
+          max-height: calc(100vh - 100px);
+          overflow-y: auto;
+          padding-right: 4px;
         }
 
         .sidebar-header {
-          padding: 14px;
+          padding: 12px;
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
+          border-radius: 12px;
         }
 
         .sidebar-title {
           display: flex;
           align-items: center;
           gap: 8px;
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 900;
           color: #ffffff;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
         .sidebar-desc {
           margin: 0;
           font-size: 11px;
           color: #94a3b8;
-          line-height: 1.4;
+          line-height: 1.35;
         }
 
         .panel-box {
-          padding: 14px;
-          border-radius: 14px;
+          padding: 12px;
+          border-radius: 12px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 8px;
         }
 
-        .preset-box {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .preset-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 6px;
-        }
-
-        .preset-btn {
-          padding: 7px 8px;
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #e2e8f0;
-          font-size: 10px;
-          font-weight: 700;
-          cursor: pointer;
-          text-align: left;
-          transition: background 0.15s;
-        }
-
-        .preset-btn:hover {
-          background: rgba(255, 255, 255, 0.12);
+        .rarity-box {
+          background: rgba(255, 132, 0, 0.06);
+          border: 1px solid rgba(255, 132, 0, 0.25);
         }
 
         .player-box {
@@ -1147,13 +1285,14 @@ export default function InfernoWalkoutDevPage() {
         }
 
         .panel-box-title {
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 900;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 5px;
         }
 
+        .text-orange { color: #ff8400; }
         .text-red { color: #ff4d5a; }
         .text-gold { color: #f1c95c; }
 
@@ -1177,13 +1316,40 @@ export default function InfernoWalkoutDevPage() {
         .control-label {
           display: flex;
           justify-content: space-between;
-          font-size: 11px;
+          align-items: center;
+          font-size: 10.5px;
           color: #cbd5e1;
+        }
+
+        .input-row {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+        }
+
+        .num-input {
+          width: 55px;
+          padding: 2px 4px;
+          background: rgba(0, 0, 0, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+          color: #ffffff;
+          font-size: 11px;
+          font-family: monospace;
+          font-weight: 800;
+          text-align: right;
+        }
+
+        .unit {
+          font-size: 10px;
+          color: #64748b;
+          font-family: monospace;
         }
 
         .val-badge {
           font-family: monospace;
           font-weight: 900;
+          font-size: 11px;
         }
 
         .range-input {
@@ -1191,51 +1357,47 @@ export default function InfernoWalkoutDevPage() {
           cursor: pointer;
         }
 
+        .range-orange { accent-color: #ff8400; }
         .range-red { accent-color: #ff2a3b; }
         .range-gold { accent-color: #f1c95c; }
 
         .copy-config-btn {
-          padding: 12px;
-          border-radius: 12px;
+          padding: 10px;
+          border-radius: 10px;
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.18);
           color: #ffffff;
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 800;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 6px;
           cursor: pointer;
-          transition: background 0.15s;
-        }
-
-        .copy-config-btn:hover {
-          background: rgba(255, 255, 255, 0.14);
         }
 
         .json-readout-box {
-          padding: 12px;
-          border-radius: 12px;
+          padding: 10px;
+          border-radius: 10px;
           background: rgba(0, 0, 0, 0.5);
           border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .readout-title {
-          font-size: 10px;
+          font-size: 9.5px;
           font-weight: 900;
           color: #38bdf8;
           letter-spacing: 0.5px;
           display: block;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
         .json-readout-box pre {
           margin: 0;
           font-family: monospace;
-          font-size: 10.5px;
+          font-size: 10px;
           color: #cbd5e1;
-          line-height: 1.4;
+          line-height: 1.35;
         }
 
         @media (max-width: 1100px) {
