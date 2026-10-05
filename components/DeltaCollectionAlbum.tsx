@@ -32,7 +32,7 @@ import {
   Play,
   Tv
 } from "lucide-react";
-import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, RARITY_CONFIG, getPackImageUrl, preloadAllCardThemes, preloadCardAssets } from "@/lib/cards/types";
+import { CardDefinition, CardRarity, UserCard, UserUnopenedPack, PackDefinition, CardLayoutConfig, RARITY_CONFIG, getPackImageUrl, preloadAllCardThemes, preloadCardAssets } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
@@ -81,6 +81,7 @@ export default function DeltaCollectionAlbum({
   const [deltaPoints, setDeltaPoints] = useState(0);
   const [realPlayers, setRealPlayers] = useState<any[]>(players || []);
   const [playerStats, setPlayerStats] = useState<Record<string, { goals: number; assists: number; attendancePercent: number; mvp: number }>>({});
+  const [cardLayoutsMap, setCardLayoutsMap] = useState<Record<string, Partial<CardLayoutConfig>>>({});
 
   // View Modes: "panini" (Team Squad Album), "roster" (Player Albums), "allCards" (Grid)
   const [activeViewTab, setActiveViewTab] = useState<"panini" | "roster" | "allCards">("panini");
@@ -111,6 +112,24 @@ export default function DeltaCollectionAlbum({
   const [signatureCard, setSignatureCard] = useState<CardDefinition | null>(null);
 
   const carouselTrackRef = React.useRef<HTMLDivElement | null>(null);
+
+  const getLayoutForCard = useMemo(() => {
+    return (card?: CardDefinition): Partial<CardLayoutConfig> | undefined => {
+      if (!card) return undefined;
+      const pId = card.player_id || card.player?.id;
+      if (!pId) return undefined;
+      const t = (card.card_type || "").toLowerCase();
+      const r = (card.rarity || "").toLowerCase();
+      const templateKey = t.includes("training") || t.includes("warrior") ? "training" :
+                          t.includes("inferno") || r === "inferno" ? "inferno" :
+                          t.includes("legend") || r === "legendary" ? "legend" :
+                          t.includes("gold") || t.includes("mvp") || r === "epic" ? "gold" :
+                          t.includes("matchday") || r === "rare" ? "matchday" :
+                          t.includes("panini") ? "panini" : "base";
+
+      return cardLayoutsMap[`${pId}_${templateKey}`] || cardLayoutsMap[`${pId}_base`] || undefined;
+    };
+  }, [cardLayoutsMap]);
 
   const scrollCarousel = (direction: "left" | "right") => {
     if (carouselTrackRef.current) {
@@ -158,6 +177,31 @@ export default function DeltaCollectionAlbum({
         setDeltaPoints(data.deltaPoints || 0);
         if (data.players && data.players.length > 0) setRealPlayers(data.players);
         if (data.playerStats) setPlayerStats(data.playerStats);
+
+        // Build Layouts Map from DB and LocalStorage
+        const layouts: Record<string, Partial<CardLayoutConfig>> = {};
+        if (data.cardLayouts && Array.isArray(data.cardLayouts)) {
+          data.cardLayouts.forEach((row: any) => {
+            layouts[`${row.player_id}_${row.template_key}`] = {
+              scale: row.scale,
+              translateX: row.translate_x,
+              translateY: row.translate_y,
+              rotate: row.rotate,
+              brightness: row.brightness,
+              contrast: row.contrast,
+              photoUrl: row.photo_url
+            };
+          });
+        }
+        // Merge with local storage cache
+        try {
+          const cached = localStorage.getItem("delta_card_layouts_cache");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            Object.assign(layouts, parsed);
+          }
+        } catch {}
+        setCardLayoutsMap(layouts);
       }
     } catch (e) {
       console.error("Error loading collection:", e);
@@ -838,6 +882,7 @@ export default function DeltaCollectionAlbum({
               onInspectCard={(card, userCard) => setInspectCard({ card, userCard })}
               onCinematicReveal={(card) => setCinematicCardToUnlock(card)}
               getCardUnlockCondition={getCardUnlockCondition}
+              layoutsMap={cardLayoutsMap}
             />
           </div>
         </div>
@@ -960,6 +1005,7 @@ export default function DeltaCollectionAlbum({
                               size="md"
                               interactive={false}
                               showFlip={false}
+                              layoutOverride={getLayoutForCard(topCard)}
                             />
                           </div>
 
@@ -1075,6 +1121,7 @@ export default function DeltaCollectionAlbum({
                             size="md"
                             interactive={false}
                             showFlip={false}
+                            layoutOverride={getLayoutForCard(representativeCard)}
                           />
                         </div>
 
@@ -1163,6 +1210,7 @@ export default function DeltaCollectionAlbum({
               touchFlip={true}
               isFlipped={inspectFlipped}
               onFlipChange={setInspectFlipped}
+              layoutOverride={getLayoutForCard(inspectCard.card)}
             />
 
             <div className="v104-inspect-toolbar" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>

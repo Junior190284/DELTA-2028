@@ -288,6 +288,16 @@ export async function GET() {
       allCards = generateVirtualCards();
     }
 
+    let cardLayouts: any[] = [];
+    try {
+      const { data: dbLayouts, error: layoutErr } = await supabase.from("card_layouts").select("*");
+      if (!layoutErr && dbLayouts) {
+        cardLayouts = dbLayouts;
+      }
+    } catch (e) {
+      console.warn("card_layouts fetch error in collection:", e);
+    }
+
     return NextResponse.json({
       allCards,
       userCards,
@@ -295,7 +305,8 @@ export async function GET() {
       deltaPoints,
       packDefinitions: packDefs,
       players: activePlayers,
-      playerStats: playerStatsMap
+      playerStats: playerStatsMap,
+      cardLayouts
     });
   } catch (error: any) {
     console.error("Błąd pobierania kolekcji:", error);

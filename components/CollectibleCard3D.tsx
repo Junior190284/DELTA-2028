@@ -2,7 +2,7 @@
 
 import React from "react";
 import PlayerCard, { getCardFIFAStats } from "./PlayerCard";
-import { CardDefinition, UserCard } from "@/lib/cards/types";
+import { CardDefinition, UserCard, CardLayoutConfig } from "@/lib/cards/types";
 
 export { getCardFIFAStats };
 
@@ -10,13 +10,14 @@ export interface CollectibleCard3DProps {
   card: CardDefinition;
   userCard?: UserCard | null;
   isLocked?: boolean;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "responsive";
   interactive?: boolean;
   showFlip?: boolean;
   touchFlip?: boolean;
   isFlipped?: boolean;
   onFlipChange?: (flipped: boolean) => void;
   onClick?: () => void;
+  layoutOverride?: Partial<CardLayoutConfig>;
   stats?: {
     matches?: number;
     goals?: number;
@@ -38,6 +39,7 @@ export default function CollectibleCard3D({
   isFlipped,
   onFlipChange,
   onClick,
+  layoutOverride,
   stats
 }: CollectibleCard3DProps) {
   return (
@@ -53,6 +55,7 @@ export default function CollectibleCard3D({
       isFlipped={isFlipped}
       onFlipChange={onFlipChange}
       onClick={onClick}
+      layoutOverride={layoutOverride}
       stats={stats}
     />
   );

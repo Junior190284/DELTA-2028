@@ -12,7 +12,7 @@ import {
   Eye,
   Hand
 } from "lucide-react";
-import { CardDefinition, UserCard } from "@/lib/cards/types";
+import { CardDefinition, UserCard, CardLayoutConfig } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 
@@ -22,6 +22,7 @@ interface PlayerCardsCircular3DCarouselProps {
   onInspectCard: (card: CardDefinition, userCard: UserCard | null) => void;
   onCinematicReveal: (card: CardDefinition) => void;
   getCardUnlockCondition: (card: CardDefinition) => string;
+  layoutsMap?: Record<string, Partial<CardLayoutConfig>>;
 }
 
 export default function PlayerCardsCircular3DCarousel({
@@ -29,7 +30,8 @@ export default function PlayerCardsCircular3DCarousel({
   ownedCardsMap,
   onInspectCard,
   onCinematicReveal,
-  getCardUnlockCondition
+  getCardUnlockCondition,
+  layoutsMap
 }: PlayerCardsCircular3DCarouselProps) {
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -309,6 +311,7 @@ export default function PlayerCardsCircular3DCarousel({
                     size="md"
                     interactive={isFront}
                     showFlip={isFront}
+                    layoutOverride={layoutsMap ? (layoutsMap[`${card.player_id}_${card.card_type}`] || layoutsMap[`${card.player_id}_base`]) : undefined}
                     onClick={() => {
                       if (!hasDragged && isFront) {
                         onInspectCard(card, userCard);
