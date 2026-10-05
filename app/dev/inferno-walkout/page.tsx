@@ -34,6 +34,7 @@ export default function InfernoWalkoutDevPage() {
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [isFlash, setIsFlash] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [isSavedLocal, setIsSavedLocal] = useState<boolean>(false);
 
   // 1. RARITY INFERNO Typography Transforms
   const [rarityX, setRarityX] = useState<number>(0);
@@ -200,16 +201,51 @@ export default function InfernoWalkoutDevPage() {
 
   const copyConfig = () => {
     const data = JSON.stringify({
-      rarityTransform: { x: rarityX, y: rarityY, scale: rarityScale },
-      playerTransform: { x: playerX, y: playerY, scale: playerScale },
-      cardTransform: { x: cardX, y: cardY, scale: cardScale }
+      rarity: { x: rarityX, y: rarityY, scale: rarityScale },
+      player: { x: playerX, y: playerY, scale: playerScale },
+      card: { x: cardX, y: cardY, scale: cardScale }
     }, null, 2);
     navigator.clipboard.writeText(data);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const saveToLocalStorage = () => {
+    try {
+      const data = {
+        rarity: { x: rarityX, y: rarityY, scale: rarityScale },
+        player: { x: playerX, y: playerY, scale: playerScale },
+        card: { x: cardX, y: cardY, scale: cardScale }
+      };
+      localStorage.setItem("delta_inferno_walkout_v2", JSON.stringify(data));
+      setIsSavedLocal(true);
+      setTimeout(() => setIsSavedLocal(false), 2500);
+    } catch (e) {}
+  };
+
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("delta_inferno_walkout_v2");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.rarity) {
+          if (parsed.rarity.x !== undefined) setRarityX(parsed.rarity.x);
+          if (parsed.rarity.y !== undefined) setRarityY(parsed.rarity.y);
+          if (parsed.rarity.scale !== undefined) setRarityScale(parsed.rarity.scale);
+        }
+        if (parsed.player) {
+          if (parsed.player.x !== undefined) setPlayerX(parsed.player.x);
+          if (parsed.player.y !== undefined) setPlayerY(parsed.player.y);
+          if (parsed.player.scale !== undefined) setPlayerScale(parsed.player.scale);
+        }
+        if (parsed.card) {
+          if (parsed.card.x !== undefined) setCardX(parsed.card.x);
+          if (parsed.card.y !== undefined) setCardY(parsed.card.y);
+          if (parsed.card.scale !== undefined) setCardScale(parsed.card.scale);
+        }
+      }
+    } catch (e) {}
+
     setManualStage("hero");
     return () => clearTimers();
   }, []);
@@ -700,11 +736,28 @@ export default function InfernoWalkoutDevPage() {
             </div>
           </div>
 
-          {/* COPY CONFIG / EXPORT */}
-          <button type="button" className="copy-config-btn" onClick={copyConfig}>
-            {copied ? <Check size={16} color="#22c55e" /> : <Copy size={16} />}
-            <span>{copied ? "SKOPIOWANO WARTOŚCI JSON!" : "KOPIUJ WARTOŚCI TRANSFORMS"}</span>
-          </button>
+          {/* SAVE & COPY BUTTONS */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <button 
+              type="button" 
+              className="copy-config-btn save-local-btn" 
+              onClick={saveToLocalStorage}
+              style={{
+                background: isSavedLocal ? "#15803d" : "linear-gradient(90deg, #ff2a3b, #ff8400)",
+                color: "#000000",
+                fontWeight: 950,
+                border: "none"
+              }}
+            >
+              {isSavedLocal ? <Check size={16} color="#000" /> : <Sparkles size={16} />}
+              <span>{isSavedLocal ? "ZAPISANO W PAMIĘCI!" : "💾 ZAPISZ USTAWIENIA W PAMIĘCI"}</span>
+            </button>
+
+            <button type="button" className="copy-config-btn" onClick={copyConfig}>
+              {copied ? <Check size={16} color="#22c55e" /> : <Copy size={16} />}
+              <span>{copied ? "SKOPIOWANO DO SCHOWKA!" : "📋 KOPIUJ WSPÓŁRZĘDNE (JSON)"}</span>
+            </button>
+          </div>
 
           {/* LIVE JSON READOUT */}
           <div className="json-readout-box">
