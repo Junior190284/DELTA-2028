@@ -174,9 +174,23 @@ export default function CardLayoutEditor({
         });
 
         const json = await res.json();
-        if (!res.ok || json.error) {
-          throw new Error(json.error || "Błąd zapisu");
-        }
+        // Save to local cache as well
+        try {
+          const cacheRaw = localStorage.getItem("delta_card_layouts_cache") || "{}";
+          const cache = JSON.parse(cacheRaw);
+          templatesToSave.forEach(tKey => {
+            cache[`${selectedPlayerId}_${tKey}`] = {
+              scale,
+              translateX,
+              translateY,
+              rotate,
+              brightness,
+              contrast,
+              photoUrl: customPhotoUrl || null
+            };
+          });
+          localStorage.setItem("delta_card_layouts_cache", JSON.stringify(cache));
+        } catch {}
       }
 
       setFeedback({ 
