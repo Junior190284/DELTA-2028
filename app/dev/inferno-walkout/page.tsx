@@ -139,7 +139,13 @@ export default function InfernoWalkoutDevPage() {
           loop
           muted={isMuted}
           playsInline
+          preload="auto"
           className="walkout-video"
+          onLoadedData={() => {
+            if (videoRef.current) {
+              videoRef.current.play().catch(() => {});
+            }
+          }}
         />
 
         {/* Layer 2: Cinematic Vignette & Color Grade */}
