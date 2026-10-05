@@ -110,21 +110,21 @@ export const DEMO_INFERNO_DATA: InfernoWalkoutData = {
   rating: 99,
   position: "RW / NAPASTNIK",
   teamName: "K.S. DELTA WARSZAWA 2018 GM",
-  playerImage: "/assets/players/ryszard-inferno.png",
-  cardImage: "/assets/players/ryszard-card-inferno.jpg",
-  backgroundVideo: MEDIA.packOpening.bgInferno || MEDIA.intro.inferno,
-  clubLogo: "/teamlogos/gm.png",
+  playerImage: "/demo/player-cutout.png",
+  cardImage: "/demo/inferno-card.png",
+  backgroundVideo: MEDIA.packOpening.bgInferno || "/media/walkouts/inferno-bg.mp4",
+  clubLogo: "/demo/delta-logo.png",
   accentColor: "#ff2a3b",
   playerTransform: {
-    x: 0,
-    y: 0,
-    scale: 1,
+    x: -21,
+    y: -24,
+    scale: 1.05,
     rotate: 0
   },
   cardTransform: {
-    x: 0,
-    y: 0,
-    scale: 1,
+    x: -2,
+    y: -78,
+    scale: 1.3,
     rotate: 0
   }
 };
@@ -185,15 +185,15 @@ export function cardToWalkoutData(card: any): InfernoWalkoutData {
     clubLogo: "/teamlogos/gm.png",
     accentColor: theme.accentColor,
     playerTransform: {
-      x: -110,
-      y: 0,
-      scale: 1.0,
+      x: -21,
+      y: -24,
+      scale: 1.05,
       rotate: 0
     },
     cardTransform: {
-      x: 100,
-      y: 0,
-      scale: 1.05,
+      x: -2,
+      y: -78,
+      scale: 1.3,
       rotate: 0
     }
   };

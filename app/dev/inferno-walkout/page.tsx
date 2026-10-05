@@ -38,18 +38,18 @@ export default function InfernoWalkoutDevPage() {
 
   // 1. RARITY INFERNO Typography Transforms
   const [rarityX, setRarityX] = useState<number>(0);
-  const [rarityY, setRarityY] = useState<number>(-40);
-  const [rarityScale, setRarityScale] = useState<number>(1.0);
+  const [rarityY, setRarityY] = useState<number>(-1);
+  const [rarityScale, setRarityScale] = useState<number>(1.75);
 
   // 2. PLAYER CUTOUT Transforms
-  const [playerX, setPlayerX] = useState<number>(-140);
-  const [playerY, setPlayerY] = useState<number>(0);
+  const [playerX, setPlayerX] = useState<number>(-21);
+  const [playerY, setPlayerY] = useState<number>(-24);
   const [playerScale, setPlayerScale] = useState<number>(1.05);
 
   // 3. 3D CARD Transforms
-  const [cardX, setCardX] = useState<number>(140);
-  const [cardY, setCardY] = useState<number>(0);
-  const [cardScale, setCardScale] = useState<number>(1.05);
+  const [cardX, setCardX] = useState<number>(-2);
+  const [cardY, setCardY] = useState<number>(-78);
+  const [cardScale, setCardScale] = useState<number>(1.3);
 
   // 4. Active selection for dragging
   const [activeLayer, setActiveLayer] = useState<"player" | "card" | "rarity">("player");
@@ -502,7 +502,7 @@ export default function InfernoWalkoutDevPage() {
               <button 
                 type="button" 
                 className="reset-mini-btn"
-                onClick={() => { setRarityX(0); setRarityY(-40); setRarityScale(1.0); }}
+                onClick={() => { setRarityX(0); setRarityY(-1); setRarityScale(1.75); }}
               >
                 Resetuj
               </button>
@@ -583,7 +583,7 @@ export default function InfernoWalkoutDevPage() {
               <button 
                 type="button" 
                 className="reset-mini-btn"
-                onClick={() => { setPlayerX(-140); setPlayerY(0); setPlayerScale(1.05); }}
+                onClick={() => { setPlayerX(-21); setPlayerY(-24); setPlayerScale(1.05); }}
               >
                 Resetuj
               </button>
@@ -664,7 +664,7 @@ export default function InfernoWalkoutDevPage() {
               <button 
                 type="button" 
                 className="reset-mini-btn"
-                onClick={() => { setCardX(140); setCardY(0); setCardScale(1.05); }}
+                onClick={() => { setCardX(-2); setCardY(-78); setCardScale(1.3); }}
               >
                 Resetuj
               </button>
