@@ -228,13 +228,13 @@ export default function PublicTeamSite(props:{
       </div>
       {nextMatch?<>
         <div className="v101-match-stage">
-          <div className="v101-match-team"><Logo team={nextMatch.home_team}/><small>GOSPODARZ</small><b>{nextMatch.home_team}</b></div>
+          <div className="v101-match-team"><Logo team={nextMatch.home_team} size={160}/><small>GOSPODARZ</small><b>{nextMatch.home_team}</b></div>
           <div className="v101-match-center">
             <span>DO PIERWSZEGO GWIZDKA</span><strong>{countdown(localDate(nextMatch.match_date,nextMatch.match_time),now)}</strong><em>VS</em>
             <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time?.slice(0,5)||"—"}</small>
             <p><MapPin size={12}/>{nextMatch.venue||"Miejsce do ustalenia"}</p>
           </div>
-          <div className="v101-match-team right"><Logo team={nextMatch.away_team}/><small>GOŚĆ</small><b>{nextMatch.away_team}</b></div>
+          <div className="v101-match-team right"><Logo team={nextMatch.away_team} size={160}/><small>GOŚĆ</small><b>{nextMatch.away_team}</b></div>
         </div>
         <div className="v101-match-tools-public">
           <div className="v101-public-attendance">
