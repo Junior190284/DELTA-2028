@@ -1530,7 +1530,7 @@ export default function TeamHub(props:{
             </div>
             <div className="v8-match-stage">
               <div className="v8-team">
-                <Logo team={nextMatch.home_team} size={76}/>
+                <Logo team={nextMatch.home_team} size={130}/>
                 <b>{nextMatch.home_team}</b>
                 <small>GOSPODARZ</small>
               </div>
@@ -1540,7 +1540,7 @@ export default function TeamHub(props:{
                 <small>{nextMatch.venue||"Miejsce do ustalenia"}</small>
               </div>
               <div className="v8-team">
-                <Logo team={nextMatch.away_team} size={76}/>
+                <Logo team={nextMatch.away_team} size={130}/>
                 <b>{nextMatch.away_team}</b>
                 <small>GOŚĆ</small>
               </div>
