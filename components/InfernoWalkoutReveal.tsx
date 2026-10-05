@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useImperativeHandle, forwardRef } from "react";
 import { createPortal } from "react-dom";
 import { 
   Sparkles, 
@@ -10,10 +10,9 @@ import {
   VolumeX, 
   RotateCcw, 
   Check, 
-  ChevronRight,
-  Shield,
   Crown,
-  Trophy
+  FastForward,
+  Play
 } from "lucide-react";
 import { InfernoWalkoutData, getRarityTheme } from "@/lib/cards/walkout-config";
 import { cardSound } from "@/lib/cards/audio";
@@ -26,23 +25,34 @@ export type WalkoutStage =
   | "card"        // 7–9s: Card slams with flash, 3D tilt & fanfare
   | "final_hero"; // 9s+: Stabilized final hero shot with full UI & CTA
 
-interface InfernoWalkoutRevealProps {
+export interface InfernoWalkoutRevealRef {
+  play: () => void;
+  replay: () => void;
+  skipToReveal: () => void;
+  setStage: (stage: WalkoutStage) => void;
+}
+
+export interface InfernoWalkoutRevealProps {
   data: InfernoWalkoutData;
+  isEmbedded?: boolean;
   onStart?: () => void;
   onComplete?: () => void;
   onSkip?: () => void;
   onCollect?: () => void;
   onClose?: () => void;
+  onReplay?: () => void;
 }
 
-export default function InfernoWalkoutReveal({
+const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutRevealProps>(function InfernoWalkoutReveal({
   data,
+  isEmbedded = false,
   onStart,
   onComplete,
   onSkip,
   onCollect,
-  onClose
-}: InfernoWalkoutRevealProps) {
+  onClose,
+  onReplay
+}, ref) {
   const [mounted, setMounted] = useState(false);
   const [stage, setStage] = useState<WalkoutStage>("intro");
   const [screenShake, setScreenShake] = useState(false);
@@ -63,21 +73,26 @@ export default function InfernoWalkoutReveal({
     stageTimersRef.current = [];
   };
 
-  // Mount setup & lock document scroll
+  // Mount setup & lock document scroll if modal
   useEffect(() => {
     setMounted(true);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    let prevOverflow = "";
+    if (!isEmbedded && typeof document !== "undefined") {
+      prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
     onStart?.();
 
     return () => {
-      document.body.style.overflow = prevOverflow;
+      if (!isEmbedded && typeof document !== "undefined") {
+        document.body.style.overflow = prevOverflow;
+      }
       clearAllTimers();
       cardSound.stopDeltaChant();
     };
-  }, [onStart]);
+  }, [onStart, isEmbedded]);
 
-  // Main timeline sequencer
+  // Main timeline sequencer (0-3s intro, 3-5s rarity, 5-7s player, 7-9s card, 9s+ final hero)
   const startTimeline = () => {
     clearAllTimers();
     setStage("intro");
@@ -103,15 +118,15 @@ export default function InfernoWalkoutReveal({
       setTimeout(() => setScreenShake(false), 600);
     }, 3000);
 
-    // ETAP 3: PLAYER REVEAL (5.2s)
+    // ETAP 3: PLAYER REVEAL (5.0s)
     const t2 = setTimeout(() => {
       setStage("player");
       try {
         cardSound.playTeaserHit(3);
       } catch {}
-    }, 5200);
+    }, 5000);
 
-    // ETAP 4: CARD REVEAL SLAM (7.4s)
+    // ETAP 4: CARD REVEAL SLAM (7.0s)
     const t3 = setTimeout(() => {
       setStage("card");
       setFlashActive(true);
@@ -123,21 +138,35 @@ export default function InfernoWalkoutReveal({
         setFlashActive(false);
         setScreenShake(false);
       }, 700);
-    }, 7400);
+    }, 7000);
 
-    // ETAP 5: FINAL HERO SHOT (9.2s)
+    // ETAP 5: FINAL HERO SHOT (9.0s)
     const t4 = setTimeout(() => {
       setStage("final_hero");
       onComplete?.();
-    }, 9200);
+    }, 9000);
 
     stageTimersRef.current = [t1, t2, t3, t4];
   };
 
+  // Expose imperative API for external controls (Dev Panel / Buttons)
+  useImperativeHandle(ref, () => ({
+    play: () => startTimeline(),
+    replay: () => {
+      startTimeline();
+      onReplay?.();
+    },
+    skipToReveal: () => handleSkip(),
+    setStage: (s: WalkoutStage) => {
+      clearAllTimers();
+      setStage(s);
+    }
+  }));
+
   useEffect(() => {
     startTimeline();
     return () => clearAllTimers();
-  }, [data]);
+  }, [data.rarity, data.backgroundVideo, data.playerImage, data.cardImage]);
 
   // Keyboard shortcut: ESC to skip
   useEffect(() => {
@@ -189,27 +218,40 @@ export default function InfernoWalkoutReveal({
   const pTransform = data.playerTransform || {};
   const cTransform = data.cardTransform || {};
 
-  const modalContent = (
+  // Dynamically compute player position & scale
+  const defaultPlayerX = stage === "final_hero" ? -110 : stage === "card" ? -80 : 0;
+  const playerFinalX = pTransform.x !== undefined ? pTransform.x : defaultPlayerX;
+  const playerFinalY = pTransform.y !== undefined ? pTransform.y : 0;
+  const playerFinalScale = pTransform.scale !== undefined ? pTransform.scale : (stage === "player" ? 1.15 : 1.0);
+
+  // Dynamically compute card position & scale
+  const defaultCardX = stage === "final_hero" ? 100 : 0;
+  const cardFinalX = cTransform.x !== undefined ? cTransform.x : defaultCardX;
+  const cardFinalY = cTransform.y !== undefined ? cTransform.y : 0;
+  const cardFinalScale = cTransform.scale !== undefined ? cTransform.scale : (stage === "final_hero" ? 1.05 : 1.12);
+
+  const mainStageContent = (
     <div 
       className={`v200-walkout-master-viewport ${screenShake ? "v200-screen-shake" : ""}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100dvh",
-        zIndex: 9999999,
+        position: isEmbedded ? "relative" : "fixed",
+        inset: isEmbedded ? "auto" : 0,
+        width: isEmbedded ? "100%" : "100vw",
+        height: isEmbedded ? "100%" : "100dvh",
+        zIndex: isEmbedded ? 1 : 9999999,
         background: "#020408",
         overflow: "hidden",
         isolation: "isolate",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        userSelect: "none"
+        userSelect: "none",
+        borderRadius: isEmbedded ? "18px" : 0
       }}
       role="dialog"
-      aria-label="Walkout Reveal"
+      aria-label="Inferno Walkout Reveal"
     >
       {/* ================= LAYER 1: CINEMATIC BACKGROUND VIDEO ================= */}
       <div 
@@ -225,7 +267,7 @@ export default function InfernoWalkoutReveal({
         {!videoError ? (
           <video
             ref={videoRef}
-            src={data.backgroundVideo}
+            src={data.backgroundVideo || "/media/walkouts/inferno-bg.mp4"}
             autoPlay
             loop
             muted
@@ -236,16 +278,16 @@ export default function InfernoWalkoutReveal({
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              filter: "brightness(0.75) contrast(1.15)"
+              filter: "brightness(0.78) contrast(1.15)"
             }}
           />
         ) : (
-          /* High-res stadium poster fallback */
+          /* High-res stadium fallback plate */
           <div 
             style={{
               width: "100%",
               height: "100%",
-              background: "radial-gradient(ellipse at 50% 30%, #1e0508 0%, #0d0203 50%, #020102 100%)"
+              background: "radial-gradient(ellipse at 50% 30%, #200508 0%, #0d0203 50%, #020102 100%)"
             }}
           />
         )}
@@ -257,7 +299,7 @@ export default function InfernoWalkoutReveal({
           position: "absolute",
           inset: 0,
           zIndex: 2,
-          background: "radial-gradient(circle at 50% 50%, transparent 20%, rgba(2, 4, 8, 0.6) 60%, rgba(2, 4, 8, 0.95) 100%)",
+          background: "radial-gradient(circle at 50% 50%, transparent 20%, rgba(2, 4, 8, 0.55) 60%, rgba(2, 4, 8, 0.95) 100%)",
           pointerEvents: "none"
         }}
       />
@@ -266,7 +308,7 @@ export default function InfernoWalkoutReveal({
           position: "absolute",
           inset: 0,
           zIndex: 3,
-          background: `radial-gradient(circle at 50% 60%, ${accentColor}18 0%, transparent 70%)`,
+          background: `radial-gradient(circle at 50% 60%, ${accentColor}22 0%, transparent 70%)`,
           mixBlendMode: "screen",
           pointerEvents: "none"
         }}
@@ -293,9 +335,9 @@ export default function InfernoWalkoutReveal({
       <div 
         style={{
           position: "absolute",
-          top: "20px",
-          left: "24px",
-          right: "24px",
+          top: "16px",
+          left: "20px",
+          right: "20px",
           zIndex: 90,
           display: "flex",
           alignItems: "center",
@@ -306,7 +348,7 @@ export default function InfernoWalkoutReveal({
         {/* Brand Kicker */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img 
-            src={data.clubLogo || "/teamlogos/gm.png"} 
+            src={data.clubLogo || "/demo/delta-logo.png"} 
             alt="DELTA" 
             style={{ width: "32px", height: "32px", objectFit: "contain", filter: "drop-shadow(0 0 10px rgba(255,255,255,0.4))" }}
           />
@@ -423,7 +465,7 @@ export default function InfernoWalkoutReveal({
 
           <h1 
             style={{
-              fontSize: "clamp(48px, 12vw, 100px)",
+              fontSize: "clamp(52px, 13vw, 110px)",
               fontWeight: 950,
               letterSpacing: "8px",
               margin: 0,
@@ -495,7 +537,7 @@ export default function InfernoWalkoutReveal({
             style={{
               position: "relative",
               width: "100%",
-              height: "clamp(380px, 60vh, 520px)",
+              height: "clamp(380px, 58vh, 520px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -507,11 +549,11 @@ export default function InfernoWalkoutReveal({
               style={{
                 position: "absolute",
                 bottom: "-20px",
-                width: "420px",
+                width: "440px",
                 height: "100px",
                 background: `radial-gradient(ellipse, ${accentColor}55 0%, rgba(0,0,0,0.8) 45%, transparent 70%)`,
                 borderRadius: "50%",
-                filter: "blur(12px)",
+                filter: "blur(14px)",
                 zIndex: 1,
                 pointerEvents: "none"
               }}
@@ -523,26 +565,23 @@ export default function InfernoWalkoutReveal({
                 position: "absolute",
                 zIndex: stage === "player" ? 10 : 5,
                 transform: `
-                  translate(
-                    ${stage === "final_hero" ? "-110px" : stage === "card" ? "-80px" : "0px"}, 
-                    ${pTransform.y || 0}px
-                  ) 
-                  scale(${stage === "player" ? (pTransform.scale || 1.15) : (pTransform.scale || 1.0)}) 
+                  translate(${playerFinalX}px, ${playerFinalY}px) 
+                  scale(${playerFinalScale}) 
                   rotate(${pTransform.rotate || 0}deg)
                 `,
-                transition: "all 0.85s cubic-bezier(0.16, 1, 0.3, 1)",
-                animation: stage === "player" ? "v200-player-glide 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards" : "v200-player-drift 5s ease-in-out infinite alternate",
-                filter: `drop-shadow(0 0 40px ${accentColor}88) drop-shadow(0 20px 30px rgba(0,0,0,0.9))`,
+                transition: "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+                animation: stage === "player" ? "v200-player-glide 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards" : undefined,
+                filter: `drop-shadow(0 0 45px ${accentColor}88) drop-shadow(0 20px 30px rgba(0,0,0,0.9))`,
                 pointerEvents: "none",
                 opacity: stage === "player" ? 1 : 0.88
               }}
             >
               <img 
-                src={data.playerImage || "/assets/players/ryszard-inferno.png"} 
+                src={data.playerImage || "/demo/player-cutout.png"} 
                 alt={data.playerName}
                 style={{
                   maxHeight: "clamp(340px, 55vh, 480px)",
-                  maxWidth: "400px",
+                  maxWidth: "420px",
                   objectFit: "contain"
                 }}
               />
@@ -555,13 +594,10 @@ export default function InfernoWalkoutReveal({
                   position: "absolute",
                   zIndex: 20,
                   transform: `
-                    translate(
-                      ${stage === "final_hero" ? "100px" : "0px"}, 
-                      ${cTransform.y || 0}px
-                    ) 
+                    translate(${cardFinalX}px, ${cardFinalY}px) 
                     rotateY(${interactiveTilt.x}deg) 
                     rotateX(${interactiveTilt.y}deg) 
-                    scale(${cTransform.scale || (stage === "final_hero" ? 1.05 : 1.12)})
+                    scale(${cardFinalScale})
                   `,
                   transformStyle: "preserve-3d",
                   transition: stage === "final_hero" ? "transform 0.15s ease-out" : "all 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -571,20 +607,20 @@ export default function InfernoWalkoutReveal({
               >
                 <div 
                   style={{
-                    width: "clamp(230px, 32vw, 300px)",
-                    height: "clamp(340px, 48vw, 440px)",
+                    width: "clamp(230px, 30vw, 300px)",
+                    height: "clamp(340px, 45vw, 440px)",
                     borderRadius: "18px",
                     overflow: "hidden",
                     background: "radial-gradient(circle, #1a080a 0%, #080203 100%)",
                     border: `2px solid ${accentColor}`,
-                    boxShadow: `0 0 30px ${accentColor}55`,
+                    boxShadow: `0 0 35px ${accentColor}55`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center"
                   }}
                 >
                   <img 
-                    src={data.cardImage || "/assets/players/ryszard-card-inferno.jpg"} 
+                    src={data.cardImage || "/demo/inferno-card.png"} 
                     alt={data.playerName}
                     style={{
                       width: "100%",
@@ -677,7 +713,10 @@ export default function InfernoWalkoutReveal({
 
                 <button
                   type="button"
-                  onClick={startTimeline}
+                  onClick={() => {
+                    startTimeline();
+                    onReplay?.();
+                  }}
                   style={{
                     padding: "13px 20px",
                     borderRadius: "16px",
@@ -694,7 +733,7 @@ export default function InfernoWalkoutReveal({
                   }}
                 >
                   <RotateCcw size={15} />
-                  <span>POWTÓRZ REVEAL</span>
+                  <span>POWTÓRZ</span>
                 </button>
               </div>
             </div>
@@ -731,15 +770,6 @@ export default function InfernoWalkoutReveal({
             opacity: 1;
             transform: translateY(0) scale(1.15);
             filter: blur(0) brightness(1);
-          }
-        }
-
-        @keyframes v200-player-drift {
-          0% {
-            transform: translate(-110px, 0px) scale(1.0);
-          }
-          100% {
-            transform: translate(-110px, -12px) scale(1.02);
           }
         }
 
@@ -791,5 +821,11 @@ export default function InfernoWalkoutReveal({
     </div>
   );
 
-  return createPortal(modalContent, document.body);
-}
+  if (isEmbedded) {
+    return mainStageContent;
+  }
+
+  return createPortal(mainStageContent, document.body);
+});
+
+export default InfernoWalkoutReveal;
