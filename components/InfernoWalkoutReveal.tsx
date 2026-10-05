@@ -219,16 +219,20 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
   const cTransform = data.cardTransform || {};
 
   // Dynamically compute player position & scale
-  const defaultPlayerX = stage === "final_hero" ? -110 : stage === "card" ? -80 : 0;
+  const defaultPlayerX = -21;
+  const defaultPlayerY = -24;
+  const defaultPlayerScale = 1.05;
   const playerFinalX = pTransform.x !== undefined ? pTransform.x : defaultPlayerX;
-  const playerFinalY = pTransform.y !== undefined ? pTransform.y : 0;
-  const playerFinalScale = pTransform.scale !== undefined ? pTransform.scale : (stage === "player" ? 1.15 : 1.0);
+  const playerFinalY = pTransform.y !== undefined ? pTransform.y : defaultPlayerY;
+  const playerFinalScale = pTransform.scale !== undefined ? pTransform.scale : defaultPlayerScale;
 
   // Dynamically compute card position & scale
-  const defaultCardX = stage === "final_hero" ? 100 : 0;
+  const defaultCardX = -2;
+  const defaultCardY = -78;
+  const defaultCardScale = 1.3;
   const cardFinalX = cTransform.x !== undefined ? cTransform.x : defaultCardX;
-  const cardFinalY = cTransform.y !== undefined ? cTransform.y : 0;
-  const cardFinalScale = cTransform.scale !== undefined ? cTransform.scale : (stage === "final_hero" ? 1.05 : 1.12);
+  const cardFinalY = cTransform.y !== undefined ? cTransform.y : defaultCardY;
+  const cardFinalScale = cTransform.scale !== undefined ? cTransform.scale : defaultCardScale;
 
   const mainStageContent = (
     <div 
