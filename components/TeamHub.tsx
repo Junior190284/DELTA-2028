@@ -34,6 +34,7 @@ import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
 import { PushSetupError, subscribeToPush, resetPushSubscription } from "@/lib/push";
 import { decodeHtmlEntities } from "@/lib/text";
+import { formatTeamName, getTeamLogo } from "@/lib/teams";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
   Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake
@@ -109,8 +110,8 @@ function seasonLabel(date?:string){
 }
 
 function Logo({team,size=58}:{team:string,size?:number}){
-  const src=teamLogos[team];
-  if(src) return <img src={src} alt="" style={{width:size,height:size,objectFit:"contain"}}/>;
+  const src=getTeamLogo(team);
+  if(src) return <img src={src} alt={formatTeamName(team)} style={{width:size,height:size,objectFit:"contain"}}/>;
   const short=team.includes(" WI")?"WI":team.includes(" WA")?"WA":team.includes(" GM")?"GM":team.split(" ").filter(Boolean)[0]?.slice(0,2).toUpperCase();
   return <div className="fallback-logo" style={{width:size,height:size}}>{short}</div>;
 }
@@ -1530,8 +1531,8 @@ export default function TeamHub(props:{
             </div>
             <div className="v8-match-stage">
               <div className="v8-team">
-                <Logo team={nextMatch.home_team} size={130}/>
-                <b>{nextMatch.home_team}</b>
+                <Logo team={nextMatch.home_team} size={155}/>
+                <b>{formatTeamName(nextMatch.home_team)}</b>
                 <small>GOSPODARZ</small>
               </div>
               <div className="v8-vs">
@@ -1540,8 +1541,8 @@ export default function TeamHub(props:{
                 <small>{nextMatch.venue||"Miejsce do ustalenia"}</small>
               </div>
               <div className="v8-team">
-                <Logo team={nextMatch.away_team} size={130}/>
-                <b>{nextMatch.away_team}</b>
+                <Logo team={nextMatch.away_team} size={155}/>
+                <b>{formatTeamName(nextMatch.away_team)}</b>
                 <small>GOŚĆ</small>
               </div>
             </div>

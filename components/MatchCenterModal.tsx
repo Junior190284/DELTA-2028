@@ -8,6 +8,7 @@ import PlayerPhoto from "./PlayerPhoto";
 import MatchPosterModal from "./MatchPosterModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import DeltaFanVotingModal from "./DeltaFanVotingModal";
+import { formatTeamName } from "@/lib/teams";
 import {
   CalendarDays, Check, ChevronRight, Crown, Goal, Save, ShieldCheck,
   Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles, Send, Heart
@@ -379,7 +380,7 @@ export default function MatchCenterModal(props:{
       <div className="v85-match-head">
         <div>
           <div className="mc-kicker">{`${displayStatus} • CENTRUM MECZU`}</div>
-          <h2>{match.home_team} <span>vs</span> {match.away_team}</h2>
+          <h2>{formatTeamName(match.home_team)} <span>vs</span> {formatTeamName(match.away_team)}</h2>
           <p>{datePL(match.match_date)} • {match.match_time||"godzina do ustalenia"} • {match.venue||"miejsce do ustalenia"}</p>
         </div>
         <div className={`v85-match-score ${match.status==="played"?"v105-score-final":"v105-score-upcoming"}`}>
@@ -421,7 +422,7 @@ export default function MatchCenterModal(props:{
 
       <div className="v85-tab-body">
         {tab==="summary"&&<>
-          <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":matchStarted?"WYNIK NA ŻYWO":"NADCHODZĄCE SPOTKANIE"}</span><strong>{match.home_team}</strong><b>{match.status==="played"||matchStarted?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{match.away_team}</strong></div><div className="v85-summary-grid">
+          <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":matchStarted?"WYNIK NA ŻYWO":"NADCHODZĄCE SPOTKANIE"}</span><strong>{formatTeamName(match.home_team)}</strong><b>{match.status==="played"||matchStarted?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{formatTeamName(match.away_team)}</strong></div><div className="v85-summary-grid">
             <div className="v85-summary-card"><span>TERMIN</span><b>{datePL(match.match_date)}</b><small>{match.match_time||"—"}</small></div>
             <div className="v85-summary-card"><span>MIEJSCE</span><b>{match.venue||"Do ustalenia"}</b><small>Kolejka {match.round_no||"—"}</small></div>
             <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>OBECNI</span><b>{presentCount}/{players.length}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>
