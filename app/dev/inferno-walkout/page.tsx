@@ -13,21 +13,30 @@ import {
   Volume2,
   VolumeX,
   Copy,
-  Check
+  Check,
+  Pause,
+  Maximize,
+  Eye,
+  Layers,
+  Move,
+  LayoutTemplate
 } from "lucide-react";
 
-type Stage = "intro" | "rarity" | "player" | "card" | "hero";
+type WalkoutStage = "intro" | "rarity" | "player" | "card" | "hero";
 
 export default function InfernoWalkoutDevPage() {
-  // Stage control: "intro" (0-3s), "rarity" (3-5s), "player" (5-7s), "card" (7-9s), "hero" (9s+)
-  const [stage, setStage] = useState<Stage>("intro");
-  const [currentTime, setCurrentTime] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [isFlash, setIsFlash] = useState<boolean>(false);
+  // Mode: "preview" (interactive studio / editor) or "cinematic" (fullscreen playback)
+  const [activeTab, setActiveTab] = useState<"editor" | "cinematic">("editor");
+
+  // Timeline & Stage
+  const [stage, setStage] = useState<WalkoutStage>("hero");
+  const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(9.0);
   const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isFlash, setIsFlash] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Live transform sliders
+  // Position & Transform Sliders (Controlled Live)
   const [playerX, setPlayerX] = useState<number>(-120);
   const [playerY, setPlayerY] = useState<number>(0);
   const [playerScale, setPlayerScale] = useState<number>(1.0);
@@ -36,12 +45,18 @@ export default function InfernoWalkoutDevPage() {
   const [cardY, setCardY] = useState<number>(0);
   const [cardScale, setCardScale] = useState<number>(1.05);
 
+  // Card & Player Info
+  const [playerName, setPlayerName] = useState<string>("RYSIO");
+  const [playerRating, setPlayerRating] = useState<number>(94);
+  const [playerPosition, setPlayerPosition] = useState<string>("NAPASTNIK");
+
+  // Video and Animation Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout[]>([]);
   const animFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
 
-  // Asset paths
+  // Assets
   const videoSrc = "/media/walkouts/inferno-bg.mp4";
   const playerCutoutSrc = "/demo/player-cutout.png";
   const cardSrc = "/demo/inferno-card.png";
@@ -55,10 +70,11 @@ export default function InfernoWalkoutDevPage() {
     }
   };
 
-  const startTimeline = () => {
+  // Start complete cinematic walkout sequence from 0.0s
+  const startFullWalkout = () => {
     clearTimers();
+    setIsPlayingAuto(true);
     setStage("intro");
-    setIsPlaying(true);
     setIsFlash(false);
     setCurrentTime(0);
     startTimeRef.current = Date.now();
@@ -68,582 +84,880 @@ export default function InfernoWalkoutDevPage() {
       videoRef.current.play().catch(() => {});
     }
 
-    // Time ticker for dev UI
     const updateTicker = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       setCurrentTime(elapsed);
-      if (elapsed < 12) {
+      if (elapsed < 11) {
         animFrameRef.current = requestAnimationFrame(updateTicker);
+      } else {
+        setIsPlayingAuto(false);
       }
     };
     animFrameRef.current = requestAnimationFrame(updateTicker);
 
-    // 3.0s: Stage 2 - RARITY (INFERNO text)
+    // 0–3s: Intro
+    // 3–5s: Rarity Slam (INFERNO)
     const t1 = setTimeout(() => {
       setStage("rarity");
     }, 3000);
 
-    // 5.0s: Stage 3 - PLAYER CUTOUT
+    // 5–7s: Player Cutout Reveal
     const t2 = setTimeout(() => {
       setStage("player");
     }, 5000);
 
-    // 7.0s: Stage 4 - INFERNO CARD
+    // 7–9s: Card Reveal with Flash
     const t3 = setTimeout(() => {
       setStage("card");
       setIsFlash(true);
       setTimeout(() => setIsFlash(false), 500);
     }, 7000);
 
-    // 9.0s+: Stage 5 - FINAL HERO SHOT
+    // 9s+: Final Hero Shot
     const t4 = setTimeout(() => {
       setStage("hero");
+      setIsPlayingAuto(false);
     }, 9000);
 
     timerRef.current = [t1, t2, t3, t4];
   };
 
-  const skipToReveal = () => {
+  // Freeze/Manual switch to any stage for live position tuning
+  const setManualStage = (newStage: WalkoutStage) => {
     clearTimers();
-    setStage("hero");
-    setCurrentTime(9.0);
+    setIsPlayingAuto(false);
     setIsFlash(false);
+    setStage(newStage);
+    if (newStage === "intro") setCurrentTime(1.5);
+    else if (newStage === "rarity") setCurrentTime(4.0);
+    else if (newStage === "player") setCurrentTime(6.0);
+    else if (newStage === "card") setCurrentTime(8.0);
+    else if (newStage === "hero") setCurrentTime(9.5);
   };
 
-  const copyValues = () => {
-    const json = JSON.stringify({
-      player: { x: playerX, y: playerY, scale: playerScale },
-      card: { x: cardX, y: cardY, scale: cardScale }
+  const applyPreset = (preset: "classic" | "centered" | "cardFront" | "stacked") => {
+    if (preset === "classic") {
+      setPlayerX(-120);
+      setPlayerY(0);
+      setPlayerScale(1.0);
+      setCardX(110);
+      setCardY(0);
+      setCardScale(1.05);
+    } else if (preset === "centered") {
+      setPlayerX(0);
+      setPlayerY(0);
+      setPlayerScale(1.0);
+      setCardX(0);
+      setCardY(0);
+      setCardScale(1.05);
+    } else if (preset === "cardFront") {
+      setPlayerX(-80);
+      setPlayerY(-20);
+      setPlayerScale(0.95);
+      setCardX(70);
+      setCardY(20);
+      setCardScale(1.1);
+    } else if (preset === "stacked") {
+      setPlayerX(0);
+      setPlayerY(-40);
+      setPlayerScale(0.88);
+      setCardX(0);
+      setCardY(60);
+      setCardScale(1.0);
+    }
+  };
+
+  const copyConfig = () => {
+    const data = JSON.stringify({
+      playerTransform: { x: playerX, y: playerY, scale: playerScale },
+      cardTransform: { x: cardX, y: cardY, scale: cardScale }
     }, null, 2);
-    navigator.clipboard.writeText(json);
+    navigator.clipboard.writeText(data);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   useEffect(() => {
-    startTimeline();
+    // Start in Hero Shot stage so the user immediately sees the player and card and can move them
+    setManualStage("hero");
     return () => clearTimers();
   }, []);
 
   return (
-    <div className="walkout-dev-root">
+    <div className="walkout-app-root">
+      
       {/* ========================================================================= */}
-      {/* FULLSCREEN CINEMATIC STAGE                                               */}
+      {/* TOP BAR & NAVIGATION                                                     */}
       {/* ========================================================================= */}
-      <div className="walkout-viewport">
-        {/* Layer 1: HTML5 Background Video */}
-        <video
-          ref={videoRef}
-          src={videoSrc}
-          autoPlay
-          loop
-          muted={isMuted}
-          playsInline
-          preload="auto"
-          className="walkout-video"
-          onLoadedData={() => {
-            if (videoRef.current) {
-              videoRef.current.play().catch(() => {});
-            }
-          }}
-        />
+      <header className="top-nav-bar">
+        <div className="nav-left">
+          <Link href="/" className="back-btn">
+            <ArrowLeft size={14} /> Powrót do aplikacji
+          </Link>
+          <div className="nav-divider" />
+          <div className="brand-title">
+            <Flame size={20} className="flame-icon" />
+            <span className="brand-name">INFERNO WALKOUT REVEAL</span>
+            <span className="dev-tag">STUDIO PROTOTYP</span>
+          </div>
+        </div>
 
-        {/* Layer 2: Cinematic Vignette & Color Grade */}
-        <div className="walkout-overlay" />
+        <div className="nav-right">
+          {/* Main Action Triggers */}
+          <button 
+            type="button" 
+            className={`tab-btn ${isPlayingAuto ? "tab-btn-active-play" : "tab-btn-primary"}`}
+            onClick={startFullWalkout}
+          >
+            <Play size={16} fill={isPlayingAuto ? "#000" : "currentColor"} />
+            <span>ODTWÓRZ PEŁNY WALKOUT (0–10s)</span>
+          </button>
 
-        {/* Layer 3: White Flash Burst (Stage 4 Card Reveal) */}
-        {isFlash && <div className="walkout-flash" />}
+          <button 
+            type="button" 
+            className="tab-btn tab-btn-secondary"
+            onClick={() => setManualStage("hero")}
+          >
+            <FastForward size={15} />
+            <span>KADR KOŃCOWY (HERO SHOT)</span>
+          </button>
 
-        {/* ========================================================================= */}
-        {/* STAGE 2: 3–5s — RARITY (INFERNO)                                         */}
-        {/* ========================================================================= */}
-        {stage === "rarity" && (
-          <div className="rarity-slam-container">
-            <span className="rarity-kicker">ULTRA RARE WALKOUT</span>
-            <h1 className="rarity-title">INFERNO</h1>
-            <div className="rarity-meta">
-              <span className="meta-pill">NAPASTNIK</span>
-              <span className="meta-pill meta-rating">OVR 94</span>
+          <button 
+            type="button" 
+            className="tab-btn tab-btn-sound"
+            onClick={() => setIsMuted(!isMuted)}
+          >
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            <span>{isMuted ? "DŹWIĘK: WYŁ" : "DŹWIĘK: WŁ"}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ========================================================================= */}
+      {/* MAIN STUDIO WORKSPACE (TWO COLUMNS: PREVIEW + DEV CONTROLS)              */}
+      {/* ========================================================================= */}
+      <div className="studio-container">
+        
+        {/* LEFT COLUMN: CINEMATIC SCREEN (THE REVEAL ITSELF) */}
+        <div className="preview-screen-wrapper">
+          
+          {/* Top Floating Stage Timeline Pills */}
+          <div className="stage-timeline-bar">
+            <span className="timeline-label">KROK OSI CZASU:</span>
+            {[
+              { id: "intro", label: "1. Intro (0-3s)", time: "0-3s" },
+              { id: "rarity", label: "2. Rarity INFERNO (3-5s)", time: "3-5s" },
+              { id: "player", label: "3. Zawodnik (5-7s)", time: "5-7s" },
+              { id: "card", label: "4. Karta 3D (7-9s)", time: "7-9s" },
+              { id: "hero", label: "5. Finał Hero (9s+)", time: "9s+" },
+            ].map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className={`stage-pill-btn ${stage === item.id ? "stage-pill-active" : ""}`}
+                onClick={() => setManualStage(item.id as WalkoutStage)}
+              >
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* THE ACTUAL WALKOUT VIEWPORT */}
+          <div className="cinematic-viewport">
+            
+            {/* 1. CINEMATIC BACKGROUND VIDEO (inferno-bg.mp4) */}
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              autoPlay
+              loop
+              muted={isMuted}
+              playsInline
+              preload="auto"
+              className="cinematic-bg-video"
+              onLoadedData={() => {
+                if (videoRef.current) {
+                  videoRef.current.play().catch(() => {});
+                }
+              }}
+            />
+
+            {/* 2. Color grading vignette */}
+            <div className="cinematic-overlay" />
+
+            {/* 3. Flash burst on card slam */}
+            {isFlash && <div className="cinematic-flash" />}
+
+            {/* ================= STAGE 2: RARITY SLAM ================= */}
+            {stage === "rarity" && (
+              <div className="rarity-slam-box">
+                <span className="rarity-kicker-text">ULTRA RARE WALKOUT</span>
+                <h1 className="rarity-huge-title">INFERNO</h1>
+                <div className="rarity-pills-row">
+                  <span className="pill-item">{playerPosition}</span>
+                  <span className="pill-item pill-rating">OVR {playerRating}</span>
+                </div>
+              </div>
+            )}
+
+            {/* ================= STAGES 3, 4, 5: HERO SCENE ================= */}
+            {(stage === "player" || stage === "card" || stage === "hero") && (
+              <div className="hero-multiplane-scene">
+                
+                {/* Ground red ambient shadow */}
+                <div className="ground-glow-spotlight" />
+
+                {/* PLAYER CUTOUT PNG — FULLY ADJUSTABLE LIVE */}
+                <div 
+                  className="player-cutout-layer"
+                  style={{
+                    transform: `translate(${playerX}px, ${playerY}px) scale(${playerScale})`,
+                    zIndex: 10
+                  }}
+                >
+                  <img 
+                    src={playerCutoutSrc} 
+                    alt="Zawodnik Cutout" 
+                    className="player-cutout-image"
+                  />
+                  {/* Subtle red rim light reflection */}
+                  <div className="player-rim-light" />
+                </div>
+
+                {/* INFERNO CARD — SHOWN IN STAGES 'card' AND 'hero' */}
+                {(stage === "card" || stage === "hero") && (
+                  <div 
+                    className="card-3d-layer"
+                    style={{
+                      transform: `translate(${cardX}px, ${cardY}px) scale(${cardScale})`,
+                      zIndex: 20
+                    }}
+                  >
+                    <div className="card-outer-box">
+                      <img 
+                        src={cardSrc} 
+                        alt="Karta INFERNO" 
+                        className="card-main-image"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* FINAL HERO SHOT UI OVERLAY (9s+) */}
+                {stage === "hero" && (
+                  <div className="hero-bottom-details">
+                    <div className="hero-badge">
+                      <Flame size={14} color="#ff2a3b" />
+                      <span>INFERNO WALKOUT</span>
+                    </div>
+
+                    <h2 className="hero-title-name">{playerName}</h2>
+
+                    <p className="hero-meta-subtitle">
+                      <span>{playerPosition}</span>
+                      <span className="sep">•</span>
+                      <span className="highlight-rating">{playerRating} OVR</span>
+                      <span className="sep">•</span>
+                      <span>K.S. DELTA WARSZAWA</span>
+                    </p>
+
+                    <div className="hero-btn-row">
+                      <button 
+                        type="button" 
+                        className="hero-btn-collect"
+                        onClick={() => alert("Karta dodana do albumu!")}
+                      >
+                        <Sparkles size={16} />
+                        <span>DODAJ DO KOLEKCJI</span>
+                      </button>
+
+                      <button 
+                        type="button" 
+                        className="hero-btn-repeat"
+                        onClick={startFullWalkout}
+                      >
+                        <RotateCcw size={15} />
+                        <span>POWTÓRZ WALKOUT</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* Quick status bar below preview */}
+          <div className="preview-status-bar">
+            <div className="status-indicator">
+              <span className="status-dot" />
+              <span>Plik wideo: <b>public/media/walkouts/inferno-bg.mp4</b></span>
+            </div>
+            <div className="status-timing">
+              Aktualny czas: <b>{currentTime.toFixed(1)}s</b> / Tryb: <b>{isPlayingAuto ? "Odtwarzanie sekwencji" : "Podgląd / Edycja pozycji"}</b>
             </div>
           </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* STAGES 3, 4, 5: PLAYER & CARD HERO COMPOSITION                           */}
-        {/* ========================================================================= */}
-        {(stage === "player" || stage === "card" || stage === "hero") && (
-          <div className="hero-scene-container">
-            {/* Ground Spotlight Shadow */}
-            <div className="ground-shadow" />
+        </div>
 
-            {/* PLAYER CUTOUT PNG (5–7s, 7–9s, 9s+) */}
-            <div 
-              className={`player-wrapper ${stage === "player" ? "anim-player-enter" : ""}`}
-              style={{
-                transform: `translate(${stage === "player" ? 0 : playerX}px, ${playerY}px) scale(${stage === "player" ? 1.15 : playerScale})`,
-                transition: stage === "player" ? "all 0.9s cubic-bezier(0.16, 1, 0.3, 1)" : "transform 0.15s ease-out"
-              }}
-            >
-              <img 
-                src={playerCutoutSrc} 
-                alt="Zawodnik" 
-                className="player-cutout-img"
+        {/* RIGHT COLUMN: DEDICATED DEV CONTROL PANEL */}
+        <aside className="dev-studio-sidebar">
+          
+          <div className="sidebar-header">
+            <div className="sidebar-title">
+              <Sliders size={18} color="#f1c95c" />
+              <span>DOPASOWANIE ZAWODNIKA I KARTY</span>
+            </div>
+            <p className="sidebar-desc">
+              Przesuwaj suwaki, aby na żywo ustawić pozycję zawodnika (PNG) oraz karty na tle naszego filmu.
+            </p>
+          </div>
+
+          {/* PRESET TEMPLATES */}
+          <div className="panel-box preset-box">
+            <span className="panel-box-title">
+              <LayoutTemplate size={14} /> GOTOWE UKŁADY (PRESETY):
+            </span>
+            <div className="preset-grid">
+              <button type="button" className="preset-btn" onClick={() => applyPreset("classic")}>
+                Klasyczny (Zawodnik L / Karta P)
+              </button>
+              <button type="button" className="preset-btn" onClick={() => applyPreset("cardFront")}>
+                Karta na pierwszym planie
+              </button>
+              <button type="button" className="preset-btn" onClick={() => applyPreset("centered")}>
+                Oba na środku (0, 0)
+              </button>
+              <button type="button" className="preset-btn" onClick={() => applyPreset("stacked")}>
+                Zawodnik góra / Karta dół
+              </button>
+            </div>
+          </div>
+
+          {/* 1. PLAYER POSITION SLIDERS */}
+          <div className="panel-box player-box">
+            <div className="panel-header-row">
+              <span className="panel-box-title text-red">
+                <Move size={14} /> ZAWODNIK (player-cutout.png):
+              </span>
+              <button 
+                type="button" 
+                className="reset-mini-btn"
+                onClick={() => { setPlayerX(-120); setPlayerY(0); setPlayerScale(1.0); }}
+              >
+                Resetuj
+              </button>
+            </div>
+
+            {/* Slider X */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Pozycja X (Lewo / Prawo):</span>
+                <span className="val-badge text-red">{playerX} px</span>
+              </div>
+              <input 
+                type="range" 
+                min="-400" 
+                max="400" 
+                value={playerX} 
+                onChange={e => setPlayerX(Number(e.target.value))}
+                className="range-input range-red"
               />
             </div>
 
-            {/* INFERNO CARD (7–9s, 9s+) */}
-            {(stage === "card" || stage === "hero") && (
-              <div 
-                className={`card-wrapper ${stage === "card" ? "anim-card-slam" : ""}`}
-                style={{
-                  transform: `translate(${cardX}px, ${cardY}px) scale(${cardScale}) rotateY(0deg)`,
-                  transition: stage === "card" ? "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)" : "transform 0.15s ease-out"
-                }}
-              >
-                <div className="card-frame">
-                  <img 
-                    src={cardSrc} 
-                    alt="Karta INFERNO" 
-                    className="card-img"
-                  />
-                </div>
+            {/* Slider Y */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Pozycja Y (Góra / Dół):</span>
+                <span className="val-badge text-red">{playerY} px</span>
               </div>
-            )}
+              <input 
+                type="range" 
+                min="-300" 
+                max="300" 
+                value={playerY} 
+                onChange={e => setPlayerY(Number(e.target.value))}
+                className="range-input range-red"
+              />
+            </div>
 
-            {/* FINAL HERO SHOT METADATA & BUTTONS (9s+) */}
-            {stage === "hero" && (
-              <div className="hero-ui-bottom anim-fade-up">
-                <div className="hero-rarity-tag">
-                  <Flame size={15} color="#ff2a3b" />
-                  <span>INFERNO WALKOUT</span>
-                </div>
-                
-                <h2 className="hero-player-name">RYSIO</h2>
-                <div className="hero-player-sub">
-                  <span>NAPASTNIK</span>
-                  <span className="dot">•</span>
-                  <span className="rating-num">94 OVR</span>
-                  <span className="dot">•</span>
-                  <span>K.S. DELTA WARSZAWA</span>
-                </div>
-
-                <div className="hero-actions">
-                  <button 
-                    type="button" 
-                    className="btn-collect"
-                    onClick={() => alert("Karta dodana do Twojej kolekcji!")}
-                  >
-                    <Sparkles size={16} />
-                    <span>DODAJ DO KOLEKCJI</span>
-                  </button>
-
-                  <button 
-                    type="button" 
-                    className="btn-replay-hero"
-                    onClick={startTimeline}
-                  >
-                    <RotateCcw size={15} />
-                    <span>POWTÓRZ</span>
-                  </button>
-                </div>
+            {/* Slider Scale */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Skala (Wielkość):</span>
+                <span className="val-badge text-red">{playerScale.toFixed(2)}x</span>
               </div>
-            )}
+              <input 
+                type="range" 
+                min="0.4" 
+                max="2.5" 
+                step="0.05"
+                value={playerScale} 
+                onChange={e => setPlayerScale(Number(e.target.value))}
+                className="range-input range-red"
+              />
+            </div>
           </div>
-        )}
+
+          {/* 2. CARD POSITION SLIDERS */}
+          <div className="panel-box card-box">
+            <div className="panel-header-row">
+              <span className="panel-box-title text-gold">
+                <Layers size={14} /> KARTA (inferno-card.png):
+              </span>
+              <button 
+                type="button" 
+                className="reset-mini-btn"
+                onClick={() => { setCardX(110); setCardY(0); setCardScale(1.05); }}
+              >
+                Resetuj
+              </button>
+            </div>
+
+            {/* Slider X */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Pozycja X (Lewo / Prawo):</span>
+                <span className="val-badge text-gold">{cardX} px</span>
+              </div>
+              <input 
+                type="range" 
+                min="-400" 
+                max="400" 
+                value={cardX} 
+                onChange={e => setCardX(Number(e.target.value))}
+                className="range-input range-gold"
+              />
+            </div>
+
+            {/* Slider Y */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Pozycja Y (Góra / Dół):</span>
+                <span className="val-badge text-gold">{cardY} px</span>
+              </div>
+              <input 
+                type="range" 
+                min="-300" 
+                max="300" 
+                value={cardY} 
+                onChange={e => setCardY(Number(e.target.value))}
+                className="range-input range-gold"
+              />
+            </div>
+
+            {/* Slider Scale */}
+            <div className="control-group">
+              <div className="control-label">
+                <span>Skala (Wielkość):</span>
+                <span className="val-badge text-gold">{cardScale.toFixed(2)}x</span>
+              </div>
+              <input 
+                type="range" 
+                min="0.4" 
+                max="2.5" 
+                step="0.05"
+                value={cardScale} 
+                onChange={e => setCardScale(Number(e.target.value))}
+                className="range-input range-gold"
+              />
+            </div>
+          </div>
+
+          {/* COPY CONFIG / EXPORT */}
+          <button type="button" className="copy-config-btn" onClick={copyConfig}>
+            {copied ? <Check size={16} color="#22c55e" /> : <Copy size={16} />}
+            <span>{copied ? "SKOPIOWANO WARTOŚCI JSON!" : "KOPIUJ POZYCJE (TRANSFORM JSON)"}</span>
+          </button>
+
+          {/* LIVE JSON READOUT */}
+          <div className="json-readout-box">
+            <span className="readout-title">AKTUALNE WSPÓŁRZĘDNE:</span>
+            <pre>
+{JSON.stringify({
+  player: { x: playerX, y: playerY, scale: playerScale },
+  card: { x: cardX, y: cardY, scale: cardScale }
+}, null, 2)}
+            </pre>
+          </div>
+
+        </aside>
+
       </div>
 
       {/* ========================================================================= */}
-      {/* DEV CONTROL PANEL (DEDICATED FOR /dev/inferno-walkout)                   */}
-      {/* ========================================================================= */}
-      <aside className="dev-panel">
-        {/* Panel Header */}
-        <div className="dev-panel-header">
-          <div className="dev-title-wrap">
-            <Link href="/" className="dev-back-link">
-              <ArrowLeft size={13} /> Strona główna
-            </Link>
-            <div className="dev-title">
-              <Sliders size={16} color="#f1c95c" />
-              <span>PANEL DEV WALKOUT</span>
-            </div>
-          </div>
-          <span className="dev-badge">STAGE: {stage.toUpperCase()} ({currentTime.toFixed(1)}s)</span>
-        </div>
-
-        {/* Action Buttons: PLAY WALKOUT, REPLAY, SKIP TO REVEAL */}
-        <div className="dev-actions-grid">
-          <button type="button" className="dev-btn btn-play" onClick={startTimeline}>
-            <Play size={14} fill="#000" />
-            <span>PLAY WALKOUT</span>
-          </button>
-
-          <button type="button" className="dev-btn btn-replay" onClick={startTimeline}>
-            <RotateCcw size={14} />
-            <span>REPLAY</span>
-          </button>
-
-          <button type="button" className="dev-btn btn-skip" onClick={skipToReveal}>
-            <FastForward size={14} />
-            <span>SKIP TO REVEAL</span>
-          </button>
-        </div>
-
-        {/* Sliders: PLAYER */}
-        <div className="dev-section player-section">
-          <div className="dev-section-title">
-            <span className="text-red">PLAYER (player-cutout.png)</span>
-            <span className="mono-val">X: {playerX} | Y: {playerY} | {playerScale}x</span>
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-label">
-              <span>X (Lewo / Prawo):</span>
-              <b>{playerX}px</b>
-            </div>
-            <input 
-              type="range" 
-              min="-400" 
-              max="300" 
-              value={playerX} 
-              onChange={e => setPlayerX(Number(e.target.value))}
-              className="accent-red"
-            />
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-label">
-              <span>Y (Góra / Dół):</span>
-              <b>{playerY}px</b>
-            </div>
-            <input 
-              type="range" 
-              min="-300" 
-              max="300" 
-              value={playerY} 
-              onChange={e => setPlayerY(Number(e.target.value))}
-              className="accent-red"
-            />
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-label">
-              <span>SCALE (Wielkość):</span>
-              <b>{playerScale}x</b>
-            </div>
-            <input 
-              type="range" 
-              min="0.5" 
-              max="2.2" 
-              step="0.05"
-              value={playerScale} 
-              onChange={e => setPlayerScale(Number(e.target.value))}
-              className="accent-red"
-            />
-          </div>
-        </div>
-
-        {/* Sliders: CARD */}
-        <div className="dev-section card-section">
-          <div className="dev-section-title">
-            <span className="text-gold">CARD (inferno-card.png)</span>
-            <span className="mono-val">X: {cardX} | Y: {cardY} | {cardScale}x</span>
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-label">
-              <span>X (Lewo / Prawo):</span>
-              <b>{cardX}px</b>
-            </div>
-            <input 
-              type="range" 
-              min="-300" 
-              max="400" 
-              value={cardX} 
-              onChange={e => setCardX(Number(e.target.value))}
-              className="accent-gold"
-            />
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-label">
-              <span>Y (Góra / Dół):</span>
-              <b>{cardY}px</b>
-            </div>
-            <input 
-              type="range" 
-              min="-300" 
-              max="300" 
-              value={cardY} 
-              onChange={e => setCardY(Number(e.target.value))}
-              className="accent-gold"
-            />
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-label">
-              <span>SCALE (Wielkość):</span>
-              <b>{cardScale}x</b>
-            </div>
-            <input 
-              type="range" 
-              min="0.5" 
-              max="2.2" 
-              step="0.05"
-              value={cardScale} 
-              onChange={e => setCardScale(Number(e.target.value))}
-              className="accent-gold"
-            />
-          </div>
-        </div>
-
-        {/* Utilities & Copy Config */}
-        <div className="dev-footer-actions">
-          <button type="button" className="dev-util-btn" onClick={() => setIsMuted(!isMuted)}>
-            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            <span>{isMuted ? "WŁĄCZ DŹWIĘK" : "WYCISZ DŹWIĘK"}</span>
-          </button>
-
-          <button type="button" className="dev-util-btn copy-btn" onClick={copyValues}>
-            {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
-            <span>{copied ? "SKOPIOWANO!" : "KOPIUJ WARTOŚCI"}</span>
-          </button>
-        </div>
-
-        {/* Timeline Reference Helper */}
-        <div className="dev-timeline-info">
-          <span className="info-title">OŚ CZASU REVEALU:</span>
-          <div className="info-row"><b>0–3 s:</b> Fullscreen film w tle (bez UI)</div>
-          <div className="info-row"><b>3–5 s:</b> Napis INFERNO + czerwony/złoty glow</div>
-          <div className="info-row"><b>5–7 s:</b> Sylwetka zawodnika + rim light & cień</div>
-          <div className="info-row"><b>7–9 s:</b> Karta INFERNO + flash & 3D scale</div>
-          <div className="info-row"><b>9 s+:</b> Finałowy Hero Shot (Rysio 94) + przyciski</div>
-        </div>
-      </aside>
-
-      {/* ========================================================================= */}
-      {/* SCOPED CSS STYLES                                                        */}
+      {/* SCOPED COMPONENT STYLES                                                  */}
       {/* ========================================================================= */}
       <style jsx>{`
-        .walkout-dev-root {
+        .walkout-app-root {
           width: 100vw;
-          height: 100vh;
-          overflow: hidden;
+          min-height: 100vh;
           background: #020408;
           color: #ffffff;
           font-family: system-ui, -apple-system, sans-serif;
           display: flex;
-          position: relative;
+          flex-direction: column;
+          overflow-x: hidden;
         }
 
-        /* Fullscreen Walkout Viewport */
-        .walkout-viewport {
+        /* Top Navigation Header */
+        .top-nav-bar {
+          height: 60px;
+          background: rgba(4, 8, 16, 0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 0 20px;
+          display: flex;
+          align-items: center;
+          justifyContent: space-between;
+          backdrop-filter: blur(12px);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+
+        .nav-left {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: #94a3b8;
+          font-size: 12px;
+          text-decoration: none;
+          font-weight: 600;
+        }
+
+        .back-btn:hover {
+          color: #ffffff;
+        }
+
+        .nav-divider {
+          width: 1px;
+          height: 18px;
+          background: rgba(255, 255, 255, 0.15);
+        }
+
+        .brand-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .flame-icon {
+          color: #ff2a3b;
+        }
+
+        .brand-name {
+          font-size: 14px;
+          font-weight: 900;
+          letter-spacing: 0.5px;
+        }
+
+        .dev-tag {
+          font-size: 10px;
+          font-weight: 900;
+          background: #dc2626;
+          color: #ffffff;
+          padding: 2px 7px;
+          border-radius: 6px;
+        }
+
+        .nav-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tab-btn {
+          padding: 8px 14px;
+          border-radius: 10px;
+          border: none;
+          font-size: 12px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .tab-btn-primary {
+          background: linear-gradient(90deg, #ff2a3b, #ff8400);
+          color: #000000;
+          box-shadow: 0 4px 15px rgba(255, 42, 59, 0.35);
+        }
+
+        .tab-btn-active-play {
+          background: #22c55e;
+          color: #000000;
+          box-shadow: 0 0 15px #22c55e;
+        }
+
+        .tab-btn-secondary {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+        }
+
+        .tab-btn-sound {
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #f1c95c;
+        }
+
+        /* Workspace Grid */
+        .studio-container {
           flex: 1;
-          height: 100%;
+          display: grid;
+          grid-template-columns: 1fr 390px;
+          padding: 20px;
+          gap: 20px;
+          max-width: 1600px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Left Column: Cinematic Preview Area */
+        .preview-screen-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .stage-timeline-bar {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 8px 12px;
+          border-radius: 12px;
+          overflow-x: auto;
+        }
+
+        .timeline-label {
+          font-size: 11px;
+          font-weight: 900;
+          color: #94a3b8;
+          white-space: nowrap;
+        }
+
+        .stage-pill-btn {
+          padding: 6px 12px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #cbd5e1;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.15s;
+        }
+
+        .stage-pill-active {
+          background: #ff2a3b;
+          border-color: #ff2a3b;
+          color: #ffffff;
+          font-weight: 900;
+          box-shadow: 0 0 12px rgba(255, 42, 59, 0.5);
+        }
+
+        /* The Viewport Container */
+        .cinematic-viewport {
+          height: 650px;
+          background: #000000;
+          border-radius: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
           position: relative;
           overflow: hidden;
-          background: #000000;
           display: flex;
           align-items: center;
           justifyContent: center;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
         }
 
-        .walkout-video {
+        .cinematic-bg-video {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
           object-fit: cover;
-          filter: brightness(0.8) contrast(1.1);
+          filter: brightness(0.8) contrast(1.15);
           z-index: 1;
         }
 
-        .walkout-overlay {
+        .cinematic-overlay {
           position: absolute;
           inset: 0;
-          background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(2, 4, 8, 0.45) 60%, rgba(2, 4, 8, 0.95) 100%),
-                      radial-gradient(circle at 50% 60%, rgba(255, 42, 59, 0.15) 0%, transparent 70%);
+          background: radial-gradient(circle at 50% 50%, transparent 25%, rgba(2, 4, 8, 0.5) 60%, rgba(2, 4, 8, 0.95) 100%),
+                      radial-gradient(circle at 50% 60%, rgba(255, 42, 59, 0.2) 0%, transparent 70%);
           z-index: 2;
           pointer-events: none;
         }
 
-        .walkout-flash {
+        .cinematic-flash {
           position: absolute;
           inset: 0;
           background: #ffffff;
           z-index: 80;
-          animation: flash-burst 0.5s ease-out forwards;
+          animation: flash-out 0.5s ease-out forwards;
           pointer-events: none;
         }
 
-        @keyframes flash-burst {
+        @keyframes flash-out {
           0% { opacity: 0.95; }
           100% { opacity: 0; }
         }
 
-        /* Stage 2: Rarity Slam */
-        .rarity-slam-container {
+        /* Stage 2 Rarity Typography */
+        .rarity-slam-box {
           position: absolute;
           z-index: 30;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          animation: rarity-slam 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: slam-anim 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           pointer-events: none;
         }
 
-        .rarity-kicker {
+        .rarity-kicker-text {
           font-size: 13px;
           font-weight: 900;
           letter-spacing: 4px;
           color: #f1c95c;
-          text-shadow: 0 0 12px rgba(241, 201, 92, 0.8);
+          text-shadow: 0 0 15px rgba(241, 201, 92, 0.8);
           margin-bottom: 6px;
         }
 
-        .rarity-title {
-          font-size: clamp(60px, 12vw, 110px);
+        .rarity-huge-title {
+          font-size: clamp(54px, 10vw, 96px);
           font-weight: 950;
           letter-spacing: 8px;
           margin: 0;
           line-height: 1;
-          background: linear-gradient(180deg, #ffffff 0%, #ff2a3b 60%, #7f0a14 100%);
+          background: linear-gradient(180deg, #ffffff 0%, #ff2a3b 60%, #5c050a 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          filter: drop-shadow(0 0 35px rgba(255, 42, 59, 0.85)) drop-shadow(0 0 60px rgba(255, 132, 0, 0.4));
+          filter: drop-shadow(0 0 40px rgba(255, 42, 59, 0.85));
         }
 
-        .rarity-meta {
+        .rarity-pills-row {
           display: flex;
           align-items: center;
           gap: 10px;
           margin-top: 14px;
         }
 
-        .meta-pill {
+        .pill-item {
           padding: 6px 16px;
           border-radius: 20px;
           background: rgba(0, 0, 0, 0.75);
           border: 1px solid #ff2a3b;
           font-size: 12px;
           font-weight: 900;
-          letter-spacing: 1px;
           color: #ffffff;
         }
 
-        .meta-rating {
+        .pill-rating {
           background: linear-gradient(90deg, #ff2a3b, #ff8400);
           color: #000000;
-          font-weight: 950;
           border: none;
-          box-shadow: 0 0 15px rgba(255, 42, 59, 0.6);
+          font-weight: 950;
         }
 
-        @keyframes rarity-slam {
-          0% { opacity: 0; transform: scale(2.2) translateY(-30px); filter: blur(12px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        @keyframes slam-anim {
+          0% { opacity: 0; transform: scale(2.2); filter: blur(10px); }
+          100% { opacity: 1; transform: scale(1); filter: blur(0); }
         }
 
         /* Hero Scene Container */
-        .hero-scene-container {
+        .hero-multiplane-scene {
           position: relative;
           z-index: 40;
           width: 100%;
-          max-width: 1000px;
           height: 100%;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justifyContent: center;
           perspective: 1200px;
         }
 
-        .ground-shadow {
+        .ground-glow-spotlight {
           position: absolute;
-          bottom: 120px;
+          bottom: 110px;
           width: 440px;
           height: 80px;
-          background: radial-gradient(ellipse, rgba(255, 42, 59, 0.45) 0%, rgba(0,0,0,0.85) 50%, transparent 70%);
+          background: radial-gradient(ellipse, rgba(255, 42, 59, 0.5) 0%, rgba(0,0,0,0.85) 50%, transparent 70%);
           border-radius: 50%;
           filter: blur(14px);
           z-index: 5;
           pointer-events: none;
         }
 
-        /* Player Cutout */
-        .player-wrapper {
+        /* Player Layer */
+        .player-cutout-layer {
           position: absolute;
-          z-index: 10;
+          transition: transform 0.1s ease-out;
+          filter: drop-shadow(0 0 40px rgba(255, 42, 59, 0.85)) drop-shadow(0 20px 30px rgba(0,0,0,0.9));
           pointer-events: none;
-          filter: drop-shadow(0 0 35px rgba(255, 42, 59, 0.75)) 
-                  drop-shadow(0 15px 30px rgba(0, 0, 0, 0.9));
         }
 
-        .player-cutout-img {
-          max-height: clamp(340px, 55vh, 480px);
-          max-width: 400px;
+        .player-cutout-image {
+          max-height: 440px;
+          max-width: 380px;
           object-fit: contain;
           display: block;
         }
 
-        .anim-player-enter {
-          animation: player-glide 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes player-glide {
-          0% { opacity: 0; transform: translateY(60px) scale(0.9); filter: blur(8px) brightness(0.4); }
-          100% { opacity: 1; transform: translateY(0) scale(1.15); filter: blur(0) brightness(1); }
-        }
-
-        /* Card Wrapper */
-        .card-wrapper {
+        /* Card 3D Layer */
+        .card-3d-layer {
           position: absolute;
-          z-index: 20;
+          transition: transform 0.1s ease-out;
+          filter: drop-shadow(0 0 45px rgba(255, 42, 59, 0.95)) drop-shadow(0 25px 40px rgba(0,0,0,0.95));
           transform-style: preserve-3d;
-          filter: drop-shadow(0 0 45px rgba(255, 42, 59, 0.9)) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.95));
         }
 
-        .card-frame {
-          width: clamp(220px, 28vw, 290px);
-          height: clamp(330px, 42vw, 430px);
+        .card-outer-box {
+          width: 260px;
+          height: 380px;
           border-radius: 18px;
           overflow: hidden;
           background: #080203;
           border: 2px solid #ff2a3b;
-          box-shadow: 0 0 30px rgba(255, 42, 59, 0.5);
+          box-shadow: 0 0 35px rgba(255, 42, 59, 0.6);
           display: flex;
           align-items: center;
           justifyContent: center;
         }
 
-        .card-img {
+        .card-main-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
         }
 
-        .anim-card-slam {
-          animation: card-slam 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes card-slam {
-          0% { opacity: 0; transform: scale(2.4) rotateY(35deg); filter: brightness(2); }
-          100% { opacity: 1; transform: scale(1.05) rotateY(0deg); filter: brightness(1); }
-        }
-
-        /* Stage 5: Hero UI Bottom */
-        .hero-ui-bottom {
+        /* Hero Bottom Details (9s+) */
+        .hero-bottom-details {
           position: absolute;
-          bottom: 32px;
+          bottom: 24px;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
           z-index: 60;
+          animation: fade-up 0.5s ease-out forwards;
         }
 
-        .hero-rarity-tag {
+        .hero-badge {
           display: flex;
           align-items: center;
           gap: 6px;
@@ -651,45 +965,45 @@ export default function InfernoWalkoutDevPage() {
           font-weight: 900;
           color: #ff2a3b;
           letter-spacing: 2px;
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
-        .hero-player-name {
-          font-size: clamp(28px, 6vw, 42px);
+        .hero-title-name {
+          font-size: clamp(26px, 5vw, 38px);
           font-weight: 950;
           letter-spacing: 2px;
-          margin: 0 0 4px 0;
-          text-shadow: 0 0 25px rgba(255, 42, 59, 0.8);
+          margin: 0;
           color: #ffffff;
+          text-shadow: 0 0 25px rgba(255, 42, 59, 0.85);
         }
 
-        .hero-player-sub {
+        .hero-meta-subtitle {
           display: flex;
           align-items: center;
           gap: 8px;
           font-size: 12px;
           color: #94a3b8;
           font-weight: 700;
-          margin-bottom: 18px;
+          margin: 4px 0 16px 0;
         }
 
-        .hero-player-sub .dot {
+        .hero-meta-subtitle .sep {
           color: #475569;
         }
 
-        .hero-player-sub .rating-num {
+        .hero-meta-subtitle .highlight-rating {
           color: #f1c95c;
           font-weight: 900;
         }
 
-        .hero-actions {
+        .hero-btn-row {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        .btn-collect {
-          padding: 13px 26px;
+        .hero-btn-collect {
+          padding: 12px 24px;
           border-radius: 14px;
           background: linear-gradient(90deg, #ff2a3b, #ff8400);
           border: none;
@@ -702,15 +1016,10 @@ export default function InfernoWalkoutDevPage() {
           gap: 8px;
           cursor: pointer;
           box-shadow: 0 6px 20px rgba(255, 42, 59, 0.5);
-          transition: transform 0.15s;
         }
 
-        .btn-collect:hover {
-          transform: scale(1.03);
-        }
-
-        .btn-replay-hero {
-          padding: 12px 20px;
+        .hero-btn-repeat {
+          padding: 12px 18px;
           border-radius: 14px;
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
@@ -724,237 +1033,217 @@ export default function InfernoWalkoutDevPage() {
           backdrop-filter: blur(8px);
         }
 
-        .btn-replay-hero:hover {
-          background: rgba(255, 255, 255, 0.18);
-        }
-
-        .anim-fade-up {
-          animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
         @keyframes fade-up {
-          0% { opacity: 0; transform: translateY(20px); }
+          0% { opacity: 0; transform: translateY(15px); }
           100% { opacity: 1; transform: translateY(0); }
         }
 
-        /* ========================================================================= */
-        /* DEV CONTROL PANEL SIDEBAR                                                */
-        /* ========================================================================= */
-        .dev-panel {
-          width: 360px;
-          height: 100%;
-          background: rgba(8, 12, 22, 0.95);
-          border-left: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 20px;
-          overflow-y: auto;
+        .preview-status-bar {
           display: flex;
-          flex-direction: column;
-          gap: 16px;
-          z-index: 99;
-          backdrop-filter: blur(12px);
-          box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
-        }
-
-        .dev-panel-header {
-          display: flex;
-          align-items: flex-start;
-          justifyContent: space-between;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          padding-bottom: 12px;
-        }
-
-        .dev-back-link {
-          display: inline-flex;
           align-items: center;
-          gap: 4px;
+          justifyContent: space-between;
+          padding: 8px 14px;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 10px;
           font-size: 11px;
-          color: #64748b;
-          text-decoration: none;
-          margin-bottom: 4px;
-        }
-
-        .dev-back-link:hover {
           color: #94a3b8;
         }
 
-        .dev-title {
+        .status-indicator {
           display: flex;
           align-items: center;
-          gap: 6px;
-          font-size: 13px;
-          font-weight: 900;
-          letter-spacing: 0.5px;
-        }
-
-        .dev-badge {
-          font-size: 10px;
-          font-weight: 900;
-          background: #ff2a3b;
-          color: #ffffff;
-          padding: 3px 8px;
-          border-radius: 6px;
-          font-family: monospace;
-        }
-
-        .dev-actions-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
           gap: 8px;
         }
 
-        .dev-btn {
-          padding: 10px;
-          border-radius: 10px;
-          border: none;
-          font-size: 11px;
-          font-weight: 900;
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          background: #22c55e;
+          border-radius: 50%;
+          box-shadow: 0 0 8px #22c55e;
+        }
+
+        /* Right Column: DEV Studio Controls */
+        .dev-studio-sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .sidebar-header {
+          padding: 14px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+        }
+
+        .sidebar-title {
           display: flex;
           align-items: center;
-          justify-content: center;
-          gap: 6px;
-          cursor: pointer;
-        }
-
-        .btn-play {
-          background: linear-gradient(90deg, #ff2a3b, #ff8400);
-          color: #000000;
-        }
-
-        .btn-replay {
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          gap: 8px;
+          font-size: 13px;
+          font-weight: 900;
           color: #ffffff;
+          margin-bottom: 4px;
         }
 
-        .btn-skip {
-          grid-column: span 2;
-          background: rgba(241, 201, 92, 0.12);
-          border: 1px solid rgba(241, 201, 92, 0.3);
-          color: #f1c95c;
+        .sidebar-desc {
+          margin: 0;
+          font-size: 11px;
+          color: #94a3b8;
+          line-height: 1.4;
         }
 
-        .dev-section {
+        .panel-box {
           padding: 14px;
-          border-radius: 12px;
+          border-radius: 14px;
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
 
-        .player-section {
+        .preset-box {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .preset-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+        }
+
+        .preset-btn {
+          padding: 7px 8px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #e2e8f0;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.15s;
+        }
+
+        .preset-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .player-box {
           background: rgba(255, 42, 59, 0.06);
-          border: 1px solid rgba(255, 42, 59, 0.2);
+          border: 1px solid rgba(255, 42, 59, 0.25);
         }
 
-        .card-section {
+        .card-box {
           background: rgba(241, 201, 92, 0.06);
-          border: 1px solid rgba(241, 201, 92, 0.2);
+          border: 1px solid rgba(241, 201, 92, 0.25);
         }
 
-        .dev-section-title {
+        .panel-header-row {
           display: flex;
           align-items: center;
           justifyContent: space-between;
-          font-size: 11px;
+        }
+
+        .panel-box-title {
+          font-size: 11.5px;
           font-weight: 900;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
 
         .text-red { color: #ff4d5a; }
         .text-gold { color: #f1c95c; }
-        .mono-val { font-family: monospace; color: #94a3b8; font-size: 10px; font-weight: normal; }
 
-        .slider-group {
+        .reset-mini-btn {
+          padding: 2px 7px;
+          border-radius: 5px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #94a3b8;
+          font-size: 9.5px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .control-group {
           display: flex;
           flex-direction: column;
           gap: 3px;
         }
 
-        .slider-label {
+        .control-label {
           display: flex;
           justify-content: space-between;
           font-size: 11px;
           color: #cbd5e1;
         }
 
-        .slider-label b {
+        .val-badge {
           font-family: monospace;
-          color: #ffffff;
+          font-weight: 900;
         }
 
-        input[type="range"] {
+        .range-input {
           width: 100%;
           cursor: pointer;
         }
 
-        .accent-red { accent-color: #ff2a3b; }
-        .accent-gold { accent-color: #f1c95c; }
+        .range-red { accent-color: #ff2a3b; }
+        .range-gold { accent-color: #f1c95c; }
 
-        .dev-footer-actions {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-        }
-
-        .dev-util-btn {
-          padding: 8px 10px;
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          color: #cbd5e1;
-          font-size: 11px;
+        .copy-config-btn {
+          padding: 12px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          color: #ffffff;
+          font-size: 11.5px;
           font-weight: 800;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 5px;
+          gap: 8px;
           cursor: pointer;
+          transition: background 0.15s;
         }
 
-        .copy-btn {
-          color: #ffffff;
+        .copy-config-btn:hover {
+          background: rgba(255, 255, 255, 0.14);
         }
 
-        .dev-timeline-info {
+        .json-readout-box {
           padding: 12px;
-          border-radius: 10px;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          font-size: 11px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
+          border-radius: 12px;
+          background: rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .info-title {
+        .readout-title {
+          font-size: 10px;
           font-weight: 900;
           color: #38bdf8;
-          font-size: 10px;
           letter-spacing: 0.5px;
-          margin-bottom: 2px;
+          display: block;
+          margin-bottom: 4px;
         }
 
-        .info-row {
-          color: #94a3b8;
+        .json-readout-box pre {
+          margin: 0;
+          font-family: monospace;
           font-size: 10.5px;
+          color: #cbd5e1;
           line-height: 1.4;
         }
 
-        .info-row b {
-          color: #f1c95c;
-        }
-
-        @media (max-width: 900px) {
-          .walkout-dev-root {
-            flex-direction: column;
-            overflow-y: auto;
+        @media (max-width: 1100px) {
+          .studio-container {
+            grid-template-columns: 1fr;
           }
-          .walkout-viewport {
-            height: 60vh;
-            flex: none;
-          }
-          .dev-panel {
-            width: 100%;
-            height: auto;
+          .cinematic-viewport {
+            height: 480px;
           }
         }
       `}</style>
