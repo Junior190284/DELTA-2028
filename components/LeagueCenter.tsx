@@ -89,10 +89,10 @@ function standings(fixtures:LeagueFixture[]){
 const TEAM_SHORT:Record<string,string>={
  "Alfa Przymierze Rodzin":"Alfa Przymierze Rodzin",
  "RKS Ursus Warszawa":"RKS Ursus",
- "K.S. Delta Warszawa WI":"Delta WI",
- [OUR]:"Delta GM",
+ "K.S. Delta Warszawa WI":"Delta Wilanów",
+ [OUR]:"Delta Górny Mokotów",
  "MUKS Julianów":"MUKS Julianów",
- "K.S. Delta Warszawa WA":"Delta WA",
+ "K.S. Delta Warszawa WA":"Delta Wawer",
  "FC Vizja Warszawa":"FC Vizja",
 };
 function dateLabel(date:string){return new Date(`${date}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit",month:"2-digit"});}

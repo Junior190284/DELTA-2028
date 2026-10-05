@@ -6,6 +6,7 @@ import StadiumFX from "./StadiumFX";
 import { LeagueHome } from "./LeagueCenter";
 import { createClient } from "@/lib/supabase/client";
 import { decodeHtmlEntities } from "@/lib/text";
+import { formatTeamName, getTeamLogo } from "@/lib/teams";
 import {
   Activity, ArrowUpRight, CalendarDays, ChevronRight, Clock3, Flame, Goal,
   LockKeyhole, MapPin, Radio, Shield, Sparkles, Star, Target,
@@ -34,7 +35,7 @@ const teamLogos:Record<string,string>={
 function datePL(v:string){
   try{return new Date(`${v}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit",month:"2-digit",year:"numeric"});}catch{return v}
 }
-function opponent(m:Match){return m.home_team===CLUB?m.away_team:m.home_team}
+function opponent(m:Match){return formatTeamName(m.home_team===CLUB?m.away_team:m.home_team)}
 function ours(m:Match){return m.home_team===CLUB?(m.home_score??0):(m.away_score??0)}
 function theirs(m:Match){return m.home_team===CLUB?(m.away_score??0):(m.home_score??0)}
 function result(m:Match){return ours(m)>theirs(m)?"W":ours(m)===theirs(m)?"R":"P"}
@@ -60,8 +61,8 @@ function shortCountdown(target:Date,now:number){
   return `${Math.max(1,hours)} h`;
 }
 function Logo({team,size=72}:{team:string,size?:number}){
-  const src=teamLogos[team];
-  if(src)return <img src={src} alt={team} style={{width:size,height:size,objectFit:"contain"}}/>;
+  const src=getTeamLogo(team);
+  if(src)return <img src={src} alt={formatTeamName(team)} style={{width:size,height:size,objectFit:"contain"}}/>;
   return <span className="v101-public-fallback-logo" style={{width:size,height:size}}>{team.split(" ").filter(Boolean)[0]?.slice(0,2).toUpperCase()}</span>;
 }
 
@@ -228,13 +229,13 @@ export default function PublicTeamSite(props:{
       </div>
       {nextMatch?<>
         <div className="v101-match-stage">
-          <div className="v101-match-team"><Logo team={nextMatch.home_team} size={160}/><small>GOSPODARZ</small><b>{nextMatch.home_team}</b></div>
+          <div className="v101-match-team"><Logo team={nextMatch.home_team} size={175}/><small>GOSPODARZ</small><b>{formatTeamName(nextMatch.home_team)}</b></div>
           <div className="v101-match-center">
             <span>DO PIERWSZEGO GWIZDKA</span><strong>{countdown(localDate(nextMatch.match_date,nextMatch.match_time),now)}</strong><em>VS</em>
             <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time?.slice(0,5)||"—"}</small>
             <p><MapPin size={12}/>{nextMatch.venue||"Miejsce do ustalenia"}</p>
           </div>
-          <div className="v101-match-team right"><Logo team={nextMatch.away_team} size={160}/><small>GOŚĆ</small><b>{nextMatch.away_team}</b></div>
+          <div className="v101-match-team right"><Logo team={nextMatch.away_team} size={175}/><small>GOŚĆ</small><b>{formatTeamName(nextMatch.away_team)}</b></div>
         </div>
         <div className="v101-match-tools-public">
           <div className="v101-public-attendance">
