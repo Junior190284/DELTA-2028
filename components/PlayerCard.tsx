@@ -41,6 +41,7 @@ export interface PlayerCardProps {
   layoutOverride?: Partial<CardLayoutConfig>;
   interactive?: boolean;
   showFlip?: boolean;
+  touchFlip?: boolean;
   isFlipped?: boolean;
   onFlipChange?: (flipped: boolean) => void;
   onClick?: () => void;
@@ -148,6 +149,7 @@ export default function PlayerCard({
   layoutOverride,
   interactive = true,
   showFlip = true,
+  touchFlip = false,
   isFlipped: controlledFlipped,
   onFlipChange,
   onClick,
@@ -338,7 +340,7 @@ export default function PlayerCard({
     // Android browsers split the many transparent card layers while a
     // preserve-3d transform is moving. Keep free 3D dragging mouse-only;
     // touch devices use the stable front/back controls instead.
-    if (e.pointerType !== "mouse") return;
+    if (e.pointerType !== "mouse" && !touchFlip) return;
     if ((e.target as HTMLElement).closest("button")) return;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     dragStartRef.current = {
@@ -352,6 +354,9 @@ export default function PlayerCard({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive) return;
+    // On touch screens we deliberately animate only the final 180 degree
+    // flip. Continuously rotating the layered transparent artwork makes
+    // Chromium/Android split the card into compositor tiles.
     if (e.pointerType !== "mouse") return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -377,18 +382,48 @@ export default function PlayerCard({
   const isBackFace = useMemo(() => (Math.abs(Math.round(internalRotateY / 180)) % 2) === 1, [internalRotateY]);
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragStartRef.current) return;
+    const dragStart = dragStartRef.current;
+    if (!dragStart) return;
     setIsDragging(false);
     dragStartRef.current = null;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+
+    if (e.pointerType !== "mouse") {
+      const deltaX = e.clientX - dragStart.startX;
+      const currentFace = Math.round(dragStart.startRotY / 180);
+      const currentSnap = currentFace * 180;
+
+      if (Math.abs(deltaX) < 36) {
+        applyRotation(0, currentSnap);
+        return;
+      }
+
+      const nextFace = currentSnap + (deltaX < 0 ? 180 : -180);
+      applyRotation(0, nextFace);
+      const isBack = Math.abs((nextFace / 180) % 2) === 1;
+      cardSound.playFlip();
+      cardSound.playHaptic("light");
+      onFlipChange?.(isBack);
+      return;
+    }
+
     const nearestFace = Math.round(rotationRef.current.y / 180) * 180;
     applyRotation(0, nearestFace);
     onFlipChange?.(Math.abs((nearestFace / 180) % 2) === 1);
   };
 
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    const dragStart = dragStartRef.current;
+    if (!dragStart) return;
+    setIsDragging(false);
+    dragStartRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    applyRotation(0, Math.round(dragStart.startRotY / 180) * 180);
+  };
+
   return (
     <div 
-      className={`v200-player-card-wrapper ${interactive ? "interactive" : ""} ${isDragging ? "dragging" : ""} ${isBackFace ? "is-back" : "is-front"} ${className}`}
+      className={`v200-player-card-wrapper ${interactive ? "interactive" : ""} ${touchFlip ? "touch-flip-enabled" : ""} ${isDragging ? "dragging" : ""} ${isBackFace ? "is-back" : "is-front"} ${className}`}
       style={{
         width: `${dim.w}px`,
         height: `${dim.h}px`,
@@ -397,13 +432,13 @@ export default function PlayerCard({
         minHeight: `${dim.h}px`,
         maxHeight: `${dim.h}px`,
         aspectRatio: "2/3",
-        touchAction: interactive ? "pan-y" : "auto",
+        touchAction: touchFlip ? "pan-y" : "auto",
         cursor: !interactive ? "default" : isDragging ? "grabbing" : "grab"
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onPointerEnter={(e) => {
         if (e.pointerType === "mouse") setIsHovered(true);
       }}

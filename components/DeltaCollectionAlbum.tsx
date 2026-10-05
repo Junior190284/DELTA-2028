@@ -1160,6 +1160,7 @@ export default function DeltaCollectionAlbum({
               size="xl"
               interactive={true}
               showFlip={true}
+              touchFlip={true}
               isFlipped={inspectFlipped}
               onFlipChange={setInspectFlipped}
             />

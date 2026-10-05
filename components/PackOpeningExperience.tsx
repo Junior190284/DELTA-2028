@@ -6,6 +6,7 @@ import {
   Flame, 
   Sparkles, 
   X, 
+  ChevronLeft,
   ChevronRight, 
   Check, 
   Coins, 
@@ -54,12 +55,30 @@ export default function PackOpeningExperience({
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
   const [screenShake, setScreenShake] = useState(false);
+  const summaryCarouselRef = useRef<HTMLDivElement | null>(null);
 
   // Preload all core card templates and textures on mount so there is zero asset popping/delay
   useEffect(() => {
     setMounted(true);
     preloadAllCardThemes();
   }, []);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  const scrollSummary = (direction: -1 | 1) => {
+    const carousel = summaryCarouselRef.current;
+    if (!carousel) return;
+    carousel.scrollBy({
+      left: direction * Math.max(220, carousel.clientWidth * 0.72),
+      behavior: "smooth"
+    });
+  };
 
   // 3D Hover tilt for sealed pack
   const packRef = useRef<HTMLDivElement | null>(null);
@@ -521,6 +540,7 @@ export default function PackOpeningExperience({
                   size="xl"
                   interactive={true}
                   showFlip={true}
+                  touchFlip={true}
                 />
               </div>
 
@@ -626,6 +646,7 @@ export default function PackOpeningExperience({
                   size="xl"
                   interactive={true}
                   showFlip={isRevealed}
+                  touchFlip={isRevealed}
                   onFlipChange={(flipped) => {
                     if (flipped) {
                       cardSound.playFlip();
@@ -695,30 +716,38 @@ export default function PackOpeningExperience({
           </div>
 
           {/* Cards Carousel (Side by Side) */}
-          <div className="v104-summary-carousel-container">
-            <div className="v104-summary-carousel-track">
-              {openingResult.cards.map((item, idx) => (
-                <div key={idx} className="v104-summary-card-item">
-                  <CollectibleCard3D
-                    card={item.card}
-                    userCard={undefined}
-                    isLocked={false}
-                    size="md"
-                    interactive={true}
-                    showFlip={true}
-                  />
-                  {item.is_duplicate ? (
-                    <span className="v104-summary-dup-tag">
-                      <Coins size={11} className="inline mr-1" /> DUPLIKAT (+{item.duplicate_points} DP)
-                    </span>
-                  ) : (
-                    <span className="v104-summary-new-tag">
-                      <Sparkles size={11} className="inline mr-1" /> NOWA KARTA
-                    </span>
-                  )}
-                </div>
-              ))}
+          <div className="v104-summary-carousel-shell">
+            <button type="button" className="v104-summary-carousel-arrow previous" onClick={() => scrollSummary(-1)} aria-label="Poprzednie karty">
+              <ChevronLeft size={22} />
+            </button>
+            <div ref={summaryCarouselRef} className="v104-summary-carousel-container">
+              <div className="v104-summary-carousel-track">
+                {openingResult.cards.map((item, idx) => (
+                  <div key={`${item.card.id}-${idx}`} className="v104-summary-card-item">
+                    <CollectibleCard3D
+                      card={item.card}
+                      userCard={undefined}
+                      isLocked={false}
+                      size="md"
+                      interactive={true}
+                      showFlip={true}
+                    />
+                    {item.is_duplicate ? (
+                      <span className="v104-summary-dup-tag">
+                        <Coins size={11} className="inline mr-1" /> DUPLIKAT (+{item.duplicate_points} DP)
+                      </span>
+                    ) : (
+                      <span className="v104-summary-new-tag">
+                        <Sparkles size={11} className="inline mr-1" /> NOWA KARTA
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+            <button type="button" className="v104-summary-carousel-arrow next" onClick={() => scrollSummary(1)} aria-label="Następne karty">
+              <ChevronRight size={22} />
+            </button>
           </div>
 
           {/* Bottom Actions */}

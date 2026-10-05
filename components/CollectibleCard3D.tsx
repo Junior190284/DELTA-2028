@@ -13,6 +13,7 @@ export interface CollectibleCard3DProps {
   size?: "sm" | "md" | "lg" | "xl";
   interactive?: boolean;
   showFlip?: boolean;
+  touchFlip?: boolean;
   isFlipped?: boolean;
   onFlipChange?: (flipped: boolean) => void;
   onClick?: () => void;
@@ -33,6 +34,7 @@ export default function CollectibleCard3D({
   size = "md",
   interactive = true,
   showFlip = true,
+  touchFlip = false,
   isFlipped,
   onFlipChange,
   onClick,
@@ -47,6 +49,7 @@ export default function CollectibleCard3D({
       size={size}
       interactive={interactive}
       showFlip={showFlip}
+      touchFlip={touchFlip}
       isFlipped={isFlipped}
       onFlipChange={onFlipChange}
       onClick={onClick}
