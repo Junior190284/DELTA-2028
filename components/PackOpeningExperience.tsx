@@ -263,21 +263,9 @@ export default function PackOpeningExperience({
     (stage === "walkout_teaser_1" || stage === "walkout_teaser_2" || stage === "walkout_teaser_3")
       ? MEDIA.packOpening.tunnel
       : stage === "walkout_slam"
-      ? (isInfernoWalkout
-          ? MEDIA.packOpening.bgInferno
-          : isLegendWalkout
-          ? MEDIA.packOpening.bgLegend
-          : pack.id === "matchday_booster"
-          ? MEDIA.packOpening.bgMatchday
-          : MEDIA.packOpening.bgGold)
+      ? getCardTierBackgroundVideo(walkoutItem?.card?.rarity, walkoutItem?.card?.card_type)
       : stage === "revealing"
-      ? (currentCardRarity === "inferno"
-          ? MEDIA.packOpening.bgInferno
-          : currentCardRarity === "legendary"
-          ? MEDIA.packOpening.bgLegend
-          : (pack.id === "matchday_booster" || currentCard?.card_type === "matchday")
-          ? MEDIA.packOpening.bgMatchday
-          : MEDIA.packOpening.bgGold)
+      ? getCardTierBackgroundVideo(currentCardRarity, currentCard?.card_type)
       : stage === "summary"
       ? (pack.theme === "inferno"
           ? MEDIA.packOpening.bgInferno
