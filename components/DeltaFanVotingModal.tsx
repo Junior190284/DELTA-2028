@@ -38,6 +38,7 @@ interface DeltaFanVotingModalProps {
   match: Match;
   players: Player[];
   onVoteCast?: (playerId: string) => void;
+  isAdmin?: boolean;
 }
 
 export default function DeltaFanVotingModal({
@@ -45,7 +46,8 @@ export default function DeltaFanVotingModal({
   onClose,
   match,
   players,
-  onVoteCast
+  onVoteCast,
+  isAdmin
 }: DeltaFanVotingModalProps) {
   const [mounted, setMounted] = useState(false);
   const [votedPlayerId, setVotedPlayerId] = useState<string | null>(null);
@@ -61,21 +63,31 @@ export default function DeltaFanVotingModal({
       if (savedVotes) {
         setVotesMap(JSON.parse(savedVotes));
       } else {
-        // Początkowe realistyczne głosy kibiców
-        const initMap: Record<string, number> = {};
-        players.slice(0, 6).forEach((p, idx) => {
-          initMap[p.id] = (6 - idx) * 2;
-        });
-        setVotesMap(initMap);
+        setVotesMap({});
       }
 
       const myVote = localStorage.getItem(`delta_my_fan_vote_${match.id}`);
       if (myVote) {
         setVotedPlayerId(myVote);
         setSubmitted(true);
+      } else {
+        setVotedPlayerId(null);
+        setSubmitted(false);
       }
     } catch {}
   }, [match.id, players]);
+
+  const handleResetVotes = () => {
+    if (!confirm("Czy na pewno chcesz zresetować wszystkie głosy kibiców dla tego meczu?")) return;
+    try {
+      localStorage.removeItem(`delta_fan_votes_${match.id}`);
+      localStorage.removeItem(`delta_my_fan_vote_${match.id}`);
+    } catch {}
+    setVotesMap({});
+    setVotedPlayerId(null);
+    setSubmitted(false);
+    alert("Głosy kibiców dla tego meczu zostały zresetowane.");
+  };
 
   // Klawisz Escape
   useEffect(() => {
@@ -95,7 +107,7 @@ export default function DeltaFanVotingModal({
     return [...players].sort((a, b) => (votesMap[b.id] || 0) - (votesMap[a.id] || 0));
   }, [players, votesMap]);
 
-  const leadingPlayer = sortedPlayers[0];
+  const leadingPlayer = totalVotes > 0 ? sortedPlayers[0] : null;
 
   const handleVote = (playerId: string) => {
     if (submitted) return;
@@ -151,14 +163,24 @@ export default function DeltaFanVotingModal({
             </div>
           </div>
 
-          <button 
-            type="button" 
-            className="v200-btn-close-knowledge"
-            onClick={onClose}
-            aria-label="Zamknij"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetVotes}
+              title="Resetuj wszystkie oddane głosy dla tego meczu"
+              className="px-2.5 py-1.5 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800 text-rose-200 text-[11px] font-bold transition flex items-center gap-1"
+            >
+              🔄 Resetuj głosy
+            </button>
+            <button 
+              type="button" 
+              className="v200-btn-close-knowledge"
+              onClick={onClose}
+              aria-label="Zamknij"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </header>
 
         {/* LIDER GŁOSOWANIA */}

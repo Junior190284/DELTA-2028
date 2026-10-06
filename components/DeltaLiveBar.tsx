@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Flame, 
   Zap, 
@@ -11,7 +11,8 @@ import {
   X, 
   AlertCircle,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Check
 } from "lucide-react";
 
 export type LiveBarType = 
@@ -71,6 +72,17 @@ export default function DeltaLiveBar({
   onNavigate,
 }: DeltaLiveBarProps) {
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const [readNewsIds, setReadNewsIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const savedDismissed = localStorage.getItem("delta_dismissed_livebar");
+      if (savedDismissed) setDismissedIds(JSON.parse(savedDismissed));
+
+      const savedRead = localStorage.getItem("delta_read_news");
+      if (savedRead) setReadNewsIds(JSON.parse(savedRead));
+    } catch {}
+  }, []);
 
   // Wyliczanie aktualnego najważniejszego zdarzenia
   const activeEvent = useMemo<LiveBarEvent | null>(() => {
@@ -152,19 +164,25 @@ export default function DeltaLiveBar({
         targetTab: "news"
       });
     } else if (news.length > 0) {
-      const latestNews = news[0];
-      const newsDate = new Date(latestNews.published_at);
-      const diffHours = (now.getTime() - newsDate.getTime()) / (1000 * 60 * 60);
-      if (diffHours < 48) {
-        candidateEvents.push({
-          id: `news-${latestNews.id}`,
-          type: "news",
-          priority: 4,
-          badge: "📰 AKTUALNOŚCI",
-          title: latestNews.title,
-          actionLabel: "CZYTAJ",
-          targetTab: "news"
-        });
+      // Filtr nieprzeczytanych wiadomości
+      const unreadNews = news.filter(n => !readNewsIds.includes(n.id));
+      if (unreadNews.length > 0) {
+        const latestNews = unreadNews[0];
+        const newsDate = new Date(latestNews.published_at);
+        const diffHours = (now.getTime() - newsDate.getTime()) / (1000 * 60 * 60);
+        if (diffHours < 72) {
+          candidateEvents.push({
+            id: `news-${latestNews.id}`,
+            type: "news",
+            priority: 4,
+            badge: "📰 AKTUALNOŚCI",
+            title: latestNews.title,
+            subtitle: "Nowa wiadomość od sztabu drużyny",
+            actionLabel: "CZYTAJ",
+            targetTab: "news",
+            extraPayload: latestNews
+          });
+        }
       }
     }
 
@@ -174,17 +192,35 @@ export default function DeltaLiveBar({
       .sort((a, b) => a.priority - b.priority);
 
     return validEvents.length > 0 ? validEvents[0] : null;
-  }, [matches, trainingSessions, news, unansweredNotices, dismissedIds]);
+  }, [matches, trainingSessions, news, unansweredNotices, dismissedIds, readNewsIds]);
 
   if (!activeEvent) return null;
 
   const handleAction = () => {
+    if (activeEvent.type === "news" && activeEvent.extraPayload?.id) {
+      markNewsAsRead(activeEvent.extraPayload.id);
+    }
     onNavigate(activeEvent.targetTab, activeEvent.extraPayload);
+  };
+
+  const markNewsAsRead = (newsId: string) => {
+    try {
+      const updated = Array.from(new Set([...readNewsIds, newsId]));
+      setReadNewsIds(updated);
+      localStorage.setItem("delta_read_news", JSON.stringify(updated));
+    } catch {}
   };
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setDismissedIds(prev => [...prev, activeEvent.id]);
+    if (activeEvent.type === "news" && activeEvent.extraPayload?.id) {
+      markNewsAsRead(activeEvent.extraPayload.id);
+    }
+    const updated = [...dismissedIds, activeEvent.id];
+    setDismissedIds(updated);
+    try {
+      localStorage.setItem("delta_dismissed_livebar", JSON.stringify(updated));
+    } catch {}
   };
 
   const getTypeIcon = () => {
@@ -242,7 +278,7 @@ export default function DeltaLiveBar({
           type="button"
           className="v200-livebar-dismiss"
           onClick={handleDismiss}
-          title="Ukryj powiadomienie"
+          title="Oznacz jako przeczytane i ukryj"
           aria-label="Ukryj powiadomienie"
         >
           <X size={14} />

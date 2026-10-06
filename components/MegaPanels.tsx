@@ -140,9 +140,11 @@ export function HallOfFame(props:{players:Player[];stats:Record<string,Stat>;tra
           const p=hallLeaders[place-1];
           return <div key={place} className={`v113-podium-position v113-place-${place} ${p?"has-player":"is-empty"}`}>
             {p?<button type="button" className="v113-podium-player v141-hof-player" onClick={()=>props.onOpenPlayer(p)} aria-label={`Profil ${p.display_name}, miejsce ${place}, ${value(p)} ${hallLabel}`}>
-              <span className="v142-card-crown" aria-hidden="true">{place===1?"✦":"◆"}</span>
-              <span className="v113-podium-photo">{ryszard(p)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={p.id}/>}</span>
-              <span className="v113-podium-name">{p.display_name}</span>
+              <span className="v142-card-crown" aria-hidden="true">{place===1?"👑":"✦"}</span>
+              <span className="v113-podium-photo" style={{ border: place===1 ? "2px solid #f59e0b" : place===2 ? "2px solid #94a3b8" : "2px solid #b45309", boxShadow: place===1 ? "0 0 20px rgba(245,158,11,0.4)" : "none" }}>
+                {ryszard(p)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={p.id}/>}
+              </span>
+              <span className="v113-podium-name font-bold">{p.display_name}</span>
               <span className="v113-podium-score"><strong>{value(p)}</strong><small>{hallLabel}</small></span>
               <span className="v113-podium-open">PROFIL <ChevronRight size={12}/></span>
             </button>:<div className="v113-podium-empty"><Shield size={24}/><span>Miejsce do zdobycia</span></div>}
@@ -158,7 +160,30 @@ export function HallOfFame(props:{players:Player[];stats:Record<string,Stat>;tra
     </article>
 
     <div className="v10-hof-team"><article><b>{played.length}</b><span>MECZE</span></article><article><b>{wins}</b><span>WYGRANE</span></article><article><b>{goals}</b><span>GOLE</span></article><article><b>{props.chemistry[0]?.score||0}%</b><span>TOP CHEMIA</span></article></div>
-    <div className="v10-hof-grid">{records.map(([title,p,value,unit,Icon])=><button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card"><Icon size={22}/><small>{title}</small>{p?<><Avatar p={p}/><h3>{p.display_name}</h3><b>{value(p)}</b><span>{unit}</span></>:<p>Brak danych</p>}</button>)}</div>
+    <div className="v10-hof-grid">
+      {records.map(([title,p,value,unit,Icon])=>(
+        <button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card relative overflow-hidden group hover:border-amber-400/50 transition">
+          <div className="absolute top-2 right-2 text-amber-500/20 group-hover:text-amber-500/40 transition">
+            <Icon size={36}/>
+          </div>
+          <small className="text-amber-400 font-black tracking-wider uppercase text-[10px]">{title}</small>
+          {p ? (
+            <div className="mt-2 flex flex-col items-center gap-1.5">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-amber-400/40 shadow-lg bg-black/40">
+                <PlayerPhoto playerId={p.id} className="w-full h-full object-cover" />
+              </div>
+              <h3 className="font-black text-xs text-white text-center mt-1">{p.display_name}</h3>
+              <div className="flex items-baseline gap-1 text-amber-300">
+                <b className="text-lg font-black">{value(p)}</b>
+                <span className="text-[10px] uppercase font-bold text-slate-400">{unit}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 mt-3">Brak danych</p>
+          )}
+        </button>
+      ))}
+    </div>
     <article className="v10-seasons devil-card"><div className="v8-panel-title"><CalendarDays size={18}/> PORÓWNANIE SEZONÓW</div><div>{seasonSummaries.length?seasonSummaries.map(x=><div key={x.label}><b>{x.label}</b><span>{x.matches} meczów</span><span>{x.wins} wygranych</span><strong>{x.goals} goli</strong></div>):<p className="muted">Dane pojawią się po rozegranych meczach.</p>}</div></article>
     <article className="v10-month devil-card"><div><small>AUTOMATYCZNE PODSUMOWANIE MIESIĄCA</small><h3>{latestMonth}</h3><p>{monthMatches.length} meczów • {monthWins} wygranych • {monthGoals} goli • {monthTrainings} treningów</p></div><button onClick={copyMonth}>KOPIUJ PODSUMOWANIE</button></article>
     <article className="v10-duos devil-card"><div className="v8-panel-title"><Zap size={18}/> NAJLEPSZE DUETY — CHEMIA</div><div>{props.chemistry.slice(0,5).map((x,i)=><div key={`${x.a.id}-${x.b.id}`}><strong>#{i+1}</strong><span>{x.a.display_name} + {x.b.display_name}</span><b>{x.score}%</b><small>{x.games} gier • {x.wins} wygranych • {x.combinedGA} akcji G/A</small></div>)}</div></article>

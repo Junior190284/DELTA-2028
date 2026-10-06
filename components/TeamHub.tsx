@@ -29,6 +29,8 @@ import DeltaCoachCornerModal from "./DeltaCoachCornerModal";
 import PlayerRecordsView from "./PlayerRecordsView";
 import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
+import NewsEditModal, { NewsItem } from "./NewsEditModal";
+import DeltaPointsRulesModal from "./DeltaPointsRulesModal";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -37,7 +39,7 @@ import { decodeHtmlEntities } from "@/lib/text";
 import { formatTeamName, getTeamLogo } from "@/lib/teams";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake, Coins
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -46,7 +48,7 @@ type Match={id:string;round_no:number|null;match_date:string;match_time:string|n
 type Attendance={match_id:string;player_id:string;status:string};
 type Lineup={match_id:string;player_id:string;is_starter:boolean;is_captain:boolean};
 type Event={id:string;match_id:string;event_type:string;player_id:string|null;assist_player_id:string|null;minute:number|null;created_at:string};
-type News={id:string;type:string;title:string;body:string|null;published_at:string};
+type News={id:string;type:string;title:string;body:string|null;published_at:string;priority?:string};
 type ClubUpdate={id:string;source_key:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string;synced_at:string};
 type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean;player_id:string|null;created_at:string};
 type TrainingSession={id:string;training_date:string;start_time:string|null;end_time:string|null;location:string|null;title:string;notes:string|null;created_at:string};
@@ -198,6 +200,10 @@ export default function TeamHub(props:{
   const [photoBoothModalOpen, setPhotoBoothModalOpen] = useState(false);
   const [birthdayModalOpen, setBirthdayModalOpen] = useState(false);
   const [coachCornerModalOpen, setCoachCornerModalOpen] = useState(false);
+  const [newsModalOpen, setNewsModalOpen] = useState(false);
+  const [editingNewsItem, setEditingNewsItem] = useState<NewsItem | null>(null);
+  const [dpRulesModalOpen, setDpRulesModalOpen] = useState(false);
+  const [readNewsMap, setReadNewsMap] = useState<Record<string, boolean>>({});
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
@@ -1118,10 +1124,51 @@ export default function TeamHub(props:{
     const {error}=await supabase.from("match_attendance").upsert({match_id:matchId,player_id:playerId,status,updated_by:props.profile.id},{onConflict:"match_id,player_id"});
     if(!error)setAttendance(prev=>[...prev.filter(a=>!(a.match_id===matchId&&a.player_id===playerId)),{match_id:matchId,player_id:playerId,status}]);
   }
-  async function saveNewsItem(){
-    const title=prompt("Tytuł aktualności");if(!title)return;const body=prompt("Treść")||"";const type=prompt("Typ: organizacja / mecz / wynik","organizacja")||"organizacja";
-    const {data,error}=await supabase.from("news").insert({title,body,type,created_by:props.profile.id}).select("id,type,title,body,published_at").single();
-    if(!error&&data)setNews(prev=>[data,...prev]);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("delta_read_news");
+      if (saved) {
+        const list: string[] = JSON.parse(saved);
+        const map: Record<string, boolean> = {};
+        list.forEach(id => { map[id] = true; });
+        setReadNewsMap(map);
+      }
+    } catch {}
+  }, []);
+
+  function handleToggleReadNews(newsId: string) {
+    setReadNewsMap(prev => {
+      const next = { ...prev, [newsId]: !prev[newsId] };
+      try {
+        const readList = Object.keys(next).filter(k => next[k]);
+        localStorage.setItem("delta_read_news", JSON.stringify(readList));
+      } catch {}
+      return next;
+    });
+  }
+
+  function openAddNewsModal() {
+    setEditingNewsItem(null);
+    setNewsModalOpen(true);
+  }
+
+  function openEditNewsModal(item: News) {
+    setEditingNewsItem(item);
+    setNewsModalOpen(true);
+  }
+
+  function handleNewsSaved(savedItem: NewsItem) {
+    setNews(prev => {
+      const exists = prev.some(n => n.id === savedItem.id);
+      if (exists) {
+        return prev.map(n => n.id === savedItem.id ? { ...n, ...savedItem } : n);
+      }
+      return [savedItem as News, ...prev];
+    });
+  }
+
+  function handleNewsDeleted(deletedId: string) {
+    setNews(prev => prev.filter(n => n.id !== deletedId));
   }
   async function enablePush(){
     if(!("serviceWorker" in navigator)||!("PushManager" in window))return alert("Push nie jest wspierany w tej przeglądarce.");
@@ -1907,7 +1954,28 @@ export default function TeamHub(props:{
 
         <section className="v8-bottom-grid">
           <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>setTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
-          <article className="v8-panel devil-card"><div className="v8-panel-title"><Newspaper size={18}/> AKTUALNOŚCI {staff&&<button onClick={saveNewsItem}>DODAJ</button>}</div><div className="v8-news-list">{news.slice(0,3).map(n=><div key={n.id}><i/><div><b>{n.title}</b><span>{new Date(n.published_at).toLocaleDateString("pl-PL")}</span></div></div>)}{news.length===0&&<p className="muted">Brak aktualności.</p>}</div></article>
+          <article className="v8-panel devil-card">
+            <div className="v8-panel-title">
+              <Newspaper size={18}/> AKTUALNOŚCI 
+              {staff && <button onClick={openAddNewsModal}>DODAJ</button>}
+            </div>
+            <div className="v8-news-list">
+              {news.slice(0,3).map(n=>{
+                const isRead = !!readNewsMap[n.id];
+                const isUrgent = n.priority === "urgent" || n.type === "wazne";
+                return (
+                  <div key={n.id} onClick={()=>setTab("news")} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+                    <i style={{background: isUrgent ? "#ef4444" : isRead ? "#4b5563" : "#f6c952"}}/>
+                    <div style={{flex:1}}>
+                      <b>{n.title}</b>
+                      <span>{new Date(n.published_at).toLocaleDateString("pl-PL")} {isRead ? "• ✓ Odczytane" : isUrgent ? "• 🔴 PILNE" : ""}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {news.length===0&&<p className="muted">Brak aktualności.</p>}
+            </div>
+          </article>
           <article className="v8-panel devil-card"><div className="v8-panel-title"><History size={18}/> KRONIKA</div><div className="v8-chronicle-preview">{matches.filter(m=>m.status==="played").slice(-2).reverse().map(m=><div key={m.id}><b>{datePL(m.match_date)}</b><span>{m.home_team} {m.home_score}:{m.away_score} {m.away_team}</span></div>)}{matches.filter(m=>m.status==="played").length===0&&<p className="muted">Historia sezonu dopiero się zaczyna.</p>}</div></article>
         </section>
       </>}
@@ -2626,7 +2694,53 @@ export default function TeamHub(props:{
         </div>
       </section>}
 
-      {tab==="news"&&<section className="section v8-section-page"><div className="section-title"><h2>Aktualności</h2>{(staff||props.userPermissions.can_manage_news)&&<button className="btn gold-btn" onClick={saveNewsItem}>Dodaj aktualność</button>}</div><div className="news-grid">{news.map(n=><article className="news-card devil-card" key={n.id}><span className="tag">{n.type}</span><h3>{n.title}</h3><p>{n.body}</p><small>{new Date(n.published_at).toLocaleString("pl-PL")}</small></article>)}</div></section>}
+      {tab==="news"&&<section className="section v8-section-page">
+        <div className="section-title">
+          <div>
+            <h2>Aktualności & Komunikaty</h2>
+            <p className="v141-hof-intro">Oficjalne wiadomości, odprawy, informacje o zbiórkach i życiu drużyny.</p>
+          </div>
+          {(staff||props.userPermissions.can_manage_news)&&<button className="btn gold-btn" onClick={openAddNewsModal}><Newspaper size={16}/> Dodaj komunikat</button>}
+        </div>
+        <div className="news-grid">
+          {news.map(n=>{
+            const isRead = !!readNewsMap[n.id];
+            const isUrgent = n.priority === "urgent" || n.type === "wazne";
+            const isImportant = n.priority === "important";
+            return (
+              <article className={`news-card devil-card ${isUrgent ? "is-urgent" : isImportant ? "is-important" : ""} ${isRead ? "is-read" : "is-unread"}`} key={n.id}>
+                <div className="v200-news-topline">
+                  <span className={`tag tag-${n.type} ${isUrgent ? "priority-urgent" : isImportant ? "priority-important" : ""}`}>
+                    {isUrgent ? "🔴 PILNE" : isImportant ? "🟡 WAŻNE" : n.type.toUpperCase()}
+                  </span>
+                  <div className="v200-news-actions-mini">
+                    {staff && (
+                      <button type="button" className="v200-news-edit-btn" onClick={()=>openEditNewsModal(n)} title="Edytuj wiadomość">
+                        ✏️ Edytuj
+                      </button>
+                    )}
+                    <button 
+                      type="button" 
+                      className={`v200-read-toggle-btn ${isRead ? "is-confirmed" : ""}`}
+                      onClick={()=>handleToggleReadNews(n.id)}
+                      title={isRead ? "Wiadomość została odczytana" : "Kliknij, aby potwierdzić przeczytanie"}
+                    >
+                      {isRead ? "✓ Przeczytano" : "Potwierdź odczytanie"}
+                    </button>
+                  </div>
+                </div>
+                <h3>{n.title}</h3>
+                <p style={{whiteSpace:"pre-wrap"}}>{n.body}</p>
+                <div className="v200-news-meta">
+                  <small>{new Date(n.published_at).toLocaleString("pl-PL", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"})}</small>
+                  {isRead && <span className="v200-read-badge">✓ Odczytane</span>}
+                </div>
+              </article>
+            );
+          })}
+          {news.length===0&&<div className="v101-empty-stage"><Newspaper size={34}/><b>Brak nowych komunikatów.</b></div>}
+        </div>
+      </section>}
     </main>
 
     {/* NAVIGATION 2.0: KAFELKOWY HUB "WIĘCEJ" */}
@@ -3052,6 +3166,25 @@ export default function TeamHub(props:{
                 onUnlockTheme={(theme) => handleUnlockTheme(selectedPlayer.id, theme)}
                 onOpenPackModal={()=>setPackModalOpen(true)}
               />
+              <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:6,width:"100%",alignItems:"center"}}>
+                <button
+                  type="button"
+                  onClick={()=>setDpRulesModalOpen(true)}
+                  style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 12px",fontSize:11,fontWeight:800,background:"rgba(246,201,82,0.08)",border:"1px solid rgba(246,201,82,0.25)",color:"#f6c952",borderRadius:6,cursor:"pointer"}}
+                >
+                  <Coins size={14}/> <span>Zasady punktów DP & Nagrody</span>
+                </button>
+                {staff && (
+                  <a 
+                    href="/dev/inferno-walkout" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 12px",fontSize:11,fontWeight:800,background:"rgba(226,46,48,0.15)",border:"1px solid rgba(226,46,48,0.35)",color:"#ff8088",borderRadius:6,textDecoration:"none"}}
+                  >
+                    <span>🎨 Otwórz Edytor Kart 3D / Walkout</span>
+                  </a>
+                )}
+              </div>
             </div>
             <div className="v111-player-content v112-player-content">
               <nav className="v112-profile-tabs" aria-label="Sekcje profilu zawodnika">
@@ -3325,6 +3458,24 @@ export default function TeamHub(props:{
         players={players}
         isCoachOrAdmin={props.profile.role === "coach" || props.profile.role === "admin"}
         currentUserName={props.profile.display_name || "Trener DELTA"}
+      />
+    )}
+
+    {newsModalOpen && (
+      <NewsEditModal
+        isOpen={newsModalOpen}
+        onClose={() => setNewsModalOpen(false)}
+        newsItem={editingNewsItem}
+        onSaved={handleNewsSaved}
+        onDeleted={handleNewsDeleted}
+        currentUserId={props.profile.id}
+      />
+    )}
+
+    {dpRulesModalOpen && (
+      <DeltaPointsRulesModal
+        isOpen={dpRulesModalOpen}
+        onClose={() => setDpRulesModalOpen(false)}
       />
     )}
   </div>;
