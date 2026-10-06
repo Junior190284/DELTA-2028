@@ -3,10 +3,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { 
   Play, 
-  Pause, 
   RotateCcw, 
   Sliders, 
-  Sparkles, 
   Flame, 
   Volume2, 
   VolumeX, 
@@ -15,20 +13,15 @@ import {
   Move, 
   Layers, 
   Type, 
-  Maximize2, 
-  Minimize2, 
   Video, 
   Upload, 
   Save, 
-  Eye, 
+  Sparkles,
   ChevronRight, 
-  RefreshCw, 
-  Crown, 
-  Star, 
   Film,
   Zap,
   Shield,
-  Trash2
+  Eye
 } from "lucide-react";
 import PlayerPhoto from "./PlayerPhoto";
 
@@ -42,24 +35,22 @@ interface Player {
 
 export interface WalkoutSettings {
   videoSrc: string;
-  soundVolume: number;
   rarity: {
     text: string;
     subtext: string;
-    x: number; // percentage offset from center
-    y: number; // percentage offset from center
+    x: number; // percentage offset
+    y: number; // percentage offset
     scale: number;
   };
   player: {
-    x: number; // percentage offset from center
-    y: number; // percentage offset from center
+    x: number; // percentage offset
+    y: number; // percentage offset
     scale: number;
     customCutoutUrl?: string;
   };
   card: {
-    template: "inferno" | "gold" | "legendary" | "epic";
-    x: number; // percentage offset from center
-    y: number; // pixel offset from center
+    x: number; // percentage offset
+    y: number; // pixel offset
     scale: number;
     customCardUrl?: string;
   };
@@ -69,12 +60,10 @@ export interface WalkoutSettings {
     playerPosition: string;
     playerClub: string;
   };
-  stage: "all" | "intro" | "rarity" | "player" | "card" | "hero";
 }
 
 const DEFAULT_SETTINGS: WalkoutSettings = {
   videoSrc: "/media/walkouts/inferno-bg.mp4",
-  soundVolume: 0.8,
   rarity: {
     text: "INFERNO",
     subtext: "EDYCJA SPECJALNA",
@@ -89,7 +78,6 @@ const DEFAULT_SETTINGS: WalkoutSettings = {
     customCutoutUrl: ""
   },
   card: {
-    template: "inferno",
     x: -2,
     y: -78,
     scale: 1.3,
@@ -100,8 +88,7 @@ const DEFAULT_SETTINGS: WalkoutSettings = {
     playerRating: 94,
     playerPosition: "NAPASTNIK",
     playerClub: "DELTA 2018 GM"
-  },
-  stage: "hero"
+  }
 };
 
 const VIDEO_PRESETS = [
@@ -144,7 +131,7 @@ export default function WalkoutStudio(props: {
     }
   }, [activePlayer]);
 
-  // Stage sequence playback
+  // Stage sequence playback: "intro" (0-3s), "rarity" (3-5s), "player" (5-7s), "card" (7-9s), "hero" (9s+)
   const [stage, setStage] = useState<"intro" | "rarity" | "player" | "card" | "hero">("hero");
   const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(9.0);
@@ -242,7 +229,7 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Drag and Drop
+  // Drag and Drop interaction on viewport
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -278,9 +265,8 @@ export default function WalkoutStudio(props: {
     const dx = e.clientX - dragStartRef.current.startX;
     const dy = e.clientY - dragStartRef.current.startY;
 
-    // Scale sensitivity
-    const stepX = Math.round(dx / 5);
-    const stepY = Math.round(dy / 5);
+    const stepX = Math.round(dx / 4);
+    const stepY = Math.round(dy / 4);
 
     const newX = dragStartRef.current.initX + stepX;
     const newY = dragStartRef.current.initY + stepY;
@@ -346,7 +332,7 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Player Cutout Upload
+  // Cutout Upload
   const handleCutoutUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -354,7 +340,7 @@ export default function WalkoutStudio(props: {
     setSettings(prev => ({ ...prev, player: { ...prev.player, customCutoutUrl: url } }));
   };
 
-  // Card Image Upload
+  // Card Upload
   const handleCardUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -363,61 +349,47 @@ export default function WalkoutStudio(props: {
   };
 
   return (
-    <div className="v300-walkout-studio w-full space-y-4">
-      {/* NAGŁÓWEK I PRZYCISKI AKCJI */}
-      <div className="flex items-center justify-between gap-3 p-4 bg-slate-900/90 border border-slate-800 rounded-2xl flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-amber-500 to-yellow-400 flex items-center justify-center text-black shadow-lg">
+    <div className="ws-root">
+      {/* GÓRNY PASEK NARZĘDZI */}
+      <div className="ws-topbar">
+        <div className="ws-brand-group">
+          <div className="ws-icon-badge">
             <Flame size={22} />
           </div>
           <div>
-            <h2 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
-              <span>Studio Walkoutów & Animacji</span>
-              <span className="text-[10px] bg-red-950 text-red-400 border border-red-800 px-2 py-0.5 rounded-full font-bold">
-                PRO WYSIWYG
-              </span>
+            <h2 className="ws-title">
+              Studio Walkoutów & Animacji DELTA
+              <span className="ws-pro-tag">WYSIWYG</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="ws-subtitle">
               Wybierz film wideo, kartę i zawodnika. Przesuwaj elementy suwakami lub przeciągaj myszką.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={handleResetDefaults}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center gap-1.5"
-          >
+        <div className="ws-actions-group">
+          <button type="button" onClick={handleResetDefaults} className="ws-btn-ghost">
             <RotateCcw size={14} /> Reset
           </button>
-          <button
-            type="button"
-            onClick={handleCopyJSON}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center gap-1.5"
-          >
+          <button type="button" onClick={handleCopyJSON} className="ws-btn-ghost">
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
             <span>{copied ? "Skopiowano!" : "Kopiuj JSON"}</span>
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black text-xs font-black uppercase tracking-wider transition shadow-lg flex items-center gap-1.5"
-          >
+          <button type="button" onClick={handleSave} className="ws-btn-primary">
             <Save size={15} />
             <span>{savedFeedback ? "✓ Zapisano!" : "Zapisz ułożenie"}</span>
           </button>
         </div>
       </div>
 
-      {/* GŁÓWNY WIDOK: LEWA - EKRAN FILMOWY, PRAWA - DOKŁADNE PANELE */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      {/* GŁÓWNA SIATKA */}
+      <div className="ws-grid">
         
-        {/* LEWA STRONA: KINOWY VIEWPORT (560px) */}
-        <div className="xl:col-span-8 flex flex-col gap-3">
+        {/* LEWA KOLUMNA: SCENA KINOWA */}
+        <div className="ws-viewport-col">
           
           <div 
-            className="relative w-full h-[520px] md:h-[560px] rounded-2xl overflow-hidden bg-black border border-red-900/60 shadow-[0_25px_60px_rgba(0,0,0,0.95)] select-none flex items-center justify-center cursor-move group"
+            className="ws-viewport"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -431,49 +403,33 @@ export default function WalkoutStudio(props: {
                 loop
                 muted={isMuted}
                 playsInline
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                className="ws-video"
               />
             ) : (
               <div 
-                className="absolute inset-0 bg-cover bg-center pointer-events-none"
+                className="ws-video-img"
                 style={{ backgroundImage: `url(${settings.videoSrc})` }}
               />
             )}
 
-            {/* Ciemna winieta */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
+            {/* WINIETA I ŚWIATŁO */}
+            <div className="ws-vignette" />
 
-            {/* EFEKT BŁYSKU (FLASH) */}
-            {isFlash && (
-              <div className="absolute inset-0 bg-white z-50 animate-ping pointer-events-none opacity-90 transition-opacity" />
-            )}
+            {/* FLASH EFFECT */}
+            {isFlash && <div className="ws-flash" />}
 
             {/* 1. WARSTWA NAPISÓW (RARITY) */}
             {(stage === "rarity" || stage === "player" || stage === "hero") && (
               <div 
-                className={`absolute pointer-events-none flex flex-col items-center text-center z-40 transition-transform duration-75 ${
-                  activeLayer === "rarity" ? "ring-2 ring-amber-400 ring-offset-4 ring-offset-black/70 rounded-xl p-2" : ""
-                }`}
+                className={`ws-rarity-layer ${activeLayer === "rarity" ? "is-active" : ""}`}
                 style={{
-                  top: "50%",
-                  left: "50%",
                   transform: `translate(calc(-50% + ${settings.rarity.x}%), calc(-50% + ${settings.rarity.y}%)) scale(${settings.rarity.scale})`
                 }}
               >
-                <div 
-                  className="font-black tracking-widest uppercase leading-none"
-                  style={{
-                    fontSize: "48px",
-                    color: "#ff3b30",
-                    textShadow: "0 0 30px rgba(255, 69, 0, 0.9), 0 0 10px #000, 0 4px 15px #000"
-                  }}
-                >
+                <div className="ws-rarity-title">
                   {settings.rarity.text}
                 </div>
-                <div 
-                  className="text-xs font-black tracking-widest uppercase text-amber-300 mt-1 opacity-90"
-                  style={{ letterSpacing: "0.25em" }}
-                >
+                <div className="ws-rarity-sub">
                   {settings.rarity.subtext}
                 </div>
               </div>
@@ -482,31 +438,26 @@ export default function WalkoutStudio(props: {
             {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) */}
             {(stage === "player" || stage === "hero") && (
               <div 
-                className={`absolute pointer-events-none z-30 transition-transform duration-75 flex items-center justify-center ${
-                  activeLayer === "player" ? "ring-2 ring-sky-400 ring-offset-4 ring-offset-black/70 rounded-2xl" : ""
-                }`}
+                className={`ws-player-layer ${activeLayer === "player" ? "is-active" : ""}`}
                 style={{
-                  top: "50%",
-                  left: "50%",
-                  transform: `translate(calc(-50% + ${settings.player.x}%), calc(-50% + ${settings.player.y}%)) scale(${settings.player.scale})`,
-                  filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.95)) drop-shadow(0 0 25px rgba(255,69,0,0.4))"
+                  transform: `translate(calc(-50% + ${settings.player.x}%), calc(-50% + ${settings.player.y}%)) scale(${settings.player.scale})`
                 }}
               >
                 {settings.player.customCutoutUrl ? (
                   <img 
                     src={settings.player.customCutoutUrl} 
                     alt="Sylwetka zawodnika"
-                    className="max-h-[380px] object-contain pointer-events-none"
+                    className="ws-player-img"
                   />
                 ) : activePlayer ? (
-                  <div className="w-64 h-80 relative flex items-center justify-center">
-                    <PlayerPhoto playerId={activePlayer.id} className="w-full h-full object-contain pointer-events-none" />
+                  <div className="ws-player-photo-box">
+                    <PlayerPhoto playerId={activePlayer.id} className="ws-player-photo" />
                   </div>
                 ) : (
                   <img 
                     src="/demo/player-cutout.png" 
-                    alt="Zawodnik domyślny"
-                    className="max-h-[380px] object-contain pointer-events-none"
+                    alt="Zawodnik"
+                    className="ws-player-img"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = "none";
                     }}
@@ -518,30 +469,24 @@ export default function WalkoutStudio(props: {
             {/* 3. WARSTWA KARTY 3D */}
             {(stage === "card" || stage === "hero") && (
               <div 
-                className={`absolute pointer-events-none z-50 transition-transform duration-75 flex items-center justify-center ${
-                  activeLayer === "card" ? "ring-2 ring-yellow-400 ring-offset-4 ring-offset-black/70 rounded-2xl" : ""
-                }`}
+                className={`ws-card-layer ${activeLayer === "card" ? "is-active" : ""}`}
                 style={{
-                  top: "50%",
-                  left: "50%",
-                  transform: `translate(calc(-50% + ${settings.card.x}%), calc(-50% + ${settings.card.y}px)) scale(${settings.card.scale})`,
-                  filter: "drop-shadow(0 0 45px rgba(255,42,59,0.95)) drop-shadow(0 25px 40px rgba(0,0,0,0.95))"
+                  transform: `translate(calc(-50% + ${settings.card.x}%), calc(-50% + ${settings.card.y}px)) scale(${settings.card.scale})`
                 }}
               >
                 {settings.card.customCardUrl ? (
                   <img 
                     src={settings.card.customCardUrl} 
                     alt="Karta"
-                    className="w-[260px] h-[380px] object-contain rounded-2xl pointer-events-none"
+                    className="ws-card-img"
                   />
                 ) : (
-                  <div className="w-[260px] h-[380px] rounded-2xl overflow-hidden bg-[#080203] border-2 border-[#ff2a3b] shadow-[0_0_35px_rgba(255,42,59,0.6)] flex items-center justify-center pointer-events-none">
+                  <div className="ws-card-box">
                     <img 
                       src="/demo/inferno-card.png" 
                       alt="Inferno Card"
-                      className="w-full h-full object-cover"
+                      className="ws-card-inner-img"
                       onError={(e) => {
-                        // Fallback dynamic card
                         (e.target as HTMLElement).style.display = "none";
                       }}
                     />
@@ -550,101 +495,90 @@ export default function WalkoutStudio(props: {
               </div>
             )}
 
-            {/* DOLNY PASEK BOHATERA (HERO DETAILS) */}
+            {/* DOLNE SZCZEGÓŁY HERO */}
             {stage === "hero" && (
-              <div className="absolute bottom-5 z-50 flex flex-col items-center text-center pointer-events-none">
-                <div className="flex items-center gap-1.5 text-xs font-black text-red-500 uppercase tracking-widest mb-1">
-                  <Flame size={14} /> <span>{settings.rarity.text} WALKOUT</span>
+              <div className="ws-hero-layer">
+                <div className="ws-hero-badge">
+                  <Flame size={13} /> <span>{settings.rarity.text} WALKOUT</span>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider drop-shadow-[0_0_25px_rgba(255,42,59,0.85)]">
+                <h1 className="ws-hero-name">
                   {settings.metadata.playerName}
                 </h1>
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-300 mt-1">
-                  <span className="text-amber-400 font-black">{settings.metadata.playerRating} OVR</span>
-                  <span className="text-slate-600">•</span>
+                <div className="ws-hero-meta">
+                  <span className="ws-rating">{settings.metadata.playerRating} OVR</span>
+                  <span className="ws-sep">•</span>
                   <span>{settings.metadata.playerPosition}</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-slate-400">{settings.metadata.playerClub}</span>
+                  <span className="ws-sep">•</span>
+                  <span className="ws-club">{settings.metadata.playerClub}</span>
                 </div>
               </div>
             )}
 
-            {/* WSKAŹNIK AKTYWNEJ WARSTWY DO PRZECIĄGANIA */}
-            <div className="absolute top-3 left-3 z-50 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2 text-xs font-bold text-slate-200">
-              <Move size={14} className="text-amber-400" />
-              <span>Przeciągaj: <b className="text-amber-400">{activeLayer === "card" ? "Karta" : activeLayer === "player" ? "Zawodnik" : "Napisy"}</b></span>
+            {/* WSKAŹNIKI STAGE */}
+            <div className="ws-drag-indicator">
+              <Move size={14} />
+              <span>Aktywna warstwa: <b>{activeLayer === "card" ? "Karta" : activeLayer === "player" ? "Zawodnik" : "Napisy"}</b></span>
             </div>
 
-            {/* WSKAŹNIK CZASU */}
-            <div className="absolute top-3 right-3 z-50 bg-black/80 backdrop-blur-md px-3 py-1 rounded-xl border border-slate-800 text-xs font-mono text-amber-400 font-black">
-              {currentTime.toFixed(1)}s • Faza: <span className="uppercase text-white">{stage}</span>
+            <div className="ws-time-indicator">
+              {currentTime.toFixed(1)}s • Faza: <span className="uppercase">{stage}</span>
             </div>
           </div>
 
-          {/* PASEK KONTROLI ODTWARZANIA I ETAPÓW */}
-          <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
+          {/* PASEK ODTWARZANIA I SKOKÓW FAZ */}
+          <div className="ws-playback-bar">
+            <div className="ws-playback-left">
               <button
                 type="button"
                 onClick={startFullWalkout}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400 hover:from-red-500 hover:to-yellow-300 text-black font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+                className="ws-btn-play"
               >
                 <Play size={16} /> <span>Odtwórz pełny film walkoutu</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsMuted(!isMuted)}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                className="ws-btn-icon"
                 title={isMuted ? "Włącz dźwięk" : "Wycisz"}
               >
                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-bold text-slate-400 mr-1">Skocz do fazy:</span>
+            <div className="ws-stages-row">
+              <span className="ws-stages-label">Skocz do:</span>
               <button
                 type="button"
                 onClick={() => jumpToStage("intro")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  stage === "intro" ? "bg-slate-700 text-white" : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
+                className={`ws-stage-btn ${stage === "intro" ? "active" : ""}`}
               >
                 1. Intro (0s)
               </button>
               <button
                 type="button"
                 onClick={() => jumpToStage("rarity")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  stage === "rarity" ? "bg-red-950 text-red-300 border border-red-700" : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
+                className={`ws-stage-btn ${stage === "rarity" ? "active red" : ""}`}
               >
                 2. Napis (3s)
               </button>
               <button
                 type="button"
                 onClick={() => jumpToStage("player")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  stage === "player" ? "bg-sky-950 text-sky-300 border border-sky-700" : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
+                className={`ws-stage-btn ${stage === "player" ? "active sky" : ""}`}
               >
                 3. Gracz (5s)
               </button>
               <button
                 type="button"
                 onClick={() => jumpToStage("card")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  stage === "card" ? "bg-amber-950 text-amber-300 border border-amber-700" : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
+                className={`ws-stage-btn ${stage === "card" ? "active gold" : ""}`}
               >
                 4. Karta (7s)
               </button>
               <button
                 type="button"
                 onClick={() => jumpToStage("hero")}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                  stage === "hero" ? "bg-yellow-500 text-black font-black" : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
+                className={`ws-stage-btn ${stage === "hero" ? "active yellow" : ""}`}
               >
                 5. Hero (9s+)
               </button>
@@ -652,23 +586,17 @@ export default function WalkoutStudio(props: {
           </div>
         </div>
 
-        {/* PRAWA STRONA: DOKŁADNE SUWAKI I KONTROLKI WARSTW */}
-        <div className="xl:col-span-4 flex flex-col gap-3">
+        {/* PRAWA KOLUMNA: DOKŁADNE PANELE KONTROLNE */}
+        <div className="ws-sidebar">
           
-          {/* WYBÓR AKTYWNEJ WARSTWY */}
-          <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-2xl">
-            <label className="block text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">
-              Wybierz warstwę do regulacji:
-            </label>
-            <div className="grid grid-cols-3 gap-2">
+          {/* WYBÓR WARSTWY DO REGULACJI */}
+          <div className="ws-panel-box">
+            <span className="ws-panel-title">Wybierz warstwę do regulacji:</span>
+            <div className="ws-layers-tabs">
               <button
                 type="button"
                 onClick={() => setActiveLayer("card")}
-                className={`py-2 px-2.5 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
-                  activeLayer === "card"
-                    ? "bg-amber-500 text-black shadow-lg"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                }`}
+                className={`ws-layer-tab ${activeLayer === "card" ? "active-gold" : ""}`}
               >
                 <Sparkles size={16} />
                 <span>Karta 3D</span>
@@ -676,11 +604,7 @@ export default function WalkoutStudio(props: {
               <button
                 type="button"
                 onClick={() => setActiveLayer("player")}
-                className={`py-2 px-2.5 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
-                  activeLayer === "player"
-                    ? "bg-sky-500 text-black shadow-lg"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                }`}
+                className={`ws-layer-tab ${activeLayer === "player" ? "active-sky" : ""}`}
               >
                 <Layers size={16} />
                 <span>Zawodnik</span>
@@ -688,11 +612,7 @@ export default function WalkoutStudio(props: {
               <button
                 type="button"
                 onClick={() => setActiveLayer("rarity")}
-                className={`py-2 px-2.5 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
-                  activeLayer === "rarity"
-                    ? "bg-red-500 text-white shadow-lg"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                }`}
+                className={`ws-layer-tab ${activeLayer === "rarity" ? "active-red" : ""}`}
               >
                 <Type size={16} />
                 <span>Napisy</span>
@@ -700,26 +620,26 @@ export default function WalkoutStudio(props: {
             </div>
           </div>
 
-          {/* SUWAKI WARSTWY KARTY */}
+          {/* PANEL KARTY */}
           {activeLayer === "card" && (
-            <div className="p-4 bg-slate-900/90 border border-amber-500/30 rounded-2xl space-y-3.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles size={16} /> Pozycja Karty 3D
+            <div className="ws-panel-box ws-box-card">
+              <div className="ws-panel-head">
+                <span className="ws-box-heading gold">
+                  <Sparkles size={15} /> Pozycja Karty 3D
                 </span>
                 <button
                   type="button"
                   onClick={() => setSettings(prev => ({ ...prev, card: { ...prev.card, x: -2, y: -78, scale: 1.3 } }))}
-                  className="text-[11px] text-slate-400 hover:text-white underline"
+                  className="ws-reset-mini"
                 >
                   Reset do optymalnych
                 </button>
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Poziom X (%)</span>
-                  <span className="font-mono text-amber-400">{settings.card.x}%</span>
+                  <span className="ws-val gold">{settings.card.x}%</span>
                 </div>
                 <input
                   type="range"
@@ -727,14 +647,14 @@ export default function WalkoutStudio(props: {
                   max={100}
                   value={settings.card.x}
                   onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, x: parseInt(e.target.value) } }))}
-                  className="w-full accent-amber-500"
+                  className="ws-slider range-gold"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Pion Y (px)</span>
-                  <span className="font-mono text-amber-400">{settings.card.y} px</span>
+                  <span className="ws-val gold">{settings.card.y} px</span>
                 </div>
                 <input
                   type="range"
@@ -742,14 +662,14 @@ export default function WalkoutStudio(props: {
                   max={100}
                   value={settings.card.y}
                   onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, y: parseInt(e.target.value) } }))}
-                  className="w-full accent-amber-500"
+                  className="ws-slider range-gold"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Skala Karty (Scale)</span>
-                  <span className="font-mono text-amber-400">{settings.card.scale.toFixed(2)}x</span>
+                  <span className="ws-val gold">{settings.card.scale.toFixed(2)}x</span>
                 </div>
                 <input
                   type="range"
@@ -758,48 +678,44 @@ export default function WalkoutStudio(props: {
                   step={0.05}
                   value={settings.card.scale}
                   onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, scale: parseFloat(e.target.value) } }))}
-                  className="w-full accent-amber-500"
+                  className="ws-slider range-gold"
                 />
               </div>
 
-              <div className="pt-2 border-t border-slate-800">
-                <label className="block font-bold text-slate-300 mb-1">
-                  Wgraj własną grafikę karty (PNG):
-                </label>
+              <div className="ws-upload-field">
+                <label className="ws-field-label">Wgraj grafikę karty (PNG):</label>
                 <input
                   type="file"
                   accept="image/png,image/webp"
                   onChange={handleCardUpload}
-                  className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-black"
+                  className="ws-file-input"
                 />
               </div>
             </div>
           )}
 
-          {/* SUWAKI WARSTWY ZAWODNIKA */}
+          {/* PANEL ZAWODNIKA */}
           {activeLayer === "player" && (
-            <div className="p-4 bg-slate-900/90 border border-sky-500/30 rounded-2xl space-y-3.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers size={16} /> Pozycja Sylwetki Gracza
+            <div className="ws-panel-box ws-box-player">
+              <div className="ws-panel-head">
+                <span className="ws-box-heading sky">
+                  <Layers size={15} /> Pozycja Sylwetki Gracza
                 </span>
                 <button
                   type="button"
                   onClick={() => setSettings(prev => ({ ...prev, player: { ...prev.player, x: -21, y: -24, scale: 1.05 } }))}
-                  className="text-[11px] text-slate-400 hover:text-white underline"
+                  className="ws-reset-mini"
                 >
                   Reset do optymalnych
                 </button>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">
-                  Wybierz zawodnika:
-                </label>
+              <div className="ws-control-group">
+                <label className="ws-field-label">Wybierz zawodnika:</label>
                 <select
                   value={selectedPlayerId}
                   onChange={e => setSelectedPlayerId(e.target.value)}
-                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold"
+                  className="ws-select"
                 >
                   {players.map(p => (
                     <option key={p.id} value={p.id}>{p.display_name} (#{p.shirt_number || "—"})</option>
@@ -807,10 +723,10 @@ export default function WalkoutStudio(props: {
                 </select>
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Poziom X (%)</span>
-                  <span className="font-mono text-sky-400">{settings.player.x}%</span>
+                  <span className="ws-val sky">{settings.player.x}%</span>
                 </div>
                 <input
                   type="range"
@@ -818,14 +734,14 @@ export default function WalkoutStudio(props: {
                   max={100}
                   value={settings.player.x}
                   onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, x: parseInt(e.target.value) } }))}
-                  className="w-full accent-sky-500"
+                  className="ws-slider range-sky"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Pion Y (%)</span>
-                  <span className="font-mono text-sky-400">{settings.player.y}%</span>
+                  <span className="ws-val sky">{settings.player.y}%</span>
                 </div>
                 <input
                   type="range"
@@ -833,14 +749,14 @@ export default function WalkoutStudio(props: {
                   max={100}
                   value={settings.player.y}
                   onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, y: parseInt(e.target.value) } }))}
-                  className="w-full accent-sky-500"
+                  className="ws-slider range-sky"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Skala Zawodnika (Scale)</span>
-                  <span className="font-mono text-sky-400">{settings.player.scale.toFixed(2)}x</span>
+                  <span className="ws-val sky">{settings.player.scale.toFixed(2)}x</span>
                 </div>
                 <input
                   type="range"
@@ -849,56 +765,52 @@ export default function WalkoutStudio(props: {
                   step={0.05}
                   value={settings.player.scale}
                   onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, scale: parseFloat(e.target.value) } }))}
-                  className="w-full accent-sky-500"
+                  className="ws-slider range-sky"
                 />
               </div>
 
-              <div className="pt-2 border-t border-slate-800">
-                <label className="block font-bold text-slate-300 mb-1">
-                  Wgraj własne wycięte zdjęcie PNG:
-                </label>
+              <div className="ws-upload-field">
+                <label className="ws-field-label">Wgraj wycięte zdjęcie PNG sylwetki:</label>
                 <input
                   type="file"
                   accept="image/png,image/webp"
                   onChange={handleCutoutUpload}
-                  className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-black"
+                  className="ws-file-input"
                 />
               </div>
             </div>
           )}
 
-          {/* SUWAKI WARSTWY NAPISÓW */}
+          {/* PANEL NAPISÓW */}
           {activeLayer === "rarity" && (
-            <div className="p-4 bg-slate-900/90 border border-red-500/30 rounded-2xl space-y-3.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Type size={16} /> Pozycja Napisów Rzadkości
+            <div className="ws-panel-box ws-box-rarity">
+              <div className="ws-panel-head">
+                <span className="ws-box-heading red">
+                  <Type size={15} /> Pozycja Napisów Rzadkości
                 </span>
                 <button
                   type="button"
                   onClick={() => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: 0, y: -1, scale: 1.75 } }))}
-                  className="text-[11px] text-slate-400 hover:text-white underline"
+                  className="ws-reset-mini"
                 >
                   Reset do optymalnych
                 </button>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-300 mb-1">
-                  Główny tekst:
-                </label>
+              <div className="ws-control-group">
+                <label className="ws-field-label">Główny tekst:</label>
                 <input
                   type="text"
                   value={settings.rarity.text}
                   onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, text: e.target.value.toUpperCase() } }))}
-                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-black"
+                  className="ws-input-text font-black"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Poziom X (%)</span>
-                  <span className="font-mono text-red-400">{settings.rarity.x}%</span>
+                  <span className="ws-val red">{settings.rarity.x}%</span>
                 </div>
                 <input
                   type="range"
@@ -906,14 +818,14 @@ export default function WalkoutStudio(props: {
                   max={100}
                   value={settings.rarity.x}
                   onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: parseInt(e.target.value) } }))}
-                  className="w-full accent-red-500"
+                  className="ws-slider range-red"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Pion Y (%)</span>
-                  <span className="font-mono text-red-400">{settings.rarity.y}%</span>
+                  <span className="ws-val red">{settings.rarity.y}%</span>
                 </div>
                 <input
                   type="range"
@@ -921,14 +833,14 @@ export default function WalkoutStudio(props: {
                   max={100}
                   value={settings.rarity.y}
                   onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, y: parseInt(e.target.value) } }))}
-                  className="w-full accent-red-500"
+                  className="ws-slider range-red"
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between font-bold text-slate-300 mb-1">
+              <div className="ws-control-group">
+                <div className="ws-label-row">
                   <span>Rozmiar czcionki (Scale)</span>
-                  <span className="font-mono text-red-400">{settings.rarity.scale.toFixed(2)}x</span>
+                  <span className="ws-val red">{settings.rarity.scale.toFixed(2)}x</span>
                 </div>
                 <input
                   type="range"
@@ -937,19 +849,19 @@ export default function WalkoutStudio(props: {
                   step={0.05}
                   value={settings.rarity.scale}
                   onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, scale: parseFloat(e.target.value) } }))}
-                  className="w-full accent-red-500"
+                  className="ws-slider range-red"
                 />
               </div>
             </div>
           )}
 
           {/* WYBÓR WIDEO */}
-          <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3 text-xs">
-            <label className="block font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Video size={16} className="text-amber-400" /> Film Wideo w Tle:
-            </label>
+          <div className="ws-panel-box">
+            <span className="ws-panel-title flex items-center gap-1.5">
+              <Video size={15} /> Film Wideo w Tle:
+            </span>
 
-            <div className="grid grid-cols-1 gap-1.5">
+            <div className="ws-presets-list">
               {VIDEO_PRESETS.map(preset => (
                 <button
                   key={preset.id}
@@ -961,36 +873,28 @@ export default function WalkoutStudio(props: {
                       videoRef.current.play().catch(() => {});
                     }
                   }}
-                  className={`p-2 rounded-xl text-xs font-bold text-left transition border ${
-                    settings.videoSrc === preset.src
-                      ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
-                      : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
-                  }`}
+                  className={`ws-preset-btn ${settings.videoSrc === preset.src ? "active" : ""}`}
                 >
                   {preset.name}
                 </button>
               ))}
             </div>
 
-            <div>
-              <label className="block text-slate-400 font-bold mb-1">
-                Wgraj własny plik wideo (MP4 / WebM):
-              </label>
+            <div className="ws-upload-field">
+              <label className="ws-field-label">Wgraj własny film MP4 / WebM:</label>
               <input
                 type="file"
                 accept="video/mp4,video/webm"
                 onChange={handleVideoUpload}
-                className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-black"
+                className="ws-file-input"
               />
             </div>
           </div>
 
           {/* JSON READOUT */}
-          <div className="p-3 bg-black/60 border border-slate-800/80 rounded-2xl">
-            <div className="flex items-center justify-between text-[11px] font-mono text-amber-400 font-bold mb-1">
-              <span>Współrzędne (Live JSON):</span>
-            </div>
-            <pre className="text-[10px] font-mono text-slate-400 overflow-x-auto p-1 bg-black/40 rounded-lg">
+          <div className="ws-json-box">
+            <span className="ws-json-title">Współrzędne (Live JSON):</span>
+            <pre className="ws-json-pre">
               {JSON.stringify({
                 rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
                 player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
@@ -1001,6 +905,762 @@ export default function WalkoutStudio(props: {
 
         </div>
       </div>
+
+      {/* SCOPED CSS STYLES - GUARANTEES ZERO LAYOUT DISRUPTION */}
+      <style jsx>{`
+        .ws-root {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          color: #ffffff;
+          box-sizing: border-box;
+          font-family: inherit;
+        }
+
+        .ws-topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 18px;
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .ws-brand-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .ws-icon-badge {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #ff2a3b, #f59e0b);
+          display: grid;
+          place-items: center;
+          color: #000;
+          box-shadow: 0 4px 14px rgba(255, 42, 59, 0.4);
+        }
+
+        .ws-title {
+          font-size: 15px;
+          font-weight: 900;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .ws-pro-tag {
+          font-size: 9.5px;
+          font-weight: 900;
+          padding: 2px 7px;
+          border-radius: 999px;
+          background: rgba(220, 38, 38, 0.25);
+          color: #f87171;
+          border: 1px solid rgba(220, 38, 38, 0.4);
+        }
+
+        .ws-subtitle {
+          margin: 2px 0 0 0;
+          font-size: 11.5px;
+          color: #94a3b8;
+        }
+
+        .ws-actions-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .ws-btn-ghost {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 14px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #cbd5e1;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: 0.15s ease;
+        }
+
+        .ws-btn-ghost:hover {
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
+        }
+
+        .ws-btn-primary {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 10px;
+          background: linear-gradient(90deg, #f59e0b, #eab308);
+          border: none;
+          color: #000;
+          font-size: 12px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+          transition: 0.15s ease;
+        }
+
+        .ws-btn-primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 18px rgba(245, 158, 11, 0.5);
+        }
+
+        /* GRID */
+        .ws-grid {
+          display: grid;
+          grid-template-columns: 1fr 360px;
+          gap: 18px;
+          width: 100%;
+          align-items: start;
+        }
+
+        .ws-viewport-col {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          width: 100%;
+          min-width: 0;
+        }
+
+        /* VIEWPORT KINOWY */
+        .ws-viewport {
+          position: relative;
+          width: 100%;
+          height: 560px;
+          border-radius: 18px;
+          overflow: hidden !important;
+          background: #000000;
+          border: 1px solid rgba(255, 42, 59, 0.4);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 42, 59, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
+          cursor: crosshair;
+        }
+
+        .ws-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .ws-video-img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          background-size: cover;
+          background-position: center;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .ws-vignette {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.75) 100%),
+                      linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.85) 100%);
+          pointer-events: none;
+          z-index: 2;
+        }
+
+        .ws-flash {
+          position: absolute;
+          inset: 0;
+          background: #ffffff;
+          opacity: 0.9;
+          z-index: 99;
+          animation: wsFlashAnim 0.3s ease-out forwards;
+          pointer-events: none;
+        }
+
+        @keyframes wsFlashAnim {
+          0% { opacity: 0.9; }
+          100% { opacity: 0; }
+        }
+
+        /* RARITY LAYER */
+        .ws-rarity-layer {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          pointer-events: none;
+          z-index: 20;
+          transform-origin: center center;
+          white-space: nowrap;
+        }
+
+        .ws-rarity-layer.is-active {
+          border: 2px dashed rgba(245, 158, 11, 0.8);
+          border-radius: 12px;
+          padding: 8px 16px;
+        }
+
+        .ws-rarity-title {
+          font-size: 52px;
+          font-weight: 950;
+          letter-spacing: 4px;
+          text-transform: uppercase;
+          line-height: 0.9;
+          color: #ff3b30;
+          text-shadow: 0 0 35px rgba(255, 69, 0, 0.95), 0 0 10px #000, 0 4px 15px #000;
+        }
+
+        .ws-rarity-sub {
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          color: #fcd34d;
+          margin-top: 4px;
+          opacity: 0.95;
+          text-shadow: 0 0 15px rgba(0,0,0,0.9);
+        }
+
+        /* PLAYER LAYER */
+        .ws-player-layer {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          z-index: 15;
+          transform-origin: center center;
+          filter: drop-shadow(0 20px 30px rgba(0,0,0,0.95)) drop-shadow(0 0 25px rgba(255,69,0,0.4));
+        }
+
+        .ws-player-layer.is-active {
+          border: 2px dashed rgba(56, 189, 248, 0.8);
+          border-radius: 16px;
+        }
+
+        .ws-player-img {
+          max-height: 400px;
+          object-fit: contain;
+          pointer-events: none;
+        }
+
+        .ws-player-photo-box {
+          width: 250px;
+          height: 320px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ws-player-photo {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          pointer-events: none;
+        }
+
+        /* CARD LAYER */
+        .ws-card-layer {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          z-index: 25;
+          transform-origin: center center;
+          filter: drop-shadow(0 0 45px rgba(255, 42, 59, 0.95)) drop-shadow(0 25px 40px rgba(0,0,0,0.95));
+        }
+
+        .ws-card-layer.is-active {
+          border: 2px dashed rgba(234, 179, 8, 0.9);
+          border-radius: 20px;
+        }
+
+        .ws-card-box {
+          width: 260px;
+          height: 380px;
+          border-radius: 18px;
+          overflow: hidden;
+          background: #080203;
+          border: 2px solid #ff2a3b;
+          box-shadow: 0 0 35px rgba(255, 42, 59, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+
+        .ws-card-img {
+          width: 260px;
+          height: 380px;
+          object-fit: contain;
+          border-radius: 18px;
+        }
+
+        .ws-card-inner-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* HERO LAYER */
+        .ws-hero-layer {
+          position: absolute;
+          bottom: 20px;
+          left: 0;
+          right: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          pointer-events: none;
+          z-index: 30;
+        }
+
+        .ws-hero-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 900;
+          color: #ff2a3b;
+          letter-spacing: 2px;
+          margin-bottom: 2px;
+          text-shadow: 0 0 15px rgba(0,0,0,0.9);
+        }
+
+        .ws-hero-name {
+          font-size: 38px;
+          font-weight: 950;
+          letter-spacing: 2px;
+          margin: 0;
+          color: #ffffff;
+          text-shadow: 0 0 25px rgba(255, 42, 59, 0.85);
+          text-transform: uppercase;
+        }
+
+        .ws-hero-meta {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          color: #94a3b8;
+          font-weight: 700;
+          margin-top: 4px;
+        }
+
+        .ws-rating {
+          color: #f1c95c;
+          font-weight: 900;
+        }
+
+        .ws-sep {
+          color: #475569;
+        }
+
+        .ws-club {
+          color: #cbd5e1;
+        }
+
+        /* OVERLAY INDICATORS */
+        .ws-drag-indicator {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          z-index: 40;
+          background: rgba(0, 0, 0, 0.75);
+          backdrop-filter: blur(8px);
+          padding: 6px 12px;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11.5px;
+          color: #cbd5e1;
+        }
+
+        .ws-drag-indicator b {
+          color: #f59e0b;
+        }
+
+        .ws-time-indicator {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 40;
+          background: rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(8px);
+          padding: 6px 12px;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          font-size: 11px;
+          font-family: monospace;
+          font-weight: 800;
+          color: #f59e0b;
+        }
+
+        /* PLAYBACK BAR */
+        .ws-playback-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .ws-playback-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .ws-btn-play {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 10px;
+          background: linear-gradient(90deg, #ff2a3b, #f59e0b);
+          border: none;
+          color: #000;
+          font-size: 12px;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(255, 42, 59, 0.4);
+        }
+
+        .ws-btn-icon {
+          padding: 8px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #cbd5e1;
+          cursor: pointer;
+        }
+
+        .ws-stages-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .ws-stages-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #94a3b8;
+          margin-right: 2px;
+        }
+
+        .ws-stage-btn {
+          padding: 6px 10px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .ws-stage-btn.active {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+        }
+
+        .ws-stage-btn.active.red {
+          background: rgba(220, 38, 38, 0.35);
+          color: #fca5a5;
+          border-color: #ef4444;
+        }
+
+        .ws-stage-btn.active.sky {
+          background: rgba(14, 165, 233, 0.35);
+          color: #bae6fd;
+          border-color: #38bdf8;
+        }
+
+        .ws-stage-btn.active.gold {
+          background: rgba(217, 119, 6, 0.35);
+          color: #fde68a;
+          border-color: #f59e0b;
+        }
+
+        .ws-stage-btn.active.yellow {
+          background: #eab308;
+          color: #000000;
+          font-weight: 900;
+        }
+
+        /* SIDEBAR PANELS */
+        .ws-sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-height: calc(100vh - 120px);
+          overflow-y: auto;
+          box-sizing: border-box;
+        }
+
+        .ws-panel-box {
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          box-sizing: border-box;
+        }
+
+        .ws-box-card {
+          border-color: rgba(245, 158, 11, 0.3);
+          background: rgba(245, 158, 11, 0.04);
+        }
+
+        .ws-box-player {
+          border-color: rgba(56, 189, 248, 0.3);
+          background: rgba(56, 189, 248, 0.04);
+        }
+
+        .ws-box-rarity {
+          border-color: rgba(239, 68, 68, 0.3);
+          background: rgba(239, 68, 68, 0.04);
+        }
+
+        .ws-panel-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .ws-box-heading {
+          font-size: 12px;
+          font-weight: 900;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          text-transform: uppercase;
+        }
+
+        .ws-box-heading.gold { color: #f59e0b; }
+        .ws-box-heading.sky { color: #38bdf8; }
+        .ws-box-heading.red { color: #ef4444; }
+
+        .ws-reset-mini {
+          font-size: 10px;
+          color: #94a3b8;
+          text-decoration: underline;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+
+        .ws-reset-mini:hover {
+          color: #fff;
+        }
+
+        .ws-panel-title {
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #cbd5e1;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .ws-layers-tabs {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 6px;
+        }
+
+        .ws-layer-tab {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 4px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: 0.15s ease;
+        }
+
+        .ws-layer-tab.active-gold {
+          background: #f59e0b;
+          color: #000;
+          font-weight: 900;
+        }
+
+        .ws-layer-tab.active-sky {
+          background: #38bdf8;
+          color: #000;
+          font-weight: 900;
+        }
+
+        .ws-layer-tab.active-red {
+          background: #ef4444;
+          color: #fff;
+          font-weight: 900;
+        }
+
+        .ws-control-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .ws-label-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+          font-weight: 700;
+          color: #cbd5e1;
+        }
+
+        .ws-val {
+          font-family: monospace;
+          font-weight: 900;
+        }
+
+        .ws-val.gold { color: #f59e0b; }
+        .ws-val.sky { color: #38bdf8; }
+        .ws-val.red { color: #ef4444; }
+
+        .ws-slider {
+          width: 100%;
+          cursor: pointer;
+        }
+
+        .range-gold { accent-color: #f59e0b; }
+        .range-sky { accent-color: #38bdf8; }
+        .range-red { accent-color: #ef4444; }
+
+        .ws-field-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #94a3b8;
+        }
+
+        .ws-select, .ws-input-text {
+          width: 100%;
+          padding: 8px 10px;
+          background: rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 8px;
+          color: #fff;
+          font-size: 11.5px;
+          box-sizing: border-box;
+        }
+
+        .ws-upload-field {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding-top: 6px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .ws-file-input {
+          font-size: 11px;
+          color: #94a3b8;
+        }
+
+        .ws-presets-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .ws-preset-btn {
+          padding: 8px 10px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #cbd5e1;
+          font-size: 11px;
+          font-weight: 700;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .ws-preset-btn.active {
+          background: rgba(245, 158, 11, 0.2);
+          color: #fcd34d;
+          border-color: rgba(245, 158, 11, 0.5);
+        }
+
+        .ws-json-box {
+          background: rgba(0, 0, 0, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          padding: 10px;
+        }
+
+        .ws-json-title {
+          font-size: 10px;
+          font-weight: 800;
+          color: #38bdf8;
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .ws-json-pre {
+          margin: 0;
+          font-family: monospace;
+          font-size: 10px;
+          color: #94a3b8;
+          line-height: 1.35;
+        }
+
+        @media (max-width: 1100px) {
+          .ws-grid {
+            grid-template-columns: 1fr;
+          }
+          .ws-viewport {
+            height: 480px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
