@@ -1806,15 +1806,19 @@ export default function WalkoutStudio(props: {
       </div>
 
       {/* SCOPED CSS STYLES */}
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .ws-root {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-          color: #ffffff;
-          box-sizing: border-box;
-          font-family: inherit;
+          width: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 14px !important;
+          color: #ffffff !important;
+          box-sizing: border-box !important;
+          font-family: inherit !important;
+        }
+
+        .ws-root button {
+          cursor: pointer !important;
         }
 
         .ws-topbar {
@@ -3061,7 +3065,7 @@ export default function WalkoutStudio(props: {
             height: 460px;
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }
