@@ -22,12 +22,13 @@ import {
   Repeat,
   AlertCircle,
   FileVideo,
-  ToggleLeft,
-  ToggleRight,
-  Zap,
+  Clock,
   Sliders,
   CheckSquare,
-  Square
+  Square,
+  Zap,
+  Trash2,
+  Plus
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
@@ -54,7 +55,8 @@ function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) return "00:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  const ms = Math.floor((seconds % 1) * 10);
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms}`;
 }
 
 interface Player {
@@ -65,23 +67,27 @@ interface Player {
   photo_path?: string | null;
 }
 
-export interface WalkoutSequenceConfig {
-  enableIntro: boolean;
-  enableRarity: boolean;
-  enablePlayer: boolean;
-  enableCard: boolean;
-  enableHero: boolean;
-  timing: {
-    introDuration: number;
-    rarityDuration: number;
-    playerDuration: number;
-    cardDuration: number;
+export interface LayerTiming {
+  enabled: boolean;
+  startTime: number; // w sekundach (moment pojawienia się)
+  endTime: number;   // w sekundach (moment zniknięcia)
+  stayUntilEnd: boolean; // czy ma pozostać do końca filmu
+}
+
+export interface WalkoutTimelineConfig {
+  rarity: LayerTiming;
+  player: LayerTiming;
+  card: LayerTiming;
+  hero: LayerTiming;
+  flash: {
+    enabled: boolean;
+    time: number; // moment błysku
   };
 }
 
 export interface WalkoutSettings {
   videoSrc: string;
-  sequence: WalkoutSequenceConfig;
+  timeline: WalkoutTimelineConfig;
   rarity: {
     text: string;
     subtext: string;
@@ -111,17 +117,34 @@ export interface WalkoutSettings {
 
 const DEFAULT_SETTINGS: WalkoutSettings = {
   videoSrc: "/media/walkouts/inferno-bg.mp4",
-  sequence: {
-    enableIntro: true,
-    enableRarity: true,
-    enablePlayer: true,
-    enableCard: true,
-    enableHero: true,
-    timing: {
-      introDuration: 3.0,
-      rarityDuration: 2.5,
-      playerDuration: 2.5,
-      cardDuration: 2.5,
+  timeline: {
+    rarity: {
+      enabled: true,
+      startTime: 2.5,
+      endTime: 5.5,
+      stayUntilEnd: false
+    },
+    player: {
+      enabled: true,
+      startTime: 5.0,
+      endTime: 8.0,
+      stayUntilEnd: false
+    },
+    card: {
+      enabled: true,
+      startTime: 7.5,
+      endTime: 15.0,
+      stayUntilEnd: true
+    },
+    hero: {
+      enabled: true,
+      startTime: 9.0,
+      endTime: 15.0,
+      stayUntilEnd: true
+    },
+    flash: {
+      enabled: true,
+      time: 7.5
     }
   },
   rarity: {
@@ -173,12 +196,50 @@ export default function WalkoutStudio(props: {
           if (parsed.videoSrc && parsed.videoSrc.startsWith("blob:")) {
             parsed.videoSrc = DEFAULT_SETTINGS.videoSrc;
           }
+          // Backwards compatibility migration for timeline
+          const baseTimeline = DEFAULT_SETTINGS.timeline;
+          let loadedTimeline = parsed.timeline || {};
+          if (parsed.sequence && !parsed.timeline) {
+            loadedTimeline = {
+              rarity: {
+                enabled: parsed.sequence.enableRarity ?? true,
+                startTime: 2.5,
+                endTime: 5.5,
+                stayUntilEnd: false
+              },
+              player: {
+                enabled: parsed.sequence.enablePlayer ?? true,
+                startTime: 5.0,
+                endTime: 8.0,
+                stayUntilEnd: false
+              },
+              card: {
+                enabled: parsed.sequence.enableCard ?? true,
+                startTime: parsed.sequence.enablePlayer ? 7.5 : 5.5,
+                endTime: 15.0,
+                stayUntilEnd: true
+              },
+              hero: {
+                enabled: parsed.sequence.enableHero ?? true,
+                startTime: parsed.sequence.enablePlayer ? 9.0 : 7.5,
+                endTime: 15.0,
+                stayUntilEnd: true
+              },
+              flash: {
+                enabled: true,
+                time: parsed.sequence.enablePlayer ? 7.5 : 5.5
+              }
+            };
+          }
           return {
             ...DEFAULT_SETTINGS,
             ...parsed,
-            sequence: {
-              ...DEFAULT_SETTINGS.sequence,
-              ...(parsed.sequence || {})
+            timeline: {
+              rarity: { ...baseTimeline.rarity, ...(loadedTimeline.rarity || {}) },
+              player: { ...baseTimeline.player, ...(loadedTimeline.player || {}) },
+              card: { ...baseTimeline.card, ...(loadedTimeline.card || {}) },
+              hero: { ...baseTimeline.hero, ...(loadedTimeline.hero || {}) },
+              flash: { ...baseTimeline.flash, ...(loadedTimeline.flash || {}) },
             }
           };
         }
@@ -204,14 +265,11 @@ export default function WalkoutStudio(props: {
     }
   }, [activePlayer]);
 
-  // Stage sequence playback: "intro" | "rarity" | "player" | "card" | "hero"
-  const [stage, setStage] = useState<"intro" | "rarity" | "player" | "card" | "hero">("hero");
+  const [activeLayer, setActiveLayer] = useState<"rarity" | "player" | "card" | "hero">("card");
   const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
-  const [currentTime, setCurrentTime] = useState<number>(9.0);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [volume, setVolume] = useState<number>(0.8);
   const [isFlash, setIsFlash] = useState<boolean>(false);
-  const [activeLayer, setActiveLayer] = useState<"rarity" | "player" | "card">("card");
   const [copied, setCopied] = useState<boolean>(false);
   const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
 
@@ -245,103 +303,76 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Calculate dynamic steps based on enabled stages
-  const activeSequencePlan = useMemo(() => {
-    const seq = settings.sequence;
-    const steps: { stage: "intro" | "rarity" | "player" | "card" | "hero"; time: number; flash?: boolean }[] = [];
-    let cur = 0;
+  // The active time to evaluate overlay visibility:
+  const activePlayTime = videoCurrentTime;
 
-    if (seq.enableIntro) {
-      steps.push({ stage: "intro", time: cur });
-      cur += seq.timing.introDuration || 3.0;
+  // Real-time visibility checks according to exact user-defined timestamps:
+  const tl = settings.timeline;
+  
+  const isRarityVisible = !hideOverlays && tl.rarity.enabled && (
+    activePlayTime >= tl.rarity.startTime && (tl.rarity.stayUntilEnd || activePlayTime <= tl.rarity.endTime)
+  );
+
+  const isPlayerVisible = !hideOverlays && tl.player.enabled && (
+    activePlayTime >= tl.player.startTime && (tl.player.stayUntilEnd || activePlayTime <= tl.player.endTime)
+  );
+
+  const isCardVisible = !hideOverlays && tl.card.enabled && (
+    activePlayTime >= tl.card.startTime && (tl.card.stayUntilEnd || activePlayTime <= tl.card.endTime)
+  );
+
+  const isHeroVisible = !hideOverlays && tl.hero.enabled && (
+    activePlayTime >= tl.hero.startTime && (tl.hero.stayUntilEnd || activePlayTime <= tl.hero.endTime)
+  );
+
+  // Auto Flash Trigger during playback
+  const lastFlashTimeRef = useRef<number>(-1);
+  useEffect(() => {
+    if (tl.flash.enabled && isVideoPlaying) {
+      const diff = Math.abs(videoCurrentTime - tl.flash.time);
+      if (diff < 0.25 && Math.abs(lastFlashTimeRef.current - tl.flash.time) > 1.0) {
+        lastFlashTimeRef.current = tl.flash.time;
+        setIsFlash(true);
+        setTimeout(() => setIsFlash(false), 350);
+      }
     }
+  }, [videoCurrentTime, tl.flash, isVideoPlaying]);
 
-    if (seq.enableRarity) {
-      steps.push({ stage: "rarity", time: cur });
-      cur += seq.timing.rarityDuration || 2.5;
-    }
-
-    if (seq.enablePlayer) {
-      steps.push({ stage: "player", time: cur });
-      cur += seq.timing.playerDuration || 2.5;
-    }
-
-    if (seq.enableCard) {
-      steps.push({ stage: "card", time: cur, flash: true });
-      cur += seq.timing.cardDuration || 2.5;
-    }
-
-    if (seq.enableHero) {
-      steps.push({ stage: "hero", time: cur });
-      cur += 3.0;
-    }
-
-    if (steps.length === 0) {
-      steps.push({ stage: "hero", time: 0 });
-      cur = 5.0;
-    }
-
-    return { steps, totalDuration: Math.max(cur, 4.0) };
-  }, [settings.sequence]);
-
-  // Full Walkout Sequence Playback
+  // Full Walkout Sequence Playback from 0.0s
   const startFullWalkout = () => {
     clearTimers();
     setIsPlayingAuto(true);
     setIsFlash(false);
-    setCurrentTime(0);
+    lastFlashTimeRef.current = -1;
     startTimeRef.current = Date.now();
-
-    const plan = activeSequencePlan;
-    if (plan.steps.length > 0) {
-      setStage(plan.steps[0].stage);
-    }
 
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
+      setVideoCurrentTime(0);
       videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
     }
 
-    const updateTicker = () => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      setCurrentTime(elapsed);
-      if (elapsed < plan.totalDuration) {
-        animFrameRef.current = requestAnimationFrame(updateTicker);
-      } else {
-        setIsPlayingAuto(false);
-      }
-    };
-    animFrameRef.current = requestAnimationFrame(updateTicker);
-
-    // Schedule each enabled step dynamically
-    plan.steps.forEach((step, idx) => {
-      if (idx === 0) return; // First step triggers immediately at 0s
+    // Schedule flash if enabled
+    if (tl.flash.enabled && tl.flash.time > 0) {
       timerRef.current.push(
         setTimeout(() => {
-          setStage(step.stage);
-          if (step.flash) {
-            setIsFlash(true);
-            setTimeout(() => setIsFlash(false), 350);
-          }
-        }, step.time * 1000)
+          setIsFlash(true);
+          setTimeout(() => setIsFlash(false), 350);
+        }, tl.flash.time * 1000)
       );
-    });
+    }
   };
 
-  const jumpToStage = (targetStage: "intro" | "rarity" | "player" | "card" | "hero") => {
+  const jumpToSecond = (sec: number) => {
     clearTimers();
     setIsPlayingAuto(false);
-    setStage(targetStage);
     setIsFlash(false);
-
-    // Find time in active sequence
-    const foundStep = activeSequencePlan.steps.find(s => s.stage === targetStage);
-    const targetTime = foundStep ? foundStep.time : 0;
-    setCurrentTime(targetTime);
+    setVideoCurrentTime(sec);
 
     if (videoRef.current) {
-      const videoSeek = targetTime % (videoRef.current.duration || 10);
-      videoRef.current.currentTime = videoSeek;
+      const dur = videoRef.current.duration || 15;
+      const targetTime = sec % dur;
+      videoRef.current.currentTime = targetTime;
       videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
     }
   };
@@ -405,49 +436,54 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Sequence Configuration Presets
-  const applySequencePreset = (type: "full" | "skip_player" | "instant_card" | "only_hero") => {
+  // Presets
+  const applyTimelinePreset = (type: "skip_player" | "full" | "instant_card") => {
     setSettings(prev => {
-      let seq = { ...prev.sequence };
-      if (type === "full") {
-        seq.enableIntro = true;
-        seq.enableRarity = true;
-        seq.enablePlayer = true;
-        seq.enableCard = true;
-        seq.enableHero = true;
-      } else if (type === "skip_player") {
-        // Karta od razu po napisie! (Intro ➔ Napis ➔ Karta ➔ Hero)
-        seq.enableIntro = true;
-        seq.enableRarity = true;
-        seq.enablePlayer = false;
-        seq.enableCard = true;
-        seq.enableHero = true;
+      let nextTl = { ...prev.timeline };
+      if (type === "skip_player") {
+        // Karta od razu po napisie! (Rarity: 2.0s - 4.5s ➔ Flash & Karta: 4.5s ➔ Hero: 6.5s)
+        nextTl.rarity = { enabled: true, startTime: 2.0, endTime: 4.5, stayUntilEnd: false };
+        nextTl.player = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false }; // ODZNACZONY GRACZ!
+        nextTl.card = { enabled: true, startTime: 4.5, endTime: 15.0, stayUntilEnd: true };
+        nextTl.hero = { enabled: true, startTime: 6.5, endTime: 15.0, stayUntilEnd: true };
+        nextTl.flash = { enabled: true, time: 4.5 };
+      } else if (type === "full") {
+        // Pełny pokaz (Rarity: 2.5s - 5.5s ➔ Gracz: 5.0s - 8.0s ➔ Karta: 7.5s ➔ Hero: 9.0s)
+        nextTl.rarity = { enabled: true, startTime: 2.5, endTime: 5.5, stayUntilEnd: false };
+        nextTl.player = { enabled: true, startTime: 5.0, endTime: 8.0, stayUntilEnd: false };
+        nextTl.card = { enabled: true, startTime: 7.5, endTime: 15.0, stayUntilEnd: true };
+        nextTl.hero = { enabled: true, startTime: 9.0, endTime: 15.0, stayUntilEnd: true };
+        nextTl.flash = { enabled: true, time: 7.5 };
       } else if (type === "instant_card") {
-        // Błyskawiczna karta (Intro ➔ Karta)
-        seq.enableIntro = true;
-        seq.enableRarity = false;
-        seq.enablePlayer = false;
-        seq.enableCard = true;
-        seq.enableHero = true;
-      } else if (type === "only_hero") {
-        seq.enableIntro = false;
-        seq.enableRarity = false;
-        seq.enablePlayer = false;
-        seq.enableCard = true;
-        seq.enableHero = true;
+        // Błyskawiczna Karta (Tylko tło wideo i od razu karta od 1.5s)
+        nextTl.rarity = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false };
+        nextTl.player = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false };
+        nextTl.card = { enabled: true, startTime: 1.5, endTime: 15.0, stayUntilEnd: true };
+        nextTl.hero = { enabled: true, startTime: 3.5, endTime: 15.0, stayUntilEnd: true };
+        nextTl.flash = { enabled: true, time: 1.5 };
       }
-      return { ...prev, sequence: seq };
+      return { ...prev, timeline: nextTl };
     });
   };
 
-  const toggleSequenceStep = (key: keyof Omit<WalkoutSequenceConfig, "timing">) => {
+  // Layer Timing Setters
+  const updateLayerTiming = (layerKey: keyof Omit<WalkoutTimelineConfig, "flash">, field: keyof LayerTiming, val: any) => {
     setSettings(prev => ({
       ...prev,
-      sequence: {
-        ...prev.sequence,
-        [key]: !prev.sequence[key]
+      timeline: {
+        ...prev.timeline,
+        [layerKey]: {
+          ...prev.timeline[layerKey],
+          [field]: val
+        }
       }
     }));
+  };
+
+  // Helper to set current video timestamp to start/end time
+  const setTimeToCurrent = (layerKey: keyof Omit<WalkoutTimelineConfig, "flash">, field: "startTime" | "endTime") => {
+    const rounded = Math.round(videoCurrentTime * 10) / 10;
+    updateLayerTiming(layerKey, field, rounded);
   };
 
   // Drag and Drop interaction on viewport
@@ -526,7 +562,7 @@ export default function WalkoutStudio(props: {
 
   const handleCopyJSON = () => {
     const jsonOutput = {
-      sequence: settings.sequence,
+      timeline: settings.timeline,
       rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
       player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
       card: { x: settings.card.x, y: settings.card.y, scale: settings.card.scale }
@@ -537,7 +573,7 @@ export default function WalkoutStudio(props: {
   };
 
   const handleResetDefaults = () => {
-    if (confirm("Zresetować położenia i sekwencję do domyślnych wartości?")) {
+    if (confirm("Zresetować czasy osi czasu i ułożenie do wartości domyślnych?")) {
       setSettings(DEFAULT_SETTINGS);
       setCustomVideoFileName("");
       localStorage.removeItem("delta_walkout_studio_settings");
@@ -600,8 +636,6 @@ export default function WalkoutStudio(props: {
     setSettings(prev => ({ ...prev, card: { ...prev.card, customCardUrl: url } }));
   };
 
-  const seq = settings.sequence;
-
   return (
     <div className="ws-root">
       {/* GÓRNY PASEK NARZĘDZI */}
@@ -612,11 +646,11 @@ export default function WalkoutStudio(props: {
           </div>
           <div>
             <h2 className="ws-title">
-              Studio Walkoutów & Animacji DELTA
-              <span className="ws-pro-tag">MODULAR SEQUENCE</span>
+              Studio Walkoutów & Oś Czasu DELTA
+              <span className="ws-pro-tag">PRO TIMELINE</span>
             </h2>
             <p className="ws-subtitle">
-              Dowolnie włączaj/wyłączaj części sekwencji (np. karta od razu po napisie), wgrywaj wideo i dostosowuj pozycje.
+              Precyzyjnie wpisuj sekundy pojawiania się i znikania każdego elementu lub usuwaj elementy ze sceny jednym kliknięciem.
             </p>
           </div>
         </div>
@@ -640,7 +674,7 @@ export default function WalkoutStudio(props: {
           </button>
           <button type="button" onClick={handleSave} className="ws-btn-primary">
             <Save size={15} />
-            <span>{savedFeedback ? "✓ Zapisano!" : "Zapisz ułożenie"}</span>
+            <span>{savedFeedback ? "✓ Zapisano!" : "Zapisz ułożenie & czasy"}</span>
           </button>
         </div>
       </div>
@@ -695,116 +729,113 @@ export default function WalkoutStudio(props: {
             {/* FLASH EFFECT */}
             {isFlash && <div className="ws-flash" />}
 
-            {/* WARSTWY NAKŁADANE (UKRYWANE W TRYBIE "TYLKO WIDEO") */}
-            {!hideOverlays && (
-              <>
-                {/* 1. WARSTWA NAPISÓW (RARITY) */}
-                {seq.enableRarity && (stage === "rarity" || stage === "player" || stage === "card" || stage === "hero") && (
-                  <div 
-                    className={`ws-rarity-layer ${activeLayer === "rarity" ? "is-active" : ""}`}
-                    style={{
-                      transform: `translate(calc(-50% + ${settings.rarity.x}%), calc(-50% + ${settings.rarity.y}%)) scale(${settings.rarity.scale})`
-                    }}
-                  >
-                    <div className="ws-rarity-title">
-                      {settings.rarity.text}
-                    </div>
-                    <div className="ws-rarity-sub">
-                      {settings.rarity.subtext}
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) - TYLKO GDY ENABLEPLAYER = TRUE */}
-                {seq.enablePlayer && (stage === "player" || stage === "hero") && (
-                  <div 
-                    className={`ws-player-layer ${activeLayer === "player" ? "is-active" : ""}`}
-                    style={{
-                      transform: `translate(calc(-50% + ${settings.player.x}%), calc(-50% + ${settings.player.y}%)) scale(${settings.player.scale})`
-                    }}
-                  >
-                    {settings.player.customCutoutUrl ? (
-                      <img 
-                        src={settings.player.customCutoutUrl} 
-                        alt="Sylwetka zawodnika"
-                        className="ws-player-img"
-                      />
-                    ) : activePlayer ? (
-                      <div className="ws-player-photo-box">
-                        <PlayerPhoto playerId={activePlayer.id} className="ws-player-photo" />
-                      </div>
-                    ) : (
-                      <img 
-                        src="/demo/player-cutout.png" 
-                        alt="Zawodnik"
-                        className="ws-player-img"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* 3. WARSTWA KARTY 3D */}
-                {seq.enableCard && (stage === "card" || stage === "hero") && (
-                  <div 
-                    className={`ws-card-layer ${activeLayer === "card" ? "is-active" : ""}`}
-                    style={{
-                      transform: `translate(calc(-50% + ${settings.card.x}%), calc(-50% + ${settings.card.y}px)) scale(${settings.card.scale})`
-                    }}
-                  >
-                    {settings.card.customCardUrl ? (
-                      <img 
-                        src={settings.card.customCardUrl} 
-                        alt="Karta"
-                        className="ws-card-img"
-                      />
-                    ) : (
-                      <div className="ws-card-box">
-                        <img 
-                          src="/demo/inferno-card.png" 
-                          alt="Inferno Card"
-                          className="ws-card-inner-img"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* DOLNE SZCZEGÓŁY HERO */}
-                {seq.enableHero && stage === "hero" && (
-                  <div className="ws-hero-layer">
-                    <div className="ws-hero-badge">
-                      <Flame size={13} /> <span>{settings.rarity.text} WALKOUT</span>
-                    </div>
-                    <h1 className="ws-hero-name">
-                      {settings.metadata.playerName}
-                    </h1>
-                    <div className="ws-hero-meta">
-                      <span className="ws-rating">{settings.metadata.playerRating} OVR</span>
-                      <span className="ws-sep">•</span>
-                      <span>{settings.metadata.playerPosition}</span>
-                      <span className="ws-sep">•</span>
-                      <span className="ws-club">{settings.metadata.playerClub}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* WSKAŹNIKI WARSTWY */}
-                <div className="ws-drag-indicator">
-                  <Move size={14} />
-                  <span>Aktywna warstwa: <b>{activeLayer === "card" ? "Karta 3D" : activeLayer === "player" ? "Zawodnik" : "Napisy"}</b></span>
+            {/* 1. WARSTWA NAPISÓW (RARITY) - DOKŁADNE SPRAWDZENIE CZASU */}
+            {isRarityVisible && (
+              <div 
+                className={`ws-rarity-layer ${activeLayer === "rarity" ? "is-active" : ""}`}
+                style={{
+                  transform: `translate(calc(-50% + ${settings.rarity.x}%), calc(-50% + ${settings.rarity.y}%)) scale(${settings.rarity.scale})`
+                }}
+              >
+                <div className="ws-rarity-title">
+                  {settings.rarity.text}
                 </div>
-              </>
+                <div className="ws-rarity-sub">
+                  {settings.rarity.subtext}
+                </div>
+              </div>
+            )}
+
+            {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) - DOKŁADNE SPRAWDZENIE CZASU */}
+            {isPlayerVisible && (
+              <div 
+                className={`ws-player-layer ${activeLayer === "player" ? "is-active" : ""}`}
+                style={{
+                  transform: `translate(calc(-50% + ${settings.player.x}%), calc(-50% + ${settings.player.y}%)) scale(${settings.player.scale})`
+                }}
+              >
+                {settings.player.customCutoutUrl ? (
+                  <img 
+                    src={settings.player.customCutoutUrl} 
+                    alt="Sylwetka zawodnika"
+                    className="ws-player-img"
+                  />
+                ) : activePlayer ? (
+                  <div className="ws-player-photo-box">
+                    <PlayerPhoto playerId={activePlayer.id} className="ws-player-photo" />
+                  </div>
+                ) : (
+                  <img 
+                    src="/demo/player-cutout.png" 
+                    alt="Zawodnik"
+                    className="ws-player-img"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* 3. WARSTWA KARTY 3D - DOKŁADNE SPRAWDZENIE CZASU */}
+            {isCardVisible && (
+              <div 
+                className={`ws-card-layer ${activeLayer === "card" ? "is-active" : ""}`}
+                style={{
+                  transform: `translate(calc(-50% + ${settings.card.x}%), calc(-50% + ${settings.card.y}px)) scale(${settings.card.scale})`
+                }}
+              >
+                {settings.card.customCardUrl ? (
+                  <img 
+                    src={settings.card.customCardUrl} 
+                    alt="Karta"
+                    className="ws-card-img"
+                  />
+                ) : (
+                  <div className="ws-card-box">
+                    <img 
+                      src="/demo/inferno-card.png" 
+                      alt="Inferno Card"
+                      className="ws-card-inner-img"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. DOLNE SZCZEGÓŁY HERO - DOKŁADNE SPRAWDZENIE CZASU */}
+            {isHeroVisible && (
+              <div className="ws-hero-layer">
+                <div className="ws-hero-badge">
+                  <Flame size={13} /> <span>{settings.rarity.text} WALKOUT</span>
+                </div>
+                <h1 className="ws-hero-name">
+                  {settings.metadata.playerName}
+                </h1>
+                <div className="ws-hero-meta">
+                  <span className="ws-rating">{settings.metadata.playerRating} OVR</span>
+                  <span className="ws-sep">•</span>
+                  <span>{settings.metadata.playerPosition}</span>
+                  <span className="ws-sep">•</span>
+                  <span className="ws-club">{settings.metadata.playerClub}</span>
+                </div>
+              </div>
+            )}
+
+            {/* WSKAŹNIKI AKTYWNEJ WARSTWY */}
+            {!hideOverlays && (
+              <div className="ws-drag-indicator">
+                <Move size={14} />
+                <span>Aktywna warstwa do przeciągania: <b>{activeLayer === "card" ? "Karta 3D" : activeLayer === "player" ? "Zawodnik" : activeLayer === "rarity" ? "Napisy" : "Hero"}</b></span>
+              </div>
             )}
 
             {/* WSKAŹNIK CZASU */}
             <div className="ws-time-indicator">
-              {formatTime(videoCurrentTime)} / {formatTime(videoDuration)} • Faza: <span className="uppercase">{stage}</span>
+              ⏱ {formatTime(videoCurrentTime)} / {formatTime(videoDuration)}
             </div>
 
             {/* KOMUNIKAT BŁĘDU WIDEO */}
@@ -816,7 +847,108 @@ export default function WalkoutStudio(props: {
             )}
           </div>
 
-          {/* DEDYKOWANY ODTWARZACZ WIDEO */}
+          {/* INTERAKTYWNA WIZUALNA OŚ CZASU (MULTI-TRACK TIMELINE) */}
+          <div className="ws-multi-timeline-card">
+            <div className="ws-timeline-header">
+              <span className="ws-timeline-title flex items-center gap-1.5">
+                <Clock size={14} className="text-amber-400" /> Wizualna Oś Czasu (Pojawianie się i znikanie warstw)
+              </span>
+              <span className="ws-current-sec-tag">{videoCurrentTime.toFixed(1)}s</span>
+            </div>
+
+            {/* ŚCIEŻKI CZASOWE DLA KAŻDEJ WARSTWY */}
+            <div className="ws-tracks-container">
+              {/* Ścieżka 1: Napisy */}
+              <div className="ws-track-row" onClick={() => jumpToSecond(tl.rarity.startTime)}>
+                <span className="ws-track-label text-red-400">🔤 Napisy</span>
+                <div className="ws-track-lane">
+                  {tl.rarity.enabled ? (
+                    <div 
+                      className="ws-track-block bg-red-600"
+                      style={{
+                        left: `${Math.min(100, (tl.rarity.startTime / (videoDuration || 15)) * 100)}%`,
+                        width: `${Math.max(4, Math.min(100, ((tl.rarity.stayUntilEnd ? (videoDuration || 15) : tl.rarity.endTime) - tl.rarity.startTime) / (videoDuration || 15) * 100))}%`
+                      }}
+                    >
+                      {tl.rarity.startTime.toFixed(1)}s - {tl.rarity.stayUntilEnd ? "Koniec" : `${tl.rarity.endTime.toFixed(1)}s`}
+                    </div>
+                  ) : (
+                    <div className="ws-track-disabled">Wyłączone / Usunięte</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Ścieżka 2: Gracz */}
+              <div className="ws-track-row" onClick={() => tl.player.enabled && jumpToSecond(tl.player.startTime)}>
+                <span className="ws-track-label text-sky-400">👤 Gracz</span>
+                <div className="ws-track-lane">
+                  {tl.player.enabled ? (
+                    <div 
+                      className="ws-track-block bg-sky-600"
+                      style={{
+                        left: `${Math.min(100, (tl.player.startTime / (videoDuration || 15)) * 100)}%`,
+                        width: `${Math.max(4, Math.min(100, ((tl.player.stayUntilEnd ? (videoDuration || 15) : tl.player.endTime) - tl.player.startTime) / (videoDuration || 15) * 100))}%`
+                      }}
+                    >
+                      {tl.player.startTime.toFixed(1)}s - {tl.player.stayUntilEnd ? "Koniec" : `${tl.player.endTime.toFixed(1)}s`}
+                    </div>
+                  ) : (
+                    <div className="ws-track-disabled text-amber-400 font-bold">⚡ Wyłączone (Od razu karta po napisie!)</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Ścieżka 3: Karta 3D */}
+              <div className="ws-track-row" onClick={() => jumpToSecond(tl.card.startTime)}>
+                <span className="ws-track-label text-amber-400">🃏 Karta 3D</span>
+                <div className="ws-track-lane">
+                  {tl.card.enabled ? (
+                    <div 
+                      className="ws-track-block bg-amber-600"
+                      style={{
+                        left: `${Math.min(100, (tl.card.startTime / (videoDuration || 15)) * 100)}%`,
+                        width: `${Math.max(4, Math.min(100, ((tl.card.stayUntilEnd ? (videoDuration || 15) : tl.card.endTime) - tl.card.startTime) / (videoDuration || 15) * 100))}%`
+                      }}
+                    >
+                      {tl.card.startTime.toFixed(1)}s - {tl.card.stayUntilEnd ? "Koniec" : `${tl.card.endTime.toFixed(1)}s`}
+                    </div>
+                  ) : (
+                    <div className="ws-track-disabled">Wyłączone / Usunięte</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Ścieżka 4: Hero */}
+              <div className="ws-track-row" onClick={() => jumpToSecond(tl.hero.startTime)}>
+                <span className="ws-track-label text-emerald-400">🏆 Pasek Hero</span>
+                <div className="ws-track-lane">
+                  {tl.hero.enabled ? (
+                    <div 
+                      className="ws-track-block bg-emerald-600"
+                      style={{
+                        left: `${Math.min(100, (tl.hero.startTime / (videoDuration || 15)) * 100)}%`,
+                        width: `${Math.max(4, Math.min(100, ((tl.hero.stayUntilEnd ? (videoDuration || 15) : tl.hero.endTime) - tl.hero.startTime) / (videoDuration || 15) * 100))}%`
+                      }}
+                    >
+                      {tl.hero.startTime.toFixed(1)}s - {tl.hero.stayUntilEnd ? "Koniec" : `${tl.hero.endTime.toFixed(1)}s`}
+                    </div>
+                  ) : (
+                    <div className="ws-track-disabled">Wyłączone / Usunięte</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Linia głowicy odtwarzania (Playhead Cursor) */}
+              <div 
+                className="ws-playhead-line"
+                style={{
+                  left: `${Math.min(100, (videoCurrentTime / (videoDuration || 15)) * 100)}%`
+                }}
+              />
+            </div>
+          </div>
+
+          {/* DEDYKOWANY ODTWARZACZ WIDEO ZE SCRUBBEREM */}
           <div className="ws-video-controls-bar">
             {/* GÓRNY WIERSZ: SUWAK CZASU (SCRUBBER) */}
             <div className="ws-scrubber-row">
@@ -824,7 +956,7 @@ export default function WalkoutStudio(props: {
               <input
                 type="range"
                 min={0}
-                max={videoDuration || 12}
+                max={videoDuration || 15}
                 step={0.05}
                 value={videoCurrentTime}
                 onChange={handleSeek}
@@ -859,63 +991,54 @@ export default function WalkoutStudio(props: {
                   type="button"
                   onClick={startFullWalkout}
                   className="ws-btn-walkout-seq"
-                  title={`Uruchom sekwencję (${activeSequencePlan.totalDuration.toFixed(1)}s)`}
+                  title="Uruchom pełną animację od 0.0s ze wszystkimi przejściami"
                 >
                   <Sparkles size={15} />
                   <span>
-                    {!seq.enablePlayer 
-                      ? "⚡ Walkout: Napis ➔ Karta" 
-                      : `Walkout (${activeSequencePlan.totalDuration.toFixed(1)}s)`}
+                    {!tl.player.enabled 
+                      ? "⚡ Walkout (Karta po napisie)" 
+                      : "Walkout od początku (0s)"}
                   </span>
                 </button>
               </div>
 
-              {/* ŚRODEK: SKOKI DO AKTYWNYCH FAZ */}
+              {/* ŚRODEK: SZYBKIE SKOKI DO CZASÓW WARSTW */}
               <div className="ws-stages-row">
                 <span className="ws-stages-label">Skocz:</span>
-                {seq.enableIntro && (
+                {tl.rarity.enabled && (
                   <button
                     type="button"
-                    onClick={() => jumpToStage("intro")}
-                    className={`ws-stage-btn ${stage === "intro" ? "active" : ""}`}
+                    onClick={() => jumpToSecond(tl.rarity.startTime)}
+                    className="ws-stage-btn red"
                   >
-                    Intro
+                    Napis ({tl.rarity.startTime}s)
                   </button>
                 )}
-                {seq.enableRarity && (
+                {tl.player.enabled && (
                   <button
                     type="button"
-                    onClick={() => jumpToStage("rarity")}
-                    className={`ws-stage-btn ${stage === "rarity" ? "active red" : ""}`}
+                    onClick={() => jumpToSecond(tl.player.startTime)}
+                    className="ws-stage-btn sky"
                   >
-                    Napis
+                    Gracz ({tl.player.startTime}s)
                   </button>
                 )}
-                {seq.enablePlayer && (
+                {tl.card.enabled && (
                   <button
                     type="button"
-                    onClick={() => jumpToStage("player")}
-                    className={`ws-stage-btn ${stage === "player" ? "active sky" : ""}`}
+                    onClick={() => jumpToSecond(tl.card.startTime)}
+                    className="ws-stage-btn gold"
                   >
-                    Gracz
+                    Karta ({tl.card.startTime}s)
                   </button>
                 )}
-                {seq.enableCard && (
+                {tl.hero.enabled && (
                   <button
                     type="button"
-                    onClick={() => jumpToStage("card")}
-                    className={`ws-stage-btn ${stage === "card" ? "active gold" : ""}`}
+                    onClick={() => jumpToSecond(tl.hero.startTime)}
+                    className="ws-stage-btn yellow"
                   >
-                    Karta
-                  </button>
-                )}
-                {seq.enableHero && (
-                  <button
-                    type="button"
-                    onClick={() => jumpToStage("hero")}
-                    className={`ws-stage-btn ${stage === "hero" ? "active yellow" : ""}`}
-                  >
-                    Hero
+                    Hero ({tl.hero.startTime}s)
                   </button>
                 )}
               </div>
@@ -967,179 +1090,337 @@ export default function WalkoutStudio(props: {
           </div>
         </div>
 
-        {/* PRAWA KOLUMNA: PANELE KONTROLNE & SEKWENCJA */}
+        {/* PRAWA KOLUMNA: DOKŁADNE CZASY ORAZ POZYCJE WARSTW */}
         <div className="ws-sidebar">
 
-          {/* NOWA SEKCJA: KONFIGURATOR ETAPÓW SEKWENCJI */}
+          {/* GŁÓWNY PANEL ZARZĄDZANIA CZASEM I WARSTWAMI */}
           <div className="ws-panel-box ws-box-sequence">
             <div className="ws-panel-head">
               <span className="ws-box-heading purple">
-                <Zap size={16} /> Etapy & Kolejność Walkoutu
+                <Zap size={16} /> Czasy Pojawiania się & Znikania
               </span>
             </div>
 
+            {/* PRESETY */}
             <div className="ws-preset-chips-row">
               <button
                 type="button"
-                onClick={() => applySequencePreset("skip_player")}
-                className={`ws-preset-chip ${!seq.enablePlayer && seq.enableRarity && seq.enableCard ? "active" : ""}`}
-                title="Karta pojawia się od razu po napisie (bez prezentacji gracza)"
+                onClick={() => applyTimelinePreset("skip_player")}
+                className={`ws-preset-chip ${!tl.player.enabled && tl.rarity.enabled && tl.card.enabled ? "active" : ""}`}
+                title="Karta pojawia się od razu po zniknięciu napisu (odznaczony gracz)"
               >
                 ⚡ Karta od razu po napisie
               </button>
               <button
                 type="button"
-                onClick={() => applySequencePreset("full")}
-                className={`ws-preset-chip ${seq.enablePlayer && seq.enableRarity && seq.enableCard ? "active" : ""}`}
-                title="Kompletny kinowy pokaz"
+                onClick={() => applyTimelinePreset("full")}
+                className={`ws-preset-chip ${tl.player.enabled && tl.rarity.enabled && tl.card.enabled ? "active" : ""}`}
+                title="Pełny kinowy pokaz"
               >
                 👑 Pełny Walkout
               </button>
               <button
                 type="button"
-                onClick={() => applySequencePreset("instant_card")}
-                className={`ws-preset-chip ${!seq.enableRarity && !seq.enablePlayer && seq.enableCard ? "active" : ""}`}
-                title="Błyskawiczny zrzut karty z tłem"
+                onClick={() => applyTimelinePreset("instant_card")}
+                className={`ws-preset-chip ${!tl.rarity.enabled && !tl.player.enabled && tl.card.enabled ? "active" : ""}`}
+                title="Błyskawiczna karta"
               >
                 🚀 Błyskawiczny
               </button>
             </div>
 
-            <div className="ws-sequence-toggles-list">
-              <label className="ws-seq-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={seq.enableIntro}
-                  onChange={() => toggleSequenceStep("enableIntro")}
-                  className="ws-checkbox"
-                />
-                <div className="ws-seq-info">
-                  <span className="ws-seq-name">1. Wstęp Wideo (Intro)</span>
-                  <span className="ws-seq-desc">Pierwsze sekundy czystego filmu / tunelu</span>
-                </div>
-              </label>
+            {/* KONTROLKI CZASOWE DLA KAŻDEJ WARSTWY */}
+            <div className="ws-layer-timing-cards">
 
-              <label className="ws-seq-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={seq.enableRarity}
-                  onChange={() => toggleSequenceStep("enableRarity")}
-                  className="ws-checkbox"
-                />
-                <div className="ws-seq-info">
-                  <span className="ws-seq-name">2. Napis Rzadkości (Rarity Title)</span>
-                  <span className="ws-seq-desc">Napis np. &quot;INFERNO&quot;, &quot;IKONA&quot;, &quot;POTM&quot;</span>
+              {/* 1. NAPISY RZADKOŚCI */}
+              <div className={`ws-timing-card ${tl.rarity.enabled ? "is-on" : "is-off"}`}>
+                <div className="ws-timing-card-head">
+                  <label className="ws-timing-toggle">
+                    <input
+                      type="checkbox"
+                      checked={tl.rarity.enabled}
+                      onChange={e => updateLayerTiming("rarity", "enabled", e.target.checked)}
+                      className="ws-checkbox-custom"
+                    />
+                    <span className="ws-timing-name text-red-400">1. Napisy Rzadkości (INFERNO)</span>
+                  </label>
+                  <span className="ws-timing-badge">{tl.rarity.enabled ? "Aktywny" : "USUNIĘTY"}</span>
                 </div>
-              </label>
 
-              <label className={`ws-seq-toggle-item ${!seq.enablePlayer ? "is-disabled-row" : ""}`}>
-                <input
-                  type="checkbox"
-                  checked={seq.enablePlayer}
-                  onChange={() => toggleSequenceStep("enablePlayer")}
-                  className="ws-checkbox"
-                />
-                <div className="ws-seq-info">
-                  <span className="ws-seq-name flex items-center gap-1.5">
-                    3. Sylwetka Zawodnika
-                    {!seq.enablePlayer && <span className="ws-tag-skipped">POMINIĘTY (Od razu karta!)</span>}
+                {tl.rarity.enabled && (
+                  <div className="ws-timing-controls-grid">
+                    <div className="ws-time-input-group">
+                      <label>Pojawia się w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          value={tl.rarity.startTime}
+                          onChange={e => updateLayerTiming("rarity", "startTime", parseFloat(e.target.value) || 0)}
+                          className="ws-input-time"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                        <button
+                          type="button"
+                          onClick={() => setTimeToCurrent("rarity", "startTime")}
+                          className="ws-btn-time-now"
+                          title="Ustaw aktualny moment filmu"
+                        >
+                          Bieżący ({videoCurrentTime.toFixed(1)}s)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ws-time-input-group">
+                      <label>Znika w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          disabled={tl.rarity.stayUntilEnd}
+                          value={tl.rarity.stayUntilEnd ? "" : tl.rarity.endTime}
+                          placeholder={tl.rarity.stayUntilEnd ? "Do końca" : "6.0"}
+                          onChange={e => updateLayerTiming("rarity", "endTime", parseFloat(e.target.value) || 0)}
+                          className="ws-input-time"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                        <button
+                          type="button"
+                          onClick={() => setTimeToCurrent("rarity", "endTime")}
+                          className="ws-btn-time-now"
+                          title="Ustaw aktualny moment filmu"
+                        >
+                          Bieżący ({videoCurrentTime.toFixed(1)}s)
+                        </button>
+                      </div>
+                      <label className="ws-sub-check">
+                        <input
+                          type="checkbox"
+                          checked={tl.rarity.stayUntilEnd}
+                          onChange={e => updateLayerTiming("rarity", "stayUntilEnd", e.target.checked)}
+                        />
+                        <span>Widoczny do samego końca filmu</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. SYLWETKA ZAWODNIKA */}
+              <div className={`ws-timing-card ${tl.player.enabled ? "is-on" : "is-off border-amber-500/40"}`}>
+                <div className="ws-timing-card-head">
+                  <label className="ws-timing-toggle">
+                    <input
+                      type="checkbox"
+                      checked={tl.player.enabled}
+                      onChange={e => updateLayerTiming("player", "enabled", e.target.checked)}
+                      className="ws-checkbox-custom"
+                    />
+                    <span className="ws-timing-name text-sky-400">2. Sylwetka Zawodnika</span>
+                  </label>
+                  <span className={`ws-timing-badge ${tl.player.enabled ? "" : "text-amber-400 bg-amber-500/20"}`}>
+                    {tl.player.enabled ? "Aktywny" : "USUNIĘTY (Karta od razu po napisie)"}
                   </span>
-                  <span className="ws-seq-desc">
-                    {seq.enablePlayer 
-                      ? "Zawodnik wychodzi przed kartą" 
-                      : "Wyłączone – karta pojawia się bezpośrednio po napisie"}
-                  </span>
                 </div>
-              </label>
 
-              <label className="ws-seq-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={seq.enableCard}
-                  onChange={() => toggleSequenceStep("enableCard")}
-                  className="ws-checkbox"
-                />
-                <div className="ws-seq-info">
-                  <span className="ws-seq-name">4. Zrzut Karty 3D & Błysk</span>
-                  <span className="ws-seq-desc">Kinowy flash i wejście głównej karty</span>
-                </div>
-              </label>
+                {tl.player.enabled ? (
+                  <div className="ws-timing-controls-grid">
+                    <div className="ws-time-input-group">
+                      <label>Pojawia się w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          value={tl.player.startTime}
+                          onChange={e => updateLayerTiming("player", "startTime", parseFloat(e.target.value) || 0)}
+                          className="ws-input-time"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                        <button
+                          type="button"
+                          onClick={() => setTimeToCurrent("player", "startTime")}
+                          className="ws-btn-time-now"
+                          title="Ustaw aktualny moment filmu"
+                        >
+                          Bieżący ({videoCurrentTime.toFixed(1)}s)
+                        </button>
+                      </div>
+                    </div>
 
-              <label className="ws-seq-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={seq.enableHero}
-                  onChange={() => toggleSequenceStep("enableHero")}
-                  className="ws-checkbox"
-                />
-                <div className="ws-seq-info">
-                  <span className="ws-seq-name">5. Pasek Hero (Rating & Klub)</span>
-                  <span className="ws-seq-desc">Dolne podsumowanie karty</span>
+                    <div className="ws-time-input-group">
+                      <label>Znika w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          disabled={tl.player.stayUntilEnd}
+                          value={tl.player.stayUntilEnd ? "" : tl.player.endTime}
+                          placeholder={tl.player.stayUntilEnd ? "Do końca" : "8.0"}
+                          onChange={e => updateLayerTiming("player", "endTime", parseFloat(e.target.value) || 0)}
+                          className="ws-input-time"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                        <button
+                          type="button"
+                          onClick={() => setTimeToCurrent("player", "endTime")}
+                          className="ws-btn-time-now"
+                          title="Ustaw aktualny moment filmu"
+                        >
+                          Bieżący ({videoCurrentTime.toFixed(1)}s)
+                        </button>
+                      </div>
+                      <label className="ws-sub-check">
+                        <input
+                          type="checkbox"
+                          checked={tl.player.stayUntilEnd}
+                          onChange={e => updateLayerTiming("player", "stayUntilEnd", e.target.checked)}
+                        />
+                        <span>Widoczny do samego końca filmu</span>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="ws-timing-disabled-hint">
+                    Odznaczone – zawodnik został wyłączony. Karta pojawi się bezpośrednio w wyznaczonym poniżej czasie!
+                  </div>
+                )}
+              </div>
+
+              {/* 3. KARTA 3D */}
+              <div className={`ws-timing-card ${tl.card.enabled ? "is-on" : "is-off"}`}>
+                <div className="ws-timing-card-head">
+                  <label className="ws-timing-toggle">
+                    <input
+                      type="checkbox"
+                      checked={tl.card.enabled}
+                      onChange={e => updateLayerTiming("card", "enabled", e.target.checked)}
+                      className="ws-checkbox-custom"
+                    />
+                    <span className="ws-timing-name text-amber-400">3. Karta 3D (Drop & Flash)</span>
+                  </label>
+                  <span className="ws-timing-badge">{tl.card.enabled ? "Aktywny" : "USUNIĘTY"}</span>
                 </div>
-              </label>
+
+                {tl.card.enabled && (
+                  <div className="ws-timing-controls-grid">
+                    <div className="ws-time-input-group">
+                      <label>Pojawia się w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          value={tl.card.startTime}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            updateLayerTiming("card", "startTime", val);
+                            setSettings(prev => ({ ...prev, timeline: { ...prev.timeline, flash: { ...prev.timeline.flash, time: val } } }));
+                          }}
+                          className="ws-input-time font-bold text-amber-400"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTimeToCurrent("card", "startTime");
+                            setSettings(prev => ({ ...prev, timeline: { ...prev.timeline, flash: { ...prev.timeline.flash, time: Math.round(videoCurrentTime * 10) / 10 } } }));
+                          }}
+                          className="ws-btn-time-now"
+                          title="Ustaw aktualny moment filmu"
+                        >
+                          Bieżący ({videoCurrentTime.toFixed(1)}s)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ws-time-input-group">
+                      <label>Znika w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          disabled={tl.card.stayUntilEnd}
+                          value={tl.card.stayUntilEnd ? "" : tl.card.endTime}
+                          placeholder={tl.card.stayUntilEnd ? "Do końca filmu" : "15.0"}
+                          onChange={e => updateLayerTiming("card", "endTime", parseFloat(e.target.value) || 0)}
+                          className="ws-input-time"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                      </div>
+                      <label className="ws-sub-check">
+                        <input
+                          type="checkbox"
+                          checked={tl.card.stayUntilEnd}
+                          onChange={e => updateLayerTiming("card", "stayUntilEnd", e.target.checked)}
+                        />
+                        <span>Widoczna do samego końca filmu (Zalecane)</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. PASEK HERO */}
+              <div className={`ws-timing-card ${tl.hero.enabled ? "is-on" : "is-off"}`}>
+                <div className="ws-timing-card-head">
+                  <label className="ws-timing-toggle">
+                    <input
+                      type="checkbox"
+                      checked={tl.hero.enabled}
+                      onChange={e => updateLayerTiming("hero", "enabled", e.target.checked)}
+                      className="ws-checkbox-custom"
+                    />
+                    <span className="ws-timing-name text-emerald-400">4. Pasek Hero (Rating & Klub)</span>
+                  </label>
+                  <span className="ws-timing-badge">{tl.hero.enabled ? "Aktywny" : "USUNIĘTY"}</span>
+                </div>
+
+                {tl.hero.enabled && (
+                  <div className="ws-timing-controls-grid">
+                    <div className="ws-time-input-group">
+                      <label>Pojawia się w sek:</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          step={0.1}
+                          min={0}
+                          max={30}
+                          value={tl.hero.startTime}
+                          onChange={e => updateLayerTiming("hero", "startTime", parseFloat(e.target.value) || 0)}
+                          className="ws-input-time"
+                        />
+                        <span className="text-xs text-slate-400">s</span>
+                        <button
+                          type="button"
+                          onClick={() => setTimeToCurrent("hero", "startTime")}
+                          className="ws-btn-time-now"
+                          title="Ustaw aktualny moment filmu"
+                        >
+                          Bieżący ({videoCurrentTime.toFixed(1)}s)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
           
-          {/* SEKCJA ZARZĄDZANIA WIDEO */}
-          <div className="ws-panel-box ws-box-video">
-            <div className="ws-panel-head">
-              <span className="ws-box-heading video-color">
-                <Video size={16} /> Odtwarzacz & Wideo w tle
-              </span>
-              <span className={`ws-status-pill ${isVideoPlaying ? "online" : "paused"}`}>
-                {isVideoPlaying ? "● Odtwarza" : "○ Wstrzymane"}
-              </span>
-            </div>
-
-            {customVideoFileName && (
-              <div className="ws-active-file-banner">
-                <FileVideo size={16} className="text-amber-400" />
-                <div className="ws-active-file-info">
-                  <span className="ws-active-file-name">{customVideoFileName}</span>
-                  <span className="ws-active-file-meta">{videoDuration.toFixed(1)}s • MP4/WebM</span>
-                </div>
-              </div>
-            )}
-
-            <div className="ws-presets-list">
-              <span className="ws-field-label">Predefiniowane tła:</span>
-              {VIDEO_PRESETS.map(preset => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => {
-                    setSettings(prev => ({ ...prev, videoSrc: preset.src }));
-                    setCustomVideoFileName("");
-                    setVideoErrorMsg(null);
-                    if (videoRef.current) {
-                      videoRef.current.src = preset.src;
-                      videoRef.current.load();
-                      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
-                    }
-                  }}
-                  className={`ws-preset-btn ${settings.videoSrc === preset.src ? "active" : ""}`}
-                >
-                  {preset.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="ws-upload-field">
-              <label className="ws-field-label font-bold text-amber-400 flex items-center gap-1.5">
-                <Upload size={13} /> Wgraj własny film z dysku (MP4 / WebM / MOV):
-              </label>
-              <input
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime,video/mov,video/*"
-                onChange={handleVideoUpload}
-                className="ws-file-input"
-              />
-            </div>
-          </div>
-
-          {/* WYBÓR WARSTWY DO REGULACJI */}
+          {/* WYBÓR WARSTWY DO REGULACJI POZYCJI X/Y/SCALE */}
           <div className="ws-panel-box">
-            <span className="ws-panel-title">Wybierz warstwę graficzną:</span>
+            <span className="ws-panel-title">Wybierz warstwę do przesunięcia myszką / suwakami:</span>
             <div className="ws-layers-tabs">
               <button
                 type="button"
@@ -1403,12 +1684,69 @@ export default function WalkoutStudio(props: {
             </div>
           )}
 
+          {/* SEKCJA ZARZĄDZANIA WIDEO */}
+          <div className="ws-panel-box ws-box-video">
+            <div className="ws-panel-head">
+              <span className="ws-box-heading video-color">
+                <Video size={16} /> Odtwarzacz & Wideo w tle
+              </span>
+              <span className={`ws-status-pill ${isVideoPlaying ? "online" : "paused"}`}>
+                {isVideoPlaying ? "● Odtwarza" : "○ Wstrzymane"}
+              </span>
+            </div>
+
+            {customVideoFileName && (
+              <div className="ws-active-file-banner">
+                <FileVideo size={16} className="text-amber-400" />
+                <div className="ws-active-file-info">
+                  <span className="ws-active-file-name">{customVideoFileName}</span>
+                  <span className="ws-active-file-meta">{videoDuration.toFixed(1)}s • MP4/WebM</span>
+                </div>
+              </div>
+            )}
+
+            <div className="ws-presets-list">
+              <span className="ws-field-label">Predefiniowane tła:</span>
+              {VIDEO_PRESETS.map(preset => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => {
+                    setSettings(prev => ({ ...prev, videoSrc: preset.src }));
+                    setCustomVideoFileName("");
+                    setVideoErrorMsg(null);
+                    if (videoRef.current) {
+                      videoRef.current.src = preset.src;
+                      videoRef.current.load();
+                      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                    }
+                  }}
+                  className={`ws-preset-btn ${settings.videoSrc === preset.src ? "active" : ""}`}
+                >
+                  {preset.name}
+                </button>
+              ))}
+            </div>
+
+            <div className="ws-upload-field">
+              <label className="ws-field-label font-bold text-amber-400 flex items-center gap-1.5">
+                <Upload size={13} /> Wgraj własny film z dysku (MP4 / WebM / MOV):
+              </label>
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/mov,video/*"
+                onChange={handleVideoUpload}
+                className="ws-file-input"
+              />
+            </div>
+          </div>
+
           {/* JSON READOUT */}
           <div className="ws-json-box">
-            <span className="ws-json-title">Współrzędne (Live JSON):</span>
+            <span className="ws-json-title">Współrzędne & Czasy (Live JSON):</span>
             <pre className="ws-json-pre">
               {JSON.stringify({
-                sequence: settings.sequence,
+                timeline: settings.timeline,
                 rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
                 player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
                 card: { x: settings.card.x, y: settings.card.y, scale: settings.card.scale }
@@ -1545,7 +1883,7 @@ export default function WalkoutStudio(props: {
         /* GRID */
         .ws-grid {
           display: grid;
-          grid-template-columns: 1fr 370px;
+          grid-template-columns: 1fr 380px;
           gap: 18px;
           width: 100%;
           align-items: start;
@@ -1563,7 +1901,7 @@ export default function WalkoutStudio(props: {
         .ws-viewport {
           position: relative;
           width: 100%;
-          height: 560px;
+          height: 540px;
           border-radius: 18px;
           overflow: hidden !important;
           background: #000000;
@@ -1634,6 +1972,7 @@ export default function WalkoutStudio(props: {
           z-index: 20;
           transform-origin: center center;
           white-space: nowrap;
+          animation: wsPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .ws-rarity-layer.is-active {
@@ -1675,6 +2014,7 @@ export default function WalkoutStudio(props: {
           z-index: 15;
           transform-origin: center center;
           filter: drop-shadow(0 20px 30px rgba(0,0,0,0.95)) drop-shadow(0 0 25px rgba(255,69,0,0.4));
+          animation: wsPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .ws-player-layer.is-active {
@@ -1715,6 +2055,17 @@ export default function WalkoutStudio(props: {
           z-index: 25;
           transform-origin: center center;
           filter: drop-shadow(0 0 45px rgba(255, 42, 59, 0.95)) drop-shadow(0 25px 40px rgba(0,0,0,0.95));
+          animation: wsDropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes wsPopIn {
+          0% { opacity: 0; transform: translate(-50%, -45%) scale(0.8); }
+          100% { opacity: 1; }
+        }
+
+        @keyframes wsDropIn {
+          0% { opacity: 0; transform: translate(-50%, -65%) scale(0.6); }
+          100% { opacity: 1; }
         }
 
         .ws-card-layer.is-active {
@@ -1762,6 +2113,7 @@ export default function WalkoutStudio(props: {
           text-align: center;
           pointer-events: none;
           z-index: 30;
+          animation: wsPopIn 0.3s ease-out;
         }
 
         .ws-hero-badge {
@@ -1866,6 +2218,110 @@ export default function WalkoutStudio(props: {
           z-index: 50;
         }
 
+        /* MULTI-TRACK VISUAL TIMELINE */
+        .ws-multi-timeline-card {
+          background: rgba(15, 23, 42, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 14px;
+          padding: 12px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .ws-timeline-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .ws-timeline-title {
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #cbd5e1;
+          letter-spacing: 0.5px;
+        }
+
+        .ws-current-sec-tag {
+          font-family: monospace;
+          font-size: 11px;
+          font-weight: 900;
+          color: #f59e0b;
+          background: rgba(245, 158, 11, 0.15);
+          padding: 2px 6px;
+          border-radius: 6px;
+        }
+
+        .ws-tracks-container {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          background: rgba(0, 0, 0, 0.5);
+          border-radius: 10px;
+          padding: 8px 10px;
+          overflow: hidden;
+        }
+
+        .ws-track-row {
+          display: grid;
+          grid-template-columns: 80px 1fr;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .ws-track-label {
+          font-size: 10px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .ws-track-lane {
+          position: relative;
+          height: 18px;
+          background: rgba(255, 255, 255, 0.04);
+          border-radius: 6px;
+          overflow: hidden;
+        }
+
+        .ws-track-block {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          border-radius: 5px;
+          display: flex;
+          align-items: center;
+          padding: 0 6px;
+          font-size: 9px;
+          font-weight: 900;
+          color: #ffffff;
+          white-space: nowrap;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .ws-track-disabled {
+          height: 100%;
+          display: flex;
+          align-items: center;
+          padding-left: 8px;
+          font-size: 9.5px;
+          color: #64748b;
+          font-style: italic;
+        }
+
+        .ws-playhead-line {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background: #f59e0b;
+          box-shadow: 0 0 8px #f59e0b;
+          pointer-events: none;
+          z-index: 10;
+        }
+
         /* CINEMA VIDEO CONTROLS BAR */
         .ws-video-controls-bar {
           display: flex;
@@ -1890,7 +2346,7 @@ export default function WalkoutStudio(props: {
           font-family: monospace;
           font-weight: 800;
           color: #94a3b8;
-          min-width: 40px;
+          min-width: 50px;
         }
 
         .ws-scrubber-slider {
@@ -2002,40 +2458,16 @@ export default function WalkoutStudio(props: {
           border-radius: 8px;
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #94a3b8;
+          color: #cbd5e1;
           font-size: 11px;
           font-weight: 700;
           cursor: pointer;
         }
 
-        .ws-stage-btn.active {
-          background: rgba(255, 255, 255, 0.2);
-          color: #ffffff;
-        }
-
-        .ws-stage-btn.active.red {
-          background: rgba(220, 38, 38, 0.35);
-          color: #fca5a5;
-          border-color: #ef4444;
-        }
-
-        .ws-stage-btn.active.sky {
-          background: rgba(14, 165, 233, 0.35);
-          color: #bae6fd;
-          border-color: #38bdf8;
-        }
-
-        .ws-stage-btn.active.gold {
-          background: rgba(217, 119, 6, 0.35);
-          color: #fde68a;
-          border-color: #f59e0b;
-        }
-
-        .ws-stage-btn.active.yellow {
-          background: #eab308;
-          color: #000000;
-          font-weight: 900;
-        }
+        .ws-stage-btn.red { border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+        .ws-stage-btn.sky { border-color: rgba(56, 189, 248, 0.4); color: #bae6fd; }
+        .ws-stage-btn.gold { border-color: rgba(245, 158, 11, 0.4); color: #fde68a; }
+        .ws-stage-btn.yellow { border-color: rgba(234, 179, 8, 0.6); color: #fef08a; }
 
         .ws-speed-select-box {
           display: flex;
@@ -2158,67 +2590,128 @@ export default function WalkoutStudio(props: {
           color: #f3e8ff;
         }
 
-        .ws-sequence-toggles-list {
+        /* TIMING CARDS */
+        .ws-layer-timing-cards {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
         }
 
-        .ws-seq-toggle-item {
+        .ws-timing-card {
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          padding: 10px;
           display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          padding: 8px 10px;
-          background: rgba(0, 0, 0, 0.35);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 9px;
-          cursor: pointer;
-          transition: 0.15s ease;
+          flex-direction: column;
+          gap: 8px;
         }
 
-        .ws-seq-toggle-item:hover {
-          background: rgba(0, 0, 0, 0.5);
-          border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .ws-seq-toggle-item.is-disabled-row {
+        .ws-timing-card.is-off {
           opacity: 0.6;
           border-color: rgba(239, 68, 68, 0.3);
         }
 
-        .ws-checkbox {
+        .ws-timing-card-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .ws-timing-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .ws-checkbox-custom {
           width: 16px;
           height: 16px;
-          margin-top: 2px;
           accent-color: #a855f7;
           cursor: pointer;
         }
 
-        .ws-seq-info {
+        .ws-timing-name {
+          font-size: 11.5px;
+          font-weight: 900;
+        }
+
+        .ws-timing-badge {
+          font-size: 9px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.08);
+          color: #cbd5e1;
+        }
+
+        .ws-timing-controls-grid {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 8px;
+          padding-top: 6px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .ws-seq-name {
-          font-size: 11.5px;
-          font-weight: 800;
-          color: #ffffff;
+        .ws-time-input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
         }
 
-        .ws-seq-desc {
+        .ws-time-input-group label {
           font-size: 10px;
+          font-weight: 700;
           color: #94a3b8;
         }
 
-        .ws-tag-skipped {
-          font-size: 9px;
-          font-weight: 900;
-          padding: 1px 5px;
-          border-radius: 4px;
-          background: rgba(239, 68, 68, 0.25);
-          color: #f87171;
-          border: 1px solid rgba(239, 68, 68, 0.4);
+        .ws-input-time {
+          width: 70px;
+          padding: 5px 8px;
+          background: rgba(0, 0, 0, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 6px;
+          color: #ffffff;
+          font-family: monospace;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .ws-btn-time-now {
+          font-size: 9.5px;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 6px;
+          background: rgba(245, 158, 11, 0.15);
+          border: 1px solid rgba(245, 158, 11, 0.35);
+          color: #fcd34d;
+          cursor: pointer;
+          transition: 0.1s ease;
+        }
+
+        .ws-btn-time-now:hover {
+          background: rgba(245, 158, 11, 0.3);
+        }
+
+        .ws-sub-check {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10px;
+          color: #cbd5e1;
+          margin-top: 3px;
+          cursor: pointer;
+        }
+
+        .ws-timing-disabled-hint {
+          font-size: 10.5px;
+          color: #fcd34d;
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px dashed rgba(245, 158, 11, 0.3);
+          border-radius: 6px;
+          padding: 6px 8px;
+          line-height: 1.35;
         }
 
         .ws-status-pill {
