@@ -20,20 +20,20 @@ export function formatTeamName(team: string | null | undefined): string {
   const t = team.trim();
   const lower = t.toLowerCase();
 
-  // Check specific Delta divisions
+  // Check specific Delta divisions safely using word boundaries and full terms
   if (lower.includes("delta")) {
-    if (lower.includes("wi") || lower.includes("wilan")) {
+    // Check Wilanów
+    if (/\b(wi|wilan|wilanow|wilanów)\b/i.test(lower) || lower.endsWith(" wi")) {
       return "Delta Wilanów";
     }
-    if (lower.includes("wa") || lower.includes("wawer")) {
+    // Check Wawer (avoid substring "wa" in "warszawa")
+    if (/\b(wa|wawer)\b/i.test(lower) || lower.endsWith(" wa")) {
       return "Delta Wawer";
     }
+    // Check Górny Mokotów
     if (
-      lower.includes("gm") ||
-      lower.includes("górny") ||
-      lower.includes("gorny") ||
-      lower.includes("mokotów") ||
-      lower.includes("mokotow") ||
+      /\b(gm|mokotow|mokotów|gorny|górny)\b/i.test(lower) ||
+      lower.endsWith(" gm") ||
       lower === "k.s. delta warszawa" ||
       lower === "delta warszawa"
     ) {

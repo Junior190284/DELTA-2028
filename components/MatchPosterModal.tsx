@@ -62,13 +62,7 @@ interface MatchPosterModalProps {
   lineup: Lineup[];
 }
 
-const LOGOS: Record<string, string> = {
-  "K.S. Delta Warszawa GM": "/teamlogos/gm.png",
-  "Alfa Przymierze Rodzin": "/teamlogos/alfa.png",
-  "FC Vizja Warszawa": "/teamlogos/vizja.png",
-  "RKS Ursus Warszawa": "/teamlogos/ursus.png",
-  "MUKS Julianów": "/teamlogos/julianow.png",
-};
+import { formatTeamName, getTeamLogo } from "@/lib/teams";
 
 export default function MatchPosterModal({
   isOpen,
@@ -93,6 +87,9 @@ export default function MatchPosterModal({
 
   const mvpName = players.find(p => p.id === mvpEvent?.player_id)?.display_name;
   const captainName = players.find(p => p.id === captainItem?.player_id)?.display_name;
+
+  const homeTeamName = useMemo(() => formatTeamName(match.home_team), [match.home_team]);
+  const awayTeamName = useMemo(() => formatTeamName(match.away_team), [match.away_team]);
 
   // Grupuj strzelców bramek
   const scorersSummary = useMemo(() => {
@@ -208,8 +205,8 @@ export default function MatchPosterModal({
       });
     };
 
-    const homeLogoSrc = LOGOS[match.home_team] || "/teamlogos/gm.png";
-    const awayLogoSrc = LOGOS[match.away_team] || "/teamlogos/gm.png";
+    const homeLogoSrc = getTeamLogo(match.home_team) || "/teamlogos/gm.png";
+    const awayLogoSrc = getTeamLogo(match.away_team) || "/teamlogos/gm.png";
 
     try {
       const [homeLogo, awayLogo] = await Promise.all([
@@ -233,9 +230,9 @@ export default function MatchPosterModal({
     ctx.textAlign = "center";
     
     // Zawijanie tekstu dla gospodarza
-    ctx.fillText(match.home_team, 240, 400, 320);
+    ctx.fillText(homeTeamName, 240, 400, 320);
     // Zawijanie tekstu dla gościa
-    ctx.fillText(match.away_team, width - 240, 400, 320);
+    ctx.fillText(awayTeamName, width - 240, 400, 320);
 
     // Wynik meczu na środku
     const hs = match.home_score !== null ? match.home_score : "-";

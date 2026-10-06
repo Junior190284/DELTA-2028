@@ -439,35 +439,45 @@ body{background:#05070a}
 
 /* V8.1 — premium polishing pass */
 .v8-topbar{
-  height:50px!important;
-  padding:0 14px!important;
-  background:linear-gradient(90deg,rgba(5,7,10,.96),rgba(8,10,14,.88))!important;
-  border-bottom:1px solid rgba(246,201,82,.08)!important;
-  box-shadow:0 7px 24px rgba(0,0,0,.24)
+  height:54px!important;
+  padding:0 18px!important;
+  background:rgba(12, 16, 24, 0.65)!important;
+  backdrop-filter:blur(24px) saturate(180%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(180%)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 8px 32px rgba(0,0,0,.35), inset 0 -1px 0 rgba(246,201,82,.08)!important;
 }
-.v8-mini-brand img{width:29px;height:29px}
-.v8-mini-brand b{font-size:10px;letter-spacing:.11em}
-.v8-mini-brand span{font-size:8px;opacity:.72}
+.v8-mini-brand img{width:32px;height:32px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+.v8-mini-brand b{font-size:11px;letter-spacing:.09em;color:#fff}
+.v8-mini-brand span{font-size:9px;color:rgba(246,201,82,.85);font-weight:700}
 .v8-top-spacer{flex:1}
 .v8-admin-chip{
   margin-left:0!important;
-  padding:6px 10px!important;
-  font-size:8px!important;
-  letter-spacing:.15em!important;
-  background:rgba(246,201,82,.045)!important;
-  border-color:rgba(246,201,82,.18)!important
+  padding:6px 12px!important;
+  font-size:9px!important;
+  font-weight:900!important;
+  letter-spacing:.12em!important;
+  background:rgba(246,201,82,.10)!important;
+  border:1px solid rgba(246,201,82,.28)!important;
+  border-radius:999px!important;
+  backdrop-filter:blur(10px)!important;
+  color:#f6c952!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.2)!important;
 }
 .v8-account-wrap{position:relative}
 .v8-account-btn{
-  width:31px;height:31px;border-radius:50%;
-  border:1px solid rgba(255,255,255,.08);
-  background:#0c1118;color:#8f9aa7;
+  width:34px;height:34px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(20,27,38,.75);color:#cbd5e1;
   display:grid;place-items:center;cursor:pointer;
-  transition:.22s ease
+  backdrop-filter:blur(10px);
+  transition:.22s ease;
+  box-shadow:0 2px 10px rgba(0,0,0,.25);
 }
 .v8-account-btn:hover{
-  color:#fff;border-color:rgba(255,37,49,.32);
-  box-shadow:0 0 18px rgba(255,31,43,.12)
+  color:#fff;border-color:rgba(246,201,82,.45);
+  box-shadow:0 0 16px rgba(246,201,82,.22);
+  transform:scale(1.05);
 }
 .v8-account-popover{
   position:absolute;right:0;top:39px;z-index:90;

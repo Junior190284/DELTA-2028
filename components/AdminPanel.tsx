@@ -9,7 +9,7 @@ import CardLayoutEditor from "./CardLayoutEditor";
 import { 
   ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, 
   Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice, Edit3, 
-  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame, Sliders 
+  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame, Sliders, ChevronDown 
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -150,15 +150,38 @@ export default function AdminPanel(props:{
       return true;
     });
   }, [players, playerFilterTab, playerSearchQuery]);
-  // Zawodnika można przypisać do dowolnego zalogowanego konta, także administratora.
-  // Funkcja rodzica to powiązanie z zawodnikiem, nie zamiana uprawnień admina.
-  const parentCandidates=allProfiles.filter(p=>["parent","admin","coach"].includes(p.role));
-  const selectedTraining=trainingSessions.find(s=>s.id===selectedTrainingId)||null;
-  const trainingGamesForSelected=trainingGames.filter(g=>g.training_id===selectedTrainingId);
-  const selectedTrainingGame=trainingGamesForSelected.find(g=>g.id===selectedTrainingGameId)||trainingGamesForSelected[0]||null;
-  const selectedTrainingPresentCount=selectedTraining?trainingAttendance.filter(x=>x.training_id===selectedTraining.id&&x.status==="present").length:0;
-  const selectedTeamACount=selectedTrainingGame?trainingGamePlayers.filter(x=>x.game_id===selectedTrainingGame.id&&x.team==="A").length:0;
-  const selectedTeamBCount=selectedTrainingGame?trainingGamePlayers.filter(x=>x.game_id===selectedTrainingGame.id&&x.team==="B").length:0;
+  const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
+  const [parentTabFilter, setParentTabFilter] = useState<"all" | "unassigned" | "parents" | "staff">("all");
+
+  const parentCandidates = allProfiles;
+  const selectedTraining = trainingSessions.find(s => s.id === selectedTrainingId) || null;
+  const trainingGamesForSelected = trainingGames.filter(g => g.training_id === selectedTrainingId);
+  const selectedTrainingGame = trainingGamesForSelected.find(g => g.id === selectedTrainingGameId) || trainingGamesForSelected[0] || null;
+  const selectedTrainingPresentCount = selectedTraining ? trainingAttendance.filter(x => x.training_id === selectedTraining.id && x.status === "present").length : 0;
+  const selectedTeamACount = selectedTrainingGame ? trainingGamePlayers.filter(x => x.game_id === selectedTrainingGame.id && x.team === "A").length : 0;
+  const selectedTeamBCount = selectedTrainingGame ? trainingGamePlayers.filter(x => x.game_id === selectedTrainingGame.id && x.team === "B").length : 0;
+  const selectedTeamCCount = selectedTrainingGame ? trainingGamePlayers.filter(x => x.game_id === selectedTrainingGame.id && x.team === "C").length : 0;
+  const selectedTeamDCount = selectedTrainingGame ? trainingGamePlayers.filter(x => x.game_id === selectedTrainingGame.id && x.team === "D").length : 0;
+
+  async function addGuestPlayer() {
+    const name = prompt("Imię i nazwisko gościa (np. Franek (Gość 2019) lub Gość 1):");
+    if (!name || !name.trim()) return;
+    const cleanName = name.trim();
+    try {
+      const { data, error } = await supabase.from("players").insert({
+        display_name: cleanName,
+        shirt_number: "G",
+        position: "Gość",
+        active: true,
+        created_by: props.currentUser.id
+      }).select("*").single();
+      if (error) throw error;
+      setPlayers(prev => [...prev, data].sort((a, b) => a.display_name.localeCompare(b.display_name, "pl")));
+      alert(`Dodano gościa do kadry: ${cleanName}`);
+    } catch (e: any) {
+      alert("Błąd dodawania gościa: " + (e?.message || e));
+    }
+  }
 
   function flashTrainingFeedback(message:string){
     setTrainingFeedback(message);
@@ -774,7 +797,7 @@ export default function AdminPanel(props:{
     setSelectedTrainingGameId(data.id);
   }
 
-  async function setTrainingGameTeam(playerId:string,teamValue:"A"|"B"|null){
+  async function setTrainingGameTeam(playerId:string,teamValue:"A"|"B"|"C"|"D"|null){
     if(!selectedTrainingGame)return;
     const gameId=selectedTrainingGame.id;
     const previous=trainingGamePlayers.find(x=>x.game_id===gameId&&x.player_id===playerId)||null;
@@ -804,7 +827,7 @@ export default function AdminPanel(props:{
       ]);
       const message=friendlyTrainingError(error);flashTrainingFeedback(message);return alert(message);
     }
-    flashTrainingFeedback(`✓ ${teamValue==="A"?selectedTrainingGame.team_a_name:selectedTrainingGame.team_b_name}: zapisano`);
+    flashTrainingFeedback(`✓ Drużyna ${teamValue}: zapisano`);
   }
 
   async function saveTrainingGameScore(){
@@ -1028,15 +1051,17 @@ export default function AdminPanel(props:{
     try {
       const { data: existing } = await supabase
         .from("user_delta_points")
-        .select("points_balance")
+        .select("points_balance, total_earned")
         .eq("user_id", grantPointsUserId)
         .maybeSingle();
 
       const newBalance = (existing?.points_balance || 0) + grantPointsAmount;
+      const newTotal = (existing?.total_earned || 0) + grantPointsAmount;
 
       const { error } = await supabase.from("user_delta_points").upsert({
         user_id: grantPointsUserId,
         points_balance: newBalance,
+        total_earned: newTotal,
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id" });
 
@@ -1047,6 +1072,124 @@ export default function AdminPanel(props:{
       alert(`🪙 Przyznano +${grantPointsAmount} Delta Points! Nowy stan konta: ${newBalance} DP`);
     } catch (e: any) {
       alert(e.message || "Wystąpił błąd");
+    } finally {
+      setGrantingPoints(false);
+    }
+  }
+
+  async function handleResetPoints(userId: string) {
+    if (!userId) return;
+    const target = allProfiles.find(p => p.id === userId)?.display_name || "użytkownika";
+    if (!confirm(`Czy na pewno chcesz zresetować punkty DP do 0 dla ${target}?`)) return;
+    setGrantingPoints(true);
+    try {
+      const { error } = await supabase.from("user_delta_points").upsert({
+        user_id: userId,
+        points_balance: 0,
+        total_earned: 0,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+      if (error) throw error;
+      alert(`✓ Zresetowano punkty DP do 0 dla ${target}.`);
+    } catch (e: any) {
+      alert(e.message || "Błąd podczas resetowania punktów.");
+    } finally {
+      setGrantingPoints(false);
+    }
+  }
+
+  async function handleSetCustomPoints(userId: string) {
+    if (!userId) return;
+    const target = allProfiles.find(p => p.id === userId)?.display_name || "użytkownika";
+    const amountStr = prompt(`Wpisz dokładną liczbę punktów DP, jaką ma posiadać ${target}:`, "500");
+    if (amountStr === null) return;
+    const amount = parseInt(amountStr, 10);
+    if (isNaN(amount) || amount < 0) return alert("Nieprawidłowa liczba punktów.");
+
+    setGrantingPoints(true);
+    try {
+      const { error } = await supabase.from("user_delta_points").upsert({
+        user_id: userId,
+        points_balance: amount,
+        total_earned: amount,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+      if (error) throw error;
+      alert(`✓ Ustawiono stan konta: ${amount} DP dla ${target}.`);
+    } catch (e: any) {
+      alert(e.message || "Błąd podczas ustawiania punktów.");
+    } finally {
+      setGrantingPoints(false);
+    }
+  }
+
+  async function handleRecalculateUserPoints(userId: string) {
+    if (!userId) return;
+    const target = allProfiles.find(p => p.id === userId)?.display_name || "użytkownika";
+    setGrantingPoints(true);
+    try {
+      // Find linked player
+      const linkedPlayerIds = parentLinks.filter(x => x.parent_id === userId).map(x => x.player_id);
+      
+      let calcPoints = 100; // startowy bonus powitalny
+      if (linkedPlayerIds.length > 0) {
+        linkedPlayerIds.forEach(pid => {
+          const tSessions = trainingAttendance.filter(a => a.player_id === pid && a.status === "present").length;
+          const mPlayed = attendance.filter(a => a.player_id === pid && (a.status === "present" || a.status === "yes")).length;
+          const goals = events.filter(e => e.player_id === pid && e.event_type === "goal").length;
+          const assists = events.filter(e => e.assist_player_id === pid && e.event_type === "goal").length;
+          const mvps = events.filter(e => e.player_id === pid && e.event_type === "mvp").length;
+
+          calcPoints += (tSessions * 50) + (mPlayed * 70) + (goals * 30) + (assists * 20) + (mvps * 100);
+        });
+      }
+
+      const { error } = await supabase.from("user_delta_points").upsert({
+        user_id: userId,
+        points_balance: calcPoints,
+        total_earned: calcPoints,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+
+      if (error) throw error;
+      alert(`✓ Przeliczono punkty DP dla ${target}! Nowy stan: ${calcPoints} DP (na podstawie statystyk i obecności).`);
+    } catch (e: any) {
+      alert(e.message || "Błąd przeliczania punktów.");
+    } finally {
+      setGrantingPoints(false);
+    }
+  }
+
+  async function handleRecalculateAllPoints() {
+    if (!confirm("Czy na pewno chcesz automatycznie przeliczyć punkty DP WSZYSTKIM użytkownikom na podstawie ich statystyk i obecności?")) return;
+    setGrantingPoints(true);
+    try {
+      let count = 0;
+      for (const acc of allProfiles) {
+        const linkedPlayerIds = parentLinks.filter(x => x.parent_id === acc.id).map(x => x.player_id);
+        let calcPoints = 100;
+        if (linkedPlayerIds.length > 0) {
+          linkedPlayerIds.forEach(pid => {
+            const tSessions = trainingAttendance.filter(a => a.player_id === pid && a.status === "present").length;
+            const mPlayed = attendance.filter(a => a.player_id === pid && (a.status === "present" || a.status === "yes")).length;
+            const goals = events.filter(e => e.player_id === pid && e.event_type === "goal").length;
+            const assists = events.filter(e => e.assist_player_id === pid && e.event_type === "goal").length;
+            const mvps = events.filter(e => e.player_id === pid && e.event_type === "mvp").length;
+
+            calcPoints += (tSessions * 50) + (mPlayed * 70) + (goals * 30) + (assists * 20) + (mvps * 100);
+          });
+        }
+        await supabase.from("user_delta_points").upsert({
+          user_id: acc.id,
+          points_balance: calcPoints,
+          total_earned: calcPoints,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+        count++;
+      }
+      alert(`✓ Pomyślnie przeliczono i zsynchronizowano punkty DP dla ${count} kont!`);
+    } catch (e: any) {
+      alert(e.message || "Błąd podczas masowego przeliczania.");
     } finally {
       setGrantingPoints(false);
     }
@@ -1253,12 +1396,24 @@ export default function AdminPanel(props:{
             <p className="muted">{selectedTraining.training_date} • {selectedTraining.start_time?.slice(0,5)||""} • {selectedTraining.location||"—"}</p>
             {trainingFeedback&&<div className="v101-training-feedback">{trainingFeedback}</div>}
 
-            <div className="v101-training-section-head"><h3>Obecność</h3><strong>{selectedTrainingPresentCount}/{activePlayers.length} obecnych</strong></div>
+            <div className="v101-training-section-head">
+              <h3>Obecność</h3>
+              <div className="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  onClick={addGuestPlayer}
+                  className="px-2.5 py-1 text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg hover:bg-amber-500/30 transition flex items-center gap-1"
+                >
+                  <Plus size={13} /> Dodaj gościa (zawodnika)
+                </button>
+                <strong>{selectedTrainingPresentCount}/{activePlayers.length} obecnych</strong>
+              </div>
+            </div>
             <div className="attendance-grid">
               {activePlayers.map(p=>{
                 const st=trainingAttendance.find(x=>x.training_id===selectedTraining.id&&x.player_id===p.id)?.status||"";
                 return <div key={p.id} className="attendance-row">
-                  <span>{p.display_name}</span>
+                  <span>{p.display_name} {p.position === "Gość" ? <small className="text-amber-400 font-bold">(Gość)</small> : ""}</span>
                   <div>
                     <button type="button" disabled={trainingBusy===`attendance-${p.id}`} className={st==="present"?"active yes":""} onClick={()=>setTrainingAttendanceStatus(p.id,"present")}>JEST</button>
                     <button type="button" disabled={trainingBusy===`attendance-${p.id}`} className={st==="absent"?"active no":""} onClick={()=>setTrainingAttendanceStatus(p.id,"absent")}>NIE</button>
@@ -1267,7 +1422,7 @@ export default function AdminPanel(props:{
               })}
             </div>
 
-            {canTrainingFull&&<><h3>Gry kontrolne</h3>
+            {canTrainingFull&&<><h3>Gry kontrolne (2, 3 lub 4 drużyny)</h3>
             <div className="admin-match-list">
               {trainingGamesForSelected.map(g=><button key={g.id} className={selectedTrainingGame?.id===g.id?"selected":""} onClick={()=>setSelectedTrainingGameId(g.id)}>
                 <strong>{g.team_a_name} {g.team_a_score}:{g.team_b_score} {g.team_b_name}</strong>
@@ -1278,10 +1433,11 @@ export default function AdminPanel(props:{
             {selectedTrainingGame&&<>
               <div className="v101-training-versus">
                 <div><span>DRUŻYNA A</span><b>{selectedTrainingGame.team_a_name}</b><strong>{selectedTeamACount}</strong></div>
-                <em>{selectedTeamACount} <small>VS</small> {selectedTeamBCount}</em>
-                <div className="right"><span>DRUŻYNA B</span><b>{selectedTrainingGame.team_b_name}</b><strong>{selectedTeamBCount}</strong></div>
+                <div><span>DRUŻYNA B</span><b>{selectedTrainingGame.team_b_name}</b><strong>{selectedTeamBCount}</strong></div>
+                {selectedTeamCCount > 0 && <div><span>DRUŻYNA C</span><b>Drużyna C</b><strong>{selectedTeamCCount}</strong></div>}
+                {selectedTeamDCount > 0 && <div><span>DRUŻYNA D</span><b>Drużyna D</b><strong>{selectedTeamDCount}</strong></div>}
               </div>
-              <p className="v101-flexible-note">Składy są elastyczne — może być 3 na 3, 4 na 4, 6 na 6 albo dowolna inna liczba zawodników.</p>
+              <p className="v101-flexible-note">Składy są w pełni elastyczne — możesz podzielić zawodników na 2, 3 lub 4 drużyny (A, B, C, D).</p>
               <div className="admin-form-grid">
                 <label>{selectedTrainingGame.team_a_name}<input id="trainingScoreA" type="number" min="0" defaultValue={selectedTrainingGame.team_a_score}/></label>
                 <label>{selectedTrainingGame.team_b_name}<input id="trainingScoreB" type="number" min="0" defaultValue={selectedTrainingGame.team_b_score}/></label>
@@ -1291,15 +1447,20 @@ export default function AdminPanel(props:{
                 <button className="danger-btn" onClick={()=>deleteTrainingGame(selectedTrainingGame.id)}><Trash2 size={15}/> Usuń grę</button>
               </div>
 
-              <div className="v101-training-section-head"><h3>Składy gry kontrolnej</h3><strong>{selectedTeamACount} vs {selectedTeamBCount}</strong></div>
+              <div className="v101-training-section-head">
+                <h3>Składy drużyn (A, B, C, D)</h3>
+                <strong>A:{selectedTeamACount} | B:{selectedTeamBCount}{selectedTeamCCount > 0 ? ` | C:${selectedTeamCCount}` : ""}{selectedTeamDCount > 0 ? ` | D:${selectedTeamDCount}` : ""}</strong>
+              </div>
               <div className="attendance-grid">
                 {activePlayers.map(p=>{
                   const team=trainingGamePlayers.find(x=>x.game_id===selectedTrainingGame.id&&x.player_id===p.id)?.team||"";
                   return <div key={p.id} className="attendance-row">
-                    <span>{p.display_name}</span>
-                    <div>
+                    <span>{p.display_name} {p.position === "Gość" ? <small className="text-amber-400 font-bold">(Gość)</small> : ""}</span>
+                    <div style={{ display: "flex", gap: "4px" }}>
                       <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team==="A"?"active team-a":""} onClick={()=>setTrainingGameTeam(p.id,"A")}>A</button>
                       <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team==="B"?"active team-b":""} onClick={()=>setTrainingGameTeam(p.id,"B")}>B</button>
+                      <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team==="C"?"active team-a":""} style={team==="C" ? { background: "#059669", borderColor: "#10b981", color: "#fff" } : {}} onClick={()=>setTrainingGameTeam(p.id,"C")}>C</button>
+                      <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team==="D"?"active team-b":""} style={team==="D" ? { background: "#7c3aed", borderColor: "#8b5cf6", color: "#fff" } : {}} onClick={()=>setTrainingGameTeam(p.id,"D")}>D</button>
                       <button type="button" disabled={trainingBusy===`team-${p.id}`} className={team===""?"active neutral":""} onClick={()=>setTrainingGameTeam(p.id,null)}>—</button>
                     </div>
                   </div>
@@ -1475,66 +1636,255 @@ export default function AdminPanel(props:{
         </div>
       </section>}
 
-      {tab==="parents" && coreStaff && <section className="admin-card">
-        <div className="admin-card-head"><h2>Rodzice, opiekunowie i pomocnicy</h2></div>
-        <p className="muted">Najpierw osoba loguje się do DELTA własnym kontem Google. Wtedy pojawia się na tej liście. Przypisz jej zawodnika; możesz przypisać dwie lub więcej osób do tego samego dziecka. Administrator może być jednocześnie rodzicem — bez zmiany roli admin.</p>
-        <p className="muted">Rola „Pomocnik strony” daje wybranym rodzicom prawo do edycji kalendarza i aktualności. Możesz osobno zaznaczyć inne uprawnienia. Sama nazwa roli nie daje dostępu — decydują zaznaczone uprawnienia.</p>
-        <div className="parent-grid">
-          {parentCandidates.map(account=><div className="admin-subcard" key={account.id}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-              <h3 style={{margin:0}}>{account.display_name||"Użytkownik"} {account.id===props.currentUser.id?"(Twoje konto)":""}</h3>
-              {account.id===props.currentUser.id && <span style={{fontSize:11,background:"#0369a1",color:"#fff",padding:"2px 8px",borderRadius:999}}>Ty</span>}
-            </div>
+      {tab==="parents" && coreStaff && <section className="admin-card space-y-4">
+        <div className="admin-card-head">
+          <div>
+            <h2><Users size={20} className="inline mr-1 text-sky-400" /> Rodzice, opiekunowie i uprawnienia</h2>
+            <p className="muted">Zarządzaj kontami zalogowanymi przez Google, przypisuj dzieci i deleguj uprawnienia pomocników.</p>
+          </div>
+        </div>
 
-            <div style={{display:"flex",alignItems:"center",gap:8,margin:"10px 0 14px 0",flexWrap:"wrap"}}>
-              <span className="muted" style={{fontSize:13}}>Rola w systemie:</span>
-              <select
-                value={account.role}
-                disabled={!isAdmin}
-                onChange={e=>changeSystemRole(account.id, e.target.value as "parent"|"coach"|"admin")}
-                style={{padding:"4px 8px",borderRadius:6,background:"#1e293b",color:"#38bdf8",fontWeight:"bold",border:"1px solid #334155",fontSize:13,cursor:isAdmin?"pointer":"not-allowed"}}
-              >
-                <option value="parent">Rodzic (standard)</option>
-                <option value="coach">Trener (dostęp trenerski)</option>
-                <option value="admin">Administrator (pełny dostęp)</option>
-              </select>
-              <span className="muted" style={{fontSize:12}}>• Powiązanych zawodników: {parentLinks.filter(x=>x.parent_id===account.id).length}</span>
-            </div>
+        {/* FILTRY ZAKŁADEK DLA UŻYTKOWNIKÓW */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setParentTabFilter("all")}
+            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              parentTabFilter === "all" ? "bg-slate-700 text-white shadow" : "bg-slate-900 text-slate-400 hover:text-white"
+            }`}
+          >
+            Wszyscy ({allProfiles.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setParentTabFilter("unassigned")}
+            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              parentTabFilter === "unassigned" 
+                ? "bg-amber-500/30 text-amber-300 border border-amber-500/50 shadow" 
+                : "bg-slate-900 text-amber-400/80 hover:bg-amber-950/40"
+            }`}
+          >
+            ⚠️ Nowo zalogowani / Nieprzypisani ({
+              allProfiles.filter(p => parentLinks.filter(x => x.parent_id === p.id).length === 0 && p.role !== "admin" && p.role !== "coach").length
+            })
+          </button>
+          <button
+            type="button"
+            onClick={() => setParentTabFilter("parents")}
+            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              parentTabFilter === "parents" ? "bg-slate-700 text-white shadow" : "bg-slate-900 text-slate-400 hover:text-white"
+            }`}
+          >
+            Rodzice ({allProfiles.filter(p => p.role === "parent").length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setParentTabFilter("staff")}
+            className={`py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              parentTabFilter === "staff" ? "bg-slate-700 text-white shadow" : "bg-slate-900 text-slate-400 hover:text-white"
+            }`}
+          >
+            Sztab i Admin ({allProfiles.filter(p => p.role === "admin" || p.role === "coach").length})
+          </button>
+        </div>
 
-            {account.role==="parent"&&<div className="v10-parent-role">
-              <label>Rola dodatkowa / opis
-                <select value={permissionFor(account.id).role_label} disabled={!isAdmin} onChange={e=>updatePermission(account.id,"role_label",e.target.value)}>
-                  <option>Rodzic</option><option>Pomocnik strony</option><option>Pomocnik trenera</option><option>Statystyk</option><option>Koordynator</option>
-                </select>
-              </label>
-              {isAdmin&&<div style={{display:"flex",flexWrap:"wrap",gap:8,margin:"10px 0"}}>
-                <button type="button" onClick={()=>setAssistantPreset(account.id,true)}>Nadaj pakiet: Pomocnik strony</button>
-                <button type="button" onClick={()=>setAssistantPreset(account.id,false)}>Cofnij uprawnienia</button>
-              </div>}
-              <div className="v10-permission-grid">
-                {([
-                  ["can_manage_matches","Mecze i składy"],
-                  ["can_edit_match_events","Gole / asysty / MVP"],
-                  ["can_manage_training","Pełne treningi"],
-                  ["can_manage_training_attendance","Obecność treningowa"],
-                  ["can_manage_calendar","Kalendarz"],
-                  ["can_manage_news","Aktualności"],
-                  ["can_manage_players","Zawodnicy"]
-                ] as [keyof UserPermissions,string][]).map(([key,label])=><label key={key} className="v10-permission-check"><input type="checkbox" disabled={!isAdmin} checked={Boolean(permissionFor(account.id)[key])} onChange={e=>updatePermission(account.id,key,e.target.checked)}/><span>{label}</span></label>)}
-              </div>
-            </div>}
-            {account.role!=="parent"&&<p className="muted">To konto zachowuje pełne uprawnienia roli <strong>{account.role==="admin"?"Administrator":"Trener"}</strong>. Poniżej możesz niezależnie powiązać je z zawodnikiem.</p>}
-            
-            <h4 style={{marginTop:16}}>Powiązanie z zawodnikiem</h4>
-            {activePlayers.map(player=>{
-              const linked=parentLinks.some(x=>x.parent_id===account.id&&x.player_id===player.id);
-              return <label className="parent-check" key={player.id}>
-                <input type="checkbox" disabled={!isAdmin} checked={linked} onChange={e=>e.target.checked?addParentLink(account.id,player.id):removeParentLink(account.id,player.id)}/>
-                <span>{player.display_name}</span>
-              </label>;
+        <div className="space-y-2.5">
+          {allProfiles
+            .filter(account => {
+              const linksCount = parentLinks.filter(x => x.parent_id === account.id).length;
+              const isStaff = account.role === "admin" || account.role === "coach";
+              if (parentTabFilter === "unassigned") return linksCount === 0 && !isStaff;
+              if (parentTabFilter === "parents") return account.role === "parent";
+              if (parentTabFilter === "staff") return isStaff;
+              return true;
+            })
+            .map(account => {
+              const isExpanded = expandedParentId === account.id;
+              const linkedPlayerIds = parentLinks.filter(x => x.parent_id === account.id).map(x => x.player_id);
+              const linkedPlayers = players.filter(p => linkedPlayerIds.includes(p.id));
+              const isUnassigned = linkedPlayers.length === 0 && account.role !== "admin" && account.role !== "coach";
+              const userPerm = permissionFor(account.id);
+
+              return (
+                <div 
+                  key={account.id}
+                  className={`rounded-xl border transition overflow-hidden ${
+                    isUnassigned 
+                      ? "bg-amber-950/20 border-amber-500/40" 
+                      : isExpanded 
+                        ? "bg-slate-900/90 border-slate-700" 
+                        : "bg-slate-900/40 border-slate-800/80 hover:border-slate-700"
+                  }`}
+                >
+                  {/* Pasek podsumowania (kliknięcie rozwija/zwija) */}
+                  <div 
+                    className="p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none"
+                    onClick={() => setExpandedParentId(isExpanded ? null : account.id)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-black text-xs text-amber-400 shrink-0">
+                        {(account.display_name || "U")[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <strong className="text-xs text-white truncate">{account.display_name || "Użytkownik bez nazwy"}</strong>
+                          {account.id === props.currentUser.id && (
+                            <span className="text-[10px] bg-sky-950 text-sky-300 border border-sky-700 px-1.5 py-0.2 rounded font-bold">Ty</span>
+                          )}
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            account.role === "admin" ? "bg-amber-950 text-amber-300 border-amber-700" :
+                            account.role === "coach" ? "bg-emerald-950 text-emerald-300 border-emerald-700" :
+                            userPerm.role_label && userPerm.role_label !== "Rodzic" ? "bg-indigo-950 text-indigo-300 border-indigo-700" :
+                            "bg-slate-800 text-slate-300 border-slate-700"
+                          }`}>
+                            {account.role === "admin" ? "👑 Administrator" :
+                             account.role === "coach" ? "⚽ Trener" :
+                             userPerm.role_label || "Rodzic"}
+                          </span>
+                          {isUnassigned && (
+                            <span className="text-[10px] bg-amber-500 text-black px-2 py-0.5 rounded-full font-black animate-pulse">
+                              ⚠️ Nowo zalogowany / Brak przypisanego dziecka
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                          {linkedPlayers.length > 0 ? (
+                            <span>Przypisani zawodnicy: <b className="text-white">{linkedPlayers.map(p => p.display_name).join(", ")}</b></span>
+                          ) : (
+                            <span className="text-slate-500 italic">Brak przypisanego zawodnika</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[11px] text-slate-400 hidden sm:inline">
+                        {isExpanded ? "Zwiń" : "Edytuj uprawnienia & przypisanie"}
+                      </span>
+                      <div className="p-1 rounded bg-slate-800 text-slate-300">
+                        {isExpanded ? <ChevronDown size={14} className="rotate-180 transition" /> : <ChevronDown size={14} className="transition" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rozwinięte szczegóły */}
+                  {isExpanded && (
+                    <div className="p-4 border-t border-slate-800 bg-black/40 space-y-4 text-xs">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Zmiana roli systemowej */}
+                        <div className="space-y-2 p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                          <label className="block font-bold text-slate-300">
+                            Rola w systemie:
+                            <select
+                              value={account.role}
+                              disabled={!isAdmin}
+                              onChange={e => changeSystemRole(account.id, e.target.value as "parent" | "coach" | "admin")}
+                              className="w-full mt-1 p-2 bg-slate-900 text-sky-400 font-bold border border-slate-700 rounded-lg"
+                            >
+                              <option value="parent">Rodzic (standardowy profil)</option>
+                              <option value="coach">Trener (dostęp trenerski)</option>
+                              <option value="admin">Administrator (pełny dostęp do systemu)</option>
+                            </select>
+                          </label>
+
+                          {account.role === "parent" && (
+                            <div className="pt-2">
+                              <label className="block font-bold text-slate-300">
+                                Rola dodatkowa / etykieta:
+                                <select 
+                                  value={permissionFor(account.id).role_label} 
+                                  disabled={!isAdmin} 
+                                  onChange={e => updatePermission(account.id, "role_label", e.target.value)}
+                                  className="w-full mt-1 p-2 bg-slate-900 text-slate-200 border border-slate-700 rounded-lg"
+                                >
+                                  <option>Rodzic</option>
+                                  <option>Pomocnik strony</option>
+                                  <option>Pomocnik trenera</option>
+                                  <option>Statystyk</option>
+                                  <option>Koordynator</option>
+                                </select>
+                              </label>
+
+                              {isAdmin && (
+                                <div className="flex gap-2 mt-2.5">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setAssistantPreset(account.id, true)}
+                                    className="py-1 px-2.5 bg-sky-900/50 hover:bg-sky-800 border border-sky-700 text-sky-200 rounded font-bold"
+                                  >
+                                    + Pakiet Pomocnik strony
+                                  </button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setAssistantPreset(account.id, false)}
+                                    className="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded font-bold"
+                                  >
+                                    Cofnij pomocnika
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Przypisanie zawodników */}
+                        <div className="space-y-2 p-3 rounded-lg bg-slate-900/60 border border-slate-800">
+                          <strong className="block font-bold text-slate-300">
+                            Powiązani zawodnicy (zaznacz dzieci tego konta):
+                          </strong>
+                          <div className="max-h-[160px] overflow-y-auto space-y-1 p-1">
+                            {activePlayers.map(player => {
+                              const linked = parentLinks.some(x => x.parent_id === account.id && x.player_id === player.id);
+                              return (
+                                <label key={player.id} className="flex items-center gap-2 p-1 rounded hover:bg-slate-800/50 cursor-pointer text-slate-200">
+                                  <input 
+                                    type="checkbox" 
+                                    disabled={!isAdmin} 
+                                    checked={linked} 
+                                    onChange={e => e.target.checked ? addParentLink(account.id, player.id) : removeParentLink(account.id, player.id)}
+                                    className="rounded border-slate-700"
+                                  />
+                                  <span>{player.display_name} (#{player.shirt_number || "—"})</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Szczegółowe uprawnienia */}
+                      {account.role === "parent" && (
+                        <div className="p-3 rounded-lg bg-slate-900/40 border border-slate-800/80 space-y-2">
+                          <strong className="text-slate-300 block font-bold">Szczegółowe uprawnienia w aplikacji:</strong>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {([
+                              ["can_manage_matches", "Mecze i składy"],
+                              ["can_edit_match_events", "Gole / asysty / MVP"],
+                              ["can_manage_training", "Pełne treningi"],
+                              ["can_manage_training_attendance", "Obecność treningowa"],
+                              ["can_manage_calendar", "Kalendarz"],
+                              ["can_manage_news", "Aktualności"],
+                              ["can_manage_players", "Zawodnicy"]
+                            ] as [keyof UserPermissions, string][]).map(([key, label]) => (
+                              <label key={key} className="flex items-center gap-2 p-1 text-slate-300 cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  disabled={!isAdmin} 
+                                  checked={Boolean(permissionFor(account.id)[key])} 
+                                  onChange={e => updatePermission(account.id, key, e.target.checked)}
+                                  className="rounded border-slate-700"
+                                />
+                                <span>{label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
             })}
-          </div>)}
-          {!parentCandidates.length&&<p>Brak zalogowanych użytkowników do przypisania.</p>}
         </div>
       </section>}
 
@@ -1750,6 +2100,44 @@ export default function AdminPanel(props:{
               >
                 <Coins size={15} /> {grantingPoints ? "Zapisywanie..." : "Dodaj punkty DP"}
               </button>
+
+              <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetCustomPoints(grantPointsUserId)}
+                  disabled={grantingPoints}
+                  className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-amber-500/20"
+                >
+                  Ustaw dokładną liczbę DP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRecalculateUserPoints(grantPointsUserId)}
+                  disabled={grantingPoints}
+                  className="flex-1 py-1.5 px-3 rounded-lg bg-sky-950/70 hover:bg-sky-900 text-sky-300 font-bold text-xs border border-sky-500/30"
+                >
+                  ⚡ Przelicz ze statystyk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleResetPoints(grantPointsUserId)}
+                  disabled={grantingPoints}
+                  className="py-1.5 px-3 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-300 font-bold text-xs border border-red-500/30"
+                >
+                  Reset do 0
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleRecalculateAllPoints}
+                  disabled={grantingPoints}
+                  className="w-full py-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 font-bold text-xs border border-emerald-500/30 flex items-center justify-center gap-1.5"
+                >
+                  <span>🔄 Przelicz i zsynchronizuj DP wszystkim kontom</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
