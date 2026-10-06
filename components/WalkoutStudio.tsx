@@ -176,8 +176,15 @@ const DEFAULT_SETTINGS: WalkoutSettings = {
 
 const VIDEO_PRESETS = [
   { id: "inferno", name: "🔥 Piekielny Tunel (Inferno MP4)", src: "/media/walkouts/inferno-bg.mp4" },
-  { id: "stadium", name: "🏟️ Nocny Stadion DELTA", src: "/assets/stadium.png" },
-  { id: "broadcast", name: "✨ Transmisja Studio Gold", src: "/assets/stadium-broadcast-v103.png" },
+  { id: "video_1", name: "⚡ Walkout 1 (Błysk & Tunel)", src: "/media/walkouts/gemini_generated_video_0cb968a2.mp4" },
+  { id: "video_2", name: "🌟 Walkout 2 (Złota Arena)", src: "/media/walkouts/gemini_generated_video_15f3538b.mp4" },
+  { id: "video_3", name: "💥 Walkout 3 (Płomienie & Reflektory)", src: "/media/walkouts/gemini_generated_video_37e13dfb.mp4" },
+  { id: "video_4", name: "🎆 Walkout 4 (Epicki Portal)", src: "/media/walkouts/gemini_generated_video_ca0c0f50.mp4" },
+  { id: "video_5", name: "🏟️ Walkout 5 (Nocny Stadion Delta)", src: "/media/walkouts/gemini_generated_video_dd3ce74b.mp4" },
+  { id: "video_6", name: "💎 Walkout 6 (Diamentowa Aura)", src: "/media/walkouts/gemini_generated_video_f3975be6.mp4" },
+  { id: "video_7", name: "👑 Walkout 7 (Legendarna Korona)", src: "/media/walkouts/gemini_generated_video_f8c08d08.mp4" },
+  { id: "stadium", name: "🏟️ Nocny Stadion DELTA (Obraz)", src: "/assets/stadium.png" },
+  { id: "broadcast", name: "✨ Transmisja Studio Gold (Obraz)", src: "/assets/stadium-broadcast-v103.png" },
 ];
 
 export default function WalkoutStudio(props: {
