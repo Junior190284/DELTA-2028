@@ -1926,53 +1926,53 @@ export default function AdminPanel(props:{
         </div>
 
         {/* SUB-TAB NAVIGATION */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-md flex-wrap shadow-inner">
           <button
             type="button"
             onClick={() => setCardsSubTab("editor")}
-            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               cardsSubTab === "editor"
-                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg"
-                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-md shadow-amber-500/20 font-black"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
           >
-            <Sliders size={14} /> 🎨 Wizualny Edytor Kart (Layout)
+            <Sliders size={14} /> 🎨 Edytor Kart (Layout)
           </button>
 
           <button
             type="button"
             onClick={() => setCardsSubTab("walkout")}
-            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               cardsSubTab === "walkout"
-                ? "bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400 text-black shadow-lg"
-                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                ? "bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400 text-black shadow-md shadow-red-500/20 font-black"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
           >
-            <Film size={14} /> 🎬 Studio Walkoutów & Filmów
+            <Film size={14} /> 🎬 Studio Walkoutów (Wideo)
           </button>
 
           <button
             type="button"
             onClick={() => setCardsSubTab("grant")}
-            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               cardsSubTab === "grant"
-                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg"
-                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-md shadow-amber-500/20 font-black"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
           >
-            <Gift size={14} /> 🎁 Przyznaj Paczki & Punkty DP
+            <Gift size={14} /> 🎁 Przyznaj Paczki & DP
           </button>
 
           <button
             type="button"
             onClick={() => setCardsSubTab("manage")}
-            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
               cardsSubTab === "manage"
-                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-lg"
-                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-md shadow-amber-500/20 font-black"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
           >
-            <Trash2 size={14} /> 🗑️ Zarządzanie Kolekcjami
+            <Trash2 size={14} /> 🗑️ Klaser Użytkowników
           </button>
         </div>
 

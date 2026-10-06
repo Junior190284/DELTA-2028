@@ -24,11 +24,11 @@ import {
   FileVideo,
   Clock,
   Sliders,
-  CheckSquare,
-  Square,
   Zap,
-  Trash2,
-  Plus
+  Film,
+  User,
+  Shield,
+  Award
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
@@ -52,7 +52,7 @@ function isVideoSource(src: string): boolean {
 }
 
 function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) return "00:00";
+  if (isNaN(seconds) || seconds < 0) return "00:00.0";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 10);
@@ -69,9 +69,9 @@ interface Player {
 
 export interface LayerTiming {
   enabled: boolean;
-  startTime: number; // w sekundach (moment pojawienia się)
-  endTime: number;   // w sekundach (moment zniknięcia)
-  stayUntilEnd: boolean; // czy ma pozostać do końca filmu
+  startTime: number;
+  endTime: number;
+  stayUntilEnd: boolean;
 }
 
 export interface WalkoutTimelineConfig {
@@ -81,7 +81,7 @@ export interface WalkoutTimelineConfig {
   hero: LayerTiming;
   flash: {
     enabled: boolean;
-    time: number; // moment błysku
+    time: number;
   };
 }
 
@@ -91,19 +91,19 @@ export interface WalkoutSettings {
   rarity: {
     text: string;
     subtext: string;
-    x: number; // percentage offset
-    y: number; // percentage offset
+    x: number;
+    y: number;
     scale: number;
   };
   player: {
-    x: number; // percentage offset
-    y: number; // percentage offset
+    x: number;
+    y: number;
     scale: number;
     customCutoutUrl?: string;
   };
   card: {
-    x: number; // percentage offset
-    y: number; // pixel offset
+    x: number;
+    y: number;
     scale: number;
     customCardUrl?: string;
   };
@@ -175,16 +175,15 @@ const DEFAULT_SETTINGS: WalkoutSettings = {
 };
 
 const VIDEO_PRESETS = [
-  { id: "inferno", name: "🔥 Piekielny Tunel (Inferno MP4)", src: "/media/walkouts/inferno-bg.mp4" },
-  { id: "video_1", name: "⚡ Walkout 1 (Błysk & Tunel)", src: "/media/walkouts/gemini_generated_video_0cb968a2.mp4" },
-  { id: "video_2", name: "🌟 Walkout 2 (Złota Arena)", src: "/media/walkouts/gemini_generated_video_15f3538b.mp4" },
-  { id: "video_3", name: "💥 Walkout 3 (Płomienie & Reflektory)", src: "/media/walkouts/gemini_generated_video_37e13dfb.mp4" },
-  { id: "video_4", name: "🎆 Walkout 4 (Epicki Portal)", src: "/media/walkouts/gemini_generated_video_ca0c0f50.mp4" },
-  { id: "video_5", name: "🏟️ Walkout 5 (Nocny Stadion Delta)", src: "/media/walkouts/gemini_generated_video_dd3ce74b.mp4" },
-  { id: "video_6", name: "💎 Walkout 6 (Diamentowa Aura)", src: "/media/walkouts/gemini_generated_video_f3975be6.mp4" },
-  { id: "video_7", name: "👑 Walkout 7 (Legendarna Korona)", src: "/media/walkouts/gemini_generated_video_f8c08d08.mp4" },
-  { id: "stadium", name: "🏟️ Nocny Stadion DELTA (Obraz)", src: "/assets/stadium.png" },
-  { id: "broadcast", name: "✨ Transmisja Studio Gold (Obraz)", src: "/assets/stadium-broadcast-v103.png" },
+  { id: "inferno", name: "🔥 Piekielny Tunel (Inferno)", desc: "Karty Inferno & Płomienie", src: "/media/walkouts/inferno-bg.mp4" },
+  { id: "video_1", name: "⚡ Walkout 1 (Błysk & Tunel)", desc: "Przelot wstępny / Teaser", src: "/media/walkouts/gemini_generated_video_0cb968a2.mp4" },
+  { id: "video_2", name: "🌟 Walkout 2 (Złota Arena)", desc: "Karty Złote & Rzadkie", src: "/media/walkouts/gemini_generated_video_15f3538b.mp4" },
+  { id: "video_3", name: "💥 Walkout 3 (Płomienie & Show)", desc: "Hat-Trick Hero & Goal Hunter", src: "/media/walkouts/gemini_generated_video_37e13dfb.mp4" },
+  { id: "video_4", name: "🎆 Walkout 4 (Epicki Portal)", desc: "Karty Epickie (Epic Tier)", src: "/media/walkouts/gemini_generated_video_ca0c0f50.mp4" },
+  { id: "video_5", name: "🏟️ Walkout 5 (Stadion Delta)", desc: "Karty Matchday Booster", src: "/media/walkouts/gemini_generated_video_dd3ce74b.mp4" },
+  { id: "video_6", name: "💎 Walkout 6 (Diamentowa Aura)", desc: "Karty MVP & Special Event", src: "/media/walkouts/gemini_generated_video_f3975be6.mp4" },
+  { id: "video_7", name: "👑 Walkout 7 (Legendarna Korona)", desc: "Karty Legend & Ikony", src: "/media/walkouts/gemini_generated_video_f8c08d08.mp4" },
+  { id: "stadium", name: "🏟️ Nocny Stadion DELTA (Obraz)", desc: "Tło statyczne HD", src: "/assets/stadium.png" },
 ];
 
 export default function WalkoutStudio(props: {
@@ -194,6 +193,9 @@ export default function WalkoutStudio(props: {
   const players = props.players || [];
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>(players[0]?.id || "");
   
+  // Sidebar Sub-tab
+  const [sidebarTab, setSidebarTab] = useState<"timeline" | "position" | "video" | "player">("timeline");
+
   const [settings, setSettings] = useState<WalkoutSettings>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -203,41 +205,8 @@ export default function WalkoutStudio(props: {
           if (parsed.videoSrc && parsed.videoSrc.startsWith("blob:")) {
             parsed.videoSrc = DEFAULT_SETTINGS.videoSrc;
           }
-          // Backwards compatibility migration for timeline
           const baseTimeline = DEFAULT_SETTINGS.timeline;
           let loadedTimeline = parsed.timeline || {};
-          if (parsed.sequence && !parsed.timeline) {
-            loadedTimeline = {
-              rarity: {
-                enabled: parsed.sequence.enableRarity ?? true,
-                startTime: 2.5,
-                endTime: 5.5,
-                stayUntilEnd: false
-              },
-              player: {
-                enabled: parsed.sequence.enablePlayer ?? true,
-                startTime: 5.0,
-                endTime: 8.0,
-                stayUntilEnd: false
-              },
-              card: {
-                enabled: parsed.sequence.enableCard ?? true,
-                startTime: parsed.sequence.enablePlayer ? 7.5 : 5.5,
-                endTime: 15.0,
-                stayUntilEnd: true
-              },
-              hero: {
-                enabled: parsed.sequence.enableHero ?? true,
-                startTime: parsed.sequence.enablePlayer ? 9.0 : 7.5,
-                endTime: 15.0,
-                stayUntilEnd: true
-              },
-              flash: {
-                enabled: true,
-                time: parsed.sequence.enablePlayer ? 7.5 : 5.5
-              }
-            };
-          }
           return {
             ...DEFAULT_SETTINGS,
             ...parsed,
@@ -272,7 +241,7 @@ export default function WalkoutStudio(props: {
     }
   }, [activePlayer]);
 
-  const [activeLayer, setActiveLayer] = useState<"rarity" | "player" | "card" | "hero">("card");
+  const [activeLayer, setActiveLayer] = useState<"rarity" | "player" | "card">("card");
   const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [volume, setVolume] = useState<number>(0.8);
@@ -310,10 +279,7 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // The active time to evaluate overlay visibility:
   const activePlayTime = videoCurrentTime;
-
-  // Real-time visibility checks according to exact user-defined timestamps:
   const tl = settings.timeline;
   
   const isRarityVisible = !hideOverlays && tl.rarity.enabled && (
@@ -332,7 +298,7 @@ export default function WalkoutStudio(props: {
     activePlayTime >= tl.hero.startTime && (tl.hero.stayUntilEnd || activePlayTime <= tl.hero.endTime)
   );
 
-  // Auto Flash Trigger during playback
+  // Flash trigger
   const lastFlashTimeRef = useRef<number>(-1);
   useEffect(() => {
     if (tl.flash.enabled && isVideoPlaying) {
@@ -359,7 +325,6 @@ export default function WalkoutStudio(props: {
       videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
     }
 
-    // Schedule flash if enabled
     if (tl.flash.enabled && tl.flash.time > 0) {
       timerRef.current.push(
         setTimeout(() => {
@@ -384,7 +349,6 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Video Manual Playback Controls
   const togglePlayPause = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
@@ -443,26 +407,22 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Presets
   const applyTimelinePreset = (type: "skip_player" | "full" | "instant_card") => {
     setSettings(prev => {
       let nextTl = { ...prev.timeline };
       if (type === "skip_player") {
-        // Karta od razu po napisie! (Rarity: 2.0s - 4.5s ➔ Flash & Karta: 4.5s ➔ Hero: 6.5s)
         nextTl.rarity = { enabled: true, startTime: 2.0, endTime: 4.5, stayUntilEnd: false };
-        nextTl.player = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false }; // ODZNACZONY GRACZ!
+        nextTl.player = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false };
         nextTl.card = { enabled: true, startTime: 4.5, endTime: 15.0, stayUntilEnd: true };
         nextTl.hero = { enabled: true, startTime: 6.5, endTime: 15.0, stayUntilEnd: true };
         nextTl.flash = { enabled: true, time: 4.5 };
       } else if (type === "full") {
-        // Pełny pokaz (Rarity: 2.5s - 5.5s ➔ Gracz: 5.0s - 8.0s ➔ Karta: 7.5s ➔ Hero: 9.0s)
         nextTl.rarity = { enabled: true, startTime: 2.5, endTime: 5.5, stayUntilEnd: false };
         nextTl.player = { enabled: true, startTime: 5.0, endTime: 8.0, stayUntilEnd: false };
         nextTl.card = { enabled: true, startTime: 7.5, endTime: 15.0, stayUntilEnd: true };
         nextTl.hero = { enabled: true, startTime: 9.0, endTime: 15.0, stayUntilEnd: true };
         nextTl.flash = { enabled: true, time: 7.5 };
       } else if (type === "instant_card") {
-        // Błyskawiczna Karta (Tylko tło wideo i od razu karta od 1.5s)
         nextTl.rarity = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false };
         nextTl.player = { enabled: false, startTime: 0, endTime: 0, stayUntilEnd: false };
         nextTl.card = { enabled: true, startTime: 1.5, endTime: 15.0, stayUntilEnd: true };
@@ -473,7 +433,6 @@ export default function WalkoutStudio(props: {
     });
   };
 
-  // Layer Timing Setters
   const updateLayerTiming = (layerKey: keyof Omit<WalkoutTimelineConfig, "flash">, field: keyof LayerTiming, val: any) => {
     setSettings(prev => ({
       ...prev,
@@ -487,13 +446,12 @@ export default function WalkoutStudio(props: {
     }));
   };
 
-  // Helper to set current video timestamp to start/end time
   const setTimeToCurrent = (layerKey: keyof Omit<WalkoutTimelineConfig, "flash">, field: "startTime" | "endTime") => {
     const rounded = Math.round(videoCurrentTime * 10) / 10;
     updateLayerTiming(layerKey, field, rounded);
   };
 
-  // Drag and Drop interaction on viewport
+  // Drag and Drop
   const handlePointerDown = (e: React.PointerEvent) => {
     if (hideOverlays) return;
     e.preventDefault();
@@ -555,7 +513,6 @@ export default function WalkoutStudio(props: {
     } catch {}
   };
 
-  // Save Settings
   const handleSave = () => {
     try {
       localStorage.setItem("delta_walkout_studio_settings", JSON.stringify(settings));
@@ -587,7 +544,6 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Video Upload
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -627,7 +583,6 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Cutout Upload
   const handleCutoutUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -635,7 +590,6 @@ export default function WalkoutStudio(props: {
     setSettings(prev => ({ ...prev, player: { ...prev.player, customCutoutUrl: url } }));
   };
 
-  // Card Upload
   const handleCardUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -649,15 +603,15 @@ export default function WalkoutStudio(props: {
       <div className="ws-topbar">
         <div className="ws-brand-group">
           <div className="ws-icon-badge">
-            <Flame size={22} />
+            <Flame size={20} />
           </div>
           <div>
-            <h2 className="ws-title">
-              Studio Walkoutów & Oś Czasu DELTA
-              <span className="ws-pro-tag">PRO TIMELINE</span>
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="ws-title">Studio Walkoutów & Animacji DELTA</h2>
+              <span className="ws-pro-tag">HD STUDIO</span>
+            </div>
             <p className="ws-subtitle">
-              Precyzyjnie wpisuj sekundy pojawiania się i znikania każdego elementu lub usuwaj elementy ze sceny jednym kliknięciem.
+              Konfiguruj filmy tła, pozycje 3D oraz precyzyjne czasy wejścia i wyjścia elementów w animacji.
             </p>
           </div>
         </div>
@@ -667,7 +621,7 @@ export default function WalkoutStudio(props: {
             type="button" 
             onClick={() => setHideOverlays(!hideOverlays)} 
             className={`ws-btn-ghost ${hideOverlays ? "ws-btn-active-toggle" : ""}`}
-            title="Ukryj lub pokaż elementy graficzne"
+            title="Ukryj/Pokaż nakładki"
           >
             {hideOverlays ? <EyeOff size={14} className="text-amber-400" /> : <Eye size={14} />}
             <span>{hideOverlays ? "Tylko wideo (Czysty film)" : "Wszystkie warstwy"}</span>
@@ -736,7 +690,7 @@ export default function WalkoutStudio(props: {
             {/* FLASH EFFECT */}
             {isFlash && <div className="ws-flash" />}
 
-            {/* 1. WARSTWA NAPISÓW (RARITY) - DOKŁADNE SPRAWDZENIE CZASU */}
+            {/* 1. WARSTWA NAPISÓW (RARITY) */}
             {isRarityVisible && (
               <div 
                 className={`ws-rarity-layer ${activeLayer === "rarity" ? "is-active" : ""}`}
@@ -753,7 +707,7 @@ export default function WalkoutStudio(props: {
               </div>
             )}
 
-            {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) - DOKŁADNE SPRAWDZENIE CZASU */}
+            {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) */}
             {isPlayerVisible && (
               <div 
                 className={`ws-player-layer ${activeLayer === "player" ? "is-active" : ""}`}
@@ -784,7 +738,7 @@ export default function WalkoutStudio(props: {
               </div>
             )}
 
-            {/* 3. WARSTWA KARTY 3D - DOKŁADNE SPRAWDZENIE CZASU */}
+            {/* 3. WARSTWA KARTY 3D */}
             {isCardVisible && (
               <div 
                 className={`ws-card-layer ${activeLayer === "card" ? "is-active" : ""}`}
@@ -813,7 +767,7 @@ export default function WalkoutStudio(props: {
               </div>
             )}
 
-            {/* 4. DOLNE SZCZEGÓŁY HERO - DOKŁADNE SPRAWDZENIE CZASU */}
+            {/* 4. DOLNE SZCZEGÓŁY HERO */}
             {isHeroVisible && (
               <div className="ws-hero-layer">
                 <div className="ws-hero-badge">
@@ -836,7 +790,7 @@ export default function WalkoutStudio(props: {
             {!hideOverlays && (
               <div className="ws-drag-indicator">
                 <Move size={14} />
-                <span>Aktywna warstwa do przeciągania: <b>{activeLayer === "card" ? "Karta 3D" : activeLayer === "player" ? "Zawodnik" : activeLayer === "rarity" ? "Napisy" : "Hero"}</b></span>
+                <span>Aktywna warstwa (przeciągaj myszką): <b>{activeLayer === "card" ? "Karta 3D" : activeLayer === "player" ? "Zawodnik" : "Napisy"}</b></span>
               </div>
             )}
 
@@ -863,7 +817,6 @@ export default function WalkoutStudio(props: {
               <span className="ws-current-sec-tag">{videoCurrentTime.toFixed(1)}s</span>
             </div>
 
-            {/* ŚCIEŻKI CZASOWE DLA KAŻDEJ WARSTWY */}
             <div className="ws-tracks-container">
               {/* Ścieżka 1: Napisy */}
               <div className="ws-track-row" onClick={() => jumpToSecond(tl.rarity.startTime)}>
@@ -927,7 +880,7 @@ export default function WalkoutStudio(props: {
 
               {/* Ścieżka 4: Hero */}
               <div className="ws-track-row" onClick={() => jumpToSecond(tl.hero.startTime)}>
-                <span className="ws-track-label text-emerald-400">🏆 Pasek Hero</span>
+                <span className="ws-track-label text-emerald-400">🏆 Hero</span>
                 <div className="ws-track-lane">
                   {tl.hero.enabled ? (
                     <div 
@@ -945,7 +898,7 @@ export default function WalkoutStudio(props: {
                 </div>
               </div>
 
-              {/* Linia głowicy odtwarzania (Playhead Cursor) */}
+              {/* Linia głowicy odtwarzania */}
               <div 
                 className="ws-playhead-line"
                 style={{
@@ -957,7 +910,7 @@ export default function WalkoutStudio(props: {
 
           {/* DEDYKOWANY ODTWARZACZ WIDEO ZE SCRUBBEREM */}
           <div className="ws-video-controls-bar">
-            {/* GÓRNY WIERSZ: SUWAK CZASU (SCRUBBER) */}
+            {/* GÓRNY WIERSZ: SUWAK CZASU */}
             <div className="ws-scrubber-row">
               <span className="ws-scrubber-time">{formatTime(videoCurrentTime)}</span>
               <input
@@ -974,7 +927,6 @@ export default function WalkoutStudio(props: {
 
             {/* DOLNY WIERSZ: PRZYCISKI KONTROLNE */}
             <div className="ws-controls-main-row">
-              {/* LEWA STRONA: PLAY/PAUSE, RESTART, ODTWÓRZ WALKOUT */}
               <div className="ws-controls-group">
                 <button
                   type="button"
@@ -1009,7 +961,7 @@ export default function WalkoutStudio(props: {
                 </button>
               </div>
 
-              {/* ŚRODEK: SZYBKIE SKOKI DO CZASÓW WARSTW */}
+              {/* SKOKI DO MOMENTÓW */}
               <div className="ws-stages-row">
                 <span className="ws-stages-label">Skocz:</span>
                 {tl.rarity.enabled && (
@@ -1050,7 +1002,7 @@ export default function WalkoutStudio(props: {
                 )}
               </div>
 
-              {/* PRAWA STRONA: PRĘDKOŚĆ, PĘTLA, DŹWIĘK */}
+              {/* DŹWIĘK I PRĘDKOŚĆ */}
               <div className="ws-controls-group">
                 <div className="ws-speed-select-box">
                   {[0.5, 1.0, 1.5, 2.0].map(s => (
@@ -1097,453 +1049,698 @@ export default function WalkoutStudio(props: {
           </div>
         </div>
 
-        {/* PRAWA KOLUMNA: DOKŁADNE CZASY ORAZ POZYCJE WARSTW */}
+        {/* PRAWA KOLUMNA: BOCZNE MENU ZAKŁADEK */}
         <div className="ws-sidebar">
 
-          {/* GŁÓWNY PANEL ZARZĄDZANIA CZASEM I WARSTWAMI */}
-          <div className="ws-panel-box ws-box-sequence">
-            <div className="ws-panel-head">
-              <span className="ws-box-heading purple">
-                <Zap size={16} /> Czasy Pojawiania się & Znikania
-              </span>
-            </div>
+          {/* NAWIGACJA ZAKŁADEK PANELU BOCZNEGO */}
+          <div className="ws-sidebar-nav">
+            <button
+              type="button"
+              onClick={() => setSidebarTab("timeline")}
+              className={`ws-sidebar-nav-btn ${sidebarTab === "timeline" ? "active-purple" : ""}`}
+            >
+              <Clock size={15} />
+              <span>Oś Czasu</span>
+            </button>
 
-            {/* PRESETY */}
-            <div className="ws-preset-chips-row">
-              <button
-                type="button"
-                onClick={() => applyTimelinePreset("skip_player")}
-                className={`ws-preset-chip ${!tl.player.enabled && tl.rarity.enabled && tl.card.enabled ? "active" : ""}`}
-                title="Karta pojawia się od razu po zniknięciu napisu (odznaczony gracz)"
-              >
-                ⚡ Karta od razu po napisie
-              </button>
-              <button
-                type="button"
-                onClick={() => applyTimelinePreset("full")}
-                className={`ws-preset-chip ${tl.player.enabled && tl.rarity.enabled && tl.card.enabled ? "active" : ""}`}
-                title="Pełny kinowy pokaz"
-              >
-                👑 Pełny Walkout
-              </button>
-              <button
-                type="button"
-                onClick={() => applyTimelinePreset("instant_card")}
-                className={`ws-preset-chip ${!tl.rarity.enabled && !tl.player.enabled && tl.card.enabled ? "active" : ""}`}
-                title="Błyskawiczna karta"
-              >
-                🚀 Błyskawiczny
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("position")}
+              className={`ws-sidebar-nav-btn ${sidebarTab === "position" ? "active-amber" : ""}`}
+            >
+              <Sliders size={15} />
+              <span>Pozycje & Skala</span>
+            </button>
 
-            {/* KONTROLKI CZASOWE DLA KAŻDEJ WARSTWY */}
-            <div className="ws-layer-timing-cards">
+            <button
+              type="button"
+              onClick={() => setSidebarTab("video")}
+              className={`ws-sidebar-nav-btn ${sidebarTab === "video" ? "active-blue" : ""}`}
+            >
+              <Film size={15} />
+              <span>Filmy Wideo ({VIDEO_PRESETS.length})</span>
+            </button>
 
-              {/* 1. NAPISY RZADKOŚCI */}
-              <div className={`ws-timing-card ${tl.rarity.enabled ? "is-on" : "is-off"}`}>
-                <div className="ws-timing-card-head">
-                  <label className="ws-timing-toggle">
-                    <input
-                      type="checkbox"
-                      checked={tl.rarity.enabled}
-                      onChange={e => updateLayerTiming("rarity", "enabled", e.target.checked)}
-                      className="ws-checkbox-custom"
-                    />
-                    <span className="ws-timing-name text-red-400">1. Napisy Rzadkości (INFERNO)</span>
-                  </label>
-                  <span className="ws-timing-badge">{tl.rarity.enabled ? "Aktywny" : "USUNIĘTY"}</span>
-                </div>
-
-                {tl.rarity.enabled && (
-                  <div className="ws-timing-controls-grid">
-                    <div className="ws-time-input-group">
-                      <label>Pojawia się w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          value={tl.rarity.startTime}
-                          onChange={e => updateLayerTiming("rarity", "startTime", parseFloat(e.target.value) || 0)}
-                          className="ws-input-time"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                        <button
-                          type="button"
-                          onClick={() => setTimeToCurrent("rarity", "startTime")}
-                          className="ws-btn-time-now"
-                          title="Ustaw aktualny moment filmu"
-                        >
-                          Bieżący ({videoCurrentTime.toFixed(1)}s)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="ws-time-input-group">
-                      <label>Znika w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          disabled={tl.rarity.stayUntilEnd}
-                          value={tl.rarity.stayUntilEnd ? "" : tl.rarity.endTime}
-                          placeholder={tl.rarity.stayUntilEnd ? "Do końca" : "6.0"}
-                          onChange={e => updateLayerTiming("rarity", "endTime", parseFloat(e.target.value) || 0)}
-                          className="ws-input-time"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                        <button
-                          type="button"
-                          onClick={() => setTimeToCurrent("rarity", "endTime")}
-                          className="ws-btn-time-now"
-                          title="Ustaw aktualny moment filmu"
-                        >
-                          Bieżący ({videoCurrentTime.toFixed(1)}s)
-                        </button>
-                      </div>
-                      <label className="ws-sub-check">
-                        <input
-                          type="checkbox"
-                          checked={tl.rarity.stayUntilEnd}
-                          onChange={e => updateLayerTiming("rarity", "stayUntilEnd", e.target.checked)}
-                        />
-                        <span>Widoczny do samego końca filmu</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 2. SYLWETKA ZAWODNIKA */}
-              <div className={`ws-timing-card ${tl.player.enabled ? "is-on" : "is-off border-amber-500/40"}`}>
-                <div className="ws-timing-card-head">
-                  <label className="ws-timing-toggle">
-                    <input
-                      type="checkbox"
-                      checked={tl.player.enabled}
-                      onChange={e => updateLayerTiming("player", "enabled", e.target.checked)}
-                      className="ws-checkbox-custom"
-                    />
-                    <span className="ws-timing-name text-sky-400">2. Sylwetka Zawodnika</span>
-                  </label>
-                  <span className={`ws-timing-badge ${tl.player.enabled ? "" : "text-amber-400 bg-amber-500/20"}`}>
-                    {tl.player.enabled ? "Aktywny" : "USUNIĘTY (Karta od razu po napisie)"}
-                  </span>
-                </div>
-
-                {tl.player.enabled ? (
-                  <div className="ws-timing-controls-grid">
-                    <div className="ws-time-input-group">
-                      <label>Pojawia się w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          value={tl.player.startTime}
-                          onChange={e => updateLayerTiming("player", "startTime", parseFloat(e.target.value) || 0)}
-                          className="ws-input-time"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                        <button
-                          type="button"
-                          onClick={() => setTimeToCurrent("player", "startTime")}
-                          className="ws-btn-time-now"
-                          title="Ustaw aktualny moment filmu"
-                        >
-                          Bieżący ({videoCurrentTime.toFixed(1)}s)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="ws-time-input-group">
-                      <label>Znika w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          disabled={tl.player.stayUntilEnd}
-                          value={tl.player.stayUntilEnd ? "" : tl.player.endTime}
-                          placeholder={tl.player.stayUntilEnd ? "Do końca" : "8.0"}
-                          onChange={e => updateLayerTiming("player", "endTime", parseFloat(e.target.value) || 0)}
-                          className="ws-input-time"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                        <button
-                          type="button"
-                          onClick={() => setTimeToCurrent("player", "endTime")}
-                          className="ws-btn-time-now"
-                          title="Ustaw aktualny moment filmu"
-                        >
-                          Bieżący ({videoCurrentTime.toFixed(1)}s)
-                        </button>
-                      </div>
-                      <label className="ws-sub-check">
-                        <input
-                          type="checkbox"
-                          checked={tl.player.stayUntilEnd}
-                          onChange={e => updateLayerTiming("player", "stayUntilEnd", e.target.checked)}
-                        />
-                        <span>Widoczny do samego końca filmu</span>
-                      </label>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="ws-timing-disabled-hint">
-                    Odznaczone – zawodnik został wyłączony. Karta pojawi się bezpośrednio w wyznaczonym poniżej czasie!
-                  </div>
-                )}
-              </div>
-
-              {/* 3. KARTA 3D */}
-              <div className={`ws-timing-card ${tl.card.enabled ? "is-on" : "is-off"}`}>
-                <div className="ws-timing-card-head">
-                  <label className="ws-timing-toggle">
-                    <input
-                      type="checkbox"
-                      checked={tl.card.enabled}
-                      onChange={e => updateLayerTiming("card", "enabled", e.target.checked)}
-                      className="ws-checkbox-custom"
-                    />
-                    <span className="ws-timing-name text-amber-400">3. Karta 3D (Drop & Flash)</span>
-                  </label>
-                  <span className="ws-timing-badge">{tl.card.enabled ? "Aktywny" : "USUNIĘTY"}</span>
-                </div>
-
-                {tl.card.enabled && (
-                  <div className="ws-timing-controls-grid">
-                    <div className="ws-time-input-group">
-                      <label>Pojawia się w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          value={tl.card.startTime}
-                          onChange={e => {
-                            const val = parseFloat(e.target.value) || 0;
-                            updateLayerTiming("card", "startTime", val);
-                            setSettings(prev => ({ ...prev, timeline: { ...prev.timeline, flash: { ...prev.timeline.flash, time: val } } }));
-                          }}
-                          className="ws-input-time font-bold text-amber-400"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTimeToCurrent("card", "startTime");
-                            setSettings(prev => ({ ...prev, timeline: { ...prev.timeline, flash: { ...prev.timeline.flash, time: Math.round(videoCurrentTime * 10) / 10 } } }));
-                          }}
-                          className="ws-btn-time-now"
-                          title="Ustaw aktualny moment filmu"
-                        >
-                          Bieżący ({videoCurrentTime.toFixed(1)}s)
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="ws-time-input-group">
-                      <label>Znika w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          disabled={tl.card.stayUntilEnd}
-                          value={tl.card.stayUntilEnd ? "" : tl.card.endTime}
-                          placeholder={tl.card.stayUntilEnd ? "Do końca filmu" : "15.0"}
-                          onChange={e => updateLayerTiming("card", "endTime", parseFloat(e.target.value) || 0)}
-                          className="ws-input-time"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                      </div>
-                      <label className="ws-sub-check">
-                        <input
-                          type="checkbox"
-                          checked={tl.card.stayUntilEnd}
-                          onChange={e => updateLayerTiming("card", "stayUntilEnd", e.target.checked)}
-                        />
-                        <span>Widoczna do samego końca filmu (Zalecane)</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 4. PASEK HERO */}
-              <div className={`ws-timing-card ${tl.hero.enabled ? "is-on" : "is-off"}`}>
-                <div className="ws-timing-card-head">
-                  <label className="ws-timing-toggle">
-                    <input
-                      type="checkbox"
-                      checked={tl.hero.enabled}
-                      onChange={e => updateLayerTiming("hero", "enabled", e.target.checked)}
-                      className="ws-checkbox-custom"
-                    />
-                    <span className="ws-timing-name text-emerald-400">4. Pasek Hero (Rating & Klub)</span>
-                  </label>
-                  <span className="ws-timing-badge">{tl.hero.enabled ? "Aktywny" : "USUNIĘTY"}</span>
-                </div>
-
-                {tl.hero.enabled && (
-                  <div className="ws-timing-controls-grid">
-                    <div className="ws-time-input-group">
-                      <label>Pojawia się w sek:</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step={0.1}
-                          min={0}
-                          max={30}
-                          value={tl.hero.startTime}
-                          onChange={e => updateLayerTiming("hero", "startTime", parseFloat(e.target.value) || 0)}
-                          className="ws-input-time"
-                        />
-                        <span className="text-xs text-slate-400">s</span>
-                        <button
-                          type="button"
-                          onClick={() => setTimeToCurrent("hero", "startTime")}
-                          className="ws-btn-time-now"
-                          title="Ustaw aktualny moment filmu"
-                        >
-                          Bieżący ({videoCurrentTime.toFixed(1)}s)
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </div>
-          </div>
-          
-          {/* WYBÓR WARSTWY DO REGULACJI POZYCJI X/Y/SCALE */}
-          <div className="ws-panel-box">
-            <span className="ws-panel-title">Wybierz warstwę do przesunięcia myszką / suwakami:</span>
-            <div className="ws-layers-tabs">
-              <button
-                type="button"
-                onClick={() => setActiveLayer("card")}
-                className={`ws-layer-tab ${activeLayer === "card" ? "active-gold" : ""}`}
-              >
-                <Sparkles size={16} />
-                <span>Karta 3D</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveLayer("player")}
-                className={`ws-layer-tab ${activeLayer === "player" ? "active-sky" : ""}`}
-              >
-                <Layers size={16} />
-                <span>Zawodnik</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveLayer("rarity")}
-                className={`ws-layer-tab ${activeLayer === "rarity" ? "active-red" : ""}`}
-              >
-                <Type size={16} />
-                <span>Napisy</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSidebarTab("player")}
+              className={`ws-sidebar-nav-btn ${sidebarTab === "player" ? "active-emerald" : ""}`}
+            >
+              <User size={15} />
+              <span>Zawodnik</span>
+            </button>
           </div>
 
-          {/* PANEL KARTY */}
-          {activeLayer === "card" && (
-            <div className="ws-panel-box ws-box-card">
+          {/* ZAKŁADKA 1: OŚ CZASU & WŁĄCZANIE / WYŁĄCZANIE WARSTW */}
+          {sidebarTab === "timeline" && (
+            <div className="ws-panel-box ws-box-sequence">
               <div className="ws-panel-head">
-                <span className="ws-box-heading gold">
-                  <Sparkles size={15} /> Pozycja Karty 3D
+                <span className="ws-box-heading purple">
+                  <Zap size={16} /> Momenty Wejścia & Wyjścia Warstw
                 </span>
+              </div>
+
+              {/* SZYBKIE PRESETY */}
+              <div className="ws-preset-chips-row">
                 <button
                   type="button"
-                  onClick={() => setSettings(prev => ({ ...prev, card: { ...prev.card, x: -2, y: -78, scale: 1.3 } }))}
-                  className="ws-reset-mini"
+                  onClick={() => applyTimelinePreset("skip_player")}
+                  className={`ws-preset-chip ${!tl.player.enabled && tl.rarity.enabled && tl.card.enabled ? "active" : ""}`}
+                  title="Karta pojawia się od razu po zniknięciu napisu"
                 >
-                  Reset do optymalnych
+                  ⚡ Karta od razu po napisie
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyTimelinePreset("full")}
+                  className={`ws-preset-chip ${tl.player.enabled && tl.rarity.enabled && tl.card.enabled ? "active" : ""}`}
+                  title="Pełny kinowy pokaz"
+                >
+                  👑 Pełny Walkout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyTimelinePreset("instant_card")}
+                  className={`ws-preset-chip ${!tl.rarity.enabled && !tl.player.enabled && tl.card.enabled ? "active" : ""}`}
+                  title="Błyskawiczna karta"
+                >
+                  🚀 Błyskawiczny
                 </button>
               </div>
 
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Poziom X (%)</span>
-                  <span className="ws-val gold">{settings.card.x}%</span>
+              {/* KARTY CZASOWE */}
+              <div className="ws-layer-timing-cards">
+
+                {/* 1. NAPISY RZADKOŚCI */}
+                <div className={`ws-timing-card ${tl.rarity.enabled ? "is-on" : "is-off"}`}>
+                  <div className="ws-timing-card-head">
+                    <label className="ws-timing-toggle">
+                      <input
+                        type="checkbox"
+                        checked={tl.rarity.enabled}
+                        onChange={e => updateLayerTiming("rarity", "enabled", e.target.checked)}
+                        className="ws-checkbox-custom"
+                      />
+                      <span className="ws-timing-name text-red-400">1. Napisy Rzadkości (INFERNO)</span>
+                    </label>
+                    <span className="ws-timing-badge">{tl.rarity.enabled ? "Aktywny" : "USUNIĘTY"}</span>
+                  </div>
+
+                  {tl.rarity.enabled && (
+                    <div className="ws-timing-controls-grid">
+                      <div className="ws-time-input-group">
+                        <label>Pojawia się w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            value={tl.rarity.startTime}
+                            onChange={e => updateLayerTiming("rarity", "startTime", parseFloat(e.target.value) || 0)}
+                            className="ws-input-time"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                          <button
+                            type="button"
+                            onClick={() => setTimeToCurrent("rarity", "startTime")}
+                            className="ws-btn-time-now"
+                            title="Ustaw aktualny moment filmu"
+                          >
+                            Bieżący ({videoCurrentTime.toFixed(1)}s)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="ws-time-input-group">
+                        <label>Znika w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            disabled={tl.rarity.stayUntilEnd}
+                            value={tl.rarity.stayUntilEnd ? "" : tl.rarity.endTime}
+                            placeholder={tl.rarity.stayUntilEnd ? "Do końca" : "5.5"}
+                            onChange={e => updateLayerTiming("rarity", "endTime", parseFloat(e.target.value) || 0)}
+                            className="ws-input-time"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                          <button
+                            type="button"
+                            onClick={() => setTimeToCurrent("rarity", "endTime")}
+                            className="ws-btn-time-now"
+                            title="Ustaw aktualny moment filmu"
+                          >
+                            Bieżący ({videoCurrentTime.toFixed(1)}s)
+                          </button>
+                        </div>
+                        <label className="ws-sub-check">
+                          <input
+                            type="checkbox"
+                            checked={tl.rarity.stayUntilEnd}
+                            onChange={e => updateLayerTiming("rarity", "stayUntilEnd", e.target.checked)}
+                          />
+                          <span>Widoczny do samego końca filmu</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  value={settings.card.x}
-                  onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, x: parseInt(e.target.value) } }))}
-                  className="ws-slider range-gold"
-                />
+
+                {/* 2. SYLWETKA ZAWODNIKA */}
+                <div className={`ws-timing-card ${tl.player.enabled ? "is-on" : "is-off border-amber-500/40"}`}>
+                  <div className="ws-timing-card-head">
+                    <label className="ws-timing-toggle">
+                      <input
+                        type="checkbox"
+                        checked={tl.player.enabled}
+                        onChange={e => updateLayerTiming("player", "enabled", e.target.checked)}
+                        className="ws-checkbox-custom"
+                      />
+                      <span className="ws-timing-name text-sky-400">2. Sylwetka Zawodnika</span>
+                    </label>
+                    <span className={`ws-timing-badge ${tl.player.enabled ? "" : "text-amber-400 bg-amber-500/20"}`}>
+                      {tl.player.enabled ? "Aktywny" : "USUNIĘTY (Karta od razu po napisie)"}
+                    </span>
+                  </div>
+
+                  {tl.player.enabled ? (
+                    <div className="ws-timing-controls-grid">
+                      <div className="ws-time-input-group">
+                        <label>Pojawia się w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            value={tl.player.startTime}
+                            onChange={e => updateLayerTiming("player", "startTime", parseFloat(e.target.value) || 0)}
+                            className="ws-input-time"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                          <button
+                            type="button"
+                            onClick={() => setTimeToCurrent("player", "startTime")}
+                            className="ws-btn-time-now"
+                            title="Ustaw aktualny moment filmu"
+                          >
+                            Bieżący ({videoCurrentTime.toFixed(1)}s)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="ws-time-input-group">
+                        <label>Znika w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            disabled={tl.player.stayUntilEnd}
+                            value={tl.player.stayUntilEnd ? "" : tl.player.endTime}
+                            placeholder={tl.player.stayUntilEnd ? "Do końca" : "8.0"}
+                            onChange={e => updateLayerTiming("player", "endTime", parseFloat(e.target.value) || 0)}
+                            className="ws-input-time"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                          <button
+                            type="button"
+                            onClick={() => setTimeToCurrent("player", "endTime")}
+                            className="ws-btn-time-now"
+                            title="Ustaw aktualny moment filmu"
+                          >
+                            Bieżący ({videoCurrentTime.toFixed(1)}s)
+                          </button>
+                        </div>
+                        <label className="ws-sub-check">
+                          <input
+                            type="checkbox"
+                            checked={tl.player.stayUntilEnd}
+                            onChange={e => updateLayerTiming("player", "stayUntilEnd", e.target.checked)}
+                          />
+                          <span>Widoczny do samego końca filmu</span>
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="ws-timing-disabled-hint">
+                      Odznaczone – zawodnik został wyłączony. Karta pojawi się bezpośrednio w wyznaczonym poniżej czasie!
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. KARTA 3D */}
+                <div className={`ws-timing-card ${tl.card.enabled ? "is-on" : "is-off"}`}>
+                  <div className="ws-timing-card-head">
+                    <label className="ws-timing-toggle">
+                      <input
+                        type="checkbox"
+                        checked={tl.card.enabled}
+                        onChange={e => updateLayerTiming("card", "enabled", e.target.checked)}
+                        className="ws-checkbox-custom"
+                      />
+                      <span className="ws-timing-name text-amber-400">3. Karta 3D (Drop & Flash)</span>
+                    </label>
+                    <span className="ws-timing-badge">{tl.card.enabled ? "Aktywny" : "USUNIĘTY"}</span>
+                  </div>
+
+                  {tl.card.enabled && (
+                    <div className="ws-timing-controls-grid">
+                      <div className="ws-time-input-group">
+                        <label>Pojawia się w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            value={tl.card.startTime}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value) || 0;
+                              updateLayerTiming("card", "startTime", val);
+                              setSettings(prev => ({ ...prev, timeline: { ...prev.timeline, flash: { ...prev.timeline.flash, time: val } } }));
+                            }}
+                            className="ws-input-time font-bold text-amber-400"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTimeToCurrent("card", "startTime");
+                              setSettings(prev => ({ ...prev, timeline: { ...prev.timeline, flash: { ...prev.timeline.flash, time: Math.round(videoCurrentTime * 10) / 10 } } }));
+                            }}
+                            className="ws-btn-time-now"
+                            title="Ustaw aktualny moment filmu"
+                          >
+                            Bieżący ({videoCurrentTime.toFixed(1)}s)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="ws-time-input-group">
+                        <label>Znika w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            disabled={tl.card.stayUntilEnd}
+                            value={tl.card.stayUntilEnd ? "" : tl.card.endTime}
+                            placeholder={tl.card.stayUntilEnd ? "Do końca filmu" : "15.0"}
+                            onChange={e => updateLayerTiming("card", "endTime", parseFloat(e.target.value) || 0)}
+                            className="ws-input-time"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                        </div>
+                        <label className="ws-sub-check">
+                          <input
+                            type="checkbox"
+                            checked={tl.card.stayUntilEnd}
+                            onChange={e => updateLayerTiming("card", "stayUntilEnd", e.target.checked)}
+                          />
+                          <span>Widoczna do samego końca filmu (Zalecane)</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. PASEK HERO */}
+                <div className={`ws-timing-card ${tl.hero.enabled ? "is-on" : "is-off"}`}>
+                  <div className="ws-timing-card-head">
+                    <label className="ws-timing-toggle">
+                      <input
+                        type="checkbox"
+                        checked={tl.hero.enabled}
+                        onChange={e => updateLayerTiming("hero", "enabled", e.target.checked)}
+                        className="ws-checkbox-custom"
+                      />
+                      <span className="ws-timing-name text-emerald-400">4. Pasek Hero (Rating & Klub)</span>
+                    </label>
+                    <span className="ws-timing-badge">{tl.hero.enabled ? "Aktywny" : "USUNIĘTY"}</span>
+                  </div>
+
+                  {tl.hero.enabled && (
+                    <div className="ws-timing-controls-grid">
+                      <div className="ws-time-input-group">
+                        <label>Pojawia się w sek:</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={30}
+                            value={tl.hero.startTime}
+                            onChange={e => updateLayerTiming("hero", "startTime", parseFloat(e.target.value) || 0)}
+                            className="ws-input-time"
+                          />
+                          <span className="text-xs text-slate-400">s</span>
+                          <button
+                            type="button"
+                            onClick={() => setTimeToCurrent("hero", "startTime")}
+                            className="ws-btn-time-now"
+                            title="Ustaw aktualny moment filmu"
+                          >
+                            Bieżący ({videoCurrentTime.toFixed(1)}s)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ZAKŁADKA 2: POZYCJE & SKALA WARSTW */}
+          {sidebarTab === "position" && (
+            <div className="space-y-3">
+              <div className="ws-panel-box">
+                <span className="ws-panel-title">Wybierz warstwę do przesunięcia:</span>
+                <div className="ws-layers-tabs">
+                  <button
+                    type="button"
+                    onClick={() => setActiveLayer("card")}
+                    className={`ws-layer-tab ${activeLayer === "card" ? "active-gold" : ""}`}
+                  >
+                    <Sparkles size={15} />
+                    <span>Karta 3D</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveLayer("player")}
+                    className={`ws-layer-tab ${activeLayer === "player" ? "active-sky" : ""}`}
+                  >
+                    <Layers size={15} />
+                    <span>Zawodnik</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveLayer("rarity")}
+                    className={`ws-layer-tab ${activeLayer === "rarity" ? "active-red" : ""}`}
+                  >
+                    <Type size={15} />
+                    <span>Napisy</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Pion Y (px)</span>
-                  <span className="ws-val gold">{settings.card.y} px</span>
+              {/* PANEL KARTY */}
+              {activeLayer === "card" && (
+                <div className="ws-panel-box ws-box-card">
+                  <div className="ws-panel-head">
+                    <span className="ws-box-heading gold">
+                      <Sparkles size={15} /> Pozycja Karty 3D
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, card: { ...prev.card, x: -2, y: -78, scale: 1.3 } }))}
+                      className="ws-reset-mini"
+                    >
+                      Reset optymalny
+                    </button>
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Poziom X (%)</span>
+                      <span className="ws-val gold">{settings.card.x}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      value={settings.card.x}
+                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, x: parseInt(e.target.value) } }))}
+                      className="ws-slider range-gold"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Pion Y (px)</span>
+                      <span className="ws-val gold">{settings.card.y} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-200}
+                      max={100}
+                      value={settings.card.y}
+                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, y: parseInt(e.target.value) } }))}
+                      className="ws-slider range-gold"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Skala Karty (Scale)</span>
+                      <span className="ws-val gold">{settings.card.scale.toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={2.5}
+                      step={0.05}
+                      value={settings.card.scale}
+                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, scale: parseFloat(e.target.value) } }))}
+                      className="ws-slider range-gold"
+                    />
+                  </div>
+
+                  <div className="ws-upload-field">
+                    <label className="ws-field-label">Wgraj grafikę karty (PNG):</label>
+                    <input
+                      type="file"
+                      accept="image/png,image/webp"
+                      onChange={handleCardUpload}
+                      className="ws-file-input"
+                    />
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={-200}
-                  max={100}
-                  value={settings.card.y}
-                  onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, y: parseInt(e.target.value) } }))}
-                  className="ws-slider range-gold"
-                />
+              )}
+
+              {/* PANEL ZAWODNIKA */}
+              {activeLayer === "player" && (
+                <div className="ws-panel-box ws-box-player">
+                  <div className="ws-panel-head">
+                    <span className="ws-box-heading sky">
+                      <Layers size={15} /> Pozycja Sylwetki Gracza
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, player: { ...prev.player, x: -21, y: -24, scale: 1.05 } }))}
+                      className="ws-reset-mini"
+                    >
+                      Reset optymalny
+                    </button>
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Poziom X (%)</span>
+                      <span className="ws-val sky">{settings.player.x}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      value={settings.player.x}
+                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, x: parseInt(e.target.value) } }))}
+                      className="ws-slider range-sky"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Pion Y (%)</span>
+                      <span className="ws-val sky">{settings.player.y}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      value={settings.player.y}
+                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, y: parseInt(e.target.value) } }))}
+                      className="ws-slider range-sky"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Skala Zawodnika (Scale)</span>
+                      <span className="ws-val sky">{settings.player.scale.toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={2.5}
+                      step={0.05}
+                      value={settings.player.scale}
+                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, scale: parseFloat(e.target.value) } }))}
+                      className="ws-slider range-sky"
+                    />
+                  </div>
+
+                  <div className="ws-upload-field">
+                    <label className="ws-field-label">Wgraj wycięte zdjęcie PNG sylwetki:</label>
+                    <input
+                      type="file"
+                      accept="image/png,image/webp"
+                      onChange={handleCutoutUpload}
+                      className="ws-file-input"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* PANEL NAPISÓW */}
+              {activeLayer === "rarity" && (
+                <div className="ws-panel-box ws-box-rarity">
+                  <div className="ws-panel-head">
+                    <span className="ws-box-heading red">
+                      <Type size={15} /> Pozycja Napisów Rzadkości
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: 0, y: -1, scale: 1.75 } }))}
+                      className="ws-reset-mini"
+                    >
+                      Reset optymalny
+                    </button>
+                  </div>
+
+                  <div className="ws-control-group">
+                    <label className="ws-field-label">Główny tekst:</label>
+                    <input
+                      type="text"
+                      value={settings.rarity.text}
+                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, text: e.target.value.toUpperCase() } }))}
+                      className="ws-input-text font-black"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Poziom X (%)</span>
+                      <span className="ws-val red">{settings.rarity.x}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      value={settings.rarity.x}
+                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: parseInt(e.target.value) } }))}
+                      className="ws-slider range-red"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Pion Y (%)</span>
+                      <span className="ws-val red">{settings.rarity.y}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      value={settings.rarity.y}
+                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, y: parseInt(e.target.value) } }))}
+                      className="ws-slider range-red"
+                    />
+                  </div>
+
+                  <div className="ws-control-group">
+                    <div className="ws-label-row">
+                      <span>Rozmiar czcionki (Scale)</span>
+                      <span className="ws-val red">{settings.rarity.scale.toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={3.0}
+                      step={0.05}
+                      value={settings.rarity.scale}
+                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, scale: parseFloat(e.target.value) } }))}
+                      className="ws-slider range-red"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ZAKŁADKA 3: FILMY WIDEO (LISTA 8 FILMÓW) */}
+          {sidebarTab === "video" && (
+            <div className="ws-panel-box ws-box-video">
+              <div className="ws-panel-head">
+                <span className="ws-box-heading video-color">
+                  <Video size={16} /> Dostępne Filmy Walkoutów ({VIDEO_PRESETS.length})
+                </span>
+                <span className={`ws-status-pill ${isVideoPlaying ? "online" : "paused"}`}>
+                  {isVideoPlaying ? "● Odtwarza" : "○ Wstrzymane"}
+                </span>
               </div>
 
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Skala Karty (Scale)</span>
-                  <span className="ws-val gold">{settings.card.scale.toFixed(2)}x</span>
+              {customVideoFileName && (
+                <div className="ws-active-file-banner">
+                  <FileVideo size={16} className="text-amber-400" />
+                  <div className="ws-active-file-info">
+                    <span className="ws-active-file-name">{customVideoFileName}</span>
+                    <span className="ws-active-file-meta">{videoDuration.toFixed(1)}s • Plik Własny</span>
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={2.5}
-                  step={0.05}
-                  value={settings.card.scale}
-                  onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, scale: parseFloat(e.target.value) } }))}
-                  className="ws-slider range-gold"
-                />
+              )}
+
+              <div className="ws-video-cards-grid">
+                {VIDEO_PRESETS.map(preset => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => {
+                      setSettings(prev => ({ ...prev, videoSrc: preset.src }));
+                      setCustomVideoFileName("");
+                      setVideoErrorMsg(null);
+                      if (videoRef.current) {
+                        videoRef.current.src = preset.src;
+                        videoRef.current.load();
+                        videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+                      }
+                    }}
+                    className={`ws-video-item-btn ${settings.videoSrc === preset.src ? "active" : ""}`}
+                  >
+                    <span className="ws-video-item-title">{preset.name}</span>
+                    <span className="ws-video-item-desc">{preset.desc}</span>
+                  </button>
+                ))}
               </div>
 
               <div className="ws-upload-field">
-                <label className="ws-field-label">Wgraj grafikę karty (PNG):</label>
+                <label className="ws-field-label font-bold text-amber-400 flex items-center gap-1.5">
+                  <Upload size={13} /> Wgraj kolejny film z dysku (MP4 / WebM / MOV):
+                </label>
                 <input
                   type="file"
-                  accept="image/png,image/webp"
-                  onChange={handleCardUpload}
+                  accept="video/mp4,video/webm,video/quicktime,video/mov,video/*"
+                  onChange={handleVideoUpload}
                   className="ws-file-input"
                 />
               </div>
             </div>
           )}
 
-          {/* PANEL ZAWODNIKA */}
-          {activeLayer === "player" && (
+          {/* ZAKŁADKA 4: DANE ZAWODNIKA I KARTY */}
+          {sidebarTab === "player" && (
             <div className="ws-panel-box ws-box-player">
               <div className="ws-panel-head">
                 <span className="ws-box-heading sky">
-                  <Layers size={15} /> Pozycja Sylwetki Gracza
+                  <User size={16} /> Podgląd Karty Zawodnika
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setSettings(prev => ({ ...prev, player: { ...prev.player, x: -21, y: -24, scale: 1.05 } }))}
-                  className="ws-reset-mini"
-                >
-                  Reset do optymalnych
-                </button>
               </div>
 
               <div className="ws-control-group">
@@ -1560,193 +1757,37 @@ export default function WalkoutStudio(props: {
               </div>
 
               <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Poziom X (%)</span>
-                  <span className="ws-val sky">{settings.player.x}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  value={settings.player.x}
-                  onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, x: parseInt(e.target.value) } }))}
-                  className="ws-slider range-sky"
-                />
-              </div>
-
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Pion Y (%)</span>
-                  <span className="ws-val sky">{settings.player.y}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  value={settings.player.y}
-                  onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, y: parseInt(e.target.value) } }))}
-                  className="ws-slider range-sky"
-                />
-              </div>
-
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Skala Zawodnika (Scale)</span>
-                  <span className="ws-val sky">{settings.player.scale.toFixed(2)}x</span>
-                </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={2.5}
-                  step={0.05}
-                  value={settings.player.scale}
-                  onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, scale: parseFloat(e.target.value) } }))}
-                  className="ws-slider range-sky"
-                />
-              </div>
-
-              <div className="ws-upload-field">
-                <label className="ws-field-label">Wgraj wycięte zdjęcie PNG sylwetki:</label>
-                <input
-                  type="file"
-                  accept="image/png,image/webp"
-                  onChange={handleCutoutUpload}
-                  className="ws-file-input"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* PANEL NAPISÓW */}
-          {activeLayer === "rarity" && (
-            <div className="ws-panel-box ws-box-rarity">
-              <div className="ws-panel-head">
-                <span className="ws-box-heading red">
-                  <Type size={15} /> Pozycja Napisów Rzadkości
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: 0, y: -1, scale: 1.75 } }))}
-                  className="ws-reset-mini"
-                >
-                  Reset do optymalnych
-                </button>
-              </div>
-
-              <div className="ws-control-group">
-                <label className="ws-field-label">Główny tekst:</label>
+                <label className="ws-field-label">Nazwisko na karcie:</label>
                 <input
                   type="text"
-                  value={settings.rarity.text}
-                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, text: e.target.value.toUpperCase() } }))}
+                  value={settings.metadata.playerName}
+                  onChange={e => setSettings(prev => ({ ...prev, metadata: { ...prev.metadata, playerName: e.target.value.toUpperCase() } }))}
                   className="ws-input-text font-black"
                 />
               </div>
 
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Poziom X (%)</span>
-                  <span className="ws-val red">{settings.rarity.x}%</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="ws-control-group">
+                  <label className="ws-field-label">Ocena OVR:</label>
+                  <input
+                    type="number"
+                    value={settings.metadata.playerRating}
+                    onChange={e => setSettings(prev => ({ ...prev, metadata: { ...prev.metadata, playerRating: parseInt(e.target.value) || 90 } }))}
+                    className="ws-input-text font-bold"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  value={settings.rarity.x}
-                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: parseInt(e.target.value) } }))}
-                  className="ws-slider range-red"
-                />
-              </div>
-
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Pion Y (%)</span>
-                  <span className="ws-val red">{settings.rarity.y}%</span>
+                <div className="ws-control-group">
+                  <label className="ws-field-label">Pozycja:</label>
+                  <input
+                    type="text"
+                    value={settings.metadata.playerPosition}
+                    onChange={e => setSettings(prev => ({ ...prev, metadata: { ...prev.metadata, playerPosition: e.target.value.toUpperCase() } }))}
+                    className="ws-input-text font-bold"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={-100}
-                  max={100}
-                  value={settings.rarity.y}
-                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, y: parseInt(e.target.value) } }))}
-                  className="ws-slider range-red"
-                />
-              </div>
-
-              <div className="ws-control-group">
-                <div className="ws-label-row">
-                  <span>Rozmiar czcionki (Scale)</span>
-                  <span className="ws-val red">{settings.rarity.scale.toFixed(2)}x</span>
-                </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={3.0}
-                  step={0.05}
-                  value={settings.rarity.scale}
-                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, scale: parseFloat(e.target.value) } }))}
-                  className="ws-slider range-red"
-                />
               </div>
             </div>
           )}
-
-          {/* SEKCJA ZARZĄDZANIA WIDEO */}
-          <div className="ws-panel-box ws-box-video">
-            <div className="ws-panel-head">
-              <span className="ws-box-heading video-color">
-                <Video size={16} /> Odtwarzacz & Wideo w tle
-              </span>
-              <span className={`ws-status-pill ${isVideoPlaying ? "online" : "paused"}`}>
-                {isVideoPlaying ? "● Odtwarza" : "○ Wstrzymane"}
-              </span>
-            </div>
-
-            {customVideoFileName && (
-              <div className="ws-active-file-banner">
-                <FileVideo size={16} className="text-amber-400" />
-                <div className="ws-active-file-info">
-                  <span className="ws-active-file-name">{customVideoFileName}</span>
-                  <span className="ws-active-file-meta">{videoDuration.toFixed(1)}s • MP4/WebM</span>
-                </div>
-              </div>
-            )}
-
-            <div className="ws-presets-list">
-              <span className="ws-field-label">Predefiniowane tła:</span>
-              {VIDEO_PRESETS.map(preset => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => {
-                    setSettings(prev => ({ ...prev, videoSrc: preset.src }));
-                    setCustomVideoFileName("");
-                    setVideoErrorMsg(null);
-                    if (videoRef.current) {
-                      videoRef.current.src = preset.src;
-                      videoRef.current.load();
-                      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
-                    }
-                  }}
-                  className={`ws-preset-btn ${settings.videoSrc === preset.src ? "active" : ""}`}
-                >
-                  {preset.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="ws-upload-field">
-              <label className="ws-field-label font-bold text-amber-400 flex items-center gap-1.5">
-                <Upload size={13} /> Wgraj własny film z dysku (MP4 / WebM / MOV):
-              </label>
-              <input
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime,video/mov,video/*"
-                onChange={handleVideoUpload}
-                className="ws-file-input"
-              />
-            </div>
-          </div>
 
           {/* JSON READOUT */}
           <div className="ws-json-box">
@@ -1770,7 +1811,7 @@ export default function WalkoutStudio(props: {
           width: 100%;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
           color: #ffffff;
           box-sizing: border-box;
           font-family: inherit;
@@ -1780,12 +1821,13 @@ export default function WalkoutStudio(props: {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 14px 18px;
-          background: rgba(15, 23, 42, 0.85);
+          padding: 12px 18px;
+          background: rgba(15, 23, 42, 0.9);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
+          border-radius: 14px;
           flex-wrap: wrap;
           gap: 12px;
+          backdrop-filter: blur(10px);
         }
 
         .ws-brand-group {
@@ -1795,9 +1837,9 @@ export default function WalkoutStudio(props: {
         }
 
         .ws-icon-badge {
-          width: 40px;
-          height: 40px;
-          border-radius: 12px;
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
           background: linear-gradient(135deg, #ff2a3b, #f59e0b);
           display: grid;
           place-items: center;
@@ -1806,12 +1848,9 @@ export default function WalkoutStudio(props: {
         }
 
         .ws-title {
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 900;
           margin: 0;
-          display: flex;
-          align-items: center;
-          gap: 8px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -1828,7 +1867,7 @@ export default function WalkoutStudio(props: {
 
         .ws-subtitle {
           margin: 2px 0 0 0;
-          font-size: 11.5px;
+          font-size: 11px;
           color: #94a3b8;
         }
 
@@ -1842,12 +1881,12 @@ export default function WalkoutStudio(props: {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 14px;
-          border-radius: 10px;
+          padding: 7px 13px;
+          border-radius: 9px;
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.12);
           color: #cbd5e1;
-          font-size: 12px;
+          font-size: 11.5px;
           font-weight: 700;
           cursor: pointer;
           transition: 0.15s ease;
@@ -1868,12 +1907,12 @@ export default function WalkoutStudio(props: {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 16px;
-          border-radius: 10px;
+          padding: 7px 15px;
+          border-radius: 9px;
           background: linear-gradient(90deg, #f59e0b, #eab308);
           border: none;
           color: #000;
-          font-size: 12px;
+          font-size: 11.5px;
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -1891,7 +1930,7 @@ export default function WalkoutStudio(props: {
         .ws-grid {
           display: grid;
           grid-template-columns: 1fr 380px;
-          gap: 18px;
+          gap: 16px;
           width: 100%;
           align-items: start;
         }
@@ -1909,7 +1948,7 @@ export default function WalkoutStudio(props: {
           position: relative;
           width: 100%;
           height: 540px;
-          border-radius: 18px;
+          border-radius: 16px;
           overflow: hidden !important;
           background: #000000;
           border: 1px solid rgba(255, 42, 59, 0.4);
@@ -2516,6 +2555,62 @@ export default function WalkoutStudio(props: {
           box-sizing: border-box;
         }
 
+        .ws-sidebar-nav {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 4px;
+          background: rgba(0, 0, 0, 0.5);
+          padding: 4px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .ws-sidebar-nav-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 4px;
+          border-radius: 8px;
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          font-size: 10px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: 0.15s ease;
+          text-align: center;
+        }
+
+        .ws-sidebar-nav-btn:hover {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ws-sidebar-nav-btn.active-purple {
+          background: rgba(168, 85, 247, 0.25);
+          color: #c084fc;
+          font-weight: 900;
+        }
+
+        .ws-sidebar-nav-btn.active-amber {
+          background: rgba(245, 158, 11, 0.25);
+          color: #fcd34d;
+          font-weight: 900;
+        }
+
+        .ws-sidebar-nav-btn.active-blue {
+          background: rgba(59, 130, 246, 0.25);
+          color: #60a5fa;
+          font-weight: 900;
+        }
+
+        .ws-sidebar-nav-btn.active-emerald {
+          background: rgba(16, 185, 129, 0.25);
+          color: #34d399;
+          font-weight: 900;
+        }
+
         .ws-panel-box {
           background: rgba(15, 23, 42, 0.85);
           border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2770,6 +2865,48 @@ export default function WalkoutStudio(props: {
           color: #94a3b8;
         }
 
+        .ws-video-cards-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .ws-video-item-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 2px;
+          padding: 8px 12px;
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #cbd5e1;
+          cursor: pointer;
+          text-align: left;
+          transition: 0.15s ease;
+        }
+
+        .ws-video-item-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: #fff;
+        }
+
+        .ws-video-item-btn.active {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: #3b82f6;
+          color: #93c5fd;
+        }
+
+        .ws-video-item-title {
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .ws-video-item-desc {
+          font-size: 9.5px;
+          color: #94a3b8;
+        }
+
         .ws-reset-mini {
           font-size: 10px;
           color: #94a3b8;
@@ -2784,7 +2921,7 @@ export default function WalkoutStudio(props: {
         }
 
         .ws-panel-title {
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 800;
           color: #cbd5e1;
           text-transform: uppercase;
@@ -2891,30 +3028,6 @@ export default function WalkoutStudio(props: {
         .ws-file-input {
           font-size: 11px;
           color: #94a3b8;
-        }
-
-        .ws-presets-list {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .ws-preset-btn {
-          padding: 8px 10px;
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #cbd5e1;
-          font-size: 11px;
-          font-weight: 700;
-          text-align: left;
-          cursor: pointer;
-        }
-
-        .ws-preset-btn.active {
-          background: rgba(245, 158, 11, 0.2);
-          color: #fcd34d;
-          border-color: rgba(245, 158, 11, 0.5);
         }
 
         .ws-json-box {
