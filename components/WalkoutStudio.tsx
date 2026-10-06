@@ -19,10 +19,15 @@ import {
   Sparkles,
   Eye,
   EyeOff,
-  FastForward,
   Repeat,
   AlertCircle,
-  FileVideo
+  FileVideo,
+  ToggleLeft,
+  ToggleRight,
+  Zap,
+  Sliders,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PlayerPhoto from "./PlayerPhoto";
@@ -60,8 +65,23 @@ interface Player {
   photo_path?: string | null;
 }
 
+export interface WalkoutSequenceConfig {
+  enableIntro: boolean;
+  enableRarity: boolean;
+  enablePlayer: boolean;
+  enableCard: boolean;
+  enableHero: boolean;
+  timing: {
+    introDuration: number;
+    rarityDuration: number;
+    playerDuration: number;
+    cardDuration: number;
+  };
+}
+
 export interface WalkoutSettings {
   videoSrc: string;
+  sequence: WalkoutSequenceConfig;
   rarity: {
     text: string;
     subtext: string;
@@ -91,6 +111,19 @@ export interface WalkoutSettings {
 
 const DEFAULT_SETTINGS: WalkoutSettings = {
   videoSrc: "/media/walkouts/inferno-bg.mp4",
+  sequence: {
+    enableIntro: true,
+    enableRarity: true,
+    enablePlayer: true,
+    enableCard: true,
+    enableHero: true,
+    timing: {
+      introDuration: 3.0,
+      rarityDuration: 2.5,
+      playerDuration: 2.5,
+      cardDuration: 2.5,
+    }
+  },
   rarity: {
     text: "INFERNO",
     subtext: "EDYCJA SPECJALNA",
@@ -137,11 +170,17 @@ export default function WalkoutStudio(props: {
         const saved = localStorage.getItem("delta_walkout_studio_settings");
         if (saved) {
           const parsed = JSON.parse(saved);
-          // If stored videoSrc is a dead blob URL from an old session, fallback to default
           if (parsed.videoSrc && parsed.videoSrc.startsWith("blob:")) {
             parsed.videoSrc = DEFAULT_SETTINGS.videoSrc;
           }
-          return { ...DEFAULT_SETTINGS, ...parsed };
+          return {
+            ...DEFAULT_SETTINGS,
+            ...parsed,
+            sequence: {
+              ...DEFAULT_SETTINGS.sequence,
+              ...(parsed.sequence || {})
+            }
+          };
         }
       } catch {}
     }
@@ -165,7 +204,7 @@ export default function WalkoutStudio(props: {
     }
   }, [activePlayer]);
 
-  // Stage sequence playback: "intro" (0-3s), "rarity" (3-5s), "player" (5-7s), "card" (7-9s), "hero" (9s+)
+  // Stage sequence playback: "intro" | "rarity" | "player" | "card" | "hero"
   const [stage, setStage] = useState<"intro" | "rarity" | "player" | "card" | "hero">("hero");
   const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(9.0);
@@ -206,14 +245,57 @@ export default function WalkoutStudio(props: {
     }
   };
 
-  // Full Walkout 12s Animation Sequence
+  // Calculate dynamic steps based on enabled stages
+  const activeSequencePlan = useMemo(() => {
+    const seq = settings.sequence;
+    const steps: { stage: "intro" | "rarity" | "player" | "card" | "hero"; time: number; flash?: boolean }[] = [];
+    let cur = 0;
+
+    if (seq.enableIntro) {
+      steps.push({ stage: "intro", time: cur });
+      cur += seq.timing.introDuration || 3.0;
+    }
+
+    if (seq.enableRarity) {
+      steps.push({ stage: "rarity", time: cur });
+      cur += seq.timing.rarityDuration || 2.5;
+    }
+
+    if (seq.enablePlayer) {
+      steps.push({ stage: "player", time: cur });
+      cur += seq.timing.playerDuration || 2.5;
+    }
+
+    if (seq.enableCard) {
+      steps.push({ stage: "card", time: cur, flash: true });
+      cur += seq.timing.cardDuration || 2.5;
+    }
+
+    if (seq.enableHero) {
+      steps.push({ stage: "hero", time: cur });
+      cur += 3.0;
+    }
+
+    if (steps.length === 0) {
+      steps.push({ stage: "hero", time: 0 });
+      cur = 5.0;
+    }
+
+    return { steps, totalDuration: Math.max(cur, 4.0) };
+  }, [settings.sequence]);
+
+  // Full Walkout Sequence Playback
   const startFullWalkout = () => {
     clearTimers();
     setIsPlayingAuto(true);
-    setStage("intro");
     setIsFlash(false);
     setCurrentTime(0);
     startTimeRef.current = Date.now();
+
+    const plan = activeSequencePlan;
+    if (plan.steps.length > 0) {
+      setStage(plan.steps[0].stage);
+    }
 
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -223,7 +305,7 @@ export default function WalkoutStudio(props: {
     const updateTicker = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       setCurrentTime(elapsed);
-      if (elapsed < 12) {
+      if (elapsed < plan.totalDuration) {
         animFrameRef.current = requestAnimationFrame(updateTicker);
       } else {
         setIsPlayingAuto(false);
@@ -231,47 +313,35 @@ export default function WalkoutStudio(props: {
     };
     animFrameRef.current = requestAnimationFrame(updateTicker);
 
-    // 1. Stage: Rarity appear at 3.0s
-    timerRef.current.push(
-      setTimeout(() => {
-        setStage("rarity");
-      }, 3000)
-    );
-
-    // 2. Stage: Player appear at 5.0s
-    timerRef.current.push(
-      setTimeout(() => {
-        setStage("player");
-      }, 5000)
-    );
-
-    // 3. Stage: Card Flash & Drop at 7.0s
-    timerRef.current.push(
-      setTimeout(() => {
-        setStage("card");
-        setIsFlash(true);
-        setTimeout(() => setIsFlash(false), 300);
-      }, 7000)
-    );
-
-    // 4. Stage: Hero full display at 9.0s
-    timerRef.current.push(
-      setTimeout(() => {
-        setStage("hero");
-      }, 9000)
-    );
+    // Schedule each enabled step dynamically
+    plan.steps.forEach((step, idx) => {
+      if (idx === 0) return; // First step triggers immediately at 0s
+      timerRef.current.push(
+        setTimeout(() => {
+          setStage(step.stage);
+          if (step.flash) {
+            setIsFlash(true);
+            setTimeout(() => setIsFlash(false), 350);
+          }
+        }, step.time * 1000)
+      );
+    });
   };
 
-  const jumpToStage = (s: "intro" | "rarity" | "player" | "card" | "hero") => {
+  const jumpToStage = (targetStage: "intro" | "rarity" | "player" | "card" | "hero") => {
     clearTimers();
     setIsPlayingAuto(false);
-    setStage(s);
+    setStage(targetStage);
     setIsFlash(false);
-    const times = { intro: 0, rarity: 3.5, player: 5.5, card: 7.5, hero: 9.5 };
-    setCurrentTime(times[s]);
+
+    // Find time in active sequence
+    const foundStep = activeSequencePlan.steps.find(s => s.stage === targetStage);
+    const targetTime = foundStep ? foundStep.time : 0;
+    setCurrentTime(targetTime);
+
     if (videoRef.current) {
-      const targetTime = times[s] % (videoRef.current.duration || 10);
-      videoRef.current.currentTime = targetTime;
+      const videoSeek = targetTime % (videoRef.current.duration || 10);
+      videoRef.current.currentTime = videoSeek;
       videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
     }
   };
@@ -333,6 +403,51 @@ export default function WalkoutStudio(props: {
     if (videoRef.current) {
       videoRef.current.muted = next;
     }
+  };
+
+  // Sequence Configuration Presets
+  const applySequencePreset = (type: "full" | "skip_player" | "instant_card" | "only_hero") => {
+    setSettings(prev => {
+      let seq = { ...prev.sequence };
+      if (type === "full") {
+        seq.enableIntro = true;
+        seq.enableRarity = true;
+        seq.enablePlayer = true;
+        seq.enableCard = true;
+        seq.enableHero = true;
+      } else if (type === "skip_player") {
+        // Karta od razu po napisie! (Intro ➔ Napis ➔ Karta ➔ Hero)
+        seq.enableIntro = true;
+        seq.enableRarity = true;
+        seq.enablePlayer = false;
+        seq.enableCard = true;
+        seq.enableHero = true;
+      } else if (type === "instant_card") {
+        // Błyskawiczna karta (Intro ➔ Karta)
+        seq.enableIntro = true;
+        seq.enableRarity = false;
+        seq.enablePlayer = false;
+        seq.enableCard = true;
+        seq.enableHero = true;
+      } else if (type === "only_hero") {
+        seq.enableIntro = false;
+        seq.enableRarity = false;
+        seq.enablePlayer = false;
+        seq.enableCard = true;
+        seq.enableHero = true;
+      }
+      return { ...prev, sequence: seq };
+    });
+  };
+
+  const toggleSequenceStep = (key: keyof Omit<WalkoutSequenceConfig, "timing">) => {
+    setSettings(prev => ({
+      ...prev,
+      sequence: {
+        ...prev.sequence,
+        [key]: !prev.sequence[key]
+      }
+    }));
   };
 
   // Drag and Drop interaction on viewport
@@ -411,6 +526,7 @@ export default function WalkoutStudio(props: {
 
   const handleCopyJSON = () => {
     const jsonOutput = {
+      sequence: settings.sequence,
       rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
       player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
       card: { x: settings.card.x, y: settings.card.y, scale: settings.card.scale }
@@ -421,17 +537,14 @@ export default function WalkoutStudio(props: {
   };
 
   const handleResetDefaults = () => {
-    if (confirm("Zresetować położenia do domyślnych wartości?")) {
+    if (confirm("Zresetować położenia i sekwencję do domyślnych wartości?")) {
       setSettings(DEFAULT_SETTINGS);
       setCustomVideoFileName("");
       localStorage.removeItem("delta_walkout_studio_settings");
     }
   };
 
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [videoStatus, setVideoStatus] = useState<string>("Gotowy");
-
-  // Video Upload with instant preview and Supabase storage upload
+  // Video Upload
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -439,12 +552,9 @@ export default function WalkoutStudio(props: {
     setVideoErrorMsg(null);
     setCustomVideoFileName(file.name);
 
-    // 1. Instant local preview
     const localUrl = URL.createObjectURL(file);
     setSettings(prev => ({ ...prev, videoSrc: localUrl }));
-    setVideoStatus(`Wczytano plik: ${file.name}`);
 
-    // 2. Play immediately
     if (videoRef.current) {
       videoRef.current.src = localUrl;
       videoRef.current.load();
@@ -455,9 +565,7 @@ export default function WalkoutStudio(props: {
       });
     }
 
-    // 3. Upload in background to Supabase Storage for permanent persistence
     try {
-      setUploadingVideo(true);
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "mp4";
       const path = `walkouts/user-video-${Date.now()}.${ext}`;
@@ -469,13 +577,10 @@ export default function WalkoutStudio(props: {
         const { data: publicData } = supabase.storage.from("match-media").getPublicUrl(path);
         if (publicData?.publicUrl) {
           setSettings(prev => ({ ...prev, videoSrc: publicData.publicUrl }));
-          setVideoStatus(`Zapisano w chmurze DELTA: ${file.name}`);
         }
       }
     } catch (err) {
       console.warn("Storage upload fallback to local:", err);
-    } finally {
-      setUploadingVideo(false);
     }
   };
 
@@ -495,6 +600,8 @@ export default function WalkoutStudio(props: {
     setSettings(prev => ({ ...prev, card: { ...prev.card, customCardUrl: url } }));
   };
 
+  const seq = settings.sequence;
+
   return (
     <div className="ws-root">
       {/* GÓRNY PASEK NARZĘDZI */}
@@ -506,10 +613,10 @@ export default function WalkoutStudio(props: {
           <div>
             <h2 className="ws-title">
               Studio Walkoutów & Animacji DELTA
-              <span className="ws-pro-tag">PRO WYSIWYG</span>
+              <span className="ws-pro-tag">MODULAR SEQUENCE</span>
             </h2>
             <p className="ws-subtitle">
-              Wgraj własny film MP4/WebM, ustaw kartę i sylwetkę gracza. Odtwarzaj wideo i testuj animacje w czasie rzeczywistym.
+              Dowolnie włączaj/wyłączaj części sekwencji (np. karta od razu po napisie), wgrywaj wideo i dostosowuj pozycje.
             </p>
           </div>
         </div>
@@ -592,7 +699,7 @@ export default function WalkoutStudio(props: {
             {!hideOverlays && (
               <>
                 {/* 1. WARSTWA NAPISÓW (RARITY) */}
-                {(stage === "rarity" || stage === "player" || stage === "hero") && (
+                {seq.enableRarity && (stage === "rarity" || stage === "player" || stage === "card" || stage === "hero") && (
                   <div 
                     className={`ws-rarity-layer ${activeLayer === "rarity" ? "is-active" : ""}`}
                     style={{
@@ -608,8 +715,8 @@ export default function WalkoutStudio(props: {
                   </div>
                 )}
 
-                {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) */}
-                {(stage === "player" || stage === "hero") && (
+                {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) - TYLKO GDY ENABLEPLAYER = TRUE */}
+                {seq.enablePlayer && (stage === "player" || stage === "hero") && (
                   <div 
                     className={`ws-player-layer ${activeLayer === "player" ? "is-active" : ""}`}
                     style={{
@@ -640,7 +747,7 @@ export default function WalkoutStudio(props: {
                 )}
 
                 {/* 3. WARSTWA KARTY 3D */}
-                {(stage === "card" || stage === "hero") && (
+                {seq.enableCard && (stage === "card" || stage === "hero") && (
                   <div 
                     className={`ws-card-layer ${activeLayer === "card" ? "is-active" : ""}`}
                     style={{
@@ -669,7 +776,7 @@ export default function WalkoutStudio(props: {
                 )}
 
                 {/* DOLNE SZCZEGÓŁY HERO */}
-                {stage === "hero" && (
+                {seq.enableHero && stage === "hero" && (
                   <div className="ws-hero-layer">
                     <div className="ws-hero-badge">
                       <Flame size={13} /> <span>{settings.rarity.text} WALKOUT</span>
@@ -700,7 +807,7 @@ export default function WalkoutStudio(props: {
               {formatTime(videoCurrentTime)} / {formatTime(videoDuration)} • Faza: <span className="uppercase">{stage}</span>
             </div>
 
-            {/* KOMUNIKAT BŁĘDU WIDEO JEŚLI WYSTĄPIŁ */}
+            {/* KOMUNIKAT BŁĘDU WIDEO */}
             {videoErrorMsg && (
               <div className="ws-video-error-badge">
                 <AlertCircle size={15} />
@@ -709,7 +816,7 @@ export default function WalkoutStudio(props: {
             )}
           </div>
 
-          {/* DEDYKOWANY ODTWARZACZ WIDEO (PLAY / PAUSE / SCRUBBER / PRĘDKOŚĆ / DŹWIĘK) */}
+          {/* DEDYKOWANY ODTWARZACZ WIDEO */}
           <div className="ws-video-controls-bar">
             {/* GÓRNY WIERSZ: SUWAK CZASU (SCRUBBER) */}
             <div className="ws-scrubber-row">
@@ -728,7 +835,7 @@ export default function WalkoutStudio(props: {
 
             {/* DOLNY WIERSZ: PRZYCISKI KONTROLNE */}
             <div className="ws-controls-main-row">
-              {/* LEWA STRONA: PLAY/PAUSE, RESTART, ODTWÓRZ CAŁY WALKOUT */}
+              {/* LEWA STRONA: PLAY/PAUSE, RESTART, ODTWÓRZ WALKOUT */}
               <div className="ws-controls-group">
                 <button
                   type="button"
@@ -736,7 +843,7 @@ export default function WalkoutStudio(props: {
                   className={`ws-btn-main-play ${isVideoPlaying ? "is-playing" : ""}`}
                 >
                   {isVideoPlaying ? <Pause size={17} /> : <Play size={17} />}
-                  <span>{isVideoPlaying ? "Wstrzymaj film" : "Odtwórz film"}</span>
+                  <span>{isVideoPlaying ? "Wstrzymaj" : "Odtwórz"}</span>
                 </button>
 
                 <button
@@ -752,56 +859,69 @@ export default function WalkoutStudio(props: {
                   type="button"
                   onClick={startFullWalkout}
                   className="ws-btn-walkout-seq"
-                  title="Uruchom pełną 12-sekundową animację kinową"
+                  title={`Uruchom sekwencję (${activeSequencePlan.totalDuration.toFixed(1)}s)`}
                 >
                   <Sparkles size={15} />
-                  <span>Animacja Walkoutu (12s)</span>
+                  <span>
+                    {!seq.enablePlayer 
+                      ? "⚡ Walkout: Napis ➔ Karta" 
+                      : `Walkout (${activeSequencePlan.totalDuration.toFixed(1)}s)`}
+                  </span>
                 </button>
               </div>
 
-              {/* ŚRODEK: SKOKI DO FAZ ANIMACJI */}
+              {/* ŚRODEK: SKOKI DO AKTYWNYCH FAZ */}
               <div className="ws-stages-row">
-                <span className="ws-stages-label">Faza:</span>
-                <button
-                  type="button"
-                  onClick={() => jumpToStage("intro")}
-                  className={`ws-stage-btn ${stage === "intro" ? "active" : ""}`}
-                >
-                  Intro (0s)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => jumpToStage("rarity")}
-                  className={`ws-stage-btn ${stage === "rarity" ? "active red" : ""}`}
-                >
-                  Napis (3s)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => jumpToStage("player")}
-                  className={`ws-stage-btn ${stage === "player" ? "active sky" : ""}`}
-                >
-                  Gracz (5s)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => jumpToStage("card")}
-                  className={`ws-stage-btn ${stage === "card" ? "active gold" : ""}`}
-                >
-                  Karta (7s)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => jumpToStage("hero")}
-                  className={`ws-stage-btn ${stage === "hero" ? "active yellow" : ""}`}
-                >
-                  Hero (9s)
-                </button>
+                <span className="ws-stages-label">Skocz:</span>
+                {seq.enableIntro && (
+                  <button
+                    type="button"
+                    onClick={() => jumpToStage("intro")}
+                    className={`ws-stage-btn ${stage === "intro" ? "active" : ""}`}
+                  >
+                    Intro
+                  </button>
+                )}
+                {seq.enableRarity && (
+                  <button
+                    type="button"
+                    onClick={() => jumpToStage("rarity")}
+                    className={`ws-stage-btn ${stage === "rarity" ? "active red" : ""}`}
+                  >
+                    Napis
+                  </button>
+                )}
+                {seq.enablePlayer && (
+                  <button
+                    type="button"
+                    onClick={() => jumpToStage("player")}
+                    className={`ws-stage-btn ${stage === "player" ? "active sky" : ""}`}
+                  >
+                    Gracz
+                  </button>
+                )}
+                {seq.enableCard && (
+                  <button
+                    type="button"
+                    onClick={() => jumpToStage("card")}
+                    className={`ws-stage-btn ${stage === "card" ? "active gold" : ""}`}
+                  >
+                    Karta
+                  </button>
+                )}
+                {seq.enableHero && (
+                  <button
+                    type="button"
+                    onClick={() => jumpToStage("hero")}
+                    className={`ws-stage-btn ${stage === "hero" ? "active yellow" : ""}`}
+                  >
+                    Hero
+                  </button>
+                )}
               </div>
 
               {/* PRAWA STRONA: PRĘDKOŚĆ, PĘTLA, DŹWIĘK */}
               <div className="ws-controls-group">
-                {/* PRĘDKOŚĆ */}
                 <div className="ws-speed-select-box">
                   {[0.5, 1.0, 1.5, 2.0].map(s => (
                     <button
@@ -815,7 +935,6 @@ export default function WalkoutStudio(props: {
                   ))}
                 </div>
 
-                {/* LOOP */}
                 <button
                   type="button"
                   onClick={() => setIsLooping(!isLooping)}
@@ -825,7 +944,6 @@ export default function WalkoutStudio(props: {
                   <Repeat size={15} />
                 </button>
 
-                {/* GŁOŚNOŚĆ */}
                 <button
                   type="button"
                   onClick={toggleMute}
@@ -849,8 +967,118 @@ export default function WalkoutStudio(props: {
           </div>
         </div>
 
-        {/* PRAWA KOLUMNA: DOKŁADNE PANELE KONTROLNE */}
+        {/* PRAWA KOLUMNA: PANELE KONTROLNE & SEKWENCJA */}
         <div className="ws-sidebar">
+
+          {/* NOWA SEKCJA: KONFIGURATOR ETAPÓW SEKWENCJI */}
+          <div className="ws-panel-box ws-box-sequence">
+            <div className="ws-panel-head">
+              <span className="ws-box-heading purple">
+                <Zap size={16} /> Etapy & Kolejność Walkoutu
+              </span>
+            </div>
+
+            <div className="ws-preset-chips-row">
+              <button
+                type="button"
+                onClick={() => applySequencePreset("skip_player")}
+                className={`ws-preset-chip ${!seq.enablePlayer && seq.enableRarity && seq.enableCard ? "active" : ""}`}
+                title="Karta pojawia się od razu po napisie (bez prezentacji gracza)"
+              >
+                ⚡ Karta od razu po napisie
+              </button>
+              <button
+                type="button"
+                onClick={() => applySequencePreset("full")}
+                className={`ws-preset-chip ${seq.enablePlayer && seq.enableRarity && seq.enableCard ? "active" : ""}`}
+                title="Kompletny kinowy pokaz"
+              >
+                👑 Pełny Walkout
+              </button>
+              <button
+                type="button"
+                onClick={() => applySequencePreset("instant_card")}
+                className={`ws-preset-chip ${!seq.enableRarity && !seq.enablePlayer && seq.enableCard ? "active" : ""}`}
+                title="Błyskawiczny zrzut karty z tłem"
+              >
+                🚀 Błyskawiczny
+              </button>
+            </div>
+
+            <div className="ws-sequence-toggles-list">
+              <label className="ws-seq-toggle-item">
+                <input
+                  type="checkbox"
+                  checked={seq.enableIntro}
+                  onChange={() => toggleSequenceStep("enableIntro")}
+                  className="ws-checkbox"
+                />
+                <div className="ws-seq-info">
+                  <span className="ws-seq-name">1. Wstęp Wideo (Intro)</span>
+                  <span className="ws-seq-desc">Pierwsze sekundy czystego filmu / tunelu</span>
+                </div>
+              </label>
+
+              <label className="ws-seq-toggle-item">
+                <input
+                  type="checkbox"
+                  checked={seq.enableRarity}
+                  onChange={() => toggleSequenceStep("enableRarity")}
+                  className="ws-checkbox"
+                />
+                <div className="ws-seq-info">
+                  <span className="ws-seq-name">2. Napis Rzadkości (Rarity Title)</span>
+                  <span className="ws-seq-desc">Napis np. &quot;INFERNO&quot;, &quot;IKONA&quot;, &quot;POTM&quot;</span>
+                </div>
+              </label>
+
+              <label className={`ws-seq-toggle-item ${!seq.enablePlayer ? "is-disabled-row" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={seq.enablePlayer}
+                  onChange={() => toggleSequenceStep("enablePlayer")}
+                  className="ws-checkbox"
+                />
+                <div className="ws-seq-info">
+                  <span className="ws-seq-name flex items-center gap-1.5">
+                    3. Sylwetka Zawodnika
+                    {!seq.enablePlayer && <span className="ws-tag-skipped">POMINIĘTY (Od razu karta!)</span>}
+                  </span>
+                  <span className="ws-seq-desc">
+                    {seq.enablePlayer 
+                      ? "Zawodnik wychodzi przed kartą" 
+                      : "Wyłączone – karta pojawia się bezpośrednio po napisie"}
+                  </span>
+                </div>
+              </label>
+
+              <label className="ws-seq-toggle-item">
+                <input
+                  type="checkbox"
+                  checked={seq.enableCard}
+                  onChange={() => toggleSequenceStep("enableCard")}
+                  className="ws-checkbox"
+                />
+                <div className="ws-seq-info">
+                  <span className="ws-seq-name">4. Zrzut Karty 3D & Błysk</span>
+                  <span className="ws-seq-desc">Kinowy flash i wejście głównej karty</span>
+                </div>
+              </label>
+
+              <label className="ws-seq-toggle-item">
+                <input
+                  type="checkbox"
+                  checked={seq.enableHero}
+                  onChange={() => toggleSequenceStep("enableHero")}
+                  className="ws-checkbox"
+                />
+                <div className="ws-seq-info">
+                  <span className="ws-seq-name">5. Pasek Hero (Rating & Klub)</span>
+                  <span className="ws-seq-desc">Dolne podsumowanie karty</span>
+                </div>
+              </label>
+            </div>
+          </div>
           
           {/* SEKCJA ZARZĄDZANIA WIDEO */}
           <div className="ws-panel-box ws-box-video">
@@ -906,9 +1134,6 @@ export default function WalkoutStudio(props: {
                 onChange={handleVideoUpload}
                 className="ws-file-input"
               />
-              <span className="ws-upload-hint">
-                Film uruchomi się natychmiast po wybraniu i zostanie przygotowany do odtwarzania.
-              </span>
             </div>
           </div>
 
@@ -1183,6 +1408,7 @@ export default function WalkoutStudio(props: {
             <span className="ws-json-title">Współrzędne (Live JSON):</span>
             <pre className="ws-json-pre">
               {JSON.stringify({
+                sequence: settings.sequence,
                 rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
                 player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
                 card: { x: settings.card.x, y: settings.card.y, scale: settings.card.scale }
@@ -1193,7 +1419,7 @@ export default function WalkoutStudio(props: {
         </div>
       </div>
 
-      {/* SCOPED CSS STYLES - ZERO BLEED GUARANTEE */}
+      {/* SCOPED CSS STYLES */}
       <style jsx>{`
         .ws-root {
           width: 100%;
@@ -1246,13 +1472,13 @@ export default function WalkoutStudio(props: {
         }
 
         .ws-pro-tag {
-          font-size: 9.5px;
+          font-size: 9px;
           font-weight: 900;
           padding: 2px 7px;
           border-radius: 999px;
-          background: rgba(220, 38, 38, 0.25);
-          color: #f87171;
-          border: 1px solid rgba(220, 38, 38, 0.4);
+          background: rgba(168, 85, 247, 0.25);
+          color: #c084fc;
+          border: 1px solid rgba(168, 85, 247, 0.4);
         }
 
         .ws-subtitle {
@@ -1384,14 +1610,14 @@ export default function WalkoutStudio(props: {
           position: absolute;
           inset: 0;
           background: #ffffff;
-          opacity: 0.9;
+          opacity: 0.95;
           z-index: 99;
-          animation: wsFlashAnim 0.3s ease-out forwards;
+          animation: wsFlashAnim 0.35s ease-out forwards;
           pointer-events: none;
         }
 
         @keyframes wsFlashAnim {
-          0% { opacity: 0.9; }
+          0% { opacity: 0.95; }
           100% { opacity: 0; }
         }
 
@@ -1862,6 +2088,11 @@ export default function WalkoutStudio(props: {
           box-sizing: border-box;
         }
 
+        .ws-box-sequence {
+          border-color: rgba(168, 85, 247, 0.4);
+          background: rgba(168, 85, 247, 0.06);
+        }
+
         .ws-box-video {
           border-color: rgba(59, 130, 246, 0.35);
           background: rgba(59, 130, 246, 0.05);
@@ -1897,10 +2128,98 @@ export default function WalkoutStudio(props: {
           text-transform: uppercase;
         }
 
+        .ws-box-heading.purple { color: #c084fc; }
         .ws-box-heading.video-color { color: #60a5fa; }
         .ws-box-heading.gold { color: #f59e0b; }
         .ws-box-heading.sky { color: #38bdf8; }
         .ws-box-heading.red { color: #ef4444; }
+
+        .ws-preset-chips-row {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .ws-preset-chip {
+          padding: 5px 10px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #cbd5e1;
+          font-size: 10.5px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: 0.15s ease;
+        }
+
+        .ws-preset-chip.active {
+          background: rgba(168, 85, 247, 0.3);
+          border-color: #a855f7;
+          color: #f3e8ff;
+        }
+
+        .ws-sequence-toggles-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .ws-seq-toggle-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 8px 10px;
+          background: rgba(0, 0, 0, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 9px;
+          cursor: pointer;
+          transition: 0.15s ease;
+        }
+
+        .ws-seq-toggle-item:hover {
+          background: rgba(0, 0, 0, 0.5);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .ws-seq-toggle-item.is-disabled-row {
+          opacity: 0.6;
+          border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .ws-checkbox {
+          width: 16px;
+          height: 16px;
+          margin-top: 2px;
+          accent-color: #a855f7;
+          cursor: pointer;
+        }
+
+        .ws-seq-info {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .ws-seq-name {
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #ffffff;
+        }
+
+        .ws-seq-desc {
+          font-size: 10px;
+          color: #94a3b8;
+        }
+
+        .ws-tag-skipped {
+          font-size: 9px;
+          font-weight: 900;
+          padding: 1px 5px;
+          border-radius: 4px;
+          background: rgba(239, 68, 68, 0.25);
+          color: #f87171;
+          border: 1px solid rgba(239, 68, 68, 0.4);
+        }
 
         .ws-status-pill {
           font-size: 10px;
@@ -2072,12 +2391,6 @@ export default function WalkoutStudio(props: {
         .ws-file-input {
           font-size: 11px;
           color: #94a3b8;
-        }
-
-        .ws-upload-hint {
-          font-size: 10px;
-          color: #64748b;
-          line-height: 1.3;
         }
 
         .ws-presets-list {
