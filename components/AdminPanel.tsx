@@ -6,10 +6,11 @@ import type { UserPermissions } from "@/lib/permissions";
 import { EMPTY_PERMISSIONS } from "@/lib/permissions";
 import PlayerPhoto from "./PlayerPhoto";
 import CardLayoutEditor from "./CardLayoutEditor";
+import WalkoutStudio from "./WalkoutStudio";
 import { 
   ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, 
   Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice, Edit3, 
-  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame, Sliders, ChevronDown 
+  Search, Camera, CheckCircle2, X, Upload, Check, AlertCircle, Sparkles, Gift, Coins, Flame, Sliders, ChevronDown, Film 
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -134,7 +135,7 @@ export default function AdminPanel(props:{
   const [userManagedCards, setUserManagedCards] = useState<any[]>([]);
   const [loadingUserCards, setLoadingUserCards] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
-  const [cardsSubTab, setCardsSubTab] = useState<"editor" | "grant" | "manage">("editor");
+  const [cardsSubTab, setCardsSubTab] = useState<"editor" | "walkout" | "grant" | "manage">("editor");
 
   const filteredAdminPlayers = useMemo(() => {
     return players.filter(p => {
@@ -1935,7 +1936,19 @@ export default function AdminPanel(props:{
                 : "bg-slate-900 text-slate-300 hover:bg-slate-800"
             }`}
           >
-            <Sliders size={14} /> 🎨 Wizualny Edytor Kart (Layout Editor)
+            <Sliders size={14} /> 🎨 Wizualny Edytor Kart (Layout)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCardsSubTab("walkout")}
+            className={`py-2 px-4 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+              cardsSubTab === "walkout"
+                ? "bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400 text-black shadow-lg"
+                : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <Film size={14} /> 🎬 Studio Walkoutów & Filmów
           </button>
 
           <button
@@ -1959,13 +1972,18 @@ export default function AdminPanel(props:{
                 : "bg-slate-900 text-slate-300 hover:bg-slate-800"
             }`}
           >
-            <Trash2 size={14} /> 🗑️ Zarządzanie Kolekcjami Użytkowników
+            <Trash2 size={14} /> 🗑️ Zarządzanie Kolekcjami
           </button>
         </div>
 
         {/* SUB-TAB 1: VISUAL CARD LAYOUT EDITOR */}
         {cardsSubTab === "editor" && (
           <CardLayoutEditor players={players} />
+        )}
+
+        {/* SUB-TAB 1.5: WALKOUT STUDIO */}
+        {cardsSubTab === "walkout" && (
+          <WalkoutStudio players={players} />
         )}
 
         {/* SUB-TAB 2: GRANTING PACKS & POINTS & CREATING SPECIAL CARDS */}
