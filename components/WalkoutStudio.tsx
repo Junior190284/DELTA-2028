@@ -27,10 +27,8 @@ import {
   Star, 
   Film,
   Zap,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Shield
+  Shield,
+  Trash2
 } from "lucide-react";
 import PlayerPhoto from "./PlayerPhoto";
 
@@ -44,35 +42,25 @@ interface Player {
 
 export interface WalkoutSettings {
   videoSrc: string;
-  videoType: "preset" | "custom";
   soundVolume: number;
   rarity: {
     text: string;
     subtext: string;
-    x: number;
-    y: number;
+    x: number; // percentage offset from center
+    y: number; // percentage offset from center
     scale: number;
-    fontSize: number;
-    color: string;
-    glowColor: string;
-    appearTime: number; // in seconds
   };
   player: {
-    x: number;
-    y: number;
+    x: number; // percentage offset from center
+    y: number; // percentage offset from center
     scale: number;
-    brightness: number;
-    contrast: number;
-    appearTime: number;
     customCutoutUrl?: string;
   };
   card: {
-    template: "inferno" | "legendary" | "gold" | "epic" | "matchday";
-    x: number;
-    y: number;
+    template: "inferno" | "gold" | "legendary" | "epic";
+    x: number; // percentage offset from center
+    y: number; // pixel offset from center
     scale: number;
-    rotation: number;
-    appearTime: number;
     customCardUrl?: string;
   };
   metadata: {
@@ -81,44 +69,30 @@ export interface WalkoutSettings {
     playerPosition: string;
     playerClub: string;
   };
-  timings: {
-    totalDuration: number;
-    flashTime: number;
-    revealTime: number;
-  };
+  stage: "all" | "intro" | "rarity" | "player" | "card" | "hero";
 }
 
-const DEFAULT_WALKOUT_SETTINGS: WalkoutSettings = {
+const DEFAULT_SETTINGS: WalkoutSettings = {
   videoSrc: "/media/walkouts/inferno-bg.mp4",
-  videoType: "preset",
   soundVolume: 0.8,
   rarity: {
     text: "INFERNO",
-    subtext: "SPECIAL EDITION",
+    subtext: "EDYCJA SPECJALNA",
     x: 0,
-    y: -80,
-    scale: 1.6,
-    fontSize: 54,
-    color: "#ff3b30",
-    glowColor: "rgba(255, 69, 0, 0.8)",
-    appearTime: 2.5
+    y: -1,
+    scale: 1.75
   },
   player: {
-    x: -30,
-    y: 10,
-    scale: 1.15,
-    brightness: 105,
-    contrast: 110,
-    appearTime: 4.8,
+    x: -21,
+    y: -24,
+    scale: 1.05,
     customCutoutUrl: ""
   },
   card: {
     template: "inferno",
-    x: 40,
-    y: -30,
-    scale: 1.25,
-    rotation: 0,
-    appearTime: 7.2,
+    x: -2,
+    y: -78,
+    scale: 1.3,
     customCardUrl: ""
   },
   metadata: {
@@ -127,18 +101,13 @@ const DEFAULT_WALKOUT_SETTINGS: WalkoutSettings = {
     playerPosition: "NAPASTNIK",
     playerClub: "DELTA 2018 GM"
   },
-  timings: {
-    totalDuration: 12.0,
-    flashTime: 7.0,
-    revealTime: 7.2
-  }
+  stage: "hero"
 };
 
 const VIDEO_PRESETS = [
-  { id: "inferno", name: "🔥 Piekielne Płomienie (Inferno MP4)", src: "/media/walkouts/inferno-bg.mp4" },
-  { id: "sparks", name: "✨ Złote Cząsteczki & Iskry", src: "/assets/stadium-broadcast-v103.png" },
+  { id: "inferno", name: "🔥 Piekielny Tunel (Inferno MP4)", src: "/media/walkouts/inferno-bg.mp4" },
   { id: "stadium", name: "🏟️ Nocny Stadion DELTA", src: "/assets/stadium.png" },
-  { id: "galaxy", name: "🌌 Kosmiczna Galaktyka", src: "/assets/stadium3.png" },
+  { id: "broadcast", name: "✨ Transmisja Studio Gold", src: "/assets/stadium-broadcast-v103.png" },
 ];
 
 export default function WalkoutStudio(props: {
@@ -147,17 +116,17 @@ export default function WalkoutStudio(props: {
 }) {
   const players = props.players || [];
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>(players[0]?.id || "");
+  
   const [settings, setSettings] = useState<WalkoutSettings>(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("delta_walkout_studio_settings");
-        if (saved) return JSON.parse(saved);
+        if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
       } catch {}
     }
-    return DEFAULT_WALKOUT_SETTINGS;
+    return DEFAULT_SETTINGS;
   });
 
-  // Player selection sync
   const activePlayer = useMemo(() => {
     return players.find(p => p.id === selectedPlayerId) || null;
   }, [players, selectedPlayerId]);
@@ -169,104 +138,111 @@ export default function WalkoutStudio(props: {
         metadata: {
           ...prev.metadata,
           playerName: activePlayer.display_name.split(" ")[0].toUpperCase(),
-          playerPosition: activePlayer.position || "ZAWODNIK",
+          playerPosition: (activePlayer.position || "ZAWODNIK").toUpperCase(),
         }
       }));
     }
   }, [activePlayer]);
 
-  // Playback & Timeline State
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(settings.timings.totalDuration);
-  const [isMuted, setIsMuted] = useState(false);
-  const [activeLayer, setActiveLayer] = useState<"card" | "player" | "rarity">("card");
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [savedFeedback, setSavedFeedback] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [isFlashActive, setIsFlashActive] = useState(false);
+  // Stage sequence playback
+  const [stage, setStage] = useState<"intro" | "rarity" | "player" | "card" | "hero">("hero");
+  const [isPlayingAuto, setIsPlayingAuto] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(9.0);
+  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isFlash, setIsFlash] = useState<boolean>(false);
+  const [activeLayer, setActiveLayer] = useState<"rarity" | "player" | "card">("card");
+  const [copied, setCopied] = useState<boolean>(false);
+  const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const playbackTimerRef = useRef<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout[]>([]);
+  const animFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-  const stageContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Dragging state
-  const [isDragging, setIsDragging] = useState(false);
+  // Dragging state on viewport
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragStartRef = useRef<{ startX: number; startY: number; initX: number; initY: number }>({
     startX: 0, startY: 0, initX: 0, initY: 0
   });
 
-  // Calculate visibility based on timeline currentTime
-  const isRarityVisible = currentTime >= settings.rarity.appearTime;
-  const isPlayerVisible = currentTime >= settings.player.appearTime;
-  const isCardVisible = currentTime >= settings.card.appearTime;
-
-  // Flash effect trigger
-  useEffect(() => {
-    const flashDelta = Math.abs(currentTime - settings.timings.flashTime);
-    if (flashDelta < 0.25) {
-      setIsFlashActive(true);
-    } else {
-      setIsFlashActive(false);
-    }
-  }, [currentTime, settings.timings.flashTime]);
-
-  // Video sync
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  // Playback Loop
-  const togglePlay = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-      if (playbackTimerRef.current) cancelAnimationFrame(playbackTimerRef.current);
-    } else {
-      setIsPlaying(true);
-      if (currentTime >= settings.timings.totalDuration - 0.2) {
-        setCurrentTime(0);
-        if (videoRef.current) videoRef.current.currentTime = 0;
-      }
-      startTimeRef.current = performance.now() - (currentTime * 1000);
-
-      const loop = (now: number) => {
-        const elapsed = (now - startTimeRef.current) / 1000;
-        if (elapsed >= settings.timings.totalDuration) {
-          setCurrentTime(settings.timings.totalDuration);
-          setIsPlaying(false);
-        } else {
-          setCurrentTime(elapsed);
-          playbackTimerRef.current = requestAnimationFrame(loop);
-        }
-      };
-      playbackTimerRef.current = requestAnimationFrame(loop);
+  const clearTimers = () => {
+    timerRef.current.forEach(t => clearTimeout(t));
+    timerRef.current = [];
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
     }
   };
 
-  const handleSeek = (newTime: number) => {
-    setCurrentTime(newTime);
-    if (videoRef.current && isFinite(videoRef.current.duration)) {
-      videoRef.current.currentTime = newTime % videoRef.current.duration;
-    }
-    if (isPlaying) {
-      startTimeRef.current = performance.now() - (newTime * 1000);
-    }
-  };
-
-  const handleResetTimeline = () => {
-    setIsPlaying(false);
-    if (playbackTimerRef.current) cancelAnimationFrame(playbackTimerRef.current);
+  const startFullWalkout = () => {
+    clearTimers();
+    setIsPlayingAuto(true);
+    setStage("intro");
+    setIsFlash(false);
     setCurrentTime(0);
-    if (videoRef.current) videoRef.current.currentTime = 0;
+    startTimeRef.current = Date.now();
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+
+    const updateTicker = () => {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      setCurrentTime(elapsed);
+      if (elapsed < 12) {
+        animFrameRef.current = requestAnimationFrame(updateTicker);
+      } else {
+        setIsPlayingAuto(false);
+      }
+    };
+    animFrameRef.current = requestAnimationFrame(updateTicker);
+
+    // 1. Stage: Rarity appear at 3.0s
+    timerRef.current.push(
+      setTimeout(() => {
+        setStage("rarity");
+      }, 3000)
+    );
+
+    // 2. Stage: Player appear at 5.0s
+    timerRef.current.push(
+      setTimeout(() => {
+        setStage("player");
+      }, 5000)
+    );
+
+    // 3. Stage: Card Flash & Drop at 7.0s
+    timerRef.current.push(
+      setTimeout(() => {
+        setStage("card");
+        setIsFlash(true);
+        setTimeout(() => setIsFlash(false), 300);
+      }, 7000)
+    );
+
+    // 4. Stage: Hero full display at 9.0s
+    timerRef.current.push(
+      setTimeout(() => {
+        setStage("hero");
+      }, 9000)
+    );
   };
 
-  // Drag and Drop interaction on Stage
+  const jumpToStage = (s: "intro" | "rarity" | "player" | "card" | "hero") => {
+    clearTimers();
+    setIsPlayingAuto(false);
+    setStage(s);
+    setIsFlash(false);
+    const times = { intro: 0, rarity: 3.5, player: 5.5, card: 7.5, hero: 9.5 };
+    setCurrentTime(times[s]);
+    if (videoRef.current) {
+      videoRef.current.currentTime = times[s] % (videoRef.current.duration || 10);
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  // Drag and Drop
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -274,15 +250,15 @@ export default function WalkoutStudio(props: {
     let initX = 0;
     let initY = 0;
 
-    if (activeLayer === "card") {
-      initX = settings.card.x;
-      initY = settings.card.y;
+    if (activeLayer === "rarity") {
+      initX = settings.rarity.x;
+      initY = settings.rarity.y;
     } else if (activeLayer === "player") {
       initX = settings.player.x;
       initY = settings.player.y;
-    } else if (activeLayer === "rarity") {
-      initX = settings.rarity.x;
-      initY = settings.rarity.y;
+    } else if (activeLayer === "card") {
+      initX = settings.card.x;
+      initY = settings.card.y;
     }
 
     dragStartRef.current = {
@@ -299,19 +275,23 @@ export default function WalkoutStudio(props: {
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
-    const deltaX = e.clientX - dragStartRef.current.startX;
-    const deltaY = e.clientY - dragStartRef.current.startY;
+    const dx = e.clientX - dragStartRef.current.startX;
+    const dy = e.clientY - dragStartRef.current.startY;
 
-    const newX = Math.round(dragStartRef.current.initX + deltaX);
-    const newY = Math.round(dragStartRef.current.initY + deltaY);
+    // Scale sensitivity
+    const stepX = Math.round(dx / 5);
+    const stepY = Math.round(dy / 5);
+
+    const newX = dragStartRef.current.initX + stepX;
+    const newY = dragStartRef.current.initY + stepY;
 
     setSettings(prev => {
-      if (activeLayer === "card") {
-        return { ...prev, card: { ...prev.card, x: newX, y: newY } };
+      if (activeLayer === "rarity") {
+        return { ...prev, rarity: { ...prev.rarity, x: newX, y: newY } };
       } else if (activeLayer === "player") {
         return { ...prev, player: { ...prev.player, x: newX, y: newY } };
-      } else if (activeLayer === "rarity") {
-        return { ...prev, rarity: { ...prev.rarity, x: newX, y: newY } };
+      } else if (activeLayer === "card") {
+        return { ...prev, card: { ...prev.card, x: newX, y: newY } };
       }
       return prev;
     });
@@ -337,14 +317,19 @@ export default function WalkoutStudio(props: {
   };
 
   const handleCopyJSON = () => {
-    navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
+    const jsonOutput = {
+      rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
+      player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
+      card: { x: settings.card.x, y: settings.card.y, scale: settings.card.scale }
+    };
+    navigator.clipboard.writeText(JSON.stringify(jsonOutput, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleResetDefaults = () => {
-    if (confirm("Przywrócić domyślne ustawienia studia walkoutów?")) {
-      setSettings(DEFAULT_WALKOUT_SETTINGS);
+    if (confirm("Zresetować położenia do domyślnych wartości?")) {
+      setSettings(DEFAULT_SETTINGS);
       localStorage.removeItem("delta_walkout_studio_settings");
     }
   };
@@ -354,44 +339,46 @@ export default function WalkoutStudio(props: {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    setSettings(prev => ({
-      ...prev,
-      videoSrc: url,
-      videoType: "custom"
-    }));
+    setSettings(prev => ({ ...prev, videoSrc: url }));
+    if (videoRef.current) {
+      videoRef.current.src = url;
+      videoRef.current.play().catch(() => {});
+    }
   };
 
-  // Cutout PNG Upload
+  // Player Cutout Upload
   const handleCutoutUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    setSettings(prev => ({
-      ...prev,
-      player: {
-        ...prev.player,
-        customCutoutUrl: url
-      }
-    }));
+    setSettings(prev => ({ ...prev, player: { ...prev.player, customCutoutUrl: url } }));
+  };
+
+  // Card Image Upload
+  const handleCardUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setSettings(prev => ({ ...prev, card: { ...prev.card, customCardUrl: url } }));
   };
 
   return (
-    <div className={`v300-walkout-studio ${isFullscreen ? "is-fullscreen" : ""}`}>
-      {/* GÓRNY PASEK NARZĘDZI */}
+    <div className="v300-walkout-studio w-full space-y-4">
+      {/* NAGŁÓWEK I PRZYCISKI AKCJI */}
       <div className="flex items-center justify-between gap-3 p-4 bg-slate-900/90 border border-slate-800 rounded-2xl flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-black shadow-lg">
-            <Film size={22} />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-amber-500 to-yellow-400 flex items-center justify-center text-black shadow-lg">
+            <Flame size={22} />
           </div>
           <div>
-            <h2 className="text-base font-black text-white flex items-center gap-2 uppercase tracking-wide">
-              <span>Studio Walkoutów DELTA</span>
-              <span className="text-[10px] bg-red-950 text-red-400 border border-red-800 px-2 py-0.5 rounded-full font-black">
-                PRO STUDIO
+            <h2 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+              <span>Studio Walkoutów & Animacji</span>
+              <span className="text-[10px] bg-red-950 text-red-400 border border-red-800 px-2 py-0.5 rounded-full font-bold">
+                PRO WYSIWYG
               </span>
             </h2>
             <p className="text-xs text-slate-400">
-              Personalizuj animację otwierania kart: wideo tła, pozycje 3D, napisy i efekty wybuchu.
+              Wybierz film wideo, kartę i zawodnika. Przesuwaj elementy suwakami lub przeciągaj myszką.
             </p>
           </div>
         </div>
@@ -402,7 +389,7 @@ export default function WalkoutStudio(props: {
             onClick={handleResetDefaults}
             className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center gap-1.5"
           >
-            <RotateCcw size={14} /> Domyślne
+            <RotateCcw size={14} /> Reset
           </button>
           <button
             type="button"
@@ -410,7 +397,7 @@ export default function WalkoutStudio(props: {
             className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition flex items-center gap-1.5"
           >
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-            <span>{copied ? "Skopiowano JSON!" : "Kopiuj JSON"}</span>
+            <span>{copied ? "Skopiowano!" : "Kopiuj JSON"}</span>
           </button>
           <button
             type="button"
@@ -418,28 +405,29 @@ export default function WalkoutStudio(props: {
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black text-xs font-black uppercase tracking-wider transition shadow-lg flex items-center gap-1.5"
           >
             <Save size={15} />
-            <span>{savedFeedback ? "✓ Zapisano!" : "Zapisz animację"}</span>
+            <span>{savedFeedback ? "✓ Zapisano!" : "Zapisz ułożenie"}</span>
           </button>
         </div>
       </div>
 
-      {/* GŁÓWNY PANEL EDYTORA (LEWA: STAGE PODGLĄDU, PRAWA: KONTROLKI) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4">
+      {/* GŁÓWNY WIDOK: LEWA - EKRAN FILMOWY, PRAWA - DOKŁADNE PANELE */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         
-        {/* LEWA STRONA: SCENA PODGLĄDU (STAGE) */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-3">
+        {/* LEWA STRONA: KINOWY VIEWPORT (560px) */}
+        <div className="xl:col-span-8 flex flex-col gap-3">
+          
           <div 
-            ref={stageContainerRef}
-            className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl select-none flex items-center justify-center cursor-crosshair group"
+            className="relative w-full h-[520px] md:h-[560px] rounded-2xl overflow-hidden bg-black border border-red-900/60 shadow-[0_25px_60px_rgba(0,0,0,0.95)] select-none flex items-center justify-center cursor-move group"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
           >
-            {/* 1. TŁO WIDEO */}
+            {/* WIDEO TŁA */}
             {settings.videoSrc.endsWith(".mp4") || settings.videoSrc.endsWith(".webm") ? (
               <video
                 ref={videoRef}
                 src={settings.videoSrc}
+                autoPlay
                 loop
                 muted={isMuted}
                 playsInline
@@ -452,32 +440,32 @@ export default function WalkoutStudio(props: {
               />
             )}
 
-            {/* Ciemna winieta i poświata stadionowa */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 pointer-events-none" />
-            <div className="absolute inset-0 bg-radial-gradient from-transparent via-transparent to-black/80 pointer-events-none" />
+            {/* Ciemna winieta */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
 
-            {/* BŁYSK EXPLOSION (FLASH) */}
-            {isFlashActive && (
+            {/* EFEKT BŁYSKU (FLASH) */}
+            {isFlash && (
               <div className="absolute inset-0 bg-white z-50 animate-ping pointer-events-none opacity-90 transition-opacity" />
             )}
 
-            {/* 2. WARSTWA 1: NAPISY RZADKOŚCI & TYTUŁ */}
-            {isRarityVisible && (
-              <div
-                className={`absolute pointer-events-none transition-transform duration-75 flex flex-col items-center justify-center text-center ${
-                  activeLayer === "rarity" ? "ring-2 ring-amber-400 ring-offset-4 ring-offset-black/50 rounded-xl p-2" : ""
+            {/* 1. WARSTWA NAPISÓW (RARITY) */}
+            {(stage === "rarity" || stage === "player" || stage === "hero") && (
+              <div 
+                className={`absolute pointer-events-none flex flex-col items-center text-center z-40 transition-transform duration-75 ${
+                  activeLayer === "rarity" ? "ring-2 ring-amber-400 ring-offset-4 ring-offset-black/70 rounded-xl p-2" : ""
                 }`}
                 style={{
-                  transform: `translate(${settings.rarity.x}px, ${settings.rarity.y}px) scale(${settings.rarity.scale})`,
-                  zIndex: 20
+                  top: "50%",
+                  left: "50%",
+                  transform: `translate(calc(-50% + ${settings.rarity.x}%), calc(-50% + ${settings.rarity.y}%)) scale(${settings.rarity.scale})`
                 }}
               >
                 <div 
-                  className="font-black uppercase tracking-widest leading-none drop-shadow-2xl"
+                  className="font-black tracking-widest uppercase leading-none"
                   style={{
-                    fontSize: `${settings.rarity.fontSize}px`,
-                    color: settings.rarity.color,
-                    textShadow: `0 0 35px ${settings.rarity.glowColor}, 0 0 10px #000, 0 4px 20px #000`
+                    fontSize: "48px",
+                    color: "#ff3b30",
+                    textShadow: "0 0 30px rgba(255, 69, 0, 0.9), 0 0 10px #000, 0 4px 15px #000"
                   }}
                 >
                   {settings.rarity.text}
@@ -491,16 +479,17 @@ export default function WalkoutStudio(props: {
               </div>
             )}
 
-            {/* 3. WARSTWA 2: SYLWETKA ZAWODNIKA (CUTOUT PNG) */}
-            {isPlayerVisible && (
-              <div
-                className={`absolute pointer-events-none transition-transform duration-75 flex items-center justify-center ${
-                  activeLayer === "player" ? "ring-2 ring-sky-400 ring-offset-4 ring-offset-black/50 rounded-2xl" : ""
+            {/* 2. WARSTWA ZAWODNIKA (CUTOUT PNG) */}
+            {(stage === "player" || stage === "hero") && (
+              <div 
+                className={`absolute pointer-events-none z-30 transition-transform duration-75 flex items-center justify-center ${
+                  activeLayer === "player" ? "ring-2 ring-sky-400 ring-offset-4 ring-offset-black/70 rounded-2xl" : ""
                 }`}
                 style={{
-                  transform: `translate(${settings.player.x}px, ${settings.player.y}px) scale(${settings.player.scale})`,
-                  filter: `brightness(${settings.player.brightness}%) contrast(${settings.player.contrast}%) drop-shadow(0 20px 30px rgba(0,0,0,0.9)) drop-shadow(0 0 25px rgba(255,69,0,0.35))`,
-                  zIndex: 25
+                  top: "50%",
+                  left: "50%",
+                  transform: `translate(calc(-50% + ${settings.player.x}%), calc(-50% + ${settings.player.y}%)) scale(${settings.player.scale})`,
+                  filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.95)) drop-shadow(0 0 25px rgba(255,69,0,0.4))"
                 }}
               >
                 {settings.player.customCutoutUrl ? (
@@ -526,171 +515,156 @@ export default function WalkoutStudio(props: {
               </div>
             )}
 
-            {/* 4. WARSTWA 3: KARTA 3D / HERO CARD */}
-            {isCardVisible && (
-              <div
-                className={`absolute pointer-events-none transition-transform duration-75 flex items-center justify-center ${
-                  activeLayer === "card" ? "ring-2 ring-yellow-400 ring-offset-4 ring-offset-black/50 rounded-2xl" : ""
+            {/* 3. WARSTWA KARTY 3D */}
+            {(stage === "card" || stage === "hero") && (
+              <div 
+                className={`absolute pointer-events-none z-50 transition-transform duration-75 flex items-center justify-center ${
+                  activeLayer === "card" ? "ring-2 ring-yellow-400 ring-offset-4 ring-offset-black/70 rounded-2xl" : ""
                 }`}
                 style={{
-                  transform: `translate(${settings.card.x}px, ${settings.card.y}px) rotate(${settings.card.rotation}deg) scale(${settings.card.scale})`,
-                  zIndex: 30
+                  top: "50%",
+                  left: "50%",
+                  transform: `translate(calc(-50% + ${settings.card.x}%), calc(-50% + ${settings.card.y}px)) scale(${settings.card.scale})`,
+                  filter: "drop-shadow(0 0 45px rgba(255,42,59,0.95)) drop-shadow(0 25px 40px rgba(0,0,0,0.95))"
                 }}
               >
-                <div className="w-56 h-80 rounded-2xl p-4 bg-gradient-to-b from-amber-500/20 via-slate-900 to-black border-2 border-amber-400/80 shadow-[0_0_50px_rgba(245,158,11,0.4)] flex flex-col justify-between items-center relative overflow-hidden backdrop-blur-md">
-                  {/* Efekt karty */}
-                  <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-                  
-                  {/* Nagłówek karty */}
-                  <div className="w-full flex justify-between items-start z-10">
-                    <div className="flex flex-col items-center">
-                      <span className="text-3xl font-black text-amber-400 leading-none">
-                        {settings.metadata.playerRating}
-                      </span>
-                      <span className="text-[10px] font-black uppercase text-white/90">
-                        {settings.metadata.playerPosition.slice(0, 3)}
-                      </span>
-                      <img src="/teamlogos/gm.png" alt="Delta" className="w-5 h-5 mt-1 object-contain" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase bg-red-950 text-red-400 border border-red-700 px-2 py-0.5 rounded-full">
-                      {settings.rarity.text}
-                    </span>
+                {settings.card.customCardUrl ? (
+                  <img 
+                    src={settings.card.customCardUrl} 
+                    alt="Karta"
+                    className="w-[260px] h-[380px] object-contain rounded-2xl pointer-events-none"
+                  />
+                ) : (
+                  <div className="w-[260px] h-[380px] rounded-2xl overflow-hidden bg-[#080203] border-2 border-[#ff2a3b] shadow-[0_0_35px_rgba(255,42,59,0.6)] flex items-center justify-center pointer-events-none">
+                    <img 
+                      src="/demo/inferno-card.png" 
+                      alt="Inferno Card"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback dynamic card
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
                   </div>
+                )}
+              </div>
+            )}
 
-                  {/* Środek karty - zdjęcie */}
-                  <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-amber-400/50 shadow-inner my-auto bg-black/40">
-                    {activePlayer ? (
-                      <PlayerPhoto playerId={activePlayer.id} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center font-black text-amber-400 text-xl">
-                        ⚽
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Dół karty - Imię i Klub */}
-                  <div className="w-full text-center z-10">
-                    <div className="text-lg font-black text-white tracking-wide uppercase truncate">
-                      {settings.metadata.playerName}
-                    </div>
-                    <div className="text-[10px] font-bold text-amber-400 tracking-wider">
-                      {settings.metadata.playerClub}
-                    </div>
-                  </div>
+            {/* DOLNY PASEK BOHATERA (HERO DETAILS) */}
+            {stage === "hero" && (
+              <div className="absolute bottom-5 z-50 flex flex-col items-center text-center pointer-events-none">
+                <div className="flex items-center gap-1.5 text-xs font-black text-red-500 uppercase tracking-widest mb-1">
+                  <Flame size={14} /> <span>{settings.rarity.text} WALKOUT</span>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider drop-shadow-[0_0_25px_rgba(255,42,59,0.85)]">
+                  {settings.metadata.playerName}
+                </h1>
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-300 mt-1">
+                  <span className="text-amber-400 font-black">{settings.metadata.playerRating} OVR</span>
+                  <span className="text-slate-600">•</span>
+                  <span>{settings.metadata.playerPosition}</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-slate-400">{settings.metadata.playerClub}</span>
                 </div>
               </div>
             )}
 
-            {/* Wskaźnik przeciągania */}
-            <div className="absolute top-3 left-3 z-40 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2 text-xs font-bold text-slate-300">
+            {/* WSKAŹNIK AKTYWNEJ WARSTWY DO PRZECIĄGANIA */}
+            <div className="absolute top-3 left-3 z-50 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2 text-xs font-bold text-slate-200">
               <Move size={14} className="text-amber-400" />
-              <span>Przeciągaj myszką: <b>{activeLayer === "card" ? "Karta 3D" : activeLayer === "player" ? "Sylwetka PNG" : "Napisy Rzadkości"}</b></span>
+              <span>Przeciągaj: <b className="text-amber-400">{activeLayer === "card" ? "Karta" : activeLayer === "player" ? "Zawodnik" : "Napisy"}</b></span>
             </div>
 
-            {/* Wskaźnik aktualnego czasu */}
-            <div className="absolute bottom-3 right-3 z-40 bg-black/80 backdrop-blur-md px-3 py-1 rounded-xl border border-slate-800 text-xs font-mono text-amber-400 font-black">
-              {currentTime.toFixed(2)}s / {settings.timings.totalDuration.toFixed(1)}s
+            {/* WSKAŹNIK CZASU */}
+            <div className="absolute top-3 right-3 z-50 bg-black/80 backdrop-blur-md px-3 py-1 rounded-xl border border-slate-800 text-xs font-mono text-amber-400 font-black">
+              {currentTime.toFixed(1)}s • Faza: <span className="uppercase text-white">{stage}</span>
             </div>
           </div>
 
-          {/* PASEK OSI CZASU (TIMELINE SCRUBBER) */}
-          <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={togglePlay}
-                  className="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black flex items-center justify-center transition shadow-lg"
-                  title={isPlaying ? "Pauza" : "Odtwórz walkout"}
-                >
-                  {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResetTimeline}
-                  className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition"
-                  title="Przewiń na początek (0.0s)"
-                >
-                  <RotateCcw size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition"
-                  title={isMuted ? "Włącz dźwięk" : "Wycisz"}
-                >
-                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                </button>
-              </div>
-
-              {/* Szybkie skoki do faz animacji */}
-              <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleSeek(0)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold"
-                >
-                  0s Start
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSeek(settings.rarity.appearTime)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold"
-                >
-                  {settings.rarity.appearTime}s Napis
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSeek(settings.player.appearTime)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold"
-                >
-                  {settings.player.appearTime}s Zawodnik
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSeek(settings.card.appearTime)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-yellow-300 font-bold"
-                >
-                  {settings.card.appearTime}s Karta
-                </button>
-              </div>
+          {/* PASEK KONTROLI ODTWARZANIA I ETAPÓW */}
+          <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={startFullWalkout}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400 hover:from-red-500 hover:to-yellow-300 text-black font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
+              >
+                <Play size={16} /> <span>Odtwórz pełny film walkoutu</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsMuted(!isMuted)}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                title={isMuted ? "Włącz dźwięk" : "Wycisz"}
+              >
+                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
             </div>
 
-            {/* Suwak Scrubber */}
-            <div className="space-y-1">
-              <input
-                type="range"
-                min={0}
-                max={settings.timings.totalDuration}
-                step={0.05}
-                value={currentTime}
-                onChange={(e) => handleSeek(parseFloat(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>0.0s (Intro)</span>
-                <span>{settings.rarity.appearTime}s (Napis)</span>
-                <span>{settings.player.appearTime}s (Zawodnik)</span>
-                <span>{settings.card.appearTime}s (Uderzenie Karty)</span>
-                <span>{settings.timings.totalDuration}s (Koniec)</span>
-              </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-slate-400 mr-1">Skocz do fazy:</span>
+              <button
+                type="button"
+                onClick={() => jumpToStage("intro")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  stage === "intro" ? "bg-slate-700 text-white" : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                1. Intro (0s)
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpToStage("rarity")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  stage === "rarity" ? "bg-red-950 text-red-300 border border-red-700" : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                2. Napis (3s)
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpToStage("player")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  stage === "player" ? "bg-sky-950 text-sky-300 border border-sky-700" : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                3. Gracz (5s)
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpToStage("card")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  stage === "card" ? "bg-amber-950 text-amber-300 border border-amber-700" : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                4. Karta (7s)
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpToStage("hero")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                  stage === "hero" ? "bg-yellow-500 text-black font-black" : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                5. Hero (9s+)
+              </button>
             </div>
           </div>
         </div>
 
-        {/* PRAWA STRONA: KONTROLKI I ZAKŁADKI PARAMETRÓW */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-3">
+        {/* PRAWA STRONA: DOKŁADNE SUWAKI I KONTROLKI WARSTW */}
+        <div className="xl:col-span-4 flex flex-col gap-3">
           
-          {/* WYBÓR WARSTWY DO EDYCJI */}
+          {/* WYBÓR AKTYWNEJ WARSTWY */}
           <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-2xl">
             <label className="block text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">
-              Wybierz aktywną warstwę do edycji:
+              Wybierz warstwę do regulacji:
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setActiveLayer("card")}
-                className={`py-2 px-3 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
                   activeLayer === "card"
                     ? "bg-amber-500 text-black shadow-lg"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
@@ -702,19 +676,19 @@ export default function WalkoutStudio(props: {
               <button
                 type="button"
                 onClick={() => setActiveLayer("player")}
-                className={`py-2 px-3 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
                   activeLayer === "player"
                     ? "bg-sky-500 text-black shadow-lg"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >
                 <Layers size={16} />
-                <span>Zawodnik PNG</span>
+                <span>Zawodnik</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveLayer("rarity")}
-                className={`py-2 px-3 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-black transition flex flex-col items-center gap-1 ${
                   activeLayer === "rarity"
                     ? "bg-red-500 text-white shadow-lg"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
@@ -726,358 +700,305 @@ export default function WalkoutStudio(props: {
             </div>
           </div>
 
-          {/* KONTROLKI WYBRANEJ WARSTWY */}
-          <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-4 max-h-[560px] overflow-y-auto">
-            
-            {/* 1. EDYCJA KARTY */}
-            {activeLayer === "card" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles size={16} /> Ustawienia Karty 3D
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setSettings(prev => ({ ...prev, card: { ...prev.card, x: 0, y: 0 } }))}
-                    className="text-[11px] text-slate-400 hover:text-white underline"
-                  >
-                    Wyśrodkuj
-                  </button>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Pozycja X (Poziom)</span>
-                      <span className="font-mono text-amber-400">{settings.card.x} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-300}
-                      max={300}
-                      value={settings.card.x}
-                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, x: parseInt(e.target.value) } }))}
-                      className="w-full accent-amber-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Pozycja Y (Pion)</span>
-                      <span className="font-mono text-amber-400">{settings.card.y} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-250}
-                      max={250}
-                      value={settings.card.y}
-                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, y: parseInt(e.target.value) } }))}
-                      className="w-full accent-amber-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Skala karty (Rozmiar)</span>
-                      <span className="font-mono text-amber-400">{settings.card.scale.toFixed(2)}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.5}
-                      max={2.5}
-                      step={0.05}
-                      value={settings.card.scale}
-                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, scale: parseFloat(e.target.value) } }))}
-                      className="w-full accent-amber-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Rotacja (Kąt)</span>
-                      <span className="font-mono text-amber-400">{settings.card.rotation}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-45}
-                      max={45}
-                      value={settings.card.rotation}
-                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, rotation: parseInt(e.target.value) } }))}
-                      className="w-full accent-amber-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Moment wejścia karty na scenę</span>
-                      <span className="font-mono text-amber-400">{settings.card.appearTime} s</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={settings.timings.totalDuration}
-                      step={0.1}
-                      value={settings.card.appearTime}
-                      onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, appearTime: parseFloat(e.target.value) } }))}
-                      className="w-full accent-amber-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 2. EDYCJA SYLWETKI ZAWODNIKA */}
-            {activeLayer === "player" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers size={16} /> Ustawienia Sylwetki Gracza
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setSettings(prev => ({ ...prev, player: { ...prev.player, x: 0, y: 0 } }))}
-                    className="text-[11px] text-slate-400 hover:text-white underline"
-                  >
-                    Wyśrodkuj
-                  </button>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-300 mb-1">
-                      Wybierz zawodnika z klubu:
-                    </label>
-                    <select
-                      value={selectedPlayerId}
-                      onChange={e => setSelectedPlayerId(e.target.value)}
-                      className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold"
-                    >
-                      {players.map(p => (
-                        <option key={p.id} value={p.id}>{p.display_name} (#{p.shirt_number || "—"})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-300 mb-1">
-                      Wgraj własne wycięte zdjęcie PNG sylwetki:
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/png,image/webp"
-                      onChange={handleCutoutUpload}
-                      className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-900 file:text-sky-200"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Pozycja X (Poziom)</span>
-                      <span className="font-mono text-sky-400">{settings.player.x} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-300}
-                      max={300}
-                      value={settings.player.x}
-                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, x: parseInt(e.target.value) } }))}
-                      className="w-full accent-sky-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Pozycja Y (Pion)</span>
-                      <span className="font-mono text-sky-400">{settings.player.y} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-250}
-                      max={250}
-                      value={settings.player.y}
-                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, y: parseInt(e.target.value) } }))}
-                      className="w-full accent-sky-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Skala zawodnika</span>
-                      <span className="font-mono text-sky-400">{settings.player.scale.toFixed(2)}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.5}
-                      max={2.5}
-                      step={0.05}
-                      value={settings.player.scale}
-                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, scale: parseFloat(e.target.value) } }))}
-                      className="w-full accent-sky-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Moment wejścia zawodnika na scenę</span>
-                      <span className="font-mono text-sky-400">{settings.player.appearTime} s</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={settings.timings.totalDuration}
-                      step={0.1}
-                      value={settings.player.appearTime}
-                      onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, appearTime: parseFloat(e.target.value) } }))}
-                      className="w-full accent-sky-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 3. EDYCJA NAPISÓW */}
-            {activeLayer === "rarity" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Type size={16} /> Ustawienia Napisów i Tekstów
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: 0, y: -80 } }))}
-                    className="text-[11px] text-slate-400 hover:text-white underline"
-                  >
-                    Wyśrodkuj
-                  </button>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-300 mb-1">
-                      Główny napis rzadkości:
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.rarity.text}
-                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, text: e.target.value.toUpperCase() } }))}
-                      className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-black"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-300 mb-1">
-                      Podtytuł rzadkości:
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.rarity.subtext}
-                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, subtext: e.target.value.toUpperCase() } }))}
-                      className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Pozycja X (Poziom)</span>
-                      <span className="font-mono text-red-400">{settings.rarity.x} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-300}
-                      max={300}
-                      value={settings.rarity.x}
-                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: parseInt(e.target.value) } }))}
-                      className="w-full accent-red-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Pozycja Y (Pion)</span>
-                      <span className="font-mono text-red-400">{settings.rarity.y} px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-250}
-                      max={250}
-                      value={settings.rarity.y}
-                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, y: parseInt(e.target.value) } }))}
-                      className="w-full accent-red-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Rozmiar czcionki (Scale)</span>
-                      <span className="font-mono text-red-400">{settings.rarity.scale.toFixed(2)}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.5}
-                      max={3.0}
-                      step={0.05}
-                      value={settings.rarity.scale}
-                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, scale: parseFloat(e.target.value) } }))}
-                      className="w-full accent-red-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-300 mb-1">
-                      <span>Moment wejścia napisu</span>
-                      <span className="font-mono text-red-400">{settings.rarity.appearTime} s</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={settings.timings.totalDuration}
-                      step={0.1}
-                      value={settings.rarity.appearTime}
-                      onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, appearTime: parseFloat(e.target.value) } }))}
-                      className="w-full accent-red-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* WYBÓR FILMU WIDEO TŁA */}
-            <div className="pt-3 border-t border-slate-800 space-y-3">
-              <label className="block text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Video size={16} className="text-amber-400" /> Wideo Tła (Background Video):
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
-                {VIDEO_PRESETS.map(preset => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setSettings(prev => ({ ...prev, videoSrc: preset.src, videoType: "preset" }))}
-                    className={`p-2 rounded-xl text-[11px] font-bold text-left transition border ${
-                      settings.videoSrc === preset.src
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
-                        : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
-                    }`}
-                  >
-                    {preset.name}
-                  </button>
-                ))}
+          {/* SUWAKI WARSTWY KARTY */}
+          {activeLayer === "card" && (
+            <div className="p-4 bg-slate-900/90 border border-amber-500/30 rounded-2xl space-y-3.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={16} /> Pozycja Karty 3D
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSettings(prev => ({ ...prev, card: { ...prev.card, x: -2, y: -78, scale: 1.3 } }))}
+                  className="text-[11px] text-slate-400 hover:text-white underline"
+                >
+                  Reset do optymalnych
+                </button>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                  Lub wgraj własny plik wideo (MP4 / WebM):
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Poziom X (%)</span>
+                  <span className="font-mono text-amber-400">{settings.card.x}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  value={settings.card.x}
+                  onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, x: parseInt(e.target.value) } }))}
+                  className="w-full accent-amber-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Pion Y (px)</span>
+                  <span className="font-mono text-amber-400">{settings.card.y} px</span>
+                </div>
+                <input
+                  type="range"
+                  min={-200}
+                  max={100}
+                  value={settings.card.y}
+                  onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, y: parseInt(e.target.value) } }))}
+                  className="w-full accent-amber-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Skala Karty (Scale)</span>
+                  <span className="font-mono text-amber-400">{settings.card.scale.toFixed(2)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2.5}
+                  step={0.05}
+                  value={settings.card.scale}
+                  onChange={e => setSettings(prev => ({ ...prev, card: { ...prev.card, scale: parseFloat(e.target.value) } }))}
+                  className="w-full accent-amber-500"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-800">
+                <label className="block font-bold text-slate-300 mb-1">
+                  Wgraj własną grafikę karty (PNG):
                 </label>
                 <input
                   type="file"
-                  accept="video/mp4,video/webm"
-                  onChange={handleVideoUpload}
+                  accept="image/png,image/webp"
+                  onChange={handleCardUpload}
                   className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-black"
                 />
               </div>
             </div>
+          )}
 
+          {/* SUWAKI WARSTWY ZAWODNIKA */}
+          {activeLayer === "player" && (
+            <div className="p-4 bg-slate-900/90 border border-sky-500/30 rounded-2xl space-y-3.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers size={16} /> Pozycja Sylwetki Gracza
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSettings(prev => ({ ...prev, player: { ...prev.player, x: -21, y: -24, scale: 1.05 } }))}
+                  className="text-[11px] text-slate-400 hover:text-white underline"
+                >
+                  Reset do optymalnych
+                </button>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-300 mb-1">
+                  Wybierz zawodnika:
+                </label>
+                <select
+                  value={selectedPlayerId}
+                  onChange={e => setSelectedPlayerId(e.target.value)}
+                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold"
+                >
+                  {players.map(p => (
+                    <option key={p.id} value={p.id}>{p.display_name} (#{p.shirt_number || "—"})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Poziom X (%)</span>
+                  <span className="font-mono text-sky-400">{settings.player.x}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  value={settings.player.x}
+                  onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, x: parseInt(e.target.value) } }))}
+                  className="w-full accent-sky-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Pion Y (%)</span>
+                  <span className="font-mono text-sky-400">{settings.player.y}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  value={settings.player.y}
+                  onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, y: parseInt(e.target.value) } }))}
+                  className="w-full accent-sky-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Skala Zawodnika (Scale)</span>
+                  <span className="font-mono text-sky-400">{settings.player.scale.toFixed(2)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2.5}
+                  step={0.05}
+                  value={settings.player.scale}
+                  onChange={e => setSettings(prev => ({ ...prev, player: { ...prev.player, scale: parseFloat(e.target.value) } }))}
+                  className="w-full accent-sky-500"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-800">
+                <label className="block font-bold text-slate-300 mb-1">
+                  Wgraj własne wycięte zdjęcie PNG:
+                </label>
+                <input
+                  type="file"
+                  accept="image/png,image/webp"
+                  onChange={handleCutoutUpload}
+                  className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-black"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* SUWAKI WARSTWY NAPISÓW */}
+          {activeLayer === "rarity" && (
+            <div className="p-4 bg-slate-900/90 border border-red-500/30 rounded-2xl space-y-3.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Type size={16} /> Pozycja Napisów Rzadkości
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: 0, y: -1, scale: 1.75 } }))}
+                  className="text-[11px] text-slate-400 hover:text-white underline"
+                >
+                  Reset do optymalnych
+                </button>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-300 mb-1">
+                  Główny tekst:
+                </label>
+                <input
+                  type="text"
+                  value={settings.rarity.text}
+                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, text: e.target.value.toUpperCase() } }))}
+                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-black"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Poziom X (%)</span>
+                  <span className="font-mono text-red-400">{settings.rarity.x}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  value={settings.rarity.x}
+                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, x: parseInt(e.target.value) } }))}
+                  className="w-full accent-red-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Pion Y (%)</span>
+                  <span className="font-mono text-red-400">{settings.rarity.y}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  value={settings.rarity.y}
+                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, y: parseInt(e.target.value) } }))}
+                  className="w-full accent-red-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between font-bold text-slate-300 mb-1">
+                  <span>Rozmiar czcionki (Scale)</span>
+                  <span className="font-mono text-red-400">{settings.rarity.scale.toFixed(2)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={3.0}
+                  step={0.05}
+                  value={settings.rarity.scale}
+                  onChange={e => setSettings(prev => ({ ...prev, rarity: { ...prev.rarity, scale: parseFloat(e.target.value) } }))}
+                  className="w-full accent-red-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* WYBÓR WIDEO */}
+          <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3 text-xs">
+            <label className="block font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Video size={16} className="text-amber-400" /> Film Wideo w Tle:
+            </label>
+
+            <div className="grid grid-cols-1 gap-1.5">
+              {VIDEO_PRESETS.map(preset => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => {
+                    setSettings(prev => ({ ...prev, videoSrc: preset.src }));
+                    if (videoRef.current) {
+                      videoRef.current.src = preset.src;
+                      videoRef.current.play().catch(() => {});
+                    }
+                  }}
+                  className={`p-2 rounded-xl text-xs font-bold text-left transition border ${
+                    settings.videoSrc === preset.src
+                      ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                      : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
+                  }`}
+                >
+                  {preset.name}
+                </button>
+              ))}
+            </div>
+
+            <div>
+              <label className="block text-slate-400 font-bold mb-1">
+                Wgraj własny plik wideo (MP4 / WebM):
+              </label>
+              <input
+                type="file"
+                accept="video/mp4,video/webm"
+                onChange={handleVideoUpload}
+                className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-black"
+              />
+            </div>
           </div>
+
+          {/* JSON READOUT */}
+          <div className="p-3 bg-black/60 border border-slate-800/80 rounded-2xl">
+            <div className="flex items-center justify-between text-[11px] font-mono text-amber-400 font-bold mb-1">
+              <span>Współrzędne (Live JSON):</span>
+            </div>
+            <pre className="text-[10px] font-mono text-slate-400 overflow-x-auto p-1 bg-black/40 rounded-lg">
+              {JSON.stringify({
+                rarity: { x: settings.rarity.x, y: settings.rarity.y, scale: settings.rarity.scale },
+                player: { x: settings.player.x, y: settings.player.y, scale: settings.player.scale },
+                card: { x: settings.card.x, y: settings.card.y, scale: settings.card.scale }
+              }, null, 2)}
+            </pre>
+          </div>
+
         </div>
       </div>
     </div>
