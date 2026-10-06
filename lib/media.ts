@@ -25,7 +25,7 @@ export function getMediaUrl(path: string): string {
 
 export const MEDIA = {
   intro: {
-    inferno: '/media/walkouts/inferno-bg.mp4',
+    inferno: getMediaUrl('intro/inferno.mp4'),
   },
   packOpening: {
     tunnel: '/media/walkouts/gemini_generated_video_0cb968a2.mp4',
