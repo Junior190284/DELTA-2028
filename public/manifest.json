@@ -1,0 +1,25 @@
+{
+  "name": "DELTA Warszawa 2018 - Górny Mokotów",
+  "short_name": "DELTA GM",
+  "description": "Oficjalna aplikacja klubowa rocznika 2018 K.S. Delta Warszawa (Górny Mokotów). Terminarze, karty 3D, transmisje meczowe i grywalizacja.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090d",
+  "theme_color": "#0a0c10",
+  "categories": ["sports", "entertainment"],
+  "icons": [
+    {
+      "src": "/teamlogos/gm.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/teamlogos/gm.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

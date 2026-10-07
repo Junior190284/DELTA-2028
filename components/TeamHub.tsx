@@ -35,6 +35,10 @@ import { DeltaDailyMissionsModal } from "./DeltaDailyMissionsModal";
 import { DeltaCardBattleArenaModal } from "./DeltaCardBattleArenaModal";
 import { DeltaNotificationCenterModal } from "./DeltaNotificationCenterModal";
 import { DeltaWeeklySummaryModal } from "./DeltaWeeklySummaryModal";
+import { DeltaPWAInstallPrompt } from "./DeltaPWAInstallPrompt";
+import { DeltaOfflineBanner } from "./DeltaOfflineBanner";
+import { DeltaNotificationPreferencesModal } from "./DeltaNotificationPreferencesModal";
+import { DeltaChangelogModal } from "./DeltaChangelogModal";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -211,6 +215,8 @@ export default function TeamHub(props:{
   const [battleArenaModalOpen, setBattleArenaModalOpen] = useState(false);
   const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
   const [weeklySummaryModalOpen, setWeeklySummaryModalOpen] = useState(false);
+  const [changelogModalOpen, setChangelogModalOpen] = useState(false);
+  const [notifPrefsModalOpen, setNotifPrefsModalOpen] = useState(false);
   const [gameProfile, setGameProfile] = useState<any>(null);
 
   const fetchGameProfile = async () => {
@@ -1549,10 +1555,26 @@ export default function TeamHub(props:{
 
       <div className="v8-account-wrap">
         <button className="v8-account-btn" onClick={()=>setAccountOpen(v=>!v)} aria-label="Konto użytkownika"><UserRound size={17}/></button>
-        {accountOpen&&<div className="v8-account-popover">
-          <small>KONTO</small>
-          <b>{props.profile.display_name||"Użytkownik"}</b>
-          <span>{props.profile.role}</span>
+        {accountOpen&&<div className="v8-account-popover space-y-2">
+          <div>
+            <small>KONTO</small>
+            <b>{props.profile.display_name||"Użytkownik"}</b>
+            <span>{props.profile.role}</span>
+          </div>
+          <div className="border-t border-white/10 pt-2 space-y-1">
+            <button
+              onClick={() => { setAccountOpen(false); setNotifPrefsModalOpen(true); }}
+              className="w-full text-left text-xs font-bold text-slate-300 hover:text-amber-400 py-1 transition-colors"
+            >
+              🔔 Preferencje powiadomień
+            </button>
+            <button
+              onClick={() => { setAccountOpen(false); setChangelogModalOpen(true); }}
+              className="w-full text-left text-xs font-bold text-slate-300 hover:text-amber-400 py-1 transition-colors"
+            >
+              🚀 Co nowego? (v1.8.0)
+            </button>
+          </div>
         </div>}
       </div>
       <button className="icon-btn v8-bell v151-notice-trigger" onClick={()=>setNoticesOpen(v=>!v)} aria-label="Komunikaty drużyny" aria-expanded={noticesOpen}><History size={18}/>{unanswered.length>0&&<i aria-hidden="true"/>}</button>
@@ -3817,5 +3839,24 @@ export default function TeamHub(props:{
         cardsUnlocked={players.length}
       />
     )}
+
+    {notifPrefsModalOpen && (
+      <DeltaNotificationPreferencesModal
+        isOpen={notifPrefsModalOpen}
+        onClose={() => setNotifPrefsModalOpen(false)}
+        userId={props.profile.id}
+      />
+    )}
+
+    {changelogModalOpen && (
+      <DeltaChangelogModal
+        isOpen={changelogModalOpen}
+        onClose={() => setChangelogModalOpen(false)}
+      />
+    )}
+
+    {/* PWA & Network Resilience Components */}
+    <DeltaPWAInstallPrompt />
+    <DeltaOfflineBanner />
   </div>;
 }
