@@ -187,6 +187,7 @@ export const DeltaCardRevealStage: React.FC<DeltaCardRevealStageProps> = ({
   return (
     <div 
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 overflow-hidden select-none animate-fadeIn"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', zIndex: 999999 }}
       role="dialog"
       aria-modal="true"
     >

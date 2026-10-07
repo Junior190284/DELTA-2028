@@ -38,31 +38,33 @@ export const DeltaChangelogModal: React.FC<DeltaChangelogModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-modal-container max-w-lg animate-fadeIn" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-red-950 via-slate-900 to-amber-950 border-b border-white/10 flex items-center justify-between">
+        <div className="v200-modal-head">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-lg">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-lg shrink-0">
               🚀
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-black text-white text-base uppercase tracking-wider">
+                <h3 className="font-black text-white text-base uppercase tracking-wider m-0">
                   Co nowego w DELTA GM?
                 </h3>
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   v1.8.0
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Najnowsze funkcje i ulepszenia aplikacji</p>
+              <p className="text-xs text-slate-400 m-0 mt-0.5">Najnowsze funkcje i ulepszenia aplikacji</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="v200-modal-close"
+            aria-label="Zamknij"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 

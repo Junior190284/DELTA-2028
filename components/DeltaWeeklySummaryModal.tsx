@@ -23,24 +23,26 @@ export const DeltaWeeklySummaryModal: React.FC<DeltaWeeklySummaryModalProps> = (
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-modal-container max-w-lg animate-fadeIn" onClick={(e) => e.stopPropagation()}>
         {/* Banner Top */}
         <div className="p-6 bg-gradient-to-br from-red-950 via-slate-900 to-amber-950 border-b border-white/10 text-center relative">
           <button
+            type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="v200-modal-close absolute top-4 right-4"
+            aria-label="Zamknij"
           >
-            <X className="w-5 h-5" />
+            <X size={20} />
           </button>
 
           <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-3xl shadow-xl shadow-amber-500/20">
             📊
           </div>
-          <h2 className="text-xl font-black text-white uppercase tracking-wider">
+          <h2 className="text-xl font-black text-white uppercase tracking-wider m-0">
             Podsumowanie Tygodnia DELTA
           </h2>
-          <p className="text-xs text-slate-300 mt-1">Świetna robota! Sprawdź swoje postępy z ostatnich 7 dni</p>
+          <p className="text-xs text-slate-300 mt-1 m-0">Świetna robota! Sprawdź swoje postępy z ostatnich 7 dni</p>
         </div>
 
         {/* Infographic Grid */}

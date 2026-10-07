@@ -57,26 +57,28 @@ export const DeltaNotificationCenterModal: React.FC<DeltaNotificationCenterModal
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-modal-container max-w-lg animate-fadeIn" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 bg-slate-950">
+        <div className="v200-modal-head">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+              <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider m-0">
                 Centrum Powiadomień
               </h2>
-              <p className="text-xs text-slate-400">Otrzymane nagrody, mecze i aktualności</p>
+              <p className="text-xs text-slate-400 m-0 mt-0.5">Otrzymane nagrody, mecze i aktualności</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="v200-modal-close"
+            aria-label="Zamknij"
           >
-            <X className="w-5 h-5" />
+            <X size={20} />
           </button>
         </div>
 

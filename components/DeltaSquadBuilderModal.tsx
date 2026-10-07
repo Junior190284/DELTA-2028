@@ -392,19 +392,20 @@ export default function DeltaSquadBuilderModal({
 
         {/* Card Selection Drawer Modal */}
         {activeSlotId && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-xl w-full max-h-[80vh] flex flex-col shadow-2xl">
-              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <div className="v200-modal-overlay" onClick={() => setActiveSlotId(null)} role="dialog" aria-modal="true" style={{ zIndex: 9999999 }}>
+            <div className="v200-modal-container max-w-xl animate-fadeIn" onClick={e => e.stopPropagation()}>
+              <div className="v200-modal-head">
                 <div>
-                  <span className="text-[10px] font-bold text-amber-400 uppercase">Wybierz Kartę na Pozycję:</span>
-                  <h4 className="text-sm font-black text-white m-0">
+                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Wybierz Kartę na Pozycję:</span>
+                  <h4 className="text-base font-black text-white m-0">
                     {activeSlotDef?.roleLabel} ({activeSlotDef?.role})
                   </h4>
                 </div>
                 <button
                   type="button"
-                  className="p-1 rounded-lg bg-white/5 text-slate-400 hover:text-white"
+                  className="v200-modal-close"
                   onClick={() => setActiveSlotId(null)}
+                  aria-label="Zamknij"
                 >
                   <X size={18} />
                 </button>
