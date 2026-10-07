@@ -6,8 +6,8 @@ import {
   Flame, 
   Sparkles, 
   X, 
-  ChevronRight, 
   ChevronLeft,
+  ChevronRight, 
   Check, 
   Coins, 
   RefreshCw,
@@ -59,12 +59,30 @@ export default function PackOpeningExperience({
   const [screenShake, setScreenShake] = useState(false);
   const [activeSummaryIndex, setActiveSummaryIndex] = useState(1);
   const touchStartX = useRef<number | null>(null);
+  const summaryCarouselRef = useRef<HTMLDivElement | null>(null);
 
   // Preload all core card templates and textures on mount so there is zero asset popping/delay
   useEffect(() => {
     setMounted(true);
     preloadAllCardThemes();
   }, []);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  const scrollSummary = (direction: -1 | 1) => {
+    const carousel = summaryCarouselRef.current;
+    if (!carousel) return;
+    carousel.scrollBy({
+      left: direction * Math.max(220, carousel.clientWidth * 0.72),
+      behavior: "smooth"
+    });
+  };
 
   // 3D Hover tilt for sealed pack
   const packRef = useRef<HTMLDivElement | null>(null);
@@ -519,6 +537,7 @@ export default function PackOpeningExperience({
                   size="xl"
                   interactive={true}
                   showFlip={true}
+                  touchFlip={true}
                 />
               </div>
 
@@ -624,6 +643,7 @@ export default function PackOpeningExperience({
                   size="xl"
                   interactive={true}
                   showFlip={isRevealed}
+                  touchFlip={isRevealed}
                   onFlipChange={(flipped) => {
                     if (flipped) {
                       cardSound.playFlip();
