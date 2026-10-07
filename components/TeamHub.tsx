@@ -31,6 +31,10 @@ import PlayerSkillRadar from "./PlayerSkillRadar";
 import SpotlightCard from "./SpotlightCard";
 import NewsEditModal, { NewsItem } from "./NewsEditModal";
 import DeltaPointsRulesModal from "./DeltaPointsRulesModal";
+import { DeltaDailyMissionsModal } from "./DeltaDailyMissionsModal";
+import { DeltaCardBattleArenaModal } from "./DeltaCardBattleArenaModal";
+import { DeltaNotificationCenterModal } from "./DeltaNotificationCenterModal";
+import { DeltaWeeklySummaryModal } from "./DeltaWeeklySummaryModal";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -203,6 +207,27 @@ export default function TeamHub(props:{
   const [newsModalOpen, setNewsModalOpen] = useState(false);
   const [editingNewsItem, setEditingNewsItem] = useState<NewsItem | null>(null);
   const [dpRulesModalOpen, setDpRulesModalOpen] = useState(false);
+  const [missionsModalOpen, setMissionsModalOpen] = useState(false);
+  const [battleArenaModalOpen, setBattleArenaModalOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+  const [weeklySummaryModalOpen, setWeeklySummaryModalOpen] = useState(false);
+  const [gameProfile, setGameProfile] = useState<any>(null);
+
+  const fetchGameProfile = async () => {
+    try {
+      const res = await fetch(`/api/game/profile?userId=${props.profile.id || "guest_user"}`);
+      const data = await res.json();
+      if (data.success) {
+        setGameProfile(data.profile);
+      }
+    } catch (e) {
+      console.error("Game profile load error", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchGameProfile();
+  }, [props.profile.id]);
   const [readNewsMap, setReadNewsMap] = useState<Record<string, boolean>>({});
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
@@ -1246,7 +1271,10 @@ export default function TeamHub(props:{
       Icon: Sparkles,
       items: [
         { id: "collection", label: "Kolekcja Kart", desc: "Klaser kart 3D, sklep z paczkami i wymiany", Icon: Sparkles, badge: "3D", isGoldTag: true },
-        { id: "season-pass-modal", label: "DELTA Battle Pass", desc: "Sezonowa ścieżka nagród, poziomy 1–20 i XP", Icon: Flame, badge: "SEZON 1", isGoldTag: true, isAction: "seasonpass" },
+        { id: "missions-modal", label: "Centrum Misji", desc: "Dziennie i tygodniowe zadania, nagrody XP i paczki", Icon: Target, badge: "MISJE", isGoldTag: true, isAction: "missions" },
+        { id: "battle-arena-modal", label: "Arena Kart (1v1 & 3v3)", desc: "Pojedynki statystyk kart przeciwko rywalom CPU", Icon: Flame, badge: "PVE ARENA", isGoldTag: true, isAction: "battle" },
+        { id: "season-pass-modal", label: "DELTA Battle Pass", desc: "Sezonowa ścieżka nagród, poziomy 1–25 i XP", Icon: Trophy, badge: "SEZON 1", isGoldTag: true, isAction: "seasonpass" },
+        { id: "weekly-summary-modal", label: "Podsumowanie Tygodnia", desc: "Infografika postępów, zdobyte XP i obecności", Icon: Award, badge: "RAPORT", isGoldTag: true, isAction: "weeklysummary" },
         { id: "typer-modal", label: "Klubowy Typer", desc: "Typuj wyniki spotkań i wygrywaj Delta Points", Icon: Crown, badge: "NOWOŚĆ", isGoldTag: true, isAction: "typer" },
         { id: "achievements-modal", label: "Osiągnięcia i Misje", desc: "30 misji, poziomy i nagrody w paczkach", Icon: Trophy, badge: "30 MISJI", isGoldTag: true, isAction: "achievements" },
       ]
@@ -1382,7 +1410,16 @@ export default function TeamHub(props:{
                   type="button"
                   className={`v200-drawer-card-btn ${isItemActive ? "active" : ""}`}
                   onClick={() => {
-                    if ((item as any).isAction === "typer") {
+                    if ((item as any).isAction === "missions") {
+                      setMissionsModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "battle") {
+                      setBattleArenaModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "weeklysummary") {
+                      setWeeklySummaryModalOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "typer") {
                       setTyperModalOpen(true);
                       setActiveDrawerCategory(null);
                     } else if ((item as any).isAction === "achievements") {
@@ -1431,7 +1468,58 @@ export default function TeamHub(props:{
 
     <header className="hub-top v8-topbar">
       <button className="v8-mini-brand v101-home-logo-btn" onClick={handleGoHomeTop} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
+      
+      {/* Central XP & Level Pill */}
+      {gameProfile && (
+        <div 
+          className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 border border-amber-500/30 text-xs shadow-inner cursor-pointer hover:border-amber-500/60 transition-all"
+          onClick={() => setWeeklySummaryModalOpen(true)}
+          title="Kliknij, aby otworzyć Podsumowanie Tygodnia"
+        >
+          <span className="font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            POZ. {gameProfile.levelInfo?.level || 1}
+          </span>
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between gap-2 text-[10px] text-slate-300 font-bold">
+              <span>{gameProfile.levelInfo?.title || 'Zawodnik DELTA'}</span>
+              <span className="text-amber-400">{gameProfile.levelInfo?.currentLevelXP || 0}/{gameProfile.levelInfo?.nextLevelXP || 100} XP</span>
+            </div>
+            <div className="w-24 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
+              <div 
+                className="h-full bg-gradient-to-r from-amber-400 to-red-500 rounded-full transition-all duration-500" 
+                style={{ width: `${gameProfile.levelInfo?.progressPercent || 0}%` }}
+              />
+            </div>
+          </div>
+          {gameProfile.activityStreak > 0 && (
+            <span className="flex items-center gap-0.5 text-xs font-black text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20 ml-1">
+              <Flame size={12} className="text-red-500" /> {gameProfile.activityStreak}d
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="v8-top-spacer"/>
+
+      {/* Quick Game Buttons */}
+      <button
+        type="button"
+        className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-red-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs uppercase tracking-wider hover:border-amber-400 transition-all"
+        onClick={() => setMissionsModalOpen(true)}
+        title="Centrum Misji Dziennych i Tygodniowych"
+      >
+        <Target size={14} /> <span>MISJE</span>
+      </button>
+
+      <button
+        type="button"
+        className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600/20 to-amber-600/20 border border-red-500/30 text-red-300 font-bold text-xs uppercase tracking-wider hover:border-red-400 transition-all"
+        onClick={() => setBattleArenaModalOpen(true)}
+        title="Arena Pojedynków Kart PvE"
+      >
+        <Flame size={14} /> <span>ARENA</span>
+      </button>
+
       <button
         type="button"
         className="v101-hub-intro-btn"
@@ -1443,6 +1531,22 @@ export default function TeamHub(props:{
       </button>
       {canOpenAdmin&&<a href="/admin" className="admin-link v8-admin-chip">{staff?"ADMIN":"POMOCNIK"}</a>}
       {canOpenAdmin&&<a href="/admin?tab=training" className="v105-mobile-training-shortcut" aria-label="Panel administratora: dodaj trening"><CalendarDays size={16}/> DODAJ TRENING</a>}
+      
+      {/* Notification Center Trigger */}
+      <button 
+        className="icon-btn v8-bell relative" 
+        onClick={() => setNotificationsModalOpen(true)} 
+        aria-label="Centrum powiadomień"
+        title="Centrum powiadomień i nagród"
+      >
+        <Bell size={18}/>
+        {gameProfile && gameProfile.unreadNotifications > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-black text-[9px] flex items-center justify-center border border-slate-900 shadow-sm">
+            {gameProfile.unreadNotifications}
+          </span>
+        )}
+      </button>
+
       <div className="v8-account-wrap">
         <button className="v8-account-btn" onClick={()=>setAccountOpen(v=>!v)} aria-label="Konto użytkownika"><UserRound size={17}/></button>
         {accountOpen&&<div className="v8-account-popover">
@@ -1451,7 +1555,7 @@ export default function TeamHub(props:{
           <span>{props.profile.role}</span>
         </div>}
       </div>
-      <button className="icon-btn v8-bell v151-notice-trigger" onClick={()=>setNoticesOpen(v=>!v)} aria-label="Komunikaty drużyny" aria-expanded={noticesOpen}><Bell size={18}/>{unanswered.length>0&&<i aria-hidden="true"/>}</button>
+      <button className="icon-btn v8-bell v151-notice-trigger" onClick={()=>setNoticesOpen(v=>!v)} aria-label="Komunikaty drużyny" aria-expanded={noticesOpen}><History size={18}/>{unanswered.length>0&&<i aria-hidden="true"/>}</button>
     </header>
 
     {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
@@ -3672,6 +3776,45 @@ export default function TeamHub(props:{
       <DeltaPointsRulesModal
         isOpen={dpRulesModalOpen}
         onClose={() => setDpRulesModalOpen(false)}
+      />
+    )}
+
+    {missionsModalOpen && (
+      <DeltaDailyMissionsModal
+        isOpen={missionsModalOpen}
+        onClose={() => setMissionsModalOpen(false)}
+        userId={props.profile.id}
+        onRewardClaimed={() => fetchGameProfile()}
+      />
+    )}
+
+    {battleArenaModalOpen && (
+      <DeltaCardBattleArenaModal
+        isOpen={battleArenaModalOpen}
+        onClose={() => setBattleArenaModalOpen(false)}
+        userId={props.profile.id}
+        playerCards={players}
+        onXPClaimed={() => fetchGameProfile()}
+      />
+    )}
+
+    {notificationsModalOpen && (
+      <DeltaNotificationCenterModal
+        isOpen={notificationsModalOpen}
+        onClose={() => setNotificationsModalOpen(false)}
+        userId={props.profile.id}
+        onNotificationRead={() => fetchGameProfile()}
+      />
+    )}
+
+    {weeklySummaryModalOpen && (
+      <DeltaWeeklySummaryModal
+        isOpen={weeklySummaryModalOpen}
+        onClose={() => setWeeklySummaryModalOpen(false)}
+        streakDays={gameProfile?.activityStreak || 1}
+        xpGained={gameProfile?.seasonXP || 0}
+        trainingsAttended={3}
+        cardsUnlocked={players.length}
       />
     )}
   </div>;
