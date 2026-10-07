@@ -35,6 +35,7 @@ export interface LessonQuestion {
 export interface KnowledgeLesson {
   id: string;
   category: "rules" | "nutrition" | "hydration" | "recovery" | "equipment" | "fairplay";
+  difficulty: "easy" | "medium" | "hard";
   title: string;
   shortDesc: string;
   icon: string;
@@ -51,6 +52,7 @@ const LESSONS_DATA: KnowledgeLesson[] = [
   {
     id: "rules-orlik",
     category: "rules",
+    difficulty: "easy",
     title: "Zasady Gry i Boisko Młodego Mistrza",
     shortDesc: "Jak prawidłowo wrzucać aut, kiedy jest rzut rożny i dlaczego nie gramy niebezpiecznie.",
     icon: "⚽",
@@ -131,6 +133,7 @@ const LESSONS_DATA: KnowledgeLesson[] = [
   {
     id: "nutrition-power",
     category: "nutrition",
+    difficulty: "easy",
     title: "Paliwo Młodego Piłkarza (Zdrowe Odżywianie)",
     shortDesc: "Co jeść przed i po meczu, żeby mieć energię Cristiano Ronaldo i siłę lwa!",
     icon: "🥗",
@@ -211,6 +214,7 @@ const LESSONS_DATA: KnowledgeLesson[] = [
   {
     id: "hydration-magic",
     category: "hydration",
+    difficulty: "easy",
     title: "Magia Nawadniania i Czysta Woda",
     shortDesc: "Dlaczego woda to najważniejszy napój sportowca i jak prawidłowo pić w trakcie meczu.",
     icon: "💧",
@@ -291,6 +295,7 @@ const LESSONS_DATA: KnowledgeLesson[] = [
   {
     id: "recovery-sleep",
     category: "recovery",
+    difficulty: "easy",
     title: "Sen i Regeneracja Mistrza",
     shortDesc: "Jak sen buduje Twoje mięśnie i dlaczego wypoczęty gracz wygrywa pojedynki 1 na 1.",
     icon: "😴",
@@ -371,6 +376,7 @@ const LESSONS_DATA: KnowledgeLesson[] = [
   {
     id: "equipment-gear",
     category: "equipment",
+    difficulty: "easy",
     title: "Torba Młodego Piłkarza i Samodzielność",
     shortDesc: "Jak pakować swój sprzęt, dbać o buty i ochraniacze, by zawsze być gotowym do gry.",
     icon: "🎒",
@@ -451,6 +457,7 @@ const LESSONS_DATA: KnowledgeLesson[] = [
   {
     id: "fairplay-team",
     category: "fairplay",
+    difficulty: "medium",
     title: "Kodeks Fair Play i Duch Drużyny DELTY",
     shortDesc: "Jeden za wszystkich, wszyscy za jednego! Szacunek dla kolegów, trenera i rywala.",
     icon: "🤝",
@@ -549,7 +556,21 @@ export default function DeltaKnowledgeCornerModal({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [claimingReward, setClaimingReward] = useState(false);
   const [rewardClaimed, setRewardClaimed] = useState(false);
-  const [completedLessons, setCompletedLessons] = useState<Record<string, { score: number; passed: boolean; claimed: boolean }>>({});
+    const [completedLessons, setCompletedLessons] = useState<Record<string, { score: number; passed: boolean; claimed: boolean }>>({});
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
+
+  const recommendedNextLesson = useMemo(() => {
+    return LESSONS_DATA.find(l => !completedLessons[l.id]?.passed) || LESSONS_DATA[0];
+  }, [completedLessons]);
+
+  const filteredLessons = useMemo(() => {
+    return LESSONS_DATA.filter(lesson => {
+      if (selectedCategory !== "all" && lesson.category !== selectedCategory) return false;
+      if (selectedDifficulty !== "all" && lesson.difficulty !== selectedDifficulty) return false;
+      return true;
+    });
+  }, [selectedCategory, selectedDifficulty]);
 
   useEffect(() => {
     setMounted(true);
@@ -756,51 +777,143 @@ export default function DeltaKnowledgeCornerModal({
         {/* GŁÓWNA ZAWARTOŚĆ */}
         <div className="v200-knowledge-content">
           {!activeLesson ? (
-            /* WIDOK LISTY LEKCJI */
-            <div className="v200-lessons-grid">
-              {LESSONS_DATA.map((lesson, idx) => {
-                const state = completedLessons[lesson.id];
-                const isPassed = state?.passed;
-                const isClaimed = state?.claimed;
-
-                return (
-                  <div 
-                    key={lesson.id} 
-                    className={`v200-lesson-card ${isPassed ? "is-passed" : ""}`}
-                    onClick={() => handleStartLesson(lesson)}
-                  >
-                    <div className="v200-lesson-card-top">
-                      <span className="v200-lesson-emoji">{lesson.icon}</span>
-                      <div className="v200-lesson-meta">
-                        <span className="v200-lesson-index">LEKCJA 0{idx + 1}</span>
-                        <span className="v200-lesson-time">{lesson.readTime} czytania</span>
-                      </div>
-                      {isPassed && (
-                        <div className="v200-passed-badge">
-                          <CheckCircle2 size={16} />
-                          <span>ZALICZONE</span>
-                        </div>
-                      )}
+            <div className="v200-lessons-catalog-wrap animate-fadeIn">
+              {/* SPOTLIGHT: NASTĘPNA REKOMENDOWANA LEKCJA */}
+              {recommendedNextLesson && (
+                <div 
+                  className="v200-recommended-lesson-banner"
+                  onClick={() => handleStartLesson(recommendedNextLesson)}
+                >
+                  <div className="banner-left">
+                    <div className="banner-icon-box">
+                      <span className="text-3xl">{recommendedNextLesson.icon}</span>
                     </div>
-
-                    <h3>{lesson.title}</h3>
-                    <p>{lesson.shortDesc}</p>
-
-                    <div className="v200-lesson-card-footer">
-                      <div className="v200-lesson-reward-tag">
-                        <Gift size={14} />
-                        <span>+{lesson.rewardPoints} DP</span>
-                        {isClaimed && <span className="claimed-check">✓ Odebrano</span>}
+                    <div>
+                      <div className="banner-tag">
+                        <Sparkles size={12} className="text-yellow-400 animate-spin" />
+                        <span>NASTĘPNA REKOMENDOWANA LEKCJA</span>
                       </div>
-
-                      <button type="button" className="v200-lesson-open-btn">
-                        <span>{isPassed ? "POWTÓRZ" : "CZYTAJ I TEST"}</span>
-                        <ChevronRight size={16} />
-                      </button>
+                      <h3 className="banner-title">{recommendedNextLesson.title}</h3>
+                      <p className="banner-desc">{recommendedNextLesson.shortDesc}</p>
                     </div>
                   </div>
-                );
-              })}
+                  <div className="banner-right">
+                    <div className="banner-reward-pill">
+                      <Gift size={15} />
+                      <span>+{recommendedNextLesson.rewardPoints} DP</span>
+                    </div>
+                    <button type="button" className="banner-cta-btn">
+                      <span>ROZPOCZNIJ LEKCJĘ</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* FILTROWANIE: KATEGORIA & POZIOM TRUDNOŚCI */}
+              <div className="v200-knowledge-filters-bar devil-card">
+                <div className="filter-row">
+                  <span className="text-xs text-slate-400 font-bold uppercase self-center mr-1">KATEGORIA:</span>
+                  {[
+                    { id: "all", label: "Wszystkie" },
+                    { id: "rules", label: "⚽ Zasady Gry" },
+                    { id: "nutrition", label: "🥗 Żywienie" },
+                    { id: "hydration", label: "💧 Nawodnienie" },
+                    { id: "recovery", label: "🌙 Regeneracja" },
+                    { id: "equipment", label: "🎒 Sprzęt" },
+                    { id: "fairplay", label: "🤝 Fair Play" }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(tab.id)}
+                      className={`v200-knowledge-pill-btn ${selectedCategory === tab.id ? "active" : ""}`}
+                    >
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="filter-row mt-2">
+                  <span className="text-xs text-slate-400 font-bold uppercase self-center mr-1">POZIOM:</span>
+                  {[
+                    { id: "all", label: "Wszystkie Poziomy" },
+                    { id: "easy", label: "🟢 Łatwy (Podstawowy)" },
+                    { id: "medium", label: "🟡 Średni (Zaawansowany)" },
+                    { id: "hard", label: "🔴 Trudny (Mistrzowski)" }
+                  ].map(diff => (
+                    <button
+                      key={diff.id}
+                      type="button"
+                      onClick={() => setSelectedDifficulty(diff.id)}
+                      className={`v200-knowledge-pill-btn diff ${selectedDifficulty === diff.id ? "active" : ""}`}
+                    >
+                      <span>{diff.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* WIDOK LISTY LEKCJI */}
+              {filteredLessons.length === 0 ? (
+                <div className="v104-empty-state devil-card" style={{ padding: "36px 20px", textAlign: "center" }}>
+                  <HelpCircle size={40} className="mx-auto mb-2 text-slate-500" />
+                  <h3 className="text-base font-bold text-white mb-1">Brak lekcji dla wybranego filtru</h3>
+                  <p className="text-xs text-slate-400">Zmień kategorię lub poziom trudności.</p>
+                </div>
+              ) : (
+                <div className="v200-lessons-grid">
+                  {filteredLessons.map((lesson, idx) => {
+                    const state = completedLessons[lesson.id];
+                    const isPassed = state?.passed;
+                    const isClaimed = state?.claimed;
+
+                    return (
+                      <div 
+                        key={lesson.id} 
+                        className={`v200-lesson-card ${isPassed ? "is-passed" : ""}`}
+                        onClick={() => handleStartLesson(lesson)}
+                      >
+                        <div className="v200-lesson-card-top">
+                          <span className="v200-lesson-emoji">{lesson.icon}</span>
+                          <div className="v200-lesson-meta">
+                            <span className="v200-lesson-index">LEKCJA 0{idx + 1}</span>
+                            <span className="v200-lesson-time">{lesson.readTime} czytania</span>
+                          </div>
+                          
+                          <div className="v200-lesson-top-badges">
+                            <span className={`v200-diff-badge diff-${lesson.difficulty || "easy"}`}>
+                              {lesson.difficulty === "easy" ? "ŁATWY" : lesson.difficulty === "medium" ? "ŚREDNI" : "TRUDNY"}
+                            </span>
+                            {isPassed && (
+                              <div className="v200-passed-badge">
+                                <CheckCircle2 size={13} />
+                                <span>ZALICZONE</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <h3>{lesson.title}</h3>
+                        <p>{lesson.shortDesc}</p>
+
+                        <div className="v200-lesson-card-footer">
+                          <div className="v200-lesson-reward-tag">
+                            <Gift size={14} />
+                            <span>+{lesson.rewardPoints} DP</span>
+                            {isClaimed && <span className="claimed-check">✓ Odebrano</span>}
+                          </div>
+
+                          <button type="button" className="v200-lesson-open-btn">
+                            <span>{isPassed ? "POWTÓRZ" : "CZYTAJ I QUIZ"}</span>
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : !quizMode ? (
             /* WIDOK LEKCJI (MATERIAŁ EDUKACYJNY) */

@@ -161,25 +161,54 @@ export function HallOfFame(props:{players:Player[];stats:Record<string,Stat>;tra
 
     <div className="v10-hof-team"><article><b>{played.length}</b><span>MECZE</span></article><article><b>{wins}</b><span>WYGRANE</span></article><article><b>{goals}</b><span>GOLE</span></article><article><b>{props.chemistry[0]?.score||0}%</b><span>TOP CHEMIA</span></article></div>
     <div className="v10-hof-grid">
-      {records.map(([title,p,value,unit,Icon])=>(
-        <button key={title} onClick={()=>p&&props.onOpenPlayer(p)} className="devil-card relative overflow-hidden group hover:border-amber-400/50 transition">
-          <div className="absolute top-2 right-2 text-amber-500/20 group-hover:text-amber-500/40 transition">
-            <Icon size={36}/>
+      {records.map(([title,p,value,unit,Icon], idx)=>(
+        <button 
+          key={title} 
+          onClick={()=>p&&props.onOpenPlayer(p)} 
+          className={`devil-card relative overflow-hidden group transition-all duration-300 ${
+            idx === 0 ? "border-amber-400/40 hover:border-amber-400 shadow-[0_4px_20px_rgba(245,158,11,0.15)] bg-gradient-to-br from-amber-950/40 to-black/80" :
+            idx === 1 ? "border-sky-400/40 hover:border-sky-400 shadow-[0_4px_20px_rgba(56,189,248,0.15)] bg-gradient-to-br from-sky-950/40 to-black/80" :
+            idx === 2 ? "border-purple-400/40 hover:border-purple-400 shadow-[0_4px_20px_rgba(168,85,247,0.15)] bg-gradient-to-br from-purple-950/40 to-black/80" :
+            idx === 3 ? "border-yellow-400/40 hover:border-yellow-400 shadow-[0_4px_20px_rgba(250,204,21,0.15)] bg-gradient-to-br from-yellow-950/40 to-black/80" :
+            idx === 4 ? "border-emerald-400/40 hover:border-emerald-400 shadow-[0_4px_20px_rgba(16,185,129,0.15)] bg-gradient-to-br from-emerald-950/40 to-black/80" :
+            "border-red-400/40 hover:border-red-400 shadow-[0_4px_20px_rgba(239,68,68,0.15)] bg-gradient-to-br from-red-950/40 to-black/80"
+          }`}
+          style={{ minHeight: "160px", padding: "16px 12px" }}
+        >
+          <div className="absolute top-2 right-2 text-white/10 group-hover:text-white/20 transition-all duration-300">
+            <Icon size={42}/>
           </div>
-          <small className="text-amber-400 font-black tracking-wider uppercase text-[10px]">{title}</small>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Icon size={14} className={
+              idx === 0 ? "text-amber-400" :
+              idx === 1 ? "text-sky-400" :
+              idx === 2 ? "text-purple-400" :
+              idx === 3 ? "text-yellow-400" :
+              idx === 4 ? "text-emerald-400" : "text-red-400"
+            } />
+            <small className="font-black tracking-wider uppercase text-[10px] text-white/80">{title}</small>
+          </div>
           {p ? (
-            <div className="mt-2 flex flex-col items-center gap-1.5">
-              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-amber-400/40 shadow-lg bg-black/40">
-                <PlayerPhoto playerId={p.id} className="w-full h-full object-cover" />
+            <div className="flex flex-col items-center gap-1.5 mt-1">
+              <div className={`w-16 h-16 rounded-full overflow-hidden border-2 shadow-xl bg-black/60 p-0.5 ${
+                idx === 0 ? "border-amber-400 shadow-amber-500/20" :
+                idx === 1 ? "border-sky-400 shadow-sky-500/20" :
+                idx === 2 ? "border-purple-400 shadow-purple-500/20" :
+                idx === 3 ? "border-yellow-400 shadow-yellow-500/20" :
+                idx === 4 ? "border-emerald-400 shadow-emerald-500/20" : "border-red-400 shadow-red-500/20"
+              }`}>
+                <PlayerPhoto playerId={p.id} className="w-full h-full object-cover rounded-full" />
               </div>
-              <h3 className="font-black text-xs text-white text-center mt-1">{p.display_name}</h3>
+              <h3 className="font-black text-xs text-white text-center mt-1 leading-tight">{p.display_name}</h3>
               <div className="flex items-baseline gap-1 text-amber-300">
-                <b className="text-lg font-black">{value(p)}</b>
+                <b className="text-xl font-black">{value(p)}</b>
                 <span className="text-[10px] uppercase font-bold text-slate-400">{unit}</span>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 mt-3">Brak danych</p>
+            <div className="text-center py-6">
+              <p className="text-xs text-slate-500">Miejsce do zdobycia</p>
+            </div>
           )}
         </button>
       ))}

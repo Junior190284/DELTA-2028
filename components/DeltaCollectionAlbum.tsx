@@ -93,7 +93,10 @@ export default function DeltaCollectionAlbum({
   // Filters & State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRarity, setSelectedRarity] = useState<string>("all");
-  const [selectedOwnership, setSelectedOwnership] = useState<"all" | "owned" | "missing">("all");
+  const [selectedCardType, setSelectedCardType] = useState<string>("all");
+  const [selectedOwnership, setSelectedOwnership] = useState<"all" | "owned" | "missing" | "duplicates">("all");
+  const [sortBy, setSortBy] = useState<"ovr_desc" | "ovr_asc" | "rarity_desc" | "name_asc">("rarity_desc");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   
   // Modals
   const [inspectCard, setInspectCard] = useState<{ card: CardDefinition; userCard: UserCard | null } | null>(null);
@@ -357,6 +360,59 @@ export default function DeltaCollectionAlbum({
 
     return list;
   }, [allCards, ownedCardsMap, players]);
+
+  const getCardOvr = (c: CardDefinition): number => {
+    switch (c?.rarity?.toLowerCase()) {
+      case "inferno": return 95;
+      case "legendary": return 89;
+      case "epic": return 84;
+      case "rare": return 79;
+      default: return 74;
+    }
+  };
+
+  // Filtered all cards across full database
+  const filteredAllCards = useMemo(() => {
+    return allCards.filter(card => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const pName = (card.player?.display_name || card.card_name || card.title || "").toLowerCase();
+        if (!pName.includes(q)) return false;
+      }
+
+      // Rarity filter
+      if (selectedRarity !== "all") {
+        if (card.rarity?.toLowerCase() !== selectedRarity.toLowerCase()) return false;
+      }
+
+      // Card Type filter
+      if (selectedCardType !== "all") {
+        const t = (card.card_type || "").toLowerCase();
+        const r = (card.rarity || "").toLowerCase();
+        if (selectedCardType === "inferno" && !(t.includes("inferno") || r === "inferno")) return false;
+        if (selectedCardType === "legend" && !(t.includes("legend") || r === "legendary")) return false;
+        if (selectedCardType === "gold" && !(t.includes("gold") || t.includes("mvp") || r === "epic")) return false;
+        if (selectedCardType === "matchday" && !(t.includes("matchday") || r === "rare")) return false;
+        if (selectedCardType === "training" && !t.includes("training")) return false;
+        if (selectedCardType === "base" && !t.includes("base") && !t.includes("standard") && t !== "") return false;
+      }
+
+      // Ownership filter
+      const isOwned = ownedCardsMap.has(card.id);
+      const userCard = ownedCardsMap.get(card.id);
+      if (selectedOwnership === "owned" && !isOwned) return false;
+      if (selectedOwnership === "missing" && isOwned) return false;
+      if (selectedOwnership === "duplicates" && (!userCard || (userCard.duplicates_count || 0) <= 0)) return false;
+
+      return true;
+    }).sort((a, b) => {
+      if (sortBy === "ovr_desc") return getCardOvr(b) - getCardOvr(a);
+      if (sortBy === "ovr_asc") return getCardOvr(a) - getCardOvr(b);
+      const rank: Record<string, number> = { inferno: 5, legendary: 4, epic: 3, rare: 2, common: 1 };
+      return (rank[b.rarity || "common"] || 1) - (rank[a.rarity || "common"] || 1);
+    });
+  }, [allCards, searchQuery, selectedRarity, selectedCardType, selectedOwnership, sortBy, ownedCardsMap]);
 
   // Filtered player albums for showcase
   const filteredPlayerAlbums = useMemo(() => {
@@ -761,6 +817,21 @@ export default function DeltaCollectionAlbum({
                     <h4 className="v200-pack-name">{pack.name}</h4>
                     <p className="v200-pack-desc">{pack.description}</p>
                     
+                    {/* Guarantee Drop Pill */}
+                    <div className="v200-pack-drop-pill">
+                      {isInferno ? (
+                        <span>🔥 Gwarantowana Karta Inferno • Walkout 3D</span>
+                      ) : isLegend ? (
+                        <span>👑 Gwarantowana Karta Legendarna</span>
+                      ) : isGold ? (
+                        <span>🌟 Min. 1 Karta Gold Master (Wysoki OVR)</span>
+                      ) : isMatchday ? (
+                        <span>⚡ Gwarantowana Karta Matchday Hero</span>
+                      ) : (
+                        <span>📦 3 Losowe Karty Zawodników DELTY</span>
+                      )}
+                    </div>
+                    
                     {/* Action button */}
                     {packCount > 0 ? (
                       <button
@@ -908,7 +979,198 @@ export default function DeltaCollectionAlbum({
               <Users size={16} />
               <span>👥 ALBUMY ZAWODNIKÓW ({playerAlbums.length})</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveViewTab("allCards")}
+              className={`v200-view-mode-tab ${activeViewTab === "allCards" ? "active" : ""}`}
+            >
+              <Layers size={16} />
+              <span>🃏 PRZEGLĄD KART & SERIE ({ownedCardsList.length}/{allCards.length})</span>
+            </button>
           </div>
+
+          {/* Overall Collection Summary Strip */}
+          <div className="v200-collection-summary-strip devil-card">
+            <div className="summary-left">
+              <div className="summary-progress-icon">
+                <Trophy size={20} className="text-yellow-400" />
+              </div>
+              <div className="summary-texts">
+                <span className="summary-eyebrow">CAŁKOWITY POSTĘP KOLEKCJI</span>
+                <strong className="summary-title">
+                  Posiadasz {ownedCardsList.length} z {allCards.length} unikalnych kart ({completionPercentage}%)
+                </strong>
+              </div>
+            </div>
+            <div className="summary-right">
+              <div className="summary-kpi-pill">
+                <span>BRAKUJĄCE:</span>
+                <b>{Math.max(0, allCards.length - ownedCardsList.length)}</b>
+              </div>
+              <div className="summary-kpi-pill gold">
+                <span>TWOJE PUNKTY DP:</span>
+                <b>{deltaPoints} DP</b>
+              </div>
+            </div>
+          </div>
+
+          {/* ================= VIEW 3: ALL CARDS & SERIES BROWSER ================= */}
+          {activeViewTab === "allCards" && (
+            <div className="v200-all-cards-section animate-fadeIn">
+              {/* Comprehensive Filter Toolbar */}
+              <div className="v200-all-cards-toolbar devil-card">
+                <div className="toolbar-top-row">
+                  {/* Search */}
+                  <div className="v104-search-box flex-1">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Szukaj karty, zawodnika, edycji..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-white">
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sort Selector */}
+                  <div className="v200-sort-selector-wrap">
+                    <span className="text-xs text-slate-400 font-bold uppercase mr-1">SORTUJ:</span>
+                    <select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value as any)}
+                      className="v200-sort-select"
+                    >
+                      <option value="rarity_desc">Rzadkość (Najrzadsze)</option>
+                      <option value="ovr_desc">Ocena OVR (Najwyższa)</option>
+                      <option value="ovr_asc">Ocena OVR (Najniższa)</option>
+                      <option value="name_asc">Nazwisko (A-Z)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Filter Pills (Series / Card Types) */}
+                <div className="v200-filter-pills-row">
+                  <span className="text-xs text-slate-400 font-bold uppercase self-center mr-1">SERIA:</span>
+                  {[
+                    { id: "all", label: "Wszystkie Serie", icon: "✨" },
+                    { id: "inferno", label: "🔥 Inferno Master", icon: "🔥" },
+                    { id: "legend", label: "👑 Legend & Ikona", icon: "👑" },
+                    { id: "gold", label: "🌟 Złoty Mistrz (Gold)", icon: "🌟" },
+                    { id: "matchday", label: "⚡ Matchday Hero", icon: "⚡" },
+                    { id: "training", label: "🛡️ Wojownik Treningowy", icon: "🛡️" },
+                    { id: "base", label: "📦 Standard", icon: "📦" }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedCardType(tab.id)}
+                      className={`v200-filter-pill-btn ${selectedCardType === tab.id ? "active" : ""}`}
+                    >
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Filter Pills (Ownership Status) */}
+                <div className="v200-filter-pills-row">
+                  <span className="text-xs text-slate-400 font-bold uppercase self-center mr-1">STAN:</span>
+                  {[
+                    { id: "all", label: `Wszystkie (${allCards.length})` },
+                    { id: "owned", label: `Posiadane (${ownedCardsList.length})` },
+                    { id: "missing", label: `Brakujące (${Math.max(0, allCards.length - ownedCardsList.length)})` },
+                    { id: "duplicates", label: "Duplikaty do SBC" }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedOwnership(tab.id as any)}
+                      className={`v200-filter-pill-btn ownership ${selectedOwnership === tab.id ? "active" : ""}`}
+                    >
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cards Grid */}
+              {loading ? (
+                <div className="v104-loading-state">
+                  <RefreshCw size={36} className="animate-spin text-gold" />
+                  <span>Ładowanie kart DELTA...</span>
+                </div>
+              ) : filteredAllCards.length === 0 ? (
+                <div className="v104-empty-state devil-card" style={{ padding: "48px 24px", textAlign: "center" }}>
+                  <div className="w-16 h-16 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto mb-3 text-3xl">
+                    🔍
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-1">Brak kart spełniających wybrane kryteria</h3>
+                  <p className="text-sm text-slate-400 max-w-md mx-auto mb-4">
+                    Nie znaleziono kart dla wybranego filtra rzadkości lub wyszukiwanego hasła. Zmień filtry lub zresetuj kryteria wyszukiwania.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCardType("all");
+                      setSelectedRarity("all");
+                      setSelectedOwnership("all");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 transition"
+                  >
+                    Zresetuj wszystkie filtry
+                  </button>
+                </div>
+              ) : (
+                <div className="v200-all-cards-grid">
+                  {filteredAllCards.map(card => {
+                    const isOwned = ownedCardsMap.has(card.id);
+                    const userCard = ownedCardsMap.get(card.id) || null;
+
+                    return (
+                      <div
+                        key={card.id}
+                        onClick={() => {
+                          if (isOwned) {
+                            setInspectCard({ card, userCard });
+                          } else {
+                            setCinematicCardToUnlock(card);
+                          }
+                        }}
+                        className={`v200-grid-card-cell ${isOwned ? "is-owned" : "is-locked"}`}
+                      >
+                        <CollectibleCard3D
+                          card={card}
+                          userCard={userCard}
+                          isLocked={!isOwned}
+                          size="sm"
+                          interactive={false}
+                          showFlip={false}
+                          layoutOverride={getLayoutForCard(card)}
+                        />
+                        <div className="v200-grid-card-footer">
+                          {isOwned ? (
+                            <span className="v200-grid-badge-owned">
+                              <CheckCircle2 size={11} className="inline mr-1 text-green-400" /> W POSIADANIU
+                              {userCard && userCard.duplicates_count > 0 && ` (+${userCard.duplicates_count})`}
+                            </span>
+                          ) : (
+                            <span className="v200-grid-badge-locked">
+                              <Lock size={11} className="inline mr-1 text-slate-400" /> ZABLOKOWANA
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ================= PANINI SQUAD STICKERS ALBUM ================= */}
           {activeViewTab === "panini" && (

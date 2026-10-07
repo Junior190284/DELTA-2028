@@ -1463,79 +1463,275 @@ export default function TeamHub(props:{
         unansweredNotices={unanswered}
         onNavigate={(targetTab) => setTab(targetTab as any)}
       />
-      {tab==="teamcenter"&&<section className="section v151-team-center">
-        <header className="v151-team-hero devil-card"><span className="eyebrow gold">DELTA 2018 GM · STREFA RODZICA</span><h1>CENTRUM <em>DRUŻYNY</em></h1><p>Najbliższe wydarzenia, Twoje sprawy i sezon w jednym miejscu.</p></header>
-        <div className="v151-team-grid">
-          <article className="v151-team-card devil-card">
-            <div className="v8-panel-title"><CalendarDays size={18}/> NAJBLIŻSZE WYDARZENIE</div>
-            {nextSmart ? (
-              <>
-                <small>{nextSmart.kind==="match"?"MECZ":nextSmart.kind==="training"?"TRENING":"WYDARZENIE"}</small>
-                <h2>{nextSmart.title}</h2>
-                <p>{nextSmart.subtitle}</p>
-                <strong>{formatCountdown(nextSmart.at.getTime()-now.getTime())}</strong>
+      {tab==="teamcenter"&&<section className="section v151-team-center animate-fadeIn">
+        <header className="v151-team-hero devil-card">
+          <div className="v151-team-hero-bg" />
+          <div className="v151-team-hero-content">
+            <span className="eyebrow gold">DELTA 2018 GM · GÓRNY MOKOTÓW</span>
+            <h1>CENTRUM <em>DRUŻYNY</em></h1>
+            <p>Główny pulpit zespołu: najbliższy mecz, ostatnie wyniki, bilans sezonu i szybkie skróty.</p>
+          </div>
+        </header>
+
+        {/* 1. NADCHODZĄCY MECZ & OSTATNI WYNIK */}
+        <div className="v200-teamcenter-match-duo">
+          {/* A. NAJBLIŻSZY MECZ */}
+          {nextMatch ? (
+            <SpotlightCard className="v200-teamcenter-card next-match devil-card" glowColor="gold" enableTilt={true}>
+              <div className="v8-section-label">
+                <span className="v200-live-pill-badge"><CalendarDays size={13}/> NAJBLIŻSZY MECZ</span>
+                <span className="text-yellow-400 text-xs font-bold">Kolejka {nextMatch.round_no || "—"}</span>
+              </div>
+              <div className="v200-tc-match-teams">
+                <div className="v200-tc-team">
+                  <Logo team={nextMatch.home_team} size={48} />
+                  <b>{formatTeamName(nextMatch.home_team)}</b>
+                  <small>GOSPODARZ</small>
+                </div>
+                <div className="v200-tc-vs">
+                  <strong>VS</strong>
+                  <span>{datePL(nextMatch.match_date)}</span>
+                  <small>{(nextMatch.match_time || "").slice(0, 5) || "Godz. do ustalenia"}</small>
+                </div>
+                <div className="v200-tc-team">
+                  <Logo team={nextMatch.away_team} size={48} />
+                  <b>{formatTeamName(nextMatch.away_team)}</b>
+                  <small>GOŚĆ</small>
+                </div>
+              </div>
+              <div className="v200-tc-match-footer">
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <UserCheck size={14} className="text-amber-400" /> Potwierdzeni: <b>{nextPresent}/{players.length}</b>
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (nextMatch) {
-                      openMatch(nextMatch, "summary");
-                    } else {
-                      setTab("calendar");
-                    }
-                  }}
+                  className="v200-tc-action-btn gold"
+                  onClick={() => openMatch(nextMatch, "summary")}
                 >
-                  SZCZEGÓŁY <ChevronRight size={15}/>
+                  CENTRUM MECZU <ChevronRight size={14}/>
                 </button>
-              </>
-            ) : (
-              <p>Brak nadchodzących wydarzeń.</p>
-            )}
+              </div>
+            </SpotlightCard>
+          ) : (
+            <div className="v200-teamcenter-card next-match devil-card empty">
+              <CalendarDays size={32} className="text-slate-500 mb-2"/>
+              <h3>Brak zaplanowanych meczów</h3>
+              <p>Szczegóły kolejnych spotkań pojawią się w kalendarzu.</p>
+              <button type="button" className="v200-tc-action-btn" onClick={() => setTab("calendar")}>
+                OTWÓRZ KALENDARZ <ChevronRight size={14}/>
+              </button>
+            </div>
+          )}
+
+          {/* B. OSTATNI WYNIK */}
+          {latestPlayed ? (
+            <SpotlightCard className="v200-teamcenter-card last-match devil-card" glowColor="red" enableTilt={true}>
+              <div className="v8-section-label">
+                <span className="v200-live-pill-badge red"><History size={13}/> OSTATNI ROZEGRANY MECZ</span>
+                <span className={`v200-tc-badge-result ${recentResult(latestPlayed).toLowerCase()}`}>
+                  {recentResult(latestPlayed)}
+                </span>
+              </div>
+              <div className="v200-tc-match-teams">
+                <div className="v200-tc-team">
+                  <Logo team={latestPlayed.home_team} size={48} />
+                  <b>{formatTeamName(latestPlayed.home_team)}</b>
+                  <strong className="v200-tc-score">{latestPlayed.home_score ?? "–"}</strong>
+                </div>
+                <div className="v200-tc-vs score-colon">
+                  <span>:</span>
+                  <small>{datePL(latestPlayed.match_date)}</small>
+                </div>
+                <div className="v200-tc-team">
+                  <Logo team={latestPlayed.away_team} size={48} />
+                  <b>{formatTeamName(latestPlayed.away_team)}</b>
+                  <strong className="v200-tc-score">{latestPlayed.away_score ?? "–"}</strong>
+                </div>
+              </div>
+              <div className="v200-tc-match-footer">
+                <span className="text-xs text-slate-400">
+                  Kolejka {latestPlayed.round_no || "—"} • {latestPlayed.venue || "Mecz ligowy"}
+                </span>
+                <button
+                  type="button"
+                  className="v200-tc-action-btn"
+                  onClick={() => openMatch(latestPlayed, "summary")}
+                >
+                  SZCZEGÓŁY & STATS <ChevronRight size={14}/>
+                </button>
+              </div>
+            </SpotlightCard>
+          ) : (
+            <div className="v200-teamcenter-card last-match devil-card empty">
+              <History size={32} className="text-slate-500 mb-2"/>
+              <h3>Brak rozegranych meczów</h3>
+              <p>Historia wyników uaktualni się po pierwszym rozegranym spotkaniu.</p>
+              <button type="button" className="v200-tc-action-btn" onClick={() => setTab("matches")}>
+                TERMINARZ <ChevronRight size={14}/>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 2. BILANS, FORMA I FREKWENCJA */}
+        <div className="v200-tc-stats-grid">
+          {/* BILANS SEZONU */}
+          <article className="v200-tc-stats-box devil-card">
+            <div className="v8-panel-title"><Trophy size={18}/> BILANS SEZONU</div>
+            <div className="v200-tc-kpis">
+              <div className="v200-tc-kpi">
+                <strong>{teamSummary.played}</strong>
+                <span>MECZE</span>
+              </div>
+              <div className="v200-tc-kpi gold">
+                <strong>{teamSummary.wins}</strong>
+                <span>WYGRANE</span>
+              </div>
+              <div className="v200-tc-kpi">
+                <strong>{teamSummary.draws}</strong>
+                <span>REMISY</span>
+              </div>
+              <div className="v200-tc-kpi">
+                <strong>{teamSummary.losses}</strong>
+                <span>PORAŻKI</span>
+              </div>
+              <div className="v200-tc-kpi red">
+                <strong>{teamSummary.goals}</strong>
+                <span>GOLE</span>
+              </div>
+            </div>
+            <div className="v200-tc-form-row">
+              <small>Ostatnia forma:</small>
+              <div className="v871-team-form-dots">
+                {recentMatches.slice(0, 5).map(m => (
+                  <i key={m.id} className={`form-${recentResult(m).toLowerCase()}`}>
+                    {recentResult(m)}
+                  </i>
+                ))}
+                {recentMatches.length === 0 && <span className="text-xs text-slate-500">Brak danych</span>}
+              </div>
+            </div>
           </article>
-          <article className="v151-team-card devil-card">
-            <div className="v8-panel-title"><UserCheck size={18}/> MOJE SPRAWY</div>
+
+          {/* FREKWENCJA TRENINGOWA I GRY */}
+          <article className="v200-tc-stats-box devil-card">
+            <div className="v8-panel-title"><Users size={18}/> FREKWENCJA I TRENINGI</div>
+            <div className="v200-tc-kpis">
+              <div className="v200-tc-kpi gold">
+                <strong>{trainingSessions.length}</strong>
+                <span>TRENINGÓW</span>
+              </div>
+              <div className="v200-tc-kpi">
+                <strong>{avgTrainingAttendance.toFixed(1)}</strong>
+                <span>ŚR. OBECNYCH</span>
+              </div>
+              <div className="v200-tc-kpi">
+                <strong>{trainingGames.length}</strong>
+                <span>GIERKI</span>
+              </div>
+              <div className="v200-tc-kpi red">
+                <strong>{trainingEvents.filter(e => e.event_type === "goal").length}</strong>
+                <span>GOLE TRN.</span>
+              </div>
+            </div>
+            <div className="v200-tc-box-footer">
+              <button type="button" className="v200-tc-link-btn" onClick={() => setTab("training")}>
+                CENTRUM TRENINGOWE <ChevronRight size={14}/>
+              </button>
+            </div>
+          </article>
+
+          {/* MOJE SPRAWY / STREFA RODZICA */}
+          <article className="v200-tc-stats-box devil-card">
+            <div className="v8-panel-title"><UserCheck size={18}/> MOJE SPRAWY (RODZIC)</div>
             {parentPlayers.length > 0 ? (
               nextMatch ? (
-                <>
-                  <small>NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>
-                  {ownMatchResponses.map(x=><div className="v151-rsvp-row" key={x.player.id}><b>{x.player.display_name}</b><span className={x.status==="yes"?"ok":x.status==="no"?"no":"pending"}>{x.status==="yes"?"Obecność potwierdzona":x.status==="no"?"Nieobecny":x.status==="maybe"?"Do potwierdzenia":"Brak odpowiedzi"}</span></div>)}
+                <div className="v200-tc-parent-box">
+                  <small className="text-amber-400 font-bold">NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>
+                  {ownMatchResponses.map(x => (
+                    <div className="v151-rsvp-row" key={x.player.id}>
+                      <b>{x.player.display_name}</b>
+                      <span className={x.status === "yes" ? "ok" : x.status === "no" ? "no" : "pending"}>
+                        {x.status === "yes" ? "✓ Obecność potwierdzona" : x.status === "no" ? "✕ Nieobecny" : x.status === "maybe" ? "Do potwierdzenia" : "Brak odpowiedzi"}
+                      </span>
+                    </div>
+                  ))}
                   <button
                     type="button"
+                    className="v200-tc-action-btn gold mt-2"
                     onClick={() => openMatch(nextMatch, "attendance")}
                   >
-                    POTWIERDŹ OBECNOŚĆ <ChevronRight size={15}/>
+                    POTWIERDŹ OBECNOŚĆ <ChevronRight size={14}/>
                   </button>
-                </>
+                </div>
               ) : (
-                <>
-                  <p>Na razie nie ma meczu do potwierdzenia.</p>
-                  <button type="button" onClick={() => setTab("calendar")}>
-                    OTWÓRZ KALENDARZ <ChevronRight size={15}/>
+                <div className="v200-tc-parent-box">
+                  <p className="text-sm text-slate-400">Brak meczu wymagającego potwierdzenia obecności.</p>
+                  <button type="button" className="v200-tc-link-btn mt-2" onClick={() => setTab("calendar")}>
+                    OTWÓRZ KALENDARZ <ChevronRight size={14}/>
                   </button>
-                </>
+                </div>
               )
             ) : (
-              nextMatch ? (
-                <>
-                  <small>NAJBLIŻSZY MECZ · {datePL(nextMatch.match_date)}</small>
-                  <p>Zobacz listę obecności oraz powołania zawodników.</p>
-                  <button
-                    type="button"
-                    onClick={() => openMatch(nextMatch, "attendance")}
-                  >
-                    POTWIERDŹ OBECNOŚĆ <ChevronRight size={15}/>
-                  </button>
-                </>
-              ) : (
-                <p>Ta sekcja pojawi się, gdy konto rodzica będzie powiązane z zawodnikiem.</p>
-              )
+              <div className="v200-tc-parent-box">
+                <p className="text-sm text-slate-400">Jesteś zalogowany jako kibic / sztab. Powiąż profil dziecka w ustawieniach, aby zgłaszać obecności.</p>
+                <button type="button" className="v200-tc-link-btn mt-2" onClick={() => setTab("players")}>
+                  KADRA ZESPOŁU <ChevronRight size={14}/>
+                </button>
+              </div>
             )}
           </article>
-          <article className="v151-team-card devil-card">
-            <div className="v8-panel-title"><Trophy size={18}/> SEZON W SKRÓCIE</div>
-            <div className="v151-season-numbers"><span><b>{teamSummary.played}</b><small>MECZE</small></span><span><b>{teamSummary.goals}</b><small>GOLE</small></span><span><b>{teamSummary.wins}</b><small>WYGRANE</small></span></div>
-            <p>{latestPlayed?`Ostatni wynik: ${latestPlayed.home_team} ${latestPlayed.home_score}:${latestPlayed.away_score} ${latestPlayed.away_team}`:"Pierwszy wynik pojawi się po meczu."}</p>
-            <button type="button" onClick={()=>setTab("league")}>CENTRUM ROZGRYWEK <ChevronRight size={15}/></button>
-          </article>
+        </div>
+
+        {/* 3. SZYBKIE SKRÓTY DO GŁÓWNYCH MODUŁÓW */}
+        <div className="v200-tc-shortcuts">
+          <div className="v8-section-label">
+            <span className="eyebrow gold">SZYBKIE SKRÓTY</span>
+          </div>
+          <div className="v200-tc-shortcuts-grid">
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setTab("collection")}>
+              <Sparkles size={22} className="text-amber-400" />
+              <div>
+                <strong>Kolekcja Kart 3D</strong>
+                <small>Karty, paczki i album</small>
+              </div>
+            </button>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setTab("stats")}>
+              <TrendingUp size={22} className="text-red-400" />
+              <div>
+                <strong>Statystyki & Rankingi</strong>
+                <small>G+A, strzelcy, asysty</small>
+              </div>
+            </button>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setTab("hall")}>
+              <Trophy size={22} className="text-yellow-400" />
+              <div>
+                <strong>Hall of Fame</strong>
+                <small>Gablota chwały i rekordy</small>
+              </div>
+            </button>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setKnowledgeModalOpen(true)}>
+              <BookOpen size={22} className="text-blue-400" />
+              <div>
+                <strong>Kącik Wiedzy</strong>
+                <small>Quizy, taktyka i zasady</small>
+              </div>
+            </button>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setBirthdayModalOpen(true)}>
+              <Cake size={22} className="text-pink-400" />
+              <div>
+                <strong>Strefa Urodzin</strong>
+                <small>Kalendarz i życzenia</small>
+              </div>
+            </button>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setTyperModalOpen(true)}>
+              <Target size={22} className="text-emerald-400" />
+              <div>
+                <strong>Typer DELTA</strong>
+                <small>Typuj mecze i zbieraj DP</small>
+              </div>
+            </button>
+          </div>
         </div>
       </section>}
       {tab==="home"&&<>
