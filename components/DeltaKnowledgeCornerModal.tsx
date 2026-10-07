@@ -534,6 +534,382 @@ const LESSONS_DATA: KnowledgeLesson[] = [
         explanation: "Siła DELTY tkwi w jedności i przyjaźni całej drużyny!"
       }
     ]
+  },
+  {
+    id: "tactics-passing-triangles",
+    category: "rules",
+    difficulty: "medium",
+    title: "Trójkąty Podaniowe i Gra Pozycyjna",
+    shortDesc: "Jak tworzyć linie podania, otwierać pozycję i wychodzić do piłki w ataku pozycyjnym.",
+    icon: "📐",
+    badgeName: "Mistrz Trójkątów",
+    rewardPoints: 60,
+    readTime: "3 min",
+    keyPoints: [
+      {
+        icon: "🔺",
+        title: "Zawsze Dwie Opcje Podania",
+        desc: "Zawodnik przy piłce powinien zawsze widzieć co najmniej dwóch kolegów tworzących trójkąt."
+      },
+      {
+        icon: "🏃",
+        title: "Ruch Bez Piłki",
+        desc: "Gdy podasz piłkę – natychmiast zmień pozycję i wyjdź w wolną przestrzeń na kolejne podanie!"
+      },
+      {
+        icon: "👀",
+        title: "Skanowanie Przestrzeni",
+        desc: "Przed przyjęciem piłki spójrz przez ramię (skanowanie), by wiedzieć gdzie są rywale."
+      },
+      {
+        icon: "⚽",
+        title: "Kierunkowe Przyjęcie",
+        desc: "Pierwszy kontakt z piłką powinien od razu kierować nas w stronę wolnego pola lub bramki."
+      }
+    ],
+    funFact: "FC Barcelona i Pep Guardiola opierają cały swój styl gry na ciągłym tworzeniu geometrycznych trójkątów na całym boisku!",
+    parentTip: "Podczas oglądania meczu w TV zwróćcie uwagę dziecku na zawodnika, który po podaniu natychmiast rusza w wolne pole.",
+    questions: [
+      {
+        id: "q1",
+        question: "Co robisz natychmiast po oddaniu celnego podania do kolegi?",
+        options: [
+          "Zatrzymujesz się i odpoczywasz",
+          "Ruszasz w wolną przestrzeń, by dać koledze kolejną opcję podania",
+          "Siadasz na murawie"
+        ],
+        correctIndex: 1,
+        explanation: "Ruch po podaniu to fundament nowoczesnej piłki nożnej!"
+      },
+      {
+        id: "q2",
+        question: "Co oznacza pojęcie 'skanowanie przestrzeni'?",
+        options: [
+          "Robienie zdjęcia telefonem",
+          "Rozglądanie się i sprawdzanie pozycji rywali i kolegów przed przyjęciem piłki",
+          "Patrzenie tylko pod swoje nogi"
+        ],
+        correctIndex: 1,
+        explanation: "Skanowanie pozwala podjąć decyzję jeszcze zanim piłka dotrze do Twojej stopy."
+      },
+      {
+        id: "q3",
+        question: "Dlaczego trójkąty podaniowe są tak skuteczne?",
+        options: [
+          "Bo gracz z piłką ma zawsze min. 2 bezpieczne i szybkie drogi rozegrania",
+          "Bo ładnie wyglądają z trybun",
+          "Bo nie trzeba biegać"
+        ],
+        correctIndex: 0,
+        explanation: "Trójkąt uniemożliwia rywalowi łatwe zablokowanie akcji!"
+      }
+    ]
+  },
+  {
+    id: "tactics-transitions",
+    category: "rules",
+    difficulty: "hard",
+    title: "Fazy Przejściowe: Odbiór i Kontratak",
+    shortDesc: "Co robić w pierwszych 5 sekundach po odbiorze i po stracie piłki.",
+    icon: "⚡",
+    badgeName: "Strateg Przejść",
+    rewardPoints: 75,
+    readTime: "4 min",
+    keyPoints: [
+      {
+        icon: "⏱️",
+        title: "Zasada 5 Sekund po Stracie (Gegenpressing)",
+        desc: "Natychmiast po stracie piłki najbliżsi zawodnicy ruszają do doskoku, by odzyskać futbolówkę."
+      },
+      {
+        icon: "🚀",
+        title: "Błyskawiczne Pierwsze Podanie do Przodu",
+        desc: "Po odbiorze piłki pierwsze podanie w wolne pole omija zdezorientowaną obronę rywala."
+      },
+      {
+        icon: "🧱",
+        title: "Odbudowa Struktury Obronnej",
+        desc: "Jeśli doskok się nie udał – cała drużyna wraca za linię piłki i zamyka środek boiska."
+      },
+      {
+        icon: "🗣️",
+        title: "Głośna Komunikacja",
+        desc: "Krzyczymy 'PLECY!', 'CZAS!', 'MOJA!' – komunikacja na boisku dodaje drużynie pewności."
+      }
+    ],
+    funFact: "Ponad 60% wszystkich bramek w Lidze Mistrzów pada w ciągu pierwszych 10 sekund od odbioru piłki!",
+    parentTip: "Chwalmy dziecko za natychmiastową reakcję po stracie piłki i chęć jej powrotnego odebrania.",
+    questions: [
+      {
+        id: "q1",
+        question: "Co powinna zrobić drużyna w pierwszych sekundach po stracie piłki?",
+        options: [
+          "Zacząć kłócić się z sędzią",
+          "Zastosować szybki doskok (pressing) i próbować natychmiast odzyskać piłkę",
+          "Zatrzymać się i czekać na gwizdek"
+        ],
+        correctIndex: 1,
+        explanation: "Szybki doskok zaskakuje rywala i pozwala natychmiast wznowić atak!"
+      },
+      {
+        id: "q2",
+        question: "Dlaczego głośna komunikacja ('PLECY!', 'CZAS!') jest tak ważna?",
+        options: [
+          "Ostrzega kolegę przed nadbiegającym rywalem i pomaga podjąć dobrą decyzję",
+          "Tylko po to, żeby było głośno na hali",
+          "Nie ma żadnego znaczenia"
+        ],
+        correctIndex: 0,
+        explanation: "Głos z boiska to 'trzecie oko' każdego piłkarza!"
+      },
+      {
+        id: "q3",
+        question: "W którym kierunku najlepiej zagrać pierwsze podanie po odbiorze?",
+        options: [
+          "Zawsze do własnego bramkarza",
+          "W wolną przestrzeń do przodu, by zaskoczyć wracających obrońców",
+          "W trybuny"
+        ],
+        correctIndex: 1,
+        explanation: "Pionowe podanie po odbiorze tworzy natychmiastową sytuację bramkową."
+      }
+    ]
+  },
+  {
+    id: "mindset-confidence",
+    category: "fairplay",
+    difficulty: "medium",
+    title: "Pewność Siebie i Odwaga na Murawie",
+    shortDesc: "Jak radzić sobie ze stresem przedmeczowym i nie bać się popełniania błędów.",
+    icon: "🦁",
+    badgeName: "Lwie Serce",
+    rewardPoints: 60,
+    readTime: "3 min",
+    keyPoints: [
+      {
+        icon: "🧠",
+        title: "Błędy to Lekcje",
+        desc: "Każdy wielki piłkarz popełnia błędy. Najważniejsze to nie poddawać się i próbować dalej!"
+      },
+      {
+        icon: "🫁",
+        title: "Spokojny Głęboki Oddech",
+        desc: "Przed wyjściem na murawę weź 3 głębokie wdechy nosem i wydechy ustami, by uspokoić emocje."
+      },
+      {
+        icon: "🎯",
+        title: "Skupienie na Zadaniu, Nie na Wyniku",
+        desc: "Skup się na walce, bieganiu i podaniach – dobry wynik przyjdzie sam jako efekt pracy."
+      },
+      {
+        icon: "🔥",
+        title: "Wiara w Swoje Umiejętności",
+        desc: "Pamiętaj o setkach udanych zagrań z treningów. Umiesz grać w piłkę – ciesz się meczem!"
+      }
+    ],
+    funFact: "Robert Lewandowski w wieku juniorskim był uważany za zbyt drobnego, ale dzięki niezłomnemu charakterowi i wierze w siebie został najlepszym piłkarzem świata!",
+    parentTip: "Po meczu zapytajmy: 'Czy dobrze się bawiłeś?' zamiast 'Ile bramek strzeliłeś?'.",
+    questions: [
+      {
+        id: "q1",
+        question: "Co robisz, gdy czujesz lekki stres przed ważnym meczem turniejowym?",
+        options: [
+          "Bierzesz kilka głębokich, spokojnych oddechów i myślisz o radości z gry w piłkę",
+          "Rezygnujesz z wyjścia na boisko",
+          "Płaczesz w kącie szatni"
+        ],
+        correctIndex: 0,
+        explanation: "Głęboki oddech uspokaja ciało i przygotowuje umysł do wspaniałej rywalizacji."
+      },
+      {
+        id: "q2",
+        question: "Czym jest błąd na boisku piłkarskim?",
+        options: [
+          "Konieczną lekcją, z której wyciągamy wnioski i stajemy się lepsi",
+          "Koniecznością natychmiastowego zakończenia kariery",
+          "Powodem do złości na cały świat"
+        ],
+        correctIndex: 0,
+        explanation: "Kto nie próbuje, ten nie popełnia błędów. Odwaga to cecha mistrzów!"
+      }
+    ]
+  },
+  {
+    id: "defense-1v1-mastery",
+    category: "rules",
+    difficulty: "hard",
+    title: "Sztuka Pojedynków 1 na 1 w Obronie",
+    shortDesc: "Prawidłowa postawa obrońcy: ugięte kolana, dystans i cierpliwość bez 'wypadania'.",
+    icon: "🛡️",
+    badgeName: "Nie do Przejścia",
+    rewardPoints: 75,
+    readTime: "3 min",
+    keyPoints: [
+      {
+        icon: "🦵",
+        title: "Ugięte Nogi i Nisko Środek Ciężkości",
+        desc: "Stoimy na ugiętych kolanach, na przedniej części stóp – gotowi do skrętu w lewo lub w prawo."
+      },
+      {
+        icon: "📐",
+        title: "Pozycja Boczna (Ukos)",
+        desc: "Nie stoimy płasko twarzą do rywala! Jedna noga z przodu, druga z tyłu kieruje rywala do linii bocznej."
+      },
+      {
+        icon: "⏳",
+        title: "Cierpliwość – Nie Wypadaj!",
+        desc: "Nie atakujemy 'na raz'. Czekamy na błąd rywala, zbyt daleki wypust piłki lub zwolnienie tempa."
+      },
+      {
+        icon: "👀",
+        title: "Patrz na Piłkę, Nie na Zwody Ciała",
+        desc: "Rywale robią zwody tułowiem, ale piłka nie kłamie – skup wzrok na samej futbolówce!"
+      }
+    ],
+    funFact: "Virgil van Dijk w całym sezonie 2018/19 nie dał się przedryblować ani jednemu zawodnikowi w Premier League i Lidze Mistrzów dzięki idealnemu timingowi!",
+    parentTip: "Zwracajmy uwagę na cierpliwość w grze obronnej – powstrzymanie rywala bez faulu to wielka sztuka.",
+    questions: [
+      {
+        id: "q1",
+        question: "Jak powinna wyglądać prawidłowa postawa obrońcy w pojedynku 1 na 1?",
+        options: [
+          "Proste sztywne nogi i ręce w kieszeniach",
+          "Ugięte kolana, nisko środek ciężkości, pozycja lekko boczna na palcach",
+          "Leżenie na trawie"
+        ],
+        correctIndex: 1,
+        explanation: "Niski środek ciężkości pozwala błyskawicznie zareagować na zmianę kierunku rywala."
+      },
+      {
+        id: "q2",
+        question: "Na co patrzy uważny obrońca podczas dryblingu przeciwnika?",
+        options: [
+          "Na fryzurę rywala",
+          "Na samą piłkę, ignorując zmyłki tułowia",
+          "W niebo"
+        ],
+        correctIndex: 1,
+        explanation: "Piłka jest jedynym prawdziwym wyznacznikiem kierunku akcji!"
+      }
+    ]
+  },
+  {
+    id: "nutrition-matchday-fuel",
+    category: "nutrition",
+    difficulty: "medium",
+    title: "Plan Żywieniowy w Dniu Turnieju",
+    shortDesc: "Jak jeść i pić, gdy gramy 4-5 meczów jednego dnia na turnieju.",
+    icon: "🍱",
+    badgeName: "Turniejowy Mistrz Energii",
+    rewardPoints: 60,
+    readTime: "3 min",
+    keyPoints: [
+      {
+        icon: "🥞",
+        title: "Śniadanie Mistrzów (2h przed startem)",
+        desc: "Owsianka z bananem i miodem, tost z chudym twarogiem lub jajecznica z pieczywem pełnoziarnistym."
+      },
+      {
+        icon: "🍎",
+        title: "Przekąski Międzymeczowe (w przerwach)",
+        desc: "Ćwiartki jabłek, banany, suszone daktyle, musy owocowe i lekkie wafelki ryżowe."
+      },
+      {
+        icon: "🚫",
+        title: "Unikaj Ciężkich Obiadów w Trakcie Gier",
+        desc: "Kotlet schabowy czy pizza w trakcie turnieju zabiorą całą krew do trawienia i spowodują kolkę."
+      },
+      {
+        icon: "💧",
+        title: "Ciągłe Małe Nawadnianie",
+        desc: "Pijemy 2-3 łyki wody co 15 minut między meczami, by organizm nie poczuł pragnienia."
+      }
+    ],
+    funFact: "Podczas całodniowego turnieju młody zawodnik może przebiec nawet 8-10 kilometrów i spalić ponad 1500 kalorii!",
+    parentTip: "Spakujmy do torby turniejowej pudełko z pokrojonymi owocami, suszonymi morelami i 2 butelki wody.",
+    questions: [
+      {
+        id: "q1",
+        question: "Co najlepiej zjeść w krótkiej 30-minutowej przerwie między meczami turnieju?",
+        options: [
+          "Tłustego burgera z frytkami",
+          "Kawałek banana, mus owocowy lub wafelek ryżowy",
+          "Paczkę chipsów"
+        ],
+        correctIndex: 1,
+        explanation: "Lekkostrawne węglowodany z owoców natychmiast uzupełniają energię bez obciążania żołądka."
+      },
+      {
+        id: "q2",
+        question: "Kiedy jemy główne śniadanie przed pierwszym meczem turnieju?",
+        options: [
+          "W trakcie zakładania butów na boisku",
+          "Około 2 godziny przed pierwszym gwizdkiem",
+          "Dzień wcześniej wieczorem i nic rano"
+        ],
+        correctIndex: 1,
+        explanation: "2 godziny dają czas na strawienie posiłku i zamianę jedzenia w czyste paliwo mięśniowe!"
+      }
+    ]
+  },
+  {
+    id: "recovery-doms-stretching",
+    category: "recovery",
+    difficulty: "hard",
+    title: "Regeneracja Powysiłkowa i Prawidłowy Rozruch",
+    shortDesc: "Jak dbać o mięśnie po ciężkim turnieju: rolowanie, rozciąganie i ciepły prysznic.",
+    icon: "🧘",
+    badgeName: "Ekspert Odnowy",
+    rewardPoints: 75,
+    readTime: "3 min",
+    keyPoints: [
+      {
+        icon: "🚶",
+        title: "Schłodzenie Organizmu (Cool-down)",
+        desc: "Po meczu nie siadamy od razu na ławce – 3 minuty truchtu i spaceru usuwają kwas mlekowy z nóg."
+      },
+      {
+        icon: "🤸",
+        title: "Spokojny Stretching Statyczny",
+        desc: "Rozciągamy łydki, uda i pośladki, przytrzymując każdą pozycję bez pulsowania przez 15-20 sekund."
+      },
+      {
+        icon: "🚿",
+        title: "Naprzemienny Prysznic (Ciepła/Chłodna Woda)",
+        desc: "Prysznic pobudza krążenie krwi i przyspiesza regenerację zmęczonych nóg."
+      },
+      {
+        icon: "🍲",
+        title: "Posiłek Regeneracyjny (do 45 min po wysiłku)",
+        desc: "Dostarczamy węglowodany i białko (np. zupa, kurczak z ryżem, twaróg), by odbudować włókna mięśniowe."
+      }
+    ],
+    funFact: "Kluby Premier League stosują po meczach specjalne wanny z lodem oraz komory kriogeniczne o temperaturze -110°C, by przyspieszyć regenerację!",
+    parentTip: "Zachęćmy dziecko do 5 minut spokojnego rozciągania w domu na dywanie po powrocie z meczu.",
+    questions: [
+      {
+        id: "q1",
+        question: "Co warto zrobić zaraz po końcowym gwizdku intensywnego meczu?",
+        options: [
+          "Położyć się bez ruchu na ziemi",
+          "Wykonać krótki 3-minutowy trucht i spokojny spacer na uspokojenie tętna",
+          "Wypić duszkiem zimną colę"
+        ],
+        correctIndex: 1,
+        explanation: "Cool-down pozwala sercu i mięśniom łagodnie wrócić do stanu spoczynku."
+      },
+      {
+        id: "q2",
+        question: "Do ilu minut po meczu warto zjeść pełnowartościowy posiłek regeneracyjny?",
+        options: [
+          "Do 45 minut po wysiłku (tzw. okno węglowodanowe)",
+          "Za 3 dni",
+          "Nie ma to żadnego znaczenia"
+        ],
+        correctIndex: 0,
+        explanation: "W tym czasie mięśnie najszybciej chłoną składniki odżywcze i regenerują się na kolejny trening!"
+      }
+    ]
   }
 ];
 

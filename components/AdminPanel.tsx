@@ -7,6 +7,10 @@ import { EMPTY_PERMISSIONS } from "@/lib/permissions";
 import PlayerPhoto from "./PlayerPhoto";
 import CardLayoutEditor from "./CardLayoutEditor";
 import WalkoutStudio from "./WalkoutStudio";
+import DeltaAdminMatchesToComplete from "./DeltaAdminMatchesToComplete";
+import DeltaAdminCustomEventsModal from "./DeltaAdminCustomEventsModal";
+import DeltaAdminResetBadgesModal from "./DeltaAdminResetBadgesModal";
+import DeltaAdminGoalkeeperStatsModal from "./DeltaAdminGoalkeeperStatsModal";
 import { 
   ArrowLeft, Save, Plus, Trash2, Users, CalendarDays, Trophy, Newspaper, 
   Link2, Bell, Goal, Crown, Star, Shield, RefreshCw, CakeSlice, Edit3, 
@@ -67,7 +71,10 @@ export default function AdminPanel(props:{
   const canPlayers=coreStaff||props.currentPermissions.can_manage_players;
   const canNews=coreStaff||props.currentPermissions.can_manage_news;
   const firstTab:string=canMatches?"matches":canTraining?"training":canCalendar?"calendar":canNews?"news":canPlayers?"players":"matches";
-  const [tab,setTab]=useState<"matches"|"calendar"|"training"|"players"|"cards"|"news"|"parents"|"push"|"sync">(firstTab as any);
+  const [tab,setTab]=useState<"matches"|"matches_to_complete"|"calendar"|"events"|"training"|"players"|"cards"|"news"|"parents"|"push"|"sync"|"reset">(firstTab as any);
+  const [gkStatsModalOpen, setGkStatsModalOpen] = useState(false);
+  const [customEventsModalOpen, setCustomEventsModalOpen] = useState(false);
+  const [resetBadgesModalOpen, setResetBadgesModalOpen] = useState(false);
   const [syncing,setSyncing]=useState(false);
   const [syncResult,setSyncResult]=useState<string>("");
   const [syncLogs,setSyncLogs]=useState(props.initialSyncLogs);
@@ -1301,7 +1308,9 @@ export default function AdminPanel(props:{
 
     <nav className="admin-tabs">
       {canMatches&&<button className={tab==="matches"?"active":""} onClick={()=>setTab("matches")}><CalendarDays size={17}/> Mecze</button>}
+      {canMatches&&<button className={tab==="matches_to_complete"?"active":""} onClick={()=>setTab("matches_to_complete")}><AlertCircle size={17}/> Do uzupełnienia</button>}
       {canCalendar&&<button className={tab==="calendar"?"active":""} onClick={()=>setTab("calendar")}><CalendarDays size={17}/> Kalendarz</button>}
+      {canCalendar&&<button className={tab==="events"?"active":""} onClick={()=>setTab("events")}><Sparkles size={17}/> Wydarzenia Specjalne</button>}
       {canTraining&&<button className={tab==="training"?"active":""} onClick={()=>setTab("training")}><Goal size={17}/> Treningi</button>}
       {canPlayers&&<button className={tab==="players"?"active":""} onClick={()=>setTab("players")}><Users size={17}/> Zawodnicy</button>}
       {coreStaff&&<button className={tab==="cards"?"active":""} onClick={()=>setTab("cards")}><Sparkles size={17}/> Karty i paczki</button>}
@@ -1309,9 +1318,33 @@ export default function AdminPanel(props:{
       {coreStaff&&<button className={tab==="parents"?"active":""} onClick={()=>setTab("parents")}><Link2 size={17}/> Rodzice i role</button>}
       {coreStaff&&<button className={tab==="push"?"active":""} onClick={()=>setTab("push")}><Bell size={17}/> Push</button>}
       {isAdmin&&<button className={tab==="sync"?"active":""} onClick={()=>setTab("sync")}><Shield size={17}/> DELTA Sync</button>}
+      {isAdmin&&<button className={tab==="reset"?"active":""} onClick={()=>setResetBadgesModalOpen(true)}><Trash2 size={17}/> Reset Odznak</button>}
     </nav>
 
     <main className="admin-main">
+      {tab==="matches_to_complete" && canMatches && (
+        <section className="admin-card">
+          <DeltaAdminMatchesToComplete
+            matches={matches}
+            events={events}
+            attendance={attendance}
+            onOpenMatchEdit={(m) => {
+              setSelectedMatchId(m.id);
+              setTab("matches");
+            }}
+          />
+        </section>
+      )}
+
+      {tab==="events" && canCalendar && (
+        <section className="admin-card">
+          <DeltaAdminCustomEventsModal
+            isOpen={true}
+            onClose={() => setTab("calendar")}
+            onEventCreated={() => {}}
+          />
+        </section>
+      )}
       {tab==="matches" && canMatches && <div className="admin-two-col">
         <aside className="admin-card">
           <div className="admin-card-head"><h2>Mecze</h2>{canMatchBasics&&<button onClick={addMatch}><Plus size={15}/> Dodaj</button>}</div>
@@ -1395,6 +1428,16 @@ export default function AdminPanel(props:{
                 return <div key={e.id}><span>{e.event_type==="goal"?`⚽ ${player}${assist?` • asysta ${assist}`:""}`:`⭐ MVP: ${player}`}</span><div className="v902-event-actions"><button onClick={()=>editMatchEvent(e.id)}>Edytuj</button><button disabled={goalBusy} onClick={()=>deleteEvent(e.id)}><Trash2 size={14}/></button></div></div>
               })}
             </div></>}
+            {canMatchBasics&&<div style={{ margin: "14px 0", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => setGkStatsModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 text-xs font-bold hover:bg-emerald-600/30 transition flex items-center gap-1.5"
+              >
+                <Shield size={14} /> STATYSTYKI BRAMKARZA W TYM MECZU
+              </button>
+            </div>}
+
             {canMatchBasics&&<div className="v10-admin-gallery"><h3>Foto-kronika meczu</h3><div className="v10-upload-row"><input id="matchPhotoInput" type="file" accept="image/*"/><button onClick={uploadMatchPhoto}><Plus size={14}/> Dodaj zdjęcie</button></div><div className="event-list">{matchMedia.filter(x=>x.match_id===selectedMatch.id).map(row=><div key={row.id}><span>📷 {row.caption||row.storage_path.split("/").pop()}</span><button onClick={()=>deleteMatchPhoto(row)}><Trash2 size={14}/></button></div>)}</div></div>}
           </>}
         </section>
@@ -2547,6 +2590,26 @@ export default function AdminPanel(props:{
           </form>
         </div>
       </div>
+    )}
+
+    {/* Goalkeeper Match Stats Modal */}
+    {gkStatsModalOpen && selectedMatch && (
+      <DeltaAdminGoalkeeperStatsModal
+        isOpen={gkStatsModalOpen}
+        onClose={() => setGkStatsModalOpen(false)}
+        matchId={selectedMatch.id}
+        players={players}
+        onSaved={() => alert("Zapisano statystyki bramkarza!")}
+      />
+    )}
+
+    {/* Reset Badges Modal */}
+    {resetBadgesModalOpen && (
+      <DeltaAdminResetBadgesModal
+        isOpen={resetBadgesModalOpen}
+        onClose={() => setResetBadgesModalOpen(false)}
+        onResetCompleted={() => alert("Osiągnięcia zostały zresetowane.")}
+      />
     )}
   </div>;
 }

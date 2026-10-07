@@ -15,6 +15,7 @@ import {
   Trophy,
   Award,
   Lock,
+  Unlock,
   Eye,
   CheckCircle2,
   ChevronRight,
@@ -39,6 +40,9 @@ import PackOpeningExperience from "./PackOpeningExperience";
 import CardUnlockCinematicModal from "./CardUnlockCinematicModal";
 import DailyInfernoSpin from "./DailyInfernoSpin";
 import SquadBuilder3D from "./SquadBuilder3D";
+import DeltaSquadBuilderModal from "./DeltaSquadBuilderModal";
+import DeltaPaniniChallengesModal from "./DeltaPaniniChallengesModal";
+import DeltaCardLegendModal from "./DeltaCardLegendModal";
 import CardBattleCompareModal from "./CardBattleCompareModal";
 import DeltaTradeHubModal from "./DeltaTradeHubModal";
 import AchievementsModal from "./AchievementsModal";
@@ -105,6 +109,8 @@ export default function DeltaCollectionAlbum({
   const [cinematicCardToUnlock, setCinematicCardToUnlock] = useState<CardDefinition | null>(null);
   const [showDailySpin, setShowDailySpin] = useState(false);
   const [showSquadBuilder, setShowSquadBuilder] = useState(false);
+  const [showPaniniChallenges, setShowPaniniChallenges] = useState(false);
+  const [showCardLegend, setShowCardLegend] = useState(false);
   const [showTradeHub, setShowTradeHub] = useState(false);
   const [showBattleCompare, setShowBattleCompare] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -113,6 +119,29 @@ export default function DeltaCollectionAlbum({
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [videoHighlightCard, setVideoHighlightCard] = useState<CardDefinition | null>(null);
   const [signatureCard, setSignatureCard] = useState<CardDefinition | null>(null);
+
+  const handleToggleLockCard = async (userCard: UserCard | null) => {
+    if (!userCard) return;
+    const newLocked = !(userCard as any).is_locked;
+    try {
+      const res = await fetch("/api/cards/lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userCardId: userCard.id, isLocked: newLocked })
+      });
+      if (res.ok) {
+        setUserCards(prev => prev.map(uc => uc.id === userCard.id ? { ...uc, is_locked: newLocked } as any : uc));
+        if (inspectCard && inspectCard.userCard?.id === userCard.id) {
+          setInspectCard({
+            ...inspectCard,
+            userCard: { ...inspectCard.userCard, is_locked: newLocked } as any
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error toggling card lock:", e);
+    }
+  };
 
   const carouselTrackRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -739,6 +768,50 @@ export default function DeltaCollectionAlbum({
               <div className="v200-tile-tag" style={{ background: "#38bdf8", color: "#000", fontWeight: "bold" }}>TRANSMISJA TV HD</div>
               <h3 className="v200-tile-title">TABLICA REKORDÓW 📺</h3>
               <p className="v200-tile-desc">Belki telewizyjne Canal+, Król Strzelców, Asysty i Liderzy Miesiąca!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
+          </button>
+
+          {/* Tile 9: Panini Challenges 2.0 */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowPaniniChallenges(true);
+              cardSound.playFlip();
+            }}
+            className="v200-vip-action-tile tile-challenges"
+            style={{ border: "1px solid rgba(245, 158, 11, 0.4)", background: "linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(0,0,0,0.6))" }}
+          >
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box" style={{ background: "rgba(245, 158, 11, 0.2)", border: "1px solid rgba(245, 158, 11, 0.5)", color: "#f59e0b" }}>
+              <Trophy size={26} className="text-amber-400" />
+            </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag" style={{ background: "#f59e0b", color: "#000", fontWeight: "bold" }}>WYZWANIA PANINI 2.0</div>
+              <h3 className="v200-tile-title">MISJE KLASERU 🏆</h3>
+              <p className="v200-tile-desc">10 wyzwań kolekcjonerskich: karty INFERNO, trenerzy, stadiony i nagrody!</p>
+            </div>
+            <div className="v200-tile-chevron">→</div>
+          </button>
+
+          {/* Tile 10: Card Legend / Guide */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowCardLegend(true);
+              cardSound.playHover();
+            }}
+            className="v200-vip-action-tile tile-legend"
+            style={{ border: "1px solid rgba(168, 85, 247, 0.4)", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(0,0,0,0.6))" }}
+          >
+            <div className="v200-tile-glow" />
+            <div className="v200-tile-icon-box" style={{ background: "rgba(168, 85, 247, 0.2)", border: "1px solid rgba(168, 85, 247, 0.5)", color: "#c084fc" }}>
+              <Crown size={26} className="text-purple-400" />
+            </div>
+            <div className="v200-tile-content">
+              <div className="v200-tile-tag" style={{ background: "#c084fc", color: "#000", fontWeight: "bold" }}>PRZEWODNIK</div>
+              <h3 className="v200-tile-title">JAK CZYTAĆ KARTĘ? 📖</h3>
+              <p className="v200-tile-desc">Współczynniki TEM, STR, POD, DRY, OBR, FIZ, rzadkości i rating OVR!</p>
             </div>
             <div className="v200-tile-chevron">→</div>
           </button>
@@ -1503,6 +1576,32 @@ export default function DeltaCollectionAlbum({
                 <Play size={13} />
                 WIDEO INTRO
               </button>
+
+              {inspectCard.userCard && (
+                <button
+                  type="button"
+                  className="v104-inspect-flip-btn"
+                  style={{
+                    background: (inspectCard.userCard as any).is_locked ? "rgba(239, 68, 68, 0.2)" : "rgba(255, 255, 255, 0.08)",
+                    border: (inspectCard.userCard as any).is_locked ? "1px solid rgba(239, 68, 68, 0.5)" : "1px solid rgba(255, 255, 255, 0.2)",
+                    color: (inspectCard.userCard as any).is_locked ? "#f87171" : "#e2e8f0"
+                  }}
+                  onClick={() => handleToggleLockCard(inspectCard.userCard)}
+                >
+                  {(inspectCard.userCard as any).is_locked ? <Lock size={13} /> : <Unlock size={13} />}
+                  {(inspectCard.userCard as any).is_locked ? "KARTA ZABLOKOWANA (SBC)" : "ZABLOKUJ (OCHRONA SBC)"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="v104-inspect-flip-btn"
+                style={{ background: "rgba(168, 85, 247, 0.15)", border: "1px solid rgba(168, 85, 247, 0.4)", color: "#c084fc" }}
+                onClick={() => setShowCardLegend(true)}
+              >
+                <Crown size={13} />
+                LEGENDA KARTY
+              </button>
             </div>
 
             <span className="v104-inspect-hint">
@@ -1577,31 +1676,32 @@ export default function DeltaCollectionAlbum({
         />
       )}
 
-      {/* ================= 2. SQUAD BUILDER 3D MODAL ================= */}
-      {showSquadBuilder && typeof document !== "undefined" && createPortal(
-        <div 
-          className="v200-picker-backdrop" 
-          style={{
-            position: "fixed",
-            inset: 0,
-            width: "100vw",
-            height: "100dvh",
-            zIndex: 9999999,
-            background: "#030508",
-            overflow: "hidden",
-            isolation: "isolate"
-          }}
-          onClick={() => setShowSquadBuilder(false)}
-        >
-          <div className="v200-picker-modal max-w-4xl" onClick={e => e.stopPropagation()}>
-            <SquadBuilder3D
-              ownedCards={ownedCardsList}
-              userCardsMap={ownedCardsMap}
-              onClose={() => setShowSquadBuilder(false)}
-            />
-          </div>
-        </div>,
-        document.body
+      {/* ================= 2. SQUAD BUILDER 2.0 MODAL ================= */}
+      {showSquadBuilder && (
+        <DeltaSquadBuilderModal
+          isOpen={showSquadBuilder}
+          onClose={() => setShowSquadBuilder(false)}
+          userCards={userCards}
+          onSquadSaved={() => fetchCollection()}
+        />
+      )}
+
+      {/* ================= PANINI CHALLENGES 2.0 MODAL ================= */}
+      {showPaniniChallenges && (
+        <DeltaPaniniChallengesModal
+          isOpen={showPaniniChallenges}
+          onClose={() => setShowPaniniChallenges(false)}
+          userCards={userCards}
+          onRewardClaimed={() => fetchCollection()}
+        />
+      )}
+
+      {/* ================= CARD LEGEND MODAL ================= */}
+      {showCardLegend && (
+        <DeltaCardLegendModal
+          isOpen={showCardLegend}
+          onClose={() => setShowCardLegend(false)}
+        />
       )}
 
       {/* ================= 3. CARD BATTLE & COMPARE MODAL ================= */}
