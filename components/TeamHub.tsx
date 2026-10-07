@@ -39,6 +39,10 @@ import { DeltaPWAInstallPrompt } from "./DeltaPWAInstallPrompt";
 import { DeltaOfflineBanner } from "./DeltaOfflineBanner";
 import { DeltaNotificationPreferencesModal } from "./DeltaNotificationPreferencesModal";
 import { DeltaChangelogModal } from "./DeltaChangelogModal";
+import { DeltaCompetitionHubModal } from "./social/DeltaCompetitionHubModal";
+import { DeltaSocialFeedModal } from "./social/DeltaSocialFeedModal";
+import { DeltaTrophyCabinetModal } from "./social/DeltaTrophyCabinetModal";
+import { DeltaSafeTradingModal } from "./social/DeltaSafeTradingModal";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -47,7 +51,7 @@ import { decodeHtmlEntities } from "@/lib/text";
 import { formatTeamName, getTeamLogo } from "@/lib/teams";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake, Coins
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake, Coins, MessageSquare
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -217,6 +221,10 @@ export default function TeamHub(props:{
   const [weeklySummaryModalOpen, setWeeklySummaryModalOpen] = useState(false);
   const [changelogModalOpen, setChangelogModalOpen] = useState(false);
   const [notifPrefsModalOpen, setNotifPrefsModalOpen] = useState(false);
+  const [competitionHubOpen, setCompetitionHubOpen] = useState(false);
+  const [socialFeedOpen, setSocialFeedOpen] = useState(false);
+  const [trophyCabinetOpen, setTrophyCabinetOpen] = useState(false);
+  const [safeTradingOpen, setSafeTradingOpen] = useState(false);
   const [gameProfile, setGameProfile] = useState<any>(null);
 
   const fetchGameProfile = async () => {
@@ -1276,9 +1284,12 @@ export default function TeamHub(props:{
       subtitle: "Karty 3D, Typer i Osiągnięcia",
       Icon: Sparkles,
       items: [
-        { id: "collection", label: "Kolekcja Kart", desc: "Klaser kart 3D, sklep z paczkami i wymiany", Icon: Sparkles, badge: "3D", isGoldTag: true },
+        { id: "collection", label: "Kolekcja Kart", desc: "Klaser kart 3D, sklep z paczkami i album", Icon: Sparkles, badge: "3D", isGoldTag: true },
+        { id: "competition-modal", label: "Centrum Rywalizacji & Ligi", desc: "Liga kartowa, turnieje, wyzwania 1v1/3v3, draft i cele drużyny", Icon: Trophy, badge: "LIGA & ARENA", isGoldTag: true, isAction: "competition" },
         { id: "missions-modal", label: "Centrum Misji", desc: "Dziennie i tygodniowe zadania, nagrody XP i paczki", Icon: Target, badge: "MISJE", isGoldTag: true, isAction: "missions" },
         { id: "battle-arena-modal", label: "Arena Kart (1v1 & 3v3)", desc: "Pojedynki statystyk kart przeciwko rywalom CPU", Icon: Flame, badge: "PVE ARENA", isGoldTag: true, isAction: "battle" },
+        { id: "trophy-cabinet-modal", label: "Gablota Trofeów & Tytuły", desc: "Puchary, medale i wybór aktywnego tytułu profilu", Icon: Award, badge: "PROFIL", isGoldTag: true, isAction: "trophies" },
+        { id: "safe-trading-modal", label: "Bezpieczna Giełda Wymian", desc: "Wymieniaj duplikaty kart 1-za-1 z kolegami z zespołu", Icon: Layers, badge: "TRADE", isGoldTag: true, isAction: "trading" },
         { id: "season-pass-modal", label: "DELTA Battle Pass", desc: "Sezonowa ścieżka nagród, poziomy 1–25 i XP", Icon: Trophy, badge: "SEZON 1", isGoldTag: true, isAction: "seasonpass" },
         { id: "weekly-summary-modal", label: "Podsumowanie Tygodnia", desc: "Infografika postępów, zdobyte XP i obecności", Icon: Award, badge: "RAPORT", isGoldTag: true, isAction: "weeklysummary" },
         { id: "typer-modal", label: "Klubowy Typer", desc: "Typuj wyniki spotkań i wygrywaj Delta Points", Icon: Crown, badge: "NOWOŚĆ", isGoldTag: true, isAction: "typer" },
@@ -1292,6 +1303,7 @@ export default function TeamHub(props:{
       subtitle: "Aktualności i oficjalne komunikaty",
       Icon: Shield,
       items: [
+        { id: "social-feed-modal", label: "Feed Drużyny (Tablica)", desc: "Oficjalne ogłoszenia, wyróżnienia i pozytywny doping", Icon: MessageSquare, badge: "SPOŁECZNOŚĆ", isGoldTag: true, isAction: "socialfeed" },
         { id: "photobooth-modal", label: "Foto-Budka DELTA", desc: "Twórz profesjonalne grafiki i relacje Instagram / WhatsApp", Icon: Camera, badge: "HD STUDIO", isGoldTag: true, isAction: "photobooth" },
         { id: "birthday-modal", label: "Strefa Urodzin", desc: "Świętujemy urodziny zawodników, życzenia i prezenty", Icon: Cake, badge: "ŚWIĘTUJEMY", isGoldTag: true, isAction: "birthday" },
         { id: "news", label: "Aktualności", desc: "Wiadomości z życia drużyny i ogłoszenia", Icon: Newspaper },
@@ -1416,7 +1428,19 @@ export default function TeamHub(props:{
                   type="button"
                   className={`v200-drawer-card-btn ${isItemActive ? "active" : ""}`}
                   onClick={() => {
-                    if ((item as any).isAction === "missions") {
+                    if ((item as any).isAction === "competition") {
+                      setCompetitionHubOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "trophies") {
+                      setTrophyCabinetOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "trading") {
+                      setSafeTradingOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "socialfeed") {
+                      setSocialFeedOpen(true);
+                      setActiveDrawerCategory(null);
+                    } else if ((item as any).isAction === "missions") {
                       setMissionsModalOpen(true);
                       setActiveDrawerCategory(null);
                     } else if ((item as any).isAction === "battle") {
@@ -3852,6 +3876,46 @@ export default function TeamHub(props:{
       <DeltaChangelogModal
         isOpen={changelogModalOpen}
         onClose={() => setChangelogModalOpen(false)}
+      />
+    )}
+
+    {competitionHubOpen && (
+      <DeltaCompetitionHubModal
+        isOpen={competitionHubOpen}
+        onClose={() => setCompetitionHubOpen(false)}
+        userId={props.profile.id}
+        userName={props.profile.display_name || "Zawodnik DELTA"}
+        playerCards={players}
+        onRewardClaimed={() => fetchGameProfile()}
+      />
+    )}
+
+    {socialFeedOpen && (
+      <DeltaSocialFeedModal
+        isOpen={socialFeedOpen}
+        onClose={() => setSocialFeedOpen(false)}
+        userId={props.profile.id}
+      />
+    )}
+
+    {trophyCabinetOpen && (
+      <DeltaTrophyCabinetModal
+        isOpen={trophyCabinetOpen}
+        onClose={() => setTrophyCabinetOpen(false)}
+        userId={props.profile.id}
+        userName={props.profile.display_name || "Zawodnik DELTA"}
+        onProfileUpdated={() => fetchGameProfile()}
+      />
+    )}
+
+    {safeTradingOpen && (
+      <DeltaSafeTradingModal
+        isOpen={safeTradingOpen}
+        onClose={() => setSafeTradingOpen(false)}
+        userId={props.profile.id}
+        userName={props.profile.display_name || "Zawodnik DELTA"}
+        playerCards={players}
+        onTradeCompleted={() => fetchGameProfile()}
       />
     )}
 
