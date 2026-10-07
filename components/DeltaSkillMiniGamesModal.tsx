@@ -49,7 +49,7 @@ export const LEVELS_CONFIG: LevelConfig[] = [
     name: "POZIOM 1: Młodzik DELTA",
     subtitle: "Trening Podstawowy (Prędkość 1.0x)",
     targetDurationSec: 25,
-    wavesToPass: 3, // 9 celów
+    wavesToPass: 3,
     speedMultiplier: 1.0,
     basePoints: 100,
     targetSize: 74,
@@ -60,54 +60,119 @@ export const LEVELS_CONFIG: LevelConfig[] = [
   {
     level: 2,
     name: "POZIOM 2: Trampkarz Ekstraklasy",
-    subtitle: "Szybkie Podania (+35% Prędkości)",
-    targetDurationSec: 22,
-    wavesToPass: 4, // 12 celów
-    speedMultiplier: 1.35,
-    basePoints: 140,
-    targetSize: 68,
-    dpReward: 30,
+    subtitle: "Szybkie Podania (Prędkość 1.25x)",
+    targetDurationSec: 24,
+    wavesToPass: 3,
+    speedMultiplier: 1.25,
+    basePoints: 120,
+    targetSize: 70,
+    dpReward: 25,
     themeColor: "#4ade80",
     description: "Szybszy ruch celów po przekątnych. Utrzymuj serię celnych uderzeń!"
   },
   {
     level: 3,
-    name: "POZIOM 3: Gwiazda DELTA 2018",
-    subtitle: "Wysoka Dynamika (+75% Prędkości)",
+    name: "POZIOM 3: Skrzydłowy DELTA",
+    subtitle: "Ruch po Łuku (Prędkość 1.5x)",
+    targetDurationSec: 22,
+    wavesToPass: 4,
+    speedMultiplier: 1.5,
+    basePoints: 150,
+    targetSize: 66,
+    dpReward: 35,
+    themeColor: "#a3e635",
+    description: "Cele orbitujące w okienkach i przy słupkach. Wymaga szybkiego refleksu!"
+  },
+  {
+    level: 4,
+    name: "POZIOM 4: Gwiazda DELTA 2018",
+    subtitle: "Wysoka Dynamika (Prędkość 1.75x)",
     targetDurationSec: 20,
-    wavesToPass: 4, // 12 celów
+    wavesToPass: 4,
     speedMultiplier: 1.75,
     basePoints: 180,
     targetSize: 62,
     dpReward: 45,
     themeColor: "#facc15",
-    description: "Mniejsze cele orbitujące w okienkach i przy słupkach. Wymaga szybkiego refleksu!"
-  },
-  {
-    level: 4,
-    name: "POZIOM 4: Liga Mistrzów",
-    subtitle: "Ekspresowe Strzały (+120% Prędkości)",
-    targetDurationSec: 18,
-    wavesToPass: 5, // 15 celów
-    speedMultiplier: 2.2,
-    basePoints: 240,
-    targetSize: 56,
-    dpReward: 65,
-    themeColor: "#f97316",
-    description: "Piłki latają z dużą prędkością! Dynamiczne przeskoki celów po całej bramce!"
+    description: "Szybkie przeskoki i mniejsze cele w rogach bramki!"
   },
   {
     level: 5,
-    name: "POZIOM 5: 🔥 INFERNO MASTER",
-    subtitle: "Maksymalna Piekielna Prędkość (2.8x)",
+    name: "POZIOM 5: Snajper Orlika",
+    subtitle: "Podwójne Przyspieszenie (Prędkość 2.0x)",
+    targetDurationSec: 19,
+    wavesToPass: 4,
+    speedMultiplier: 2.0,
+    basePoints: 210,
+    targetSize: 58,
+    dpReward: 60,
+    themeColor: "#fb923c",
+    description: "Uderzenia w pełnym biegu. Cele zmieniają kierunek w ułamku sekundy!"
+  },
+  {
+    level: 6,
+    name: "POZIOM 6: Rozgrywający Ligi",
+    subtitle: "Precyzja Mistrza (Prędkość 2.25x)",
+    targetDurationSec: 18,
+    wavesToPass: 5,
+    speedMultiplier: 2.25,
+    basePoints: 240,
+    targetSize: 54,
+    dpReward: 75,
+    themeColor: "#f87171",
+    description: "5 fal po 3 cele. Wymagana żelazna koncentracja!"
+  },
+  {
+    level: 7,
+    name: "POZIOM 7: Liga Mistrzów",
+    subtitle: "Ekspresowe Strzały (Prędkość 2.5x)",
+    targetDurationSec: 17,
+    wavesToPass: 5,
+    speedMultiplier: 2.5,
+    basePoints: 280,
+    targetSize: 50,
+    dpReward: 90,
+    themeColor: "#e879f9",
+    description: "Piłki latają z ogromną prędkością! Dynamiczny taniec celów po całej siatce!"
+  },
+  {
+    level: 8,
+    name: "POZIOM 8: Złoty Strzelec Ekstra",
+    subtitle: "Ekspert Okienek (Prędkość 2.8x)",
     targetDurationSec: 16,
-    wavesToPass: 5, // 15 celów
+    wavesToPass: 5,
     speedMultiplier: 2.8,
     basePoints: 320,
-    targetSize: 50,
-    dpReward: 100,
+    targetSize: 46,
+    dpReward: 110,
+    themeColor: "#c084fc",
+    description: "Cele celują w same spojenia słupka i poprzeczki!"
+  },
+  {
+    level: 9,
+    name: "POZIOM 9: Czempion DELTA VIP",
+    subtitle: "Elitarna Szybkość (Prędkość 3.1x)",
+    targetDurationSec: 15,
+    wavesToPass: 6,
+    speedMultiplier: 3.1,
+    basePoints: 370,
+    targetSize: 42,
+    dpReward: 135,
+    themeColor: "#818cf8",
+    description: "6 bezbłędnych fal. Tylko dla najszybszych napastników szatni!"
+  },
+  {
+    level: 10,
+    name: "POZIOM 10: 🔥 LEGENDARNY INFERNO MASTER",
+    subtitle: "Maksymalna Piekielna Prędkość (3.5x)",
+    targetDurationSec: 14,
+    wavesToPass: 6,
+    speedMultiplier: 3.5,
+    basePoints: 450,
+    targetSize: 38,
+    dpReward: 200,
     themeColor: "#ef4444",
-    description: "Maksymalne tempo! Błyskawiczny ruch i unikalne złote cele. Nagroda mistrza: +100 DP!"
+    description: "Ostateczna próba mistrzowska! Błyskawiczne złote cele. Nagroda arcymistrza: +200 DP!"
   }
 ];
 
@@ -133,10 +198,32 @@ export default function DeltaSkillMiniGamesModal({
   const [currentLevelIdx, setCurrentLevelIdx] = useState<number>(0);
   const [unlockedMaxLevel, setUnlockedMaxLevel] = useState<number>(1);
   
+  const [accuracyHighScore, setAccuracyHighScore] = useState<number>(0);
+  const [gkHighScore, setGkHighScore] = useState<number>(0);
+  const [gkBestStreakRecord, setGkBestStreakRecord] = useState<number>(0);
+
   useEffect(() => {
     setMounted(true);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    // Load user minigame progress from server
+    async function loadProgress() {
+      try {
+        const res = await fetch("/api/minigames/progress");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.unlockedMaxLevel) setUnlockedMaxLevel(data.unlockedMaxLevel);
+          if (data.accuracyHighScore) setAccuracyHighScore(data.accuracyHighScore);
+          if (data.gkHighScore) setGkHighScore(data.gkHighScore);
+          if (data.gkBestStreak) setGkBestStreakRecord(data.gkBestStreak);
+        }
+      } catch (err) {
+        console.warn("Minigame progress load note:", err);
+      }
+    }
+    loadProgress();
+
     return () => {
       document.body.style.overflow = prevOverflow;
     };
@@ -232,11 +319,27 @@ export default function DeltaSkillMiniGamesModal({
         setGameState("game_over");
         cardSound.playFlip();
         cardSound.playHaptic("medium");
+        const newAccuracyHigh = Math.max(accuracyHighScore, score);
+        setAccuracyHighScore(newAccuracyHigh);
+        fetch("/api/minigames/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accuracyHighScore: newAccuracyHigh })
+        }).catch(err => console.warn("Save minigame progress failed", err));
       }
     } else {
       setGameState("game_over");
       cardSound.playWalkoutFanfare();
       cardSound.playHaptic("walkout");
+      const newGkHigh = Math.max(gkHighScore, score);
+      const newGkStreak = Math.max(gkBestStreakRecord, bestStreak);
+      setGkHighScore(newGkHigh);
+      setGkBestStreakRecord(newGkStreak);
+      fetch("/api/minigames/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gkHighScore: newGkHigh, gkBestStreak: newGkStreak })
+      }).catch(err => console.warn("Save GK progress failed", err));
     }
   };
 
@@ -246,9 +349,23 @@ export default function DeltaSkillMiniGamesModal({
     cardSound.playHaptic("walkout");
 
     // Unlock next level if available
-    if (currentLevel.level >= unlockedMaxLevel && currentLevel.level < LEVELS_CONFIG.length) {
-      setUnlockedMaxLevel(currentLevel.level + 1);
+    const nextMax = (currentLevel.level >= unlockedMaxLevel && currentLevel.level < LEVELS_CONFIG.length)
+      ? currentLevel.level + 1
+      : unlockedMaxLevel;
+    if (nextMax > unlockedMaxLevel) {
+      setUnlockedMaxLevel(nextMax);
     }
+    const newAccuracyHigh = Math.max(accuracyHighScore, score);
+    setAccuracyHighScore(newAccuracyHigh);
+
+    fetch("/api/minigames/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        unlockedMaxLevel: nextMax,
+        accuracyHighScore: newAccuracyHigh
+      })
+    }).catch(err => console.warn("Save minigame progress failed", err));
   };
 
   // Start Level

@@ -1255,7 +1255,14 @@ export default function DeltaCollectionAlbum({
       {activePackToOpen && (
         <PackOpeningExperience
           pack={activePackToOpen}
-          unopenedCount={unopenedPacks.length - 1}
+          unopenedCount={Math.max(0, unopenedPacks.length - 1)}
+          onPackConsumed={(remaining) => {
+            if (typeof remaining === "number") {
+              setUnopenedPacks(prev => prev.slice(0, remaining));
+            } else {
+              setUnopenedPacks(prev => prev.slice(1));
+            }
+          }}
           onClose={() => {
             setActivePackToOpen(null);
             fetchCollection();
@@ -1264,8 +1271,10 @@ export default function DeltaCollectionAlbum({
             if (unopenedPacks.length > 1) {
               const nextPack = unopenedPacks[1];
               const packDef = packDefinitions.find(p => p.id === nextPack.pack_type_id) || packDefinitions[0];
+              setUnopenedPacks(prev => prev.slice(1));
               setActivePackToOpen(packDef);
             } else {
+              setUnopenedPacks([]);
               setActivePackToOpen(null);
             }
             fetchCollection();

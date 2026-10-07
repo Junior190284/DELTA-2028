@@ -7,6 +7,7 @@ import {
   Sparkles, 
   X, 
   ChevronRight, 
+  ChevronLeft,
   Check, 
   Coins, 
   RefreshCw,
@@ -27,6 +28,7 @@ interface PackOpeningExperienceProps {
   onClose: () => void;
   onOpenAnother?: () => void;
   unopenedCount?: number;
+  onPackConsumed?: (remainingCount?: number) => void;
 }
 
 type Stage = 
@@ -44,7 +46,8 @@ export default function PackOpeningExperience({
   pack,
   onClose,
   onOpenAnother,
-  unopenedCount = 0
+  unopenedCount = 0,
+  onPackConsumed
 }: PackOpeningExperienceProps) {
   const [mounted, setMounted] = useState(false);
   const [stage, setStage] = useState<Stage>("sealed");
@@ -54,6 +57,8 @@ export default function PackOpeningExperience({
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
   const [screenShake, setScreenShake] = useState(false);
+  const [activeSummaryIndex, setActiveSummaryIndex] = useState(1);
+  const touchStartX = useRef<number | null>(null);
 
   // Preload all core card templates and textures on mount so there is zero asset popping/delay
   useEffect(() => {
@@ -98,13 +103,18 @@ export default function PackOpeningExperience({
         throw new Error(err.error || "Błąd otwierania paczki");
       }
 
-      const data: PackOpeningResult = await res.json();
+      const data: any = await res.json();
       setOpeningResult(data);
       setRevealedCards(new Array(data.cards.length).fill(false));
+      setActiveSummaryIndex(Math.floor(data.cards.length / 2)); // Middle card active by default
+
+      if (onPackConsumed && data.remaining_unopened_packs_count !== undefined) {
+        onPackConsumed(data.remaining_unopened_packs_count);
+      }
 
       // Instantly preload and decode all card artwork, textures, and cutouts into GPU memory
       preloadAllCardThemes();
-      Promise.all(data.cards.map(item => preloadCardAssets(item.card)));
+      Promise.all(data.cards.map((item: { card: CardDefinition }) => preloadCardAssets(item.card)));
 
       // Rank cards to find the star card
       const rarityRank: Record<string, number> = {
@@ -668,7 +678,7 @@ export default function PackOpeningExperience({
         </div>
       )}
 
-      {/* ================= STAGE 4: SUMMARY ================= */}
+      {/* ================= STAGE 4: SUMMARY (3 CARDS SWIPE / DRAG CAROUSEL) ================= */}
       {stage === "summary" && openingResult && (
         <div className="v104-open-summary-stage animate-fadeIn" style={{ zIndex: 10 }}>
           <div className="v104-summary-header">
@@ -682,32 +692,114 @@ export default function PackOpeningExperience({
             )}
           </div>
 
-          {/* Cards Carousel (Side by Side) */}
-          <div className="v104-summary-carousel-container">
+          {/* Cards Carousel (Swipe & Drag with Middle Active Card) */}
+          <div 
+            className="v104-summary-carousel-container"
+            onTouchStart={(e) => {
+              touchStartX.current = e.touches[0].clientX;
+            }}
+            onTouchEnd={(e) => {
+              if (touchStartX.current === null) return;
+              const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+              if (deltaX > 40 && activeSummaryIndex > 0) {
+                setActiveSummaryIndex(prev => prev - 1);
+                cardSound.playFlip();
+              } else if (deltaX < -40 && activeSummaryIndex < openingResult.cards.length - 1) {
+                setActiveSummaryIndex(prev => prev + 1);
+                cardSound.playFlip();
+              }
+              touchStartX.current = null;
+            }}
+          >
+            {/* Left Nav Arrow */}
+            {openingResult.cards.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeSummaryIndex > 0) {
+                    setActiveSummaryIndex(prev => prev - 1);
+                    cardSound.playFlip();
+                  }
+                }}
+                disabled={activeSummaryIndex === 0}
+                className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-black/60 border border-white/20 text-white hover:bg-amber-500 hover:text-black transition-all disabled:opacity-30 disabled:pointer-events-none"
+                aria-label="Poprzednia karta"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+
             <div className="v104-summary-carousel-track">
-              {openingResult.cards.map((item, idx) => (
-                <div key={idx} className="v104-summary-card-item">
-                  <CollectibleCard3D
-                    card={item.card}
-                    userCard={undefined}
-                    isLocked={false}
-                    size="md"
-                    interactive={true}
-                    showFlip={true}
-                  />
-                  {item.is_duplicate ? (
-                    <span className="v104-summary-dup-tag">
-                      <Coins size={11} className="inline mr-1" /> DUPLIKAT (+{item.duplicate_points} DP)
-                    </span>
-                  ) : (
-                    <span className="v104-summary-new-tag">
-                      <Sparkles size={11} className="inline mr-1" /> NOWA KARTA
-                    </span>
-                  )}
-                </div>
+              {openingResult.cards.map((item, idx) => {
+                const isActive = idx === activeSummaryIndex;
+
+                return (
+                  <div 
+                    key={idx} 
+                    className={`v104-summary-card-item cursor-pointer transition-all duration-300 ${isActive ? "scale-105 z-20 opacity-100" : "scale-95 z-10 opacity-75 sm:opacity-90"}`}
+                    onClick={() => {
+                      setActiveSummaryIndex(idx);
+                      cardSound.playFlip();
+                    }}
+                  >
+                    <CollectibleCard3D
+                      card={item.card}
+                      userCard={undefined}
+                      isLocked={false}
+                      size="md"
+                      interactive={true}
+                      showFlip={true}
+                    />
+                    {item.is_duplicate ? (
+                      <span className="v104-summary-dup-tag">
+                        <Coins size={11} className="inline mr-1" /> DUPLIKAT (+{item.duplicate_points} DP)
+                      </span>
+                    ) : (
+                      <span className="v104-summary-new-tag">
+                        <Sparkles size={11} className="inline mr-1" /> NOWA KARTA
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Nav Arrow */}
+            {openingResult.cards.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeSummaryIndex < openingResult.cards.length - 1) {
+                    setActiveSummaryIndex(prev => prev + 1);
+                    cardSound.playFlip();
+                  }
+                }}
+                disabled={activeSummaryIndex === openingResult.cards.length - 1}
+                className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-black/60 border border-white/20 text-white hover:bg-amber-500 hover:text-black transition-all disabled:opacity-30 disabled:pointer-events-none"
+                aria-label="Następna karta"
+              >
+                <ChevronRight size={22} />
+              </button>
+            )}
+          </div>
+
+          {/* Carousel Pagination Dots */}
+          {openingResult.cards.length > 1 && (
+            <div className="flex items-center justify-center gap-2 my-2">
+              {openingResult.cards.map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  type="button"
+                  onClick={() => {
+                    setActiveSummaryIndex(dotIdx);
+                    cardSound.playFlip();
+                  }}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${dotIdx === activeSummaryIndex ? "w-6 bg-amber-400 shadow-md shadow-amber-400/50" : "bg-slate-600 hover:bg-slate-400"}`}
+                  aria-label={`Karta ${dotIdx + 1}`}
+                />
               ))}
             </div>
-          </div>
+          )}
 
           {/* Bottom Actions */}
           <div className="v104-summary-actions">

@@ -2404,7 +2404,7 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="stats"&&<section className="section v8-section-page v890-stats-center">
-        <div className="v890-stats-hero devil-card">
+        <div className="v890-stats-hero">
           <div className="v890-stats-hero-bg"/>
           <div className="v890-stats-copy">
             <span className="eyebrow gold">DELTA 2018 GM • DATA STUDIO</span>

@@ -236,13 +236,15 @@ export default function AdminPanel(props:{
     const as=(document.getElementById("mas") as HTMLInputElement).value;
     const venue=(document.getElementById("mvenue") as HTMLInputElement).value;
     const rawTime=(document.getElementById("mtime") as HTMLInputElement).value;
+    const homeTeam=(document.getElementById("mhome") as HTMLInputElement)?.value?.trim()||selectedMatch.home_team;
+    const awayTeam=(document.getElementById("maway") as HTMLInputElement)?.value?.trim()||selectedMatch.away_team;
     const time=cleanTimeForDB(rawTime);
     const {error}=await supabase.from("matches").update({
-      status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time
+      status,match_date:date||selectedMatch.match_date,home_team:homeTeam,away_team:awayTeam,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time
     }).eq("id",selectedMatch.id);
     if(error)return alert(error.message);
-    setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,status,match_date:date||selectedMatch.match_date,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time}:m).sort((a,b)=>a.match_date.localeCompare(b.match_date)));
-    alert("Zapisano mecz");
+    setMatches(prev=>prev.map(m=>m.id===selectedMatch.id?{...m,status,match_date:date||selectedMatch.match_date,home_team:homeTeam,away_team:awayTeam,home_score:hs===""?null:Number(hs),away_score:as===""?null:Number(as),venue,match_time:time}:m).sort((a,b)=>a.match_date.localeCompare(b.match_date)));
+    alert("Zapisano dane meczu");
   }
 
   async function setAttendanceStatus(playerId:string,status:string){
@@ -1329,7 +1331,25 @@ export default function AdminPanel(props:{
               <label>Data meczu<input id="mdate" type="date" key={`date-${selectedMatch.id}-${selectedMatch.match_date}`} defaultValue={selectedMatch.match_date}/></label>
               <label>Godzina<input id="mtime" key={`time-${selectedMatch.id}-${selectedMatch.match_time}`} defaultValue={(selectedMatch.match_time||"").slice(0, 5)} placeholder="np. 11:20"/></label>
               <label>Miejsce<input id="mvenue" key={`venue-${selectedMatch.id}-${selectedMatch.venue}`} defaultValue={selectedMatch.venue||""} placeholder="np. Mokotów"/></label>
-              <label>Gospodarz<input value={selectedMatch.home_team} readOnly/></label>
+              <label>Gospodarz (Home Team)<input id="mhome" key={`home-${selectedMatch.id}-${selectedMatch.home_team}`} defaultValue={selectedMatch.home_team}/></label>
+              <label>Gość (Away Team)<input id="maway" key={`away-${selectedMatch.id}-${selectedMatch.away_team}`} defaultValue={selectedMatch.away_team}/></label>
+              <div style={{ gridColumn: "span 2", display: "flex", gap: "8px", alignItems: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const hInput = document.getElementById("mhome") as HTMLInputElement;
+                    const aInput = document.getElementById("maway") as HTMLInputElement;
+                    if (hInput && aInput) {
+                      const temp = hInput.value;
+                      hInput.value = aInput.value;
+                      aInput.value = temp;
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 transition flex items-center gap-1.5"
+                >
+                  <RefreshCw size={13} /> Zamień miejscami: Gospodarz ⇄ Gość
+                </button>
+              </div>
               <label>Wynik gospodarza<input id="mhs" type="number" key={`hs-${selectedMatch.id}-${selectedMatch.home_score}`} defaultValue={selectedMatch.home_score??""}/></label>
               <label>Wynik gościa<input id="mas" type="number" key={`as-${selectedMatch.id}-${selectedMatch.away_score}`} defaultValue={selectedMatch.away_score??""}/></label>
             </div>}

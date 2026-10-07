@@ -648,6 +648,33 @@ export default function DeltaSBCModal({
                             {card.rarity}
                           </span>
 
+                          {/* Kopie i bilans powtórek */}
+                          {(() => {
+                            const totalCopies = (userCard.duplicates_count || 0) + 1;
+                            const chosen = isSelected ? 1 : 0;
+                            const remain = totalCopies - chosen;
+
+                            return (
+                              <div 
+                                style={{ 
+                                  marginTop: "4px", 
+                                  fontSize: "8px", 
+                                  textAlign: "center", 
+                                  lineHeight: "1.3",
+                                  background: "rgba(0,0,0,0.4)",
+                                  padding: "2px 4px",
+                                  borderRadius: "6px",
+                                  width: "100%",
+                                  boxSizing: "border-box"
+                                }}
+                              >
+                                <div style={{ color: "#94a3b8" }}>Posiadasz: <b style={{ color: "#fff" }}>{totalCopies}</b></div>
+                                <div style={{ color: isSelected ? "#fbbf24" : "#64748b" }}>Wybrane: <b>{chosen}</b></div>
+                                <div style={{ color: remain > 0 ? "#34d399" : "#f87171" }}>Pozostanie: <b>{remain}</b></div>
+                              </div>
+                            );
+                          })()}
+
                           {isSelected && (
                             <div 
                               style={{

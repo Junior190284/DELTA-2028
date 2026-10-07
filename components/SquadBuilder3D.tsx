@@ -195,20 +195,26 @@ export default function SquadBuilder3D({
             <button
               type="button"
               onClick={() => { setViewMode("pitch"); cardSound.playHover(); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                viewMode === "pitch" ? "bg-amber-500 text-black shadow" : "text-slate-400 hover:text-white"
+              className={`px-3.5 py-2 rounded-lg text-xs font-black tracking-wider flex items-center gap-2 transition-all ${
+                viewMode === "pitch" 
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-lg shadow-amber-500/30 scale-[1.02]" 
+                  : "text-slate-300 hover:text-white hover:bg-white/5"
               }`}
             >
-              <LayoutGrid size={13} /> MURAWA 3D
+              <LayoutGrid size={14} className={viewMode === "pitch" ? "text-black" : "text-amber-400"} /> 
+              <span>MURAWA 3D</span>
             </button>
             <button
               type="button"
               onClick={() => { setViewMode("lockerRoom"); cardSound.playHover(); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                viewMode === "lockerRoom" ? "bg-amber-500 text-black shadow" : "text-slate-400 hover:text-white"
+              className={`px-3.5 py-2 rounded-lg text-xs font-black tracking-wider flex items-center gap-2 transition-all ${
+                viewMode === "lockerRoom" 
+                  ? "bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-lg shadow-amber-500/30 scale-[1.02]" 
+                  : "text-slate-300 hover:text-white hover:bg-white/5"
               }`}
             >
-              <Shirt size={13} /> SZATNIA VIP
+              <Shirt size={14} className={viewMode === "lockerRoom" ? "text-black" : "text-amber-400"} /> 
+              <span>SZATNIA VIP</span>
             </button>
           </div>
 
@@ -353,7 +359,7 @@ export default function SquadBuilder3D({
                         card={assignedCard}
                         userCard={userCardsMap.get(assignedCard.id) || null}
                         isLocked={false}
-                        size="sm"
+                        size="xs"
                         interactive={false}
                         showFlip={false}
                       />

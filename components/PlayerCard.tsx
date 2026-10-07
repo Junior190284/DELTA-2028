@@ -172,8 +172,8 @@ export default function PlayerCard({
   // Dimensions based on 2:3 ratio
   const dim = useMemo(() => {
     switch (size) {
-      case "xs": return { w: 120, h: 180 };
-      case "sm": return { w: 170, h: 255 };
+      case "xs": return { w: 72, h: 108 };
+      case "sm": return { w: 140, h: 210 };
       case "lg": return { w: 300, h: 450 };
       case "xl": return { w: 360, h: 540 };
       case "responsive": return { w: 260, h: 390 };

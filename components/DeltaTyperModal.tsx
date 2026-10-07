@@ -70,19 +70,13 @@ interface LeaderboardEntry {
   scorerHits: number;
 }
 
+import { formatTeamName, getTeamLogo } from "@/lib/teams";
+
 interface DeltaTyperModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPointsUpdated?: (newPoints: number) => void;
 }
-
-const TEAM_LOGOS: Record<string, string> = {
-  "K.S. Delta Warszawa GM": "/teamlogos/gm.png",
-  "Alfa Przymierze Rodzin": "/teamlogos/alfa.png",
-  "FC Vizja Warszawa": "/teamlogos/vizja.png",
-  "RKS Ursus Warszawa": "/teamlogos/ursus.png",
-  "MUKS Julianów": "/teamlogos/julianow.png",
-};
 
 export default function DeltaTyperModal({
   isOpen,
@@ -372,8 +366,10 @@ export default function DeltaTyperModal({
                 const formVal = getFormValue(m.id);
                 const isSaved = myPredictions.some(p => p.match_id === m.id);
                 const comm = communityStats[m.id] || { total: 0, deltaWinPct: 0, drawPct: 0, oppWinPct: 0 };
-                const homeLogo = TEAM_LOGOS[m.home_team] || "/teamlogos/gm.png";
-                const awayLogo = TEAM_LOGOS[m.away_team] || "/teamlogos/alfa.png";
+                const homeLogo = getTeamLogo(m.home_team);
+                const awayLogo = getTeamLogo(m.away_team);
+                const homeName = formatTeamName(m.home_team);
+                const awayName = formatTeamName(m.away_team);
                 const insight = getMatchInsight(m);
                 const isInsightOpen = expandedInsights[m.id] !== false; // domyślnie otwarta
 
@@ -465,9 +461,9 @@ export default function DeltaTyperModal({
                     {/* Arena */}
                     <div className="v200-typer-match-arena">
                       <div className="v200-typer-team-block">
-                        <img src={homeLogo} alt={m.home_team} style={{ width: 44, height: 44, objectFit: "contain" }} />
+                        <img src={homeLogo} alt={homeName} style={{ width: 44, height: 44, objectFit: "contain" }} />
                         <div>
-                          <strong style={{ display: "block", fontSize: 13, color: "#fff" }}>{m.home_team}</strong>
+                          <strong style={{ display: "block", fontSize: 13, color: "#fff" }}>{homeName}</strong>
                           <span style={{ fontSize: 10, color: "#94a3b8" }}>Gospodarz</span>
                         </div>
                       </div>
@@ -494,10 +490,10 @@ export default function DeltaTyperModal({
 
                       <div className="v200-typer-team-block right">
                         <div>
-                          <strong style={{ display: "block", fontSize: 13, color: "#fff" }}>{m.away_team}</strong>
+                          <strong style={{ display: "block", fontSize: 13, color: "#fff" }}>{awayName}</strong>
                           <span style={{ fontSize: 10, color: "#94a3b8" }}>Gość</span>
                         </div>
-                        <img src={awayLogo} alt={m.away_team} style={{ width: 44, height: 44, objectFit: "contain" }} />
+                        <img src={awayLogo} alt={awayName} style={{ width: 44, height: 44, objectFit: "contain" }} />
                       </div>
                     </div>
 
@@ -522,7 +518,7 @@ export default function DeltaTyperModal({
                           <div className="v200-insight-probs">
                             <div className="prob-item">
                               <div className="prob-top">
-                                <span>1 ({m.home_team})</span>
+                                <span>1 ({homeName})</span>
                                 <b>{insight.p1}%</b>
                               </div>
                               <div className="prob-bar"><div className="fill gold" style={{ width: `${insight.p1}%` }} /></div>
@@ -536,7 +532,7 @@ export default function DeltaTyperModal({
                             </div>
                             <div className="prob-item">
                               <div className="prob-top">
-                                <span>2 ({m.away_team})</span>
+                                <span>2 ({awayName})</span>
                                 <b>{insight.p2}%</b>
                               </div>
                               <div className="prob-bar"><div className="fill red" style={{ width: `${insight.p2}%` }} /></div>
@@ -638,7 +634,7 @@ export default function DeltaTyperModal({
                   <div key={pred.id} style={{ padding: 14, borderRadius: 14, background: "rgba(18,24,38,0.8)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                     <div>
                       <div style={{ fontSize: 11, color: "#94a3b8" }}>
-                        {match?.home_team} vs {match?.away_team} • {match ? new Date(match.match_date).toLocaleDateString("pl-PL") : ""}
+                        {match ? `${formatTeamName(match.home_team)} vs ${formatTeamName(match.away_team)} • ${new Date(match.match_date).toLocaleDateString("pl-PL")}` : ""}
                       </div>
                       <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", marginTop: 2 }}>
                         Twój typ: <strong style={{ color: "#f59e0b", fontFamily: "monospace" }}>{pred.predicted_home_score} : {pred.predicted_away_score}</strong>

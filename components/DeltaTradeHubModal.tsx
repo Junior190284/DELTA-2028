@@ -188,9 +188,17 @@ export default function DeltaTradeHubModal({
         width: "100vw",
         height: "100dvh",
         zIndex: 9999999,
-        background: "#030508",
-        overflow: "hidden",
-        isolation: "isolate"
+        background: "rgba(3, 5, 8, 0.95)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        overflowY: "auto",
+        overflowX: "hidden",
+        isolation: "isolate",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "clamp(10px, 3vw, 24px)",
+        boxSizing: "border-box"
       }}
       onClick={onClose}
     >

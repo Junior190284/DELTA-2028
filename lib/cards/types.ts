@@ -109,6 +109,8 @@ export interface PackOpeningResult {
   total_delta_points_earned: number;
   new_points_balance: number;
   pack_type_id: string;
+  consumed_pack_id?: string | null;
+  remaining_unopened_packs_count?: number;
 }
 
 export const RARITY_CONFIG: Record<CardRarity, {

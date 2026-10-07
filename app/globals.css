@@ -16203,23 +16203,34 @@ body > main,
   position: relative;
 }
 
-.v200-winner-crown-badge {
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #f59e0b;
-  color: #000000;
-  font-size: 9px;
-  font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 999px;
+
+.v200-battle-winner-slot {
+  height: 28px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.v200-winner-crown-placeholder {
+  height: 28px;
+  visibility: hidden;
+}
+
+.v200-winner-crown-badge {
+  background: linear-gradient(135deg, #facc15, #f59e0b);
+  color: #000000;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
-  z-index: 30;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.6);
+  z-index: 10;
+  letter-spacing: 0.05em;
 }
 
 .v200-battle-vs-badge {
@@ -16383,10 +16394,18 @@ body > main,
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+
 .v200-lineup-match-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .v200-lineup-match-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .v200-lineup-col {
@@ -24163,19 +24182,22 @@ body > main,
 /* Feedback Toast */
 .v200-shot-feedback-toast {
   position: absolute;
-  top: 45%;
+  top: 8px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.88);
+  transform: translateX(-50%);
+  background: rgba(4, 7, 13, 0.95);
   border: 2px solid #facc15;
-  padding: 10px 22px;
-  border-radius: 30px;
-  font-size: 15px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
   font-weight: 900;
-  z-index: 20;
+  z-index: 40;
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), 0 0 15px rgba(250, 204, 21, 0.3);
 }
 
 /* Targets */

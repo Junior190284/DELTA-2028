@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { 
   Sparkles, 
@@ -15,6 +15,7 @@ import {
   Zap, 
   Calendar, 
   Star, 
+  Clock,
   ShieldAlert 
 } from "lucide-react";
 import { cardSound } from "@/lib/cards/audio";
@@ -45,14 +46,14 @@ const WHEEL_SEGMENTS: WheelSegment[] = [
   { id: "s8", name: "🌟 LEGEND PACK", shortName: "LEGEND PACK", type: "pack", packTypeId: "legend_pack", gradientId: "grad-legend", textColor: "#ffffff", icon: "🌟", weight: 2 }
 ];
 
-const STREAK_DAYS = [
-  { day: 1, reward: "+25 DP", claimed: true },
-  { day: 2, reward: "+50 DP", claimed: true },
-  { day: 3, reward: "Paczka Std", claimed: false, current: true },
-  { day: 4, reward: "+75 DP", claimed: false },
-  { day: 5, reward: "Matchday", claimed: false },
-  { day: 6, reward: "+150 DP", claimed: false },
-  { day: 7, reward: "👑 Gold Pack", claimed: false, big: true }
+const STREAK_REWARDS_CONFIG = [
+  { day: 1, reward: "+25 DP" },
+  { day: 2, reward: "+50 DP" },
+  { day: 3, reward: "Paczka Std" },
+  { day: 4, reward: "+75 DP" },
+  { day: 5, reward: "Matchday" },
+  { day: 6, reward: "+150 DP" },
+  { day: 7, reward: "👑 Gold Pack", big: true }
 ];
 
 interface DailyInfernoSpinProps {
@@ -69,12 +70,16 @@ export default function DailyInfernoSpin({
   packDefinitions = []
 }: DailyInfernoSpinProps) {
   const [mounted, setMounted] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [winningSegment, setWinningSegment] = useState<WheelSegment | null>(null);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
-  const [hasSpunToday, setHasSpunToday] = useState(false);
-  const [savingReward, setSavingReward] = useState(false);
+  
+  // Daily cooldown & streak state from server
+  const [canSpin, setCanSpin] = useState<boolean>(true);
+  const [streakCount, setStreakCount] = useState<number>(1);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -85,12 +90,59 @@ export default function DailyInfernoSpin({
     };
   }, []);
 
+  // Fetch initial spin eligibility and streak from server
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSpinStatus() {
+      try {
+        setLoadingStatus(true);
+        const res = await fetch("/api/cards/daily-spin");
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setCanSpin(Boolean(data.canSpin));
+            setStreakCount(data.streak || 1);
+            setSecondsRemaining(data.secondsRemaining || 0);
+          }
+        }
+      } catch (err) {
+        console.error("Błąd pobierania statusu daily-spin:", err);
+      } finally {
+        if (isMounted) setLoadingStatus(false);
+      }
+    }
+    loadSpinStatus();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Countdown timer interval
+  useEffect(() => {
+    if (secondsRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setSecondsRemaining(prev => {
+        if (prev <= 1) {
+          setCanSpin(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [secondsRemaining]);
+
+  const formatCountdown = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
   const numSegments = WHEEL_SEGMENTS.length;
   const arcSize = 360 / numSegments;
 
   // Spin wheel action
   const handleSpin = () => {
-    if (spinning) return;
+    if (spinning || !canSpin || secondsRemaining > 0) return;
 
     setSpinning(true);
     setWinningSegment(null);
@@ -112,13 +164,10 @@ export default function DailyInfernoSpin({
     const prize = WHEEL_SEGMENTS[selectedIndex];
 
     // Calculate rotation: 5 full spins (1800 deg) + offset to land on selectedIndex
-    // Segment 0 is at 0-45 deg. The pointer is at the top (270 deg / -90 deg).
     const extraTurns = 5 * 360;
     const segmentCenterAngle = selectedIndex * arcSize + arcSize / 2;
-    // Pointer is at the top (90 deg relative or 270)
     const targetAngle = extraTurns + (360 - segmentCenterAngle);
 
-    // Add current rotation to keep spinning forward
     const finalRotation = rotation + targetAngle + (Math.random() * (arcSize * 0.6) - arcSize * 0.3);
     setRotation(finalRotation);
 
@@ -135,12 +184,11 @@ export default function DailyInfernoSpin({
       setSpinning(false);
       setWinningSegment(prize);
       setShowWinCelebration(true);
-      setHasSpunToday(true);
+      setCanSpin(false);
       cardSound.playWalkoutFanfare();
 
-      // Persist reward
+      // Persist reward to server
       try {
-        setSavingReward(true);
         const res = await fetch("/api/cards/daily-spin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -148,14 +196,19 @@ export default function DailyInfernoSpin({
         });
         if (res.ok) {
           const data = await res.json();
+          if (data.streak !== undefined) setStreakCount(data.streak);
+          if (data.secondsRemaining !== undefined) setSecondsRemaining(data.secondsRemaining);
           if (onRewardClaimed && data.newPointsBalance !== undefined) {
             onRewardClaimed(data.newPointsBalance);
+          }
+        } else {
+          const errData = await res.json();
+          if (errData.secondsRemaining) {
+            setSecondsRemaining(errData.secondsRemaining);
           }
         }
       } catch (e) {
         console.error("Błąd zapisu nagrody:", e);
-      } finally {
-        setSavingReward(false);
       }
     }, 4600);
   };
@@ -191,6 +244,18 @@ export default function DailyInfernoSpin({
     };
   });
 
+  const streakDaysList = useMemo(() => {
+    return STREAK_REWARDS_CONFIG.map(s => {
+      const isClaimed = s.day < streakCount || (s.day === streakCount && !canSpin);
+      const isCurrent = s.day === streakCount && canSpin;
+      return {
+        ...s,
+        claimed: isClaimed,
+        current: isCurrent
+      };
+    });
+  }, [streakCount, canSpin]);
+
   if (!mounted || typeof document === "undefined") {
     return null;
   }
@@ -204,17 +269,26 @@ export default function DailyInfernoSpin({
         width: "100vw",
         height: "100dvh",
         zIndex: 9999999,
-        background: "#030508",
-        overflow: "hidden",
-        isolation: "isolate"
+        background: "rgba(3, 5, 8, 0.96)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        overflowY: "auto",
+        overflowX: "hidden",
+        isolation: "isolate",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "clamp(10px, 3vw, 24px)",
+        boxSizing: "border-box"
       }}
+      onClick={onClose}
     >
       {/* Dynamic Celebration Particles */}
       {showWinCelebration && (
         <CanvasParticles theme="gold" active={true} />
       )}
 
-      <div className="v200-spin-modal-container vip-wheel-container">
+      <div className="v200-spin-modal-container vip-wheel-container" onClick={e => e.stopPropagation()}>
         {/* Header Bar */}
         <div className="v200-spin-header">
           <div className="v200-spin-title-group">
@@ -223,7 +297,7 @@ export default function DailyInfernoSpin({
               <span>DELTA CASINO & WHEEL VIP</span>
             </div>
             <h2>CODZIENNE KOŁO FORTUNY</h2>
-            <p>Zakręć kołem i zdobywaj codzienne nagrody, paczki oraz punkty Delta!</p>
+            <p>Maksymalnie 1 darmowy obrót dziennie. Zbieraj codzienną serię 7 dni!</p>
           </div>
 
           {onClose && (
@@ -243,7 +317,7 @@ export default function DailyInfernoSpin({
           <div className="v200-streak-header">
             <span className="v200-streak-title">
               <Calendar size={14} className="text-yellow-400 inline mr-1.5" />
-              SERIA LOGOWANIA (DZIEŃ 3 Z 7)
+              SERIA LOGOWANIA (DZIEŃ {streakCount} Z 7)
             </span>
             <span className="v200-streak-boost">
               Dzień 7: 👑 <strong>Gwarantowany Gold Booster!</strong>
@@ -251,7 +325,7 @@ export default function DailyInfernoSpin({
           </div>
 
           <div className="v200-streak-track">
-            {STREAK_DAYS.map(s => (
+            {streakDaysList.map(s => (
               <div 
                 key={s.day} 
                 className={`v200-streak-step ${s.claimed ? "claimed" : ""} ${s.current ? "current" : ""} ${s.big ? "big-reward" : ""}`}
@@ -291,7 +365,6 @@ export default function DailyInfernoSpin({
               {/* SVG Segments */}
               <svg viewBox="0 0 500 500" className="v200-wheel-svg">
                 <defs>
-                  {/* High Quality Radial / Linear Gradients for Slices */}
                   <linearGradient id="grad-gold" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#fde047" />
                     <stop offset="50%" stopColor="#eab308" />
@@ -379,7 +452,6 @@ export default function DailyInfernoSpin({
 
                       {/* Radial Content rotated to bisector */}
                       <g transform={`rotate(${textAngle}, 250, 250)`}>
-                        {/* Outer Icon */}
                         <text
                           x="250"
                           y="62"
@@ -391,7 +463,6 @@ export default function DailyInfernoSpin({
                           {seg.icon}
                         </text>
 
-                        {/* Large Clear Prize Name */}
                         <text
                           x="250"
                           y="110"
@@ -410,7 +481,6 @@ export default function DailyInfernoSpin({
                           {seg.shortName}
                         </text>
 
-                        {/* Tiny decorative divider line */}
                         <line 
                           x1="250" 
                           y1="165" 
@@ -444,9 +514,9 @@ export default function DailyInfernoSpin({
               <button 
                 type="button"
                 onClick={handleSpin}
-                disabled={spinning}
-                className="v200-wheel-center-hub mega-hub"
-                title="Kliknij, aby zakręcić!"
+                disabled={spinning || !canSpin || secondsRemaining > 0}
+                className={`v200-wheel-center-hub mega-hub ${!canSpin && !spinning ? "opacity-80" : ""}`}
+                title={canSpin ? "Kliknij, aby zakręcić!" : `Kolejny spin za: ${formatCountdown(secondsRemaining)}`}
               >
                 <div className="v200-hub-inner">
                   <img 
@@ -455,7 +525,7 @@ export default function DailyInfernoSpin({
                     className="v200-hub-logo" 
                   />
                   <span className="v200-hub-spin-txt">
-                    {spinning ? "..." : "SPIN"}
+                    {spinning ? "..." : canSpin ? "SPIN" : "JUTRO"}
                   </span>
                 </div>
                 <div className="v200-hub-ring" />
@@ -466,24 +536,40 @@ export default function DailyInfernoSpin({
 
         {/* Action Controls */}
         <div className="v200-spin-action-row">
-          <button
-            type="button"
-            onClick={handleSpin}
-            disabled={spinning}
-            className={`v200-spin-launch-btn mega-launch-btn ${spinning ? "spinning" : ""}`}
-          >
-            {spinning ? (
-              <>
-                <RotateCw size={22} className="animate-spin" />
-                <span>LOSOWANIE NAGRODY W TOKU...</span>
-              </>
-            ) : (
-              <>
-                <Zap size={22} className="text-black fill-black" />
-                <span>ZAKRĘĆ KOŁEM (DARMOWY SPIN DNIA)</span>
-              </>
-            )}
-          </button>
+          {canSpin && secondsRemaining === 0 ? (
+            <button
+              type="button"
+              onClick={handleSpin}
+              disabled={spinning}
+              className={`v200-spin-launch-btn mega-launch-btn ${spinning ? "spinning" : ""}`}
+            >
+              {spinning ? (
+                <>
+                  <RotateCw size={22} className="animate-spin" />
+                  <span>LOSOWANIE NAGRODY W TOKU...</span>
+                </>
+              ) : (
+                <>
+                  <Zap size={22} className="text-black fill-black" />
+                  <span>ZAKRĘĆ KOŁEM (DARMOWY SPIN DNIA)</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="flex flex-col items-center gap-2 w-full max-w-md">
+              <button
+                type="button"
+                disabled
+                className="w-full py-3.5 px-6 rounded-2xl bg-slate-800/80 border border-slate-700 text-slate-300 font-extrabold text-sm flex items-center justify-center gap-3 cursor-not-allowed shadow-inner"
+              >
+                <Clock size={18} className="text-amber-400 animate-pulse" />
+                <span>KOLEJNY SPIN ZA: <strong className="font-mono text-amber-400 text-base">{formatCountdown(secondsRemaining)}</strong></span>
+              </button>
+              <span className="text-[11px] text-slate-400 text-center font-medium">
+                Wykorzystano darmowy spin na dzisiaj (Dzień {streakCount}/7). Wróć jutro, aby kontynuować serię!
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ================= WINNING PRIZE MODAL BANNER ================= */}

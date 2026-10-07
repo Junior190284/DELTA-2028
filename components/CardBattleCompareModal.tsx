@@ -301,12 +301,17 @@ export default function CardBattleCompareModal({
                   </select>
                 </div>
 
-                <div className="v200-battle-card-stage">
-                  {winsA > winsB && (
+                <div className="v200-battle-winner-slot">
+                  {winsA > winsB ? (
                     <div className="v200-winner-crown-badge animate-bounce">
-                      <Crown size={15} /> ZWYCIĘZCA POJEDYNKU
+                      <Crown size={14} /> ZWYCIĘZCA POJEDYNKU
                     </div>
+                  ) : (
+                    <div className="v200-winner-crown-placeholder" />
                   )}
+                </div>
+
+                <div className="v200-battle-card-stage">
                   <CollectibleCard3D
                     card={cardA}
                     userCard={userCardsMap.get(cardA.id) || null}
@@ -343,12 +348,17 @@ export default function CardBattleCompareModal({
                   </select>
                 </div>
 
-                <div className="v200-battle-card-stage">
-                  {winsB > winsA && (
+                <div className="v200-battle-winner-slot">
+                  {winsB > winsA ? (
                     <div className="v200-winner-crown-badge animate-bounce">
-                      <Crown size={15} /> ZWYCIĘZCA POJEDYNKU
+                      <Crown size={14} /> ZWYCIĘZCA POJEDYNKU
                     </div>
+                  ) : (
+                    <div className="v200-winner-crown-placeholder" />
                   )}
+                </div>
+
+                <div className="v200-battle-card-stage">
                   <CollectibleCard3D
                     card={cardB}
                     userCard={userCardsMap.get(cardB.id) || null}
@@ -505,7 +515,7 @@ export default function CardBattleCompareModal({
                         card={c}
                         userCard={userCardsMap.get(c.id) || null}
                         isLocked={false}
-                        size="sm"
+                        size="xs"
                         interactive={false}
                         showFlip={false}
                       />
@@ -525,7 +535,7 @@ export default function CardBattleCompareModal({
                       <CollectibleCard3D
                         card={c}
                         isLocked={false}
-                        size="sm"
+                        size="xs"
                         interactive={false}
                         showFlip={false}
                       />

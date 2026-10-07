@@ -340,16 +340,61 @@ export async function openPackServerSide(
     newBalance = currentPoints?.points_balance || 0;
   }
 
-  // c) Oznaczenie paczki jako otwartej
-  if (userUnopenedPackId) {
+  // c) Oznaczenie paczki jako otwartej w bazie (zużycie konkretnego egzemplarza)
+  let consumedPackId: string | null = userUnopenedPackId || null;
+
+  if (consumedPackId) {
     await supabase
       .from("user_unopened_packs")
       .update({
         is_opened: true,
         opened_at: new Date().toISOString()
       })
-      .eq("id", userUnopenedPackId);
+      .eq("id", consumedPackId);
+  } else {
+    // Jeśli nie podano ID konkretnej paczki, zużywamy najstarszą nieotwartą paczkę użytkownika tego typu
+    const { data: matchPack } = await supabase
+      .from("user_unopened_packs")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("pack_type_id", finalPackTypeId)
+      .eq("is_opened", false)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (matchPack?.id) {
+      consumedPackId = matchPack.id;
+    } else {
+      // Fallback: dowolna pierwsza nieotwarta paczka użytkownika
+      const { data: anyPack } = await supabase
+        .from("user_unopened_packs")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("is_opened", false)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (anyPack?.id) consumedPackId = anyPack.id;
+    }
+
+    if (consumedPackId) {
+      await supabase
+        .from("user_unopened_packs")
+        .update({
+          is_opened: true,
+          opened_at: new Date().toISOString()
+        })
+        .eq("id", consumedPackId);
+    }
   }
+
+  // Pobieramy aktualną liczbę pozostałych nieotwartych paczek
+  const { count: remainingCount } = await supabase
+    .from("user_unopened_packs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("is_opened", false);
 
   // d) Zapis do audit logu
   await supabase
@@ -370,6 +415,8 @@ export async function openPackServerSide(
     cards: drawnCards,
     total_delta_points_earned: totalDeltaPoints,
     new_points_balance: newBalance,
-    pack_type_id: finalPackTypeId
+    pack_type_id: finalPackTypeId,
+    consumed_pack_id: consumedPackId,
+    remaining_unopened_packs_count: remainingCount ?? 0
   };
 }
