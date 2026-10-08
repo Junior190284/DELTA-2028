@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Medal, Crown, Star, Check, Sparkles, ShieldCheck } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { 
+  X, Trophy, Medal, Crown, Star, Check, Sparkles, 
+  ShieldCheck, User, CheckCircle2, Award, Flame, Target, Swords 
+} from 'lucide-react';
 
 interface DeltaTrophyCabinetModalProps {
   isOpen: boolean;
@@ -15,23 +19,37 @@ export const DeltaTrophyCabinetModal: React.FC<DeltaTrophyCabinetModalProps> = (
   isOpen,
   onClose,
   userId = 'guest_user',
-  userName = 'Zawodnik DELTA',
+  userName = 'Zawodnik DELTA 2018',
   onProfileUpdated
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [activeTitle, setActiveTitle] = useState('Młody Wilczek');
   const [activeBadge, setActiveBadge] = useState('badge_starter');
   const [trophies, setTrophies] = useState<any[]>([]);
   const [savedToast, setSavedToast] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const availableTitles = [
-    'Młody Talent',
-    'Młody Wilczek',
-    'Snajper Mokotowa',
-    'Wojownik Treningu',
-    'Mistrz Asyst',
-    'Żelazny Obrońca',
-    'Gwiazda INFERNO',
-    'Legenda DELTA'
+    { title: 'Młody Talent', icon: '⭐', desc: 'Debiut w akademii' },
+    { title: 'Młody Wilczek', icon: '🐺', desc: 'Waleczność i charakter' },
+    { title: 'Snajper Mokotowa', icon: '🎯', desc: 'Instynkt strzelecki' },
+    { title: 'Wojownik Treningu', icon: '🏃', desc: '100% zaangażowania' },
+    { title: 'Mistrz Asyst', icon: '🪄', desc: 'Przegląd pola i podania' },
+    { title: 'Żelazny Obrońca', icon: '🛡️', desc: 'Nie do przejścia' },
+    { title: 'Gwiazda INFERNO', icon: '🔥', desc: 'Najrzadsze karty' },
+    { title: 'Legenda DELTA', icon: '👑', desc: 'Mistrzowski status' }
+  ];
+
+  const showcaseTrophies = [
+    { title: 'Mistrz Jesieni 2026', icon: '🏆', date: 'Październik 2026', tier: 'gold' },
+    { title: '100% Frekwencji', icon: '⭐', date: 'Wrzesień 2026', tier: 'gold' },
+    { title: 'Puchar INFERNO', icon: '🔥', date: 'Sezon 1', tier: 'inferno' },
+    { title: 'Król Strzelców Minigier', icon: '🎯', date: 'Październik 2026', tier: 'gold' },
+    { title: 'Wojownik Areny 3v3', icon: '⚔️', date: 'Liga Kartowa', tier: 'silver' },
+    { title: 'Pierwsza Karta RARE', icon: '🥇', date: 'Kolekcja Panini', tier: 'silver' },
   ];
 
   const fetchProfileCustomization = async () => {
@@ -68,111 +86,150 @@ export const DeltaTrophyCabinetModal: React.FC<DeltaTrophyCabinetModalProps> = (
       });
       setSavedToast(true);
       if (onProfileUpdated) onProfileUpdated();
-      setTimeout(() => setSavedToast(false), 2000);
+      setTimeout(() => setSavedToast(false), 2500);
     } catch (e) {
       console.error('Save title error:', e);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="v200-modal-container max-w-xl animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-modal-head">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
-              🏆
+  const modalContent = (
+    <div className="v200-cabinet-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-cabinet-sheet" onClick={(e) => e.stopPropagation()}>
+        {/* ================= HEADER ================= */}
+        <div className="v200-cabinet-header">
+          <div className="cabinet-header-brand">
+            <div className="cabinet-trophy-icon">
+              <Trophy size={24} className="text-amber-400" />
             </div>
             <div>
-              <h3 className="font-black text-white text-base uppercase tracking-wider m-0">
-                Gablota Trofeów & Wizytówka
-              </h3>
-              <p className="text-xs text-slate-400 m-0 mt-0.5">Zdobyte medale, puchary i wybór tytułu profilowego</p>
+              <div className="cabinet-eyebrow-tag">PROFIL ZAWODNIKA • GABANIT PRESTIŻU</div>
+              <h2 className="cabinet-modal-title">GABLOTA TROFEÓW & WIZYTÓWKA</h2>
+              <p className="cabinet-modal-subtitle">Zdobyte medale, puchary i wybór aktywnego tytułu profilowego</p>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="v200-modal-close"
+            className="cabinet-close-btn"
             aria-label="Zamknij"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
-          {/* Player Card Showcase Preview */}
-          <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-amber-500/30 flex items-center gap-4 shadow-inner">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-3xl shadow-xl shadow-amber-500/20">
-              👤
+        {/* ================= BODY SCROLL ================= */}
+        <div className="v200-cabinet-body-scroll">
+          {/* VIP Player Business Card Preview */}
+          <div className="cabinet-player-showcase-card">
+            <div className="showcase-avatar-box">
+              <div className="showcase-avatar-circle">
+                <User size={30} className="text-amber-400" />
+              </div>
+              <div className="showcase-crown-tag">👑</div>
             </div>
-            <div>
-              <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                {activeTitle}
-              </span>
-              <h4 className="text-base font-black text-white uppercase mt-1">{userName}</h4>
-              <p className="text-xs text-slate-400">K.S. Delta Warszawa 2018 · Górny Mokotów</p>
+
+            <div className="showcase-player-details">
+              <div className="showcase-title-chip">
+                <Sparkles size={12} className="text-amber-400" />
+                <span>{activeTitle}</span>
+              </div>
+              <h3 className="showcase-player-name">{userName}</h3>
+              <p className="showcase-club-line">K.S. Delta Warszawa 2018 • Górny Mokotów</p>
+            </div>
+
+            <div className="showcase-verified-badge">
+              <ShieldCheck size={16} className="text-emerald-400" />
+              <span>AKTYWNY W PROFILU</span>
             </div>
           </div>
 
-          {/* Titles Picker */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Wybierz Aktywny Tytuł Profilu:
-              </label>
+          {/* Titles Picker Section */}
+          <div className="cabinet-section-box">
+            <div className="cabinet-section-header">
+              <div className="section-title-wrap">
+                <Award size={16} className="text-amber-400" />
+                <h4 className="section-title">Wybierz Aktywny Tytuł Profilu</h4>
+              </div>
               {savedToast && (
-                <span className="text-xs font-bold text-emerald-400 animate-fadeIn">✓ Zapisano</span>
+                <div className="saved-indicator-chip animate-fadeIn">
+                  <CheckCircle2 size={13} />
+                  <span>Zapisano nowy tytuł!</span>
+                </div>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {availableTitles.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => handleSaveTitle(t)}
-                  className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all flex items-center justify-between ${
-                    activeTitle === t
-                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md'
-                      : 'bg-slate-800/40 border-white/5 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <span>{t}</span>
-                  {activeTitle === t && <Check size={14} className="text-amber-400" />}
-                </button>
-              ))}
+
+            <div className="cabinet-titles-grid">
+              {availableTitles.map((item) => {
+                const isSelected = activeTitle === item.title;
+                return (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => handleSaveTitle(item.title)}
+                    className={`cabinet-title-btn ${isSelected ? 'is-selected' : ''}`}
+                  >
+                    <div className="title-btn-left">
+                      <span className="title-btn-emoji">{item.icon}</span>
+                      <div className="title-btn-text-wrap">
+                        <strong className="title-btn-name">{item.title}</strong>
+                        <span className="title-btn-desc">{item.desc}</span>
+                      </div>
+                    </div>
+
+                    <div className={`title-btn-check ${isSelected ? 'active' : ''}`}>
+                      {isSelected ? <Check size={14} /> : null}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Trophy Cabinet Grid */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Zdobyte Trofea i Osiągnięcia Sezonowe:
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                { title: 'Mistrz Jesieni 2026', icon: '🏆', date: 'Październik 2026' },
-                { title: '100% Frekwencji', icon: '⭐', date: 'Wrzesień 2026' },
-                { title: 'Puchar INFERNO', icon: '🔥', date: 'Sezon 1' },
-                { title: 'Król Strzelców Minigier', icon: '🎯', date: 'Październik 2026' },
-                { title: 'Wojownik Areny 3v3', icon: '⚔️', date: 'Liga Kartowa' },
-                { title: 'Pierwsza Karta RARE', icon: '🥇', date: 'Kolekcja' },
-              ].map((trophy, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 rounded-2xl bg-slate-800/50 border border-white/10 flex flex-col items-center text-center space-y-1 shadow-md hover:border-amber-500/40 transition-colors"
-                >
-                  <div className="text-3xl my-1">{trophy.icon}</div>
-                  <h5 className="font-bold text-white text-xs leading-snug">{trophy.title}</h5>
-                  <span className="text-[9px] text-slate-400">{trophy.date}</span>
+          <div className="cabinet-section-box">
+            <div className="cabinet-section-header">
+              <div className="section-title-wrap">
+                <Trophy size={16} className="text-amber-400" />
+                <h4 className="section-title">Zdobyte Trofea i Osiągnięcia Sezonowe</h4>
+              </div>
+              <span className="trophies-count-tag">{showcaseTrophies.length} odblokowanych</span>
+            </div>
+
+            <div className="cabinet-trophies-grid">
+              {showcaseTrophies.map((trophy, idx) => (
+                <div key={idx} className={`cabinet-trophy-pedestal ${trophy.tier}`}>
+                  <div className="trophy-shelf-glow" />
+                  <div className="trophy-3d-icon">{trophy.icon}</div>
+                  <h5 className="trophy-name">{trophy.title}</h5>
+                  <span className="trophy-date-tag">{trophy.date}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* ================= FOOTER ================= */}
+        <div className="v200-cabinet-footer">
+          <div className="cabinet-footer-info">
+            <Sparkles size={16} className="text-amber-400" />
+            <span>Tytuł profilu jest widoczny we Własnej Drużynie, Pojedynkach 3v3 i na Giełdzie Kart</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cabinet-footer-close-btn"
+          >
+            Zamknij
+          </button>
+        </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
+
+export default DeltaTrophyCabinetModal;
