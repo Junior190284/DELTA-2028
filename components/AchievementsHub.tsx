@@ -44,6 +44,19 @@ export default function AchievementsHub({
   const unlockedCount = playerAchievements.filter(a => a.isUnlocked).length;
   const overallPercent = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
+  // Statystyki rzadkości
+  const infernoCount = playerAchievements.filter(a => a.definition.rarity === "inferno" && a.isUnlocked).length;
+  const infernoTotal = playerAchievements.filter(a => a.definition.rarity === "inferno").length;
+
+  const legendaryCount = playerAchievements.filter(a => a.definition.rarity === "legendary" && a.isUnlocked).length;
+  const legendaryTotal = playerAchievements.filter(a => a.definition.rarity === "legendary").length;
+
+  const epicCount = playerAchievements.filter(a => a.definition.rarity === "epic" && a.isUnlocked).length;
+  const epicTotal = playerAchievements.filter(a => a.definition.rarity === "epic").length;
+
+  const rareCount = playerAchievements.filter(a => a.definition.rarity === "rare" && a.isUnlocked).length;
+  const rareTotal = playerAchievements.filter(a => a.definition.rarity === "rare").length;
+
   const filteredList = useMemo(() => {
     return playerAchievements.filter(item => {
       // Filtr kategorii
@@ -79,29 +92,92 @@ export default function AchievementsHub({
 
   return (
     <div className="v200-achievements-hub">
-      {/* 1. GŁÓWNY BANER STATYSTYK OSIĄGNIĘĆ */}
+      {/* 1. GŁÓWNY BANER STATYSTYK OSIĄGNIĘĆ Z GRAFIKĄ STADIONOWĄ I TROFEUM */}
       <header className="v200-ach-banner devil-card">
+        <div className="v200-ach-banner-bg" aria-hidden="true" />
+        <div className="v200-ach-banner-overlay" aria-hidden="true" />
         <div className="v200-ach-banner-glow" aria-hidden="true" />
-        <div className="v200-ach-banner-top">
-          <div>
-            <span className="v200-ach-eyebrow">
-              <Trophy size={14} /> CENTRUM OSIĄGNIĘĆ 2.0
-            </span>
-            <h2>GABLOTA TROFEÓW <em>{playerName.toUpperCase()}</em></h2>
-            <p>Każdy trening i każdy mecz buduje Twoją legendę w DELTA 2018 GM.</p>
+
+        <div className="v200-ach-banner-main">
+          {/* LEWA STRONA - INFO, TYTUŁ I MINI-STATYSTYKI */}
+          <div className="v200-ach-banner-info">
+            <div className="v200-ach-eyebrow">
+              <Trophy size={14} className="v200-ach-eyebrow-icon" />
+              <span>CENTRUM OSIĄGNIĘĆ DELTA • GABLOTA MISTRZÓW</span>
+            </div>
+            <h2>
+              GABLOTA TROFEÓW <em>{playerName.toUpperCase()}</em>
+            </h2>
+            <p className="v200-ach-desc">
+              Każdy trening, bramka i rozegrany mecz buduje Twoją legendę w DELTA 2018 GM.
+            </p>
+
+            {/* Pigułki ze statystykami rzadkości */}
+            <div className="v200-ach-pills-row">
+              <div className="v200-ach-stat-chip chip-total">
+                <Medal size={13} />
+                <span>Zdobyte: <strong>{unlockedCount} / {totalCount}</strong></span>
+              </div>
+              {infernoTotal > 0 && (
+                <div className="v200-ach-stat-chip chip-inferno">
+                  <Flame size={13} />
+                  <span>Inferno: <strong>{infernoCount}/{infernoTotal}</strong></span>
+                </div>
+              )}
+              {legendaryTotal > 0 && (
+                <div className="v200-ach-stat-chip chip-legendary">
+                  <Crown size={13} />
+                  <span>Legendy: <strong>{legendaryCount}/{legendaryTotal}</strong></span>
+                </div>
+              )}
+              {epicTotal > 0 && (
+                <div className="v200-ach-stat-chip chip-epic">
+                  <Sparkles size={13} />
+                  <span>Epickie: <strong>{epicCount}/{epicTotal}</strong></span>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="v200-ach-score-box">
-            <strong>{unlockedCount} <span>/ {totalCount}</span></strong>
-            <small>ZDOBYTE TROFEA ({overallPercent}%)</small>
+
+          {/* PRAWA STRONA - TROPHY SHOWCASE & HUD GAUGE */}
+          <div className="v200-ach-score-stage">
+            <div className="v200-ach-trophy-display">
+              <div className="v200-ach-trophy-glow" />
+              <div className="v200-ach-trophy-icon-wrapper">
+                <Trophy size={42} className="v200-ach-hero-cup" />
+              </div>
+              <div className="v200-ach-score-hud">
+                <span className="v200-ach-score-val">{overallPercent}%</span>
+                <span className="v200-ach-score-lbl">KOMPLETNOŚĆ GABLOTY</span>
+              </div>
+            </div>
+
+            <div className="v200-ach-rank-tag">
+              {overallPercent >= 100 ? "👑 KOMPLETNA LEGENDA" : overallPercent >= 50 ? "⭐ MISTRZ DELTA" : "🔥 W DRODZE NA SZCZYT"}
+            </div>
           </div>
         </div>
 
-        {/* Pasek ogólnego postępu */}
-        <div className="v200-ach-global-bar">
-          <div 
-            className="v200-ach-global-fill" 
-            style={{ width: `${overallPercent}%` }}
-          />
+        {/* Pasek ogólnego postępu z etapami */}
+        <div className="v200-ach-progress-section">
+          <div className="v200-ach-progress-meta">
+            <span>OGÓLNY POSTĘP KLUBOWY</span>
+            <strong>{unlockedCount} z {totalCount} trofeów odblokowanych ({overallPercent}%)</strong>
+          </div>
+          <div className="v200-ach-global-bar">
+            <div 
+              className="v200-ach-global-fill" 
+              style={{ width: `${overallPercent}%` }}
+            >
+              <div className="v200-ach-fill-spark" />
+            </div>
+          </div>
+          <div className="v200-ach-milestones">
+            <span className={overallPercent >= 25 ? "active" : ""}>25% Debiut</span>
+            <span className={overallPercent >= 50 ? "active" : ""}>50% Ekspert</span>
+            <span className={overallPercent >= 75 ? "active" : ""}>75% Weteran</span>
+            <span className={overallPercent >= 100 ? "active" : ""}>100% Galeria Sław</span>
+          </div>
         </div>
       </header>
 

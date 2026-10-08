@@ -14472,110 +14472,288 @@ body > main,
 
 .v200-ach-banner {
   position: relative;
-  padding: 24px;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #161b24 0%, #0c1017 100%);
-  border: 1px solid rgba(241, 201, 92, 0.25);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(227, 29, 47, 0.1);
+  padding: 26px 28px;
+  border-radius: 20px;
+  background: #080d16;
+  border: 1px solid rgba(241, 201, 92, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(227, 29, 47, 0.15);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.v200-ach-banner-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/assets/broadcast-hof-banner.jpg') center/cover no-repeat;
+  opacity: 0.38;
+  filter: contrast(1.15) saturate(1.2);
+  pointer-events: none;
+}
+
+.v200-ach-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(5, 8, 14, 0.95) 0%, rgba(10, 15, 26, 0.85) 50%, rgba(88, 7, 17, 0.65) 100%),
+              radial-gradient(ellipse at 85% 20%, rgba(241, 201, 92, 0.18) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .v200-ach-banner-glow {
   position: absolute;
-  top: -30%;
+  top: -40%;
   right: -10%;
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, rgba(241, 201, 92, 0.15) 0%, transparent 70%);
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(241, 201, 92, 0.22) 0%, transparent 70%);
   pointer-events: none;
 }
 
-.v200-ach-banner-top {
+.v200-ach-banner-main {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   flex-wrap: wrap;
+}
+
+.v200-ach-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 620px;
 }
 
 .v200-ach-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
+  gap: 7px;
+  font-size: 10.5px;
   font-weight: 1000;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.15em;
   color: #f1c95c;
   text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(241, 201, 92, 0.4);
+}
+
+.v200-ach-eyebrow-icon {
+  color: #f1c95c;
 }
 
 .v200-ach-banner h2 {
-  margin: 6px 0 4px;
-  font-size: 24px;
+  margin: 0;
+  font-size: 26px;
   font-weight: 1000;
   letter-spacing: -0.02em;
   color: #ffffff;
+  line-height: 1.15;
 }
 
 .v200-ach-banner h2 em {
   color: #f1c95c;
   font-style: normal;
+  text-shadow: 0 0 16px rgba(241, 201, 92, 0.35);
 }
 
-.v200-ach-banner p {
+.v200-ach-desc {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #9aa5b1;
+  line-height: 1.45;
 }
 
-.v200-ach-score-box {
+.v200-ach-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.v200-ach-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+
+.v200-ach-stat-chip strong {
+  font-weight: 1000;
+}
+
+.v200-ach-stat-chip.chip-total {
+  background: rgba(241, 201, 92, 0.12);
+  border: 1px solid rgba(241, 201, 92, 0.35);
+  color: #f1c95c;
+}
+
+.v200-ach-stat-chip.chip-inferno {
+  background: rgba(227, 29, 47, 0.18);
+  border: 1px solid rgba(227, 29, 47, 0.45);
+  color: #ff5722;
+  box-shadow: 0 0 10px rgba(227, 29, 47, 0.2);
+}
+
+.v200-ach-stat-chip.chip-legendary {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+}
+
+.v200-ach-stat-chip.chip-epic {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+}
+
+/* PRAWA STRONA - STAGE TROFEUM */
+.v200-ach-score-stage {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(241, 201, 92, 0.2);
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(145deg, rgba(20, 26, 38, 0.8) 0%, rgba(8, 12, 18, 0.9) 100%);
+  padding: 14px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(241, 201, 92, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(241, 201, 92, 0.08);
+  min-width: 220px;
 }
 
-.v200-ach-score-box strong {
-  font-size: 24px;
+.v200-ach-trophy-display {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+.v200-ach-trophy-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(241, 201, 92, 0.25) 0%, rgba(227, 29, 47, 0.15) 100%);
+  border: 1px solid rgba(241, 201, 92, 0.45);
+  box-shadow: 0 0 20px rgba(241, 201, 92, 0.3);
+  flex-shrink: 0;
+}
+
+.v200-ach-hero-cup {
+  color: #f1c95c;
+  filter: drop-shadow(0 0 8px rgba(241, 201, 92, 0.7));
+}
+
+.v200-ach-score-hud {
+  display: flex;
+  flex-direction: column;
+}
+
+.v200-ach-score-val {
+  font-size: 30px;
   font-weight: 1000;
   color: #f1c95c;
   line-height: 1;
+  text-shadow: 0 0 15px rgba(241, 201, 92, 0.4);
 }
 
-.v200-ach-score-box strong span {
-  font-size: 14px;
-  color: #8b97a3;
-  font-weight: 700;
-}
-
-.v200-ach-score-box small {
+.v200-ach-score-lbl {
   font-size: 9px;
   font-weight: 900;
-  color: #9aa5b1;
+  color: #8b97a3;
   letter-spacing: 0.08em;
-  margin-top: 4px;
+  margin-top: 3px;
+}
+
+.v200-ach-rank-tag {
+  font-size: 10.5px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  color: #f1c95c;
+  background: rgba(241, 201, 92, 0.1);
+  border: 1px solid rgba(241, 201, 92, 0.25);
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+/* PROGRES SEKCJA */
+.v200-ach-progress-section {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.v200-ach-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.v200-ach-progress-meta span {
+  color: #8b97a3;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.v200-ach-progress-meta strong {
+  color: #f1c95c;
+  font-weight: 900;
 }
 
 .v200-ach-global-bar {
   width: 100%;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.5);
+  height: 10px;
+  background: rgba(0, 0, 0, 0.6);
   border-radius: 999px;
-  margin-top: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
 }
 
 .v200-ach-global-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #e31d2f, #f1c95c);
-  box-shadow: 0 0 12px rgba(241, 201, 92, 0.5);
+  background: linear-gradient(90deg, #e31d2f 0%, #ff5722 45%, #f1c95c 100%);
+  box-shadow: 0 0 16px rgba(241, 201, 92, 0.6);
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.v200-ach-fill-spark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 0 10px #ffffff, 0 0 20px #f1c95c;
+}
+
+.v200-ach-milestones {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #64748b;
+  padding: 2px 4px 0;
+}
+
+.v200-ach-milestones span.active {
+  color: #f1c95c;
+  text-shadow: 0 0 8px rgba(241, 201, 92, 0.3);
 }
 
 /* Kontrolki i filtry */
