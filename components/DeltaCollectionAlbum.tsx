@@ -52,6 +52,7 @@ import BroadcastLeaderboard from "./BroadcastLeaderboard";
 import PlayerVideoHighlightModal from "./PlayerVideoHighlightModal";
 import DigitalSignatureModal from "./DigitalSignatureModal";
 import PlayerCardsCircular3DCarousel from "./PlayerCardsCircular3DCarousel";
+import Panini3DAlbumBinder from "./Panini3DAlbumBinder";
 
 const PACK_PRICES: Record<string, number> = {
   standard_pack: 50,
@@ -1245,146 +1246,32 @@ export default function DeltaCollectionAlbum({
             </div>
           )}
 
-          {/* ================= PANINI SQUAD STICKERS ALBUM ================= */}
+          {/* ================= PANINI 3D SQUAD COLLECTOR'S BINDER ================= */}
           {activeViewTab === "panini" && (
-            <div className="v200-panini-album-section animate-fadeIn">
-              {/* Panini Squad Grand Banner */}
-              <div className="v200-panini-banner-card">
-                <div className="v200-panini-banner-left">
-                  <div className="v200-panini-gold-shield">
-                    <Shield size={32} className="text-yellow-400 animate-pulse" />
-                  </div>
-                  <div>
-                    <span className="v200-panini-eyebrow">OFICJALNY KLASER DRUŻYNOWY PANINI</span>
-                    <h3 className="v200-panini-title">MISTRZOWSKI SKŁAD DELTA 2018 GM</h3>
-                    <p className="v200-panini-desc">
-                      Zbierz kartę każdego z {playerAlbums.length} zawodników rocznika 2018. Wypełnij klaser, aby odebrać nagrodę mistrza drużyny!
-                    </p>
-                  </div>
-                </div>
-
-                {/* Progress & Milestone Claim */}
-                <div className="v200-panini-banner-right">
-                  <div className="v200-panini-kpi-box">
-                    <div className="v200-panini-kpi-labels">
-                      <span>POSTĘP SKŁADU</span>
-                      <b>{playerAlbums.filter(a => a.ownedCount > 0).length} / {playerAlbums.length} ZAWODNIKÓW</b>
-                    </div>
-                    <div className="v200-panini-bar-track">
-                      <div 
-                        className="v200-panini-bar-fill" 
-                        style={{ width: `${playerAlbums.length > 0 ? Math.round((playerAlbums.filter(a => a.ownedCount > 0).length / playerAlbums.length) * 100) : 0}%` }} 
-                      />
-                    </div>
-                    <span className="v200-panini-rate-sub">
-                      {playerAlbums.length > 0 ? Math.round((playerAlbums.filter(a => a.ownedCount > 0).length / playerAlbums.length) * 100) : 0}% kompletnego klaseru rocznika
-                    </span>
-                  </div>
-
-                  {!paniniRewardClaimed ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const collected = playerAlbums.filter(a => a.ownedCount > 0).length;
-                        if (collected >= 10) {
-                          setPaniniRewardClaimed(true);
-                          setDeltaPoints(p => p + 500);
-                          cardSound.playWalkoutFanfare();
-                          alert("👑 GRATULACJE! Odblokowano nagrodę Mistrza Klaseru Rocznika 2018: +500 DP oraz Złotą Odznakę!");
-                        } else {
-                          alert(`Zbierz jeszcze ${10 - collected} zawodników, aby odblokować nagrodę mistrzowską (+500 DP)!`);
-                        }
-                      }}
-                      className={`v200-panini-reward-btn ${playerAlbums.filter(a => a.ownedCount > 0).length >= 10 ? "ready" : "locked"}`}
-                    >
-                      <Trophy size={16} />
-                      <span>
-                        {playerAlbums.filter(a => a.ownedCount > 0).length >= 10 ? "ODBIERZ NAGRODĘ (+500 DP)" : `NAGRODA (OD 10 ZAWODNIKÓW)`}
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="v200-panini-claimed-tag">
-                      <CheckCircle2 size={16} className="text-green-400" />
-                      <span>NAGRODA MISTRZA ODEBRANA (+500 DP)</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Panini 16-Player Sticker Grid */}
-              <div className="v200-panini-stickers-grid">
-                {playerAlbums.map(album => {
-                  const isOwned = album.ownedCount > 0;
-                  const topCard = album.topOwnedCard || album.cards[0];
-
-                  return (
-                    <div
-                      key={album.player.id}
-                      onClick={() => {
-                        if (isOwned && topCard) {
-                          setInspectCard({ card: topCard, userCard: ownedCardsMap.get(topCard.id) || null });
-                        } else {
-                          setSelectedAlbumPlayerId(album.player.id);
-                        }
-                      }}
-                      className={`v200-panini-sticker-slot ${isOwned ? "collected" : "empty"}`}
-                    >
-                      {isOwned ? (
-                        /* Collected Player Shiny Card Slot */
-                        <div className="v200-panini-collected-inner">
-                          <div className="v200-panini-card-wrap">
-                            <CollectibleCard3D
-                              card={topCard}
-                              userCard={ownedCardsMap.get(topCard.id) || null}
-                              isLocked={false}
-                              size="md"
-                              interactive={false}
-                              showFlip={false}
-                              layoutOverride={getLayoutForCard(topCard)}
-                            />
-                          </div>
-
-                          <div className="v200-panini-collected-footer">
-                            <span className="v200-panini-badge-collected">
-                              <CheckCircle2 size={12} className="inline mr-1 text-green-400" /> ZEBRANY W SKŁADZIE
-                            </span>
-                            <span className="v200-panini-owned-sub">
-                              {album.ownedCount} / {album.cards.length} edycji karty
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Missing Player Sticker Silhouette Slot */
-                        <div className="v200-panini-missing-inner">
-                          <div className="v200-panini-silhouette-box">
-                            <div className="v200-panini-jersey-num">#{album.player.shirt_number || "18"}</div>
-                            <img src="/teamlogos/gm.png" alt="DELTA" className="v200-panini-crest-faint" />
-                            <span className="v200-panini-pos-faint">{album.player.position || "POMOCNIK"}</span>
-                          </div>
-
-                          <div className="v200-panini-missing-footer">
-                            <h4 className="v200-panini-missing-name">{album.player.display_name}</h4>
-                            <span className="v200-panini-badge-missing">
-                              <Lock size={11} className="inline mr-1" /> BRAKUJE W KLASERZE
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedAlbumPlayerId(album.player.id);
-                              }}
-                              className="v200-panini-find-btn"
-                            >
-                              <Sparkles size={11} /> JAK ZDOBYĆ?
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <Panini3DAlbumBinder
+              playerAlbums={playerAlbums}
+              ownedCardsMap={ownedCardsMap}
+              allCards={allCards}
+              deltaPoints={deltaPoints}
+              paniniRewardClaimed={paniniRewardClaimed}
+              onInspectCard={(card, userCard) => setInspectCard({ card, userCard })}
+              onSelectPlayer={(playerId) => setSelectedAlbumPlayerId(playerId)}
+              onOpenPacks={() => setActivePackToOpen(packDefinitions[0] || null)}
+              onOpenSBC={() => setShowSBC(true)}
+              onOpenTradeHub={() => setShowTradeHub(true)}
+              onClaimPaniniReward={() => {
+                const collected = playerAlbums.filter(a => a.ownedCount > 0).length;
+                if (collected >= 10) {
+                  setPaniniRewardClaimed(true);
+                  setDeltaPoints(p => p + 500);
+                  cardSound.playWalkoutFanfare();
+                  alert("👑 GRATULACJE! Odblokowano nagrodę Mistrza Klaseru Rocznika 2018: +500 DP oraz Złotą Odznakę!");
+                } else {
+                  alert(`Zbierz jeszcze ${10 - collected} zawodników, aby odblokować nagrodę mistrzowską (+500 DP)!`);
+                }
+              }}
+              getLayoutForCard={getLayoutForCard}
+            />
           )}
 
           {/* ================= ROSTER OVERVIEW (SEARCH & FILTERS) ================= */}
