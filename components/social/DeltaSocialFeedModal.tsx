@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, MessageSquare, Flame, Sparkles, Heart, Trophy, Send, Award, Bell } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { 
+  X, MessageSquare, Flame, Sparkles, Heart, Trophy, 
+  Send, Award, Bell, ShieldCheck, Megaphone, CheckCircle2, 
+  Calendar, ThumbsUp 
+} from 'lucide-react';
 
 interface DeltaSocialFeedModalProps {
   isOpen: boolean;
@@ -14,8 +19,14 @@ export const DeltaSocialFeedModal: React.FC<DeltaSocialFeedModalProps> = ({
   onClose,
   userId = 'guest_user'
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reactingPostId, setReactingPostId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchFeed = async () => {
     try {
@@ -39,6 +50,7 @@ export const DeltaSocialFeedModal: React.FC<DeltaSocialFeedModalProps> = ({
   }, [isOpen]);
 
   const handleReact = async (postId: string, reactionType: string) => {
+    setReactingPostId(postId + '-' + reactionType);
     try {
       const res = await fetch('/api/social/feed', {
         method: 'POST',
@@ -51,107 +63,156 @@ export const DeltaSocialFeedModal: React.FC<DeltaSocialFeedModalProps> = ({
       }
     } catch (err) {
       console.error('React error:', err);
+    } finally {
+      setTimeout(() => setReactingPostId(null), 300);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="v200-modal-container max-w-xl animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-modal-head">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
-              📢
+  const modalContent = (
+    <div className="v200-feed-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-feed-sheet" onClick={(e) => e.stopPropagation()}>
+        {/* ================= HEADER ================= */}
+        <div className="v200-feed-header">
+          <div className="feed-header-brand">
+            <div className="feed-megaphone-icon">
+              <Megaphone size={22} className="text-amber-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-black text-white text-base uppercase tracking-wider m-0">
-                  Feed Drużyny DELTA 2018
-                </h3>
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  BEZPIECZNA STREFA
+              <div className="feed-eyebrow-row">
+                <span className="feed-title-tag">FEED DRUŻYNY DELTA 2018</span>
+                <span className="feed-safe-badge">
+                  <ShieldCheck size={12} /> BEZPIECZNA STREFA
                 </span>
               </div>
-              <p className="text-xs text-slate-400 m-0 mt-0.5">Oficjalne ogłoszenia, osiągnięcia i pozytywny doping</p>
+              <h2 className="feed-modal-title">AKTUALNOŚCI I DOPING</h2>
+              <p className="feed-modal-subtitle">Oficjalne ogłoszenia sztabu, osiągnięcia adeptów i pozytywny doping</p>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="v200-modal-close"
+            className="feed-close-btn"
             aria-label="Zamknij"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Posts List */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+        {/* ================= POSTS LIST ================= */}
+        <div className="v200-feed-list-body">
           {loading ? (
-            <div className="py-12 flex justify-center text-slate-500">
-              <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <div className="feed-loading-state">
+              <div className="feed-spinner" />
+              <span>Ładowanie feedu drużyny...</span>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="feed-empty-state">
+              <MessageSquare size={36} className="text-slate-600 mb-2" />
+              <p>Brak nowych wpisów w feedzie drużyny.</p>
             </div>
           ) : (
-            posts.map((post) => (
-              <div
-                key={post.id}
-                className="p-4 rounded-2xl bg-slate-800/40 border border-white/5 space-y-3 shadow-md"
-              >
-                <div className="flex justify-between items-start">
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded border uppercase tracking-wider ${
-                    post.author_role === 'COACH'
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                      : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-                  }`}>
-                    {post.author_role === 'COACH' ? 'TRENER DELTA' : 'SYSTEM KLUBOWY'}
-                  </span>
-                  <span className="text-[10px] text-slate-500">
-                    {new Date(post.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: 'short' })}
-                  </span>
-                </div>
+            posts.map((post) => {
+              const isCoach = post.author_role === 'COACH';
 
-                <div>
-                  <h4 className="font-bold text-white text-sm leading-snug">{post.title}</h4>
-                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">{post.content}</p>
-                </div>
+              return (
+                <article
+                  key={post.id}
+                  className={`v200-feed-card ${isCoach ? 'is-coach' : 'is-system'}`}
+                >
+                  {/* Top Meta Row */}
+                  <div className="feed-card-top-row">
+                    <div className="author-badge-wrap">
+                      <span className={`author-role-pill ${isCoach ? 'coach' : 'system'}`}>
+                        {isCoach ? '📢 TRENER DELTA' : '⚡ SYSTEM KLUBOWY'}
+                      </span>
+                    </div>
 
-                {/* Positive Reactions Bar */}
-                <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                  <button
-                    onClick={() => handleReact(post.id, 'applause')}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 hover:border-amber-500 text-xs text-slate-300 font-bold flex items-center gap-1.5 transition-all transform active:scale-95"
-                  >
-                    👏 <span>{post.reactions?.applause || 0}</span>
-                  </button>
+                    <div className="post-date-tag">
+                      <Calendar size={12} className="text-slate-500" />
+                      <span>{new Date(post.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                  </div>
 
-                  <button
-                    onClick={() => handleReact(post.id, 'fire')}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 hover:border-red-500 text-xs text-slate-300 font-bold flex items-center gap-1.5 transition-all transform active:scale-95"
-                  >
-                    🔥 <span>{post.reactions?.fire || 0}</span>
-                  </button>
+                  {/* Post Content */}
+                  <div className="feed-card-content">
+                    <h3 className="feed-post-title">{post.title}</h3>
+                    <p className="feed-post-text">{post.content}</p>
+                  </div>
 
-                  <button
-                    onClick={() => handleReact(post.id, 'ball')}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 hover:border-emerald-500 text-xs text-slate-300 font-bold flex items-center gap-1.5 transition-all transform active:scale-95"
-                  >
-                    ⚽ <span>{post.reactions?.ball || 0}</span>
-                  </button>
+                  {/* Positive Reactions Bar */}
+                  <div className="feed-reactions-bar">
+                    <button
+                      type="button"
+                      onClick={() => handleReact(post.id, 'applause')}
+                      className={`reaction-pill ${reactingPostId === post.id + '-applause' ? 'is-bouncing' : ''}`}
+                      title="Brawo!"
+                    >
+                      <span className="reaction-emoji">👏</span>
+                      <span className="reaction-label">Brawo</span>
+                      <b className="reaction-count">{post.reactions?.applause || 0}</b>
+                    </button>
 
-                  <button
-                    onClick={() => handleReact(post.id, 'heart')}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 hover:border-pink-500 text-xs text-slate-300 font-bold flex items-center gap-1.5 transition-all transform active:scale-95"
-                  >
-                    ❤️ <span>{post.reactions?.heart || 0}</span>
-                  </button>
-                </div>
-              </div>
-            ))
+                    <button
+                      type="button"
+                      onClick={() => handleReact(post.id, 'fire')}
+                      className={`reaction-pill fire ${reactingPostId === post.id + '-fire' ? 'is-bouncing' : ''}`}
+                      title="Ogień!"
+                    >
+                      <span className="reaction-emoji">🔥</span>
+                      <span className="reaction-label">Ogień</span>
+                      <b className="reaction-count">{post.reactions?.fire || 0}</b>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleReact(post.id, 'ball')}
+                      className={`reaction-pill ball ${reactingPostId === post.id + '-ball' ? 'is-bouncing' : ''}`}
+                      title="Piłka!"
+                    >
+                      <span className="reaction-emoji">⚽</span>
+                      <span className="reaction-label">Piłka</span>
+                      <b className="reaction-count">{post.reactions?.ball || 0}</b>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleReact(post.id, 'heart')}
+                      className={`reaction-pill heart ${reactingPostId === post.id + '-heart' ? 'is-bouncing' : ''}`}
+                      title="Doping!"
+                    >
+                      <span className="reaction-emoji">❤️</span>
+                      <span className="reaction-label">Doping</span>
+                      <b className="reaction-count">{post.reactions?.heart || 0}</b>
+                    </button>
+                  </div>
+                </article>
+              );
+            })
           )}
+        </div>
+
+        {/* ================= FOOTER ================= */}
+        <div className="v200-feed-footer">
+          <div className="feed-footer-info">
+            <ShieldCheck size={16} className="text-emerald-400" />
+            <span>Bezpieczna komunikacja: Treści i reakcje są moderowane przez sztab DELTA 2018</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="feed-footer-close-btn"
+          >
+            Zamknij
+          </button>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
+
+export default DeltaSocialFeedModal;

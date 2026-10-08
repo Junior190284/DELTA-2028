@@ -34294,3 +34294,352 @@ body > main,
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45) !important;
 }
+
+
+/* ==========================================================================
+   DELTA SOCIAL FEED 2.0 (v200-feed-*)
+   ========================================================================== */
+
+.v200-feed-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999999 !important;
+  background: rgba(3, 6, 17, 0.96) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+}
+
+.v200-feed-sheet {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 740px !important;
+  background: #080e21 !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(245, 158, 11, 0.15) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  overflow: hidden !important;
+  animation: v200SquadIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.v200-feed-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1.1rem 1.4rem !important;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.25) 0%, rgba(220, 38, 38, 0.2) 50%, rgba(8, 14, 33, 0.9) 100%) !important;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+.feed-header-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.9rem !important;
+}
+
+.feed-megaphone-icon {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2) !important;
+  shrink: 0 !important;
+}
+
+.feed-eyebrow-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-bottom: 0.2rem !important;
+  flex-wrap: wrap !important;
+}
+
+.feed-title-tag {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  color: #fbbf24 !important;
+  text-transform: uppercase !important;
+}
+
+.feed-safe-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  padding: 0.15rem 0.45rem !important;
+  border-radius: 4px !important;
+  background: rgba(16, 185, 129, 0.2) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #6ee7b7 !important;
+  font-size: 0.65rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+}
+
+.feed-modal-title {
+  font-size: 1.25rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.02em !important;
+  margin: 0 !important;
+  text-transform: uppercase !important;
+}
+
+.feed-modal-subtitle {
+  font-size: 0.75rem !important;
+  color: #94a3b8 !important;
+  margin: 0.2rem 0 0 0 !important;
+}
+
+.feed-close-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.feed-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #ffffff !important;
+}
+
+/* Feed List */
+.v200-feed-list-body {
+  padding: 1.25rem 1.4rem !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+}
+
+.feed-loading-state, .feed-empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 3rem 1rem !important;
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+}
+
+.feed-spinner {
+  width: 28px !important;
+  height: 28px !important;
+  border: 3px solid rgba(245, 158, 11, 0.2) !important;
+  border-top-color: #fbbf24 !important;
+  border-radius: 50% !important;
+  animation: spin 0.8s linear infinite !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Feed Card */
+.v200-feed-card {
+  background: rgba(14, 23, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 1.1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.v200-feed-card:hover {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: rgba(18, 30, 58, 0.95) !important;
+}
+
+.v200-feed-card.is-coach {
+  border-left: 4px solid #f59e0b !important;
+}
+
+.v200-feed-card.is-system {
+  border-left: 4px solid #c084fc !important;
+}
+
+.feed-card-top-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.5rem !important;
+}
+
+.author-role-pill {
+  padding: 0.25rem 0.65rem !important;
+  border-radius: 6px !important;
+  font-size: 0.7rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.author-role-pill.coach {
+  background: rgba(245, 158, 11, 0.2) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: #fbbf24 !important;
+}
+
+.author-role-pill.system {
+  background: rgba(192, 132, 252, 0.2) !important;
+  border: 1px solid rgba(192, 132, 252, 0.4) !important;
+  color: #e9d5ff !important;
+}
+
+.post-date-tag {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  font-size: 0.72rem !important;
+  color: #94a3b8 !important;
+}
+
+.feed-card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+}
+
+.feed-post-title {
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.feed-post-text {
+  font-size: 0.82rem !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
+/* Reactions Bar */
+.feed-reactions-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding-top: 0.6rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  flex-wrap: wrap !important;
+}
+
+.reaction-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 8px !important;
+  background: rgba(3, 7, 18, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.reaction-pill:hover {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.reaction-pill.fire:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+.reaction-pill.ball:hover {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.reaction-pill.heart:hover {
+  background: rgba(244, 114, 182, 0.15) !important;
+  border-color: rgba(244, 114, 182, 0.4) !important;
+}
+
+.reaction-pill.is-bouncing {
+  animation: reactionBounce 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes reactionBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.reaction-emoji {
+  font-size: 0.95rem !important;
+}
+
+.reaction-label {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+}
+
+.reaction-count {
+  font-size: 0.75rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  padding: 0.1rem 0.35rem !important;
+  border-radius: 4px !important;
+}
+
+/* Feed Footer */
+.v200-feed-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1rem 1.4rem !important;
+  background: rgba(4, 9, 23, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  gap: 1rem !important;
+  flex-wrap: wrap !important;
+}
+
+.feed-footer-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-size: 0.75rem !important;
+  color: #94a3b8 !important;
+}
+
+.feed-footer-close-btn {
+  padding: 0.55rem 1.3rem !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.feed-footer-close-btn:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
