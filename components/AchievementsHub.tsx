@@ -22,6 +22,7 @@ import {
   PlayerAchievementStatus, 
   ACHIEVEMENTS_CATALOG 
 } from "@/lib/achievements/engine";
+import AchievementUnlock from "./AchievementUnlock";
 
 interface AchievementsHubProps {
   playerAchievements: PlayerAchievementStatus[];
@@ -231,8 +232,23 @@ export default function AchievementsHub({
         ))}
       </div>
 
-      {/* 4. MODAL SZCZEGÓŁÓW OSIĄGNIĘCIA */}
-      {selectedAchievement && (
+      {/* 4. MODAL SZCZEGÓŁÓW OSIĄGNIĘCIA / ANIMACJA ODBLOKOWANIA */}
+      {selectedAchievement && selectedAchievement.isUnlocked ? (
+        <AchievementUnlock
+          grantId={selectedAchievement.definition.id}
+          title={selectedAchievement.definition.name}
+          description={selectedAchievement.definition.description}
+          variant={selectedAchievement.definition.rarity === 'inferno' ? 'inferno' : 'gold'}
+          eyebrow={selectedAchievement.definition.rarity === 'inferno' ? 'LEGENDARNE OSIĄGNIĘCIE INFERNO' : 'ODBLOKOWANA ODZNAKA DELTA'}
+          progress={selectedAchievement.target > 1 ? {
+            current: selectedAchievement.current,
+            max: selectedAchievement.target,
+            label: 'Zrealizowany cel:'
+          } : undefined}
+          playerName={playerName}
+          onClose={() => setSelectedAchievement(null)}
+        />
+      ) : selectedAchievement && (
         <div className="v200-ach-modal-backdrop" onClick={() => setSelectedAchievement(null)}>
           <div className="v200-ach-modal-dialog" onClick={e => e.stopPropagation()}>
             <header className="v200-ach-modal-header">

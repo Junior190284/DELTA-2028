@@ -26940,3 +26940,359 @@ body > main,
 .animate-fadeIn {
   animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
+
+/* =========================================================
+   V200 ACHIEVEMENT UNLOCK & METALLIC SHIELD CELEBRATION
+   ========================================================= */
+
+.v200-unlock-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: radial-gradient(circle at 50% 35%, rgba(14, 18, 28, 0.96) 0%, rgba(4, 5, 8, 0.99) 70%, #020204 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+.v200-unlock-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 32px 24px 28px;
+  background: transparent;
+}
+
+/* Background Atmosphere Glows */
+.v200-unlock-ambient-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(60px);
+  opacity: 0.45;
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+.v200-unlock-ambient-glow.gold {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.8) 0%, rgba(220, 38, 38, 0.3) 50%, transparent 70%);
+}
+
+.v200-unlock-ambient-glow.inferno {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.9) 0%, rgba(185, 28, 28, 0.5) 45%, rgba(0, 0, 0, 0) 70%);
+}
+
+/* Particle Canvas */
+.v200-unlock-particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 3D Shield Container */
+.v200-unlock-shield-stage {
+  position: relative;
+  width: 220px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  perspective: 1000px;
+  z-index: 10;
+}
+
+.v200-unlock-shield-tilt {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.v200-unlock-shield-svg-wrap {
+  position: relative;
+  width: 190px;
+  height: 230px;
+  filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 25px var(--shield-glow, rgba(245, 158, 11, 0.3)));
+}
+
+/* Metallic Gleam / Shimmer Animation */
+.v200-unlock-gleam-ray {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 20px;
+  clip-path: polygon(50% 0%, 100% 12%, 100% 70%, 50% 100%, 0% 70%, 0% 12%);
+  z-index: 12;
+}
+
+.v200-unlock-gleam-shimmer {
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 35%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0.08) 65%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  opacity: 0;
+}
+
+.v200-unlock-gleam-shimmer.active {
+  animation: metallicGleamSweep 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes metallicGleamSweep {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    left: 200%;
+    opacity: 0;
+  }
+}
+
+/* Eyebrow & Rarity Tag */
+.v200-unlock-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--unlock-accent, #f59e0b);
+  margin-bottom: 6px;
+  text-shadow: 0 0 12px var(--unlock-glow, rgba(245, 158, 11, 0.4));
+}
+
+/* Big Title */
+.v200-unlock-title {
+  font-size: clamp(24px, 6vw, 32px);
+  font-weight: 950;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  margin: 0 0 8px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+}
+
+/* Description */
+.v200-unlock-desc {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #cbd5e1;
+  margin: 0 0 18px;
+  max-width: 380px;
+}
+
+/* Progress Box (Only when progress exists) */
+.v200-unlock-progress-box {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 20, 30, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v200-unlock-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.v200-unlock-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.v200-unlock-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Next Goal Box (Only when nextGoal exists) */
+.v200-unlock-next-goal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.v200-unlock-next-goal b {
+  color: #f59e0b;
+}
+
+/* Red CTA Button: "ODBIERZ ODZNAKĘ" */
+.v200-unlock-cta-btn {
+  width: 100%;
+  max-width: 360px;
+  min-height: 50px;
+  padding: 14px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e51d2f 0%, #b91c1c 60%, #991b1b 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(229, 29, 47, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  outline: none;
+}
+
+.v200-unlock-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(229, 29, 47, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  filter: brightness(1.08);
+}
+
+.v200-unlock-cta-btn:active {
+  transform: scale(0.98);
+}
+
+.v200-unlock-cta-btn:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 3px;
+}
+
+/* Close top corner button */
+.v200-unlock-corner-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 20;
+}
+
+.v200-unlock-corner-close:hover {
+  background: rgba(220, 38, 38, 0.25);
+  border-color: rgba(220, 38, 38, 0.5);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Animations for sequence phases */
+@keyframes unlockBadgeReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes unlockTextSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.v200-animate-badge-reveal {
+  animation: unlockBadgeReveal 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.v200-animate-text-reveal {
+  animation: unlockTextSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  .v200-unlock-ambient-glow,
+  .v200-unlock-gleam-shimmer,
+  .v200-unlock-shield-tilt,
+  .v200-animate-badge-reveal,
+  .v200-animate-text-reveal {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .v200-unlock-particle-canvas {
+    display: none !important;
+  }
+}
