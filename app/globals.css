@@ -17413,7 +17413,7 @@ body > main,
 }
 
 
-/* ================= 4. DELTA TRADE HUB MODAL ================= */
+/* ================= 4. DELTA TRADE HUB MODAL (BROADCAST ESPORTS EA FC) ================= */
 .v200-trade-backdrop {
   position: fixed !important;
   inset: 0 !important;
@@ -17421,240 +17421,1066 @@ body > main,
   height: 100dvh !important;
   min-height: 100dvh !important;
   z-index: 9999999 !important;
-  background: #030508 !important;
+  background: #030611 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 16px;
-  overflow-y: auto;
+  overflow-y: auto !important;
   isolation: isolate !important;
-  touch-action: none;
+  backdrop-filter: blur(16px);
 }
 
-.v200-trade-modal {
+.v200-trade-sheet {
   width: 100%;
-  max-width: 680px;
-  background: #0b0f17;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
-  padding: 24px;
+  max-width: 1040px;
+  max-height: 94vh;
+  background: radial-gradient(circle at 50% 10%, rgba(241, 201, 92, 0.08) 0%, #080d1a 60%, #030611 100%);
+  border: 1.5px solid rgba(241, 201, 92, 0.35);
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9), 0 0 40px rgba(241, 201, 92, 0.12);
+  overflow: hidden;
+  position: relative;
+  animation: v200ModalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Header */
+.v200-trade-header-bar {
+  padding: 18px 24px;
+  background: rgba(3, 6, 17, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.v200-trade-header-bar .header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.v200-trade-badge-crest {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.25));
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  flex-shrink: 0;
+}
+
+.v200-trade-title {
+  font-size: 20px;
+  font-weight: 1000;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 2px 0 0 0;
+  line-height: 1.2;
+}
+
+.v200-trade-header-bar .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.v200-trade-vault-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde047;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.v200-trade-vault-pill strong {
+  color: #ffffff;
+  font-weight: 1000;
+}
+
+.v200-trade-close-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v200-trade-close-circle:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* Explainer Banner */
+.v200-trade-explainer-banner {
+  margin: 16px 24px 0 24px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.v200-trade-explainer-banner .explainer-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.v200-trade-explainer-banner .explainer-text strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 1000;
+  color: #6ee7b7;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.v200-trade-explainer-banner .explainer-text p {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 2px 0 0 0;
+  line-height: 1.4;
+}
+
+/* Navigation Tabs */
+.v200-trade-nav-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 14px 24px 8px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.trade-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.trade-nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.trade-nav-item.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #030611;
+  font-weight: 1000;
+  border-color: #fde047;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.tab-count-badge {
+  font-size: 9px;
+  font-weight: 1000;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+}
+
+.tab-count-badge.gold {
+  background: #fde047;
+  color: #000000;
+}
+
+/* Body Container */
+.v200-trade-body-container {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.v200-trade-header {
+/* ================= TAB 1: MARKET OFFERS ================= */
+.v200-market-view {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.v200-trade-badge {
-  display: inline-flex;
+.market-filter-subbar {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.market-filter-subbar .filter-label {
+  font-size: 11px;
   font-weight: 900;
-  color: #f1c95c;
-  letter-spacing: 0.1em;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.v200-trade-title-group h2 {
-  font-size: 19px;
-  font-weight: 900;
-  color: #ffffff;
-  margin: 4px 0 2px;
+.market-filter-subbar .filter-buttons {
+  display: flex;
+  gap: 8px;
 }
 
-.v200-trade-title-group p {
+.market-filter-subbar .filter-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.market-filter-subbar .filter-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fde047;
+}
+
+.v200-barter-offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.v200-empty-market-box {
+  grid-column: 1 / -1;
+  padding: 40px 20px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+}
+
+.v200-empty-market-box h4 {
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.v200-empty-market-box p {
   font-size: 12px;
   color: #94a3b8;
   margin: 0;
 }
 
-.v200-trade-close-btn {
-  padding: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.v200-trade-tabs-row {
-  display: flex;
-  gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.v200-trade-tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.v200-trade-tab-btn.active {
-  background: #f1c95c;
-  color: #000000;
-  border-color: #fde047;
-}
-
-.v200-trade-market-grid {
+.v200-barter-card-box {
+  background: radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.7) 0%, rgba(10, 16, 30, 0.95) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
 }
 
-.v200-trade-offer-card {
-  background: rgba(18, 24, 38, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.v200-barter-card-box:hover {
+  border-color: rgba(241, 201, 92, 0.4);
+  transform: translateY(-2px);
 }
 
-.v200-trade-offer-top {
+.barter-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
 }
 
-.v200-trade-offer-body {
+.barter-creator {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
-.v200-trade-card-wrap {
-  flex-shrink: 0;
+.creator-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde047;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.v200-trade-req-info {
-  flex: 1;
+.barter-creator strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.barter-creator small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.barter-time {
+  font-size: 10px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Barter Stage */
+.barter-stage-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.barter-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.v200-trade-accept-btn {
-  padding: 10px 18px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #f1c95c, #ca8a04);
-  border: 1px solid #fde047;
-  color: #000000;
+.item-direction-tag {
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.item-direction-tag.get {
+  color: #4ade80;
+}
+
+.item-direction-tag.give {
+  color: #fde047;
+}
+
+.barter-card-preview {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 80px;
+  justify-content: center;
+}
+
+.barter-card-preview.requirement {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.barter-card-preview.requirement.missing {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.mini-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.mini-ovr {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #fde047;
+}
+
+.mini-rarity {
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.status-pill {
+  font-size: 8px;
+  font-weight: 1000;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.status-pill.success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.status-pill.missing {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.barter-card-preview strong {
   font-size: 12px;
   font-weight: 900;
-  text-transform: uppercase;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barter-card-preview small {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.barter-center-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.exchange-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(245, 158, 11, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  cursor: pointer;
+}
+
+.exchange-label {
+  font-size: 9px;
+  font-weight: 1000;
+  color: #64748b;
+}
+
+.barter-action-footer {
   margin-top: 4px;
 }
 
-.v200-trade-accept-btn.accepted {
+.barter-accept-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 50%, #d97706 100%);
+  border: 1px solid #fef08a;
+  color: #030611;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  transition: all 0.2s ease;
+}
+
+.barter-accept-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.6);
+}
+
+.barter-accept-btn.accepted {
   background: #22c55e;
   border-color: #4ade80;
   color: #ffffff;
 }
 
-/* Create trade form & PIN */
-.v200-trade-create-section, .v200-trade-pin-section {
-  background: rgba(18, 24, 38, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 18px;
-}
-
-.v200-form-group {
-  margin-bottom: 14px;
-}
-
-.v200-trade-select-input, .v200-trade-text-input {
-  width: 100%;
-  padding: 10px 14px;
+.barter-disabled-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ================= TAB 2: CREATE TRADE STUDIO ================= */
+.v200-create-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.v200-create-trade-studio {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(10, 16, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.studio-instructions h3 {
+  font-size: 15px;
+  font-weight: 1000;
+  color: #fde047;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0 0 2px 0;
+}
+
+.studio-instructions p {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.studio-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 768px) {
+  .studio-two-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.studio-col {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-badge {
+  font-size: 9px;
+  font-weight: 1000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000000;
+}
+
+.step-header strong {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.studio-card-selector-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.studio-card-selector-box label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.studio-select-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1.5px solid rgba(241, 201, 92, 0.35);
   color: #ffffff;
   font-size: 12px;
-  box-sizing: border-box;
+  font-weight: 800;
+  outline: none;
 }
 
-.v200-trade-submit-btn {
-  width: 100%;
-  padding: 12px;
+.preview-chosen-card {
+  margin-top: 4px;
+}
+
+.preview-tag {
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.card-mini-box {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1.5px solid rgba(34, 197, 94, 0.5);
   border-radius: 12px;
-  background: linear-gradient(135deg, #fde047, #ca8a04);
+  padding: 10px 14px;
+}
+
+.card-mini-box.want {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.card-mini-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.badge-ovr {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #fde047;
+}
+
+.badge-rarity {
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.card-mini-box h4 {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0;
+}
+
+.card-mini-box small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* Search Box */
+.search-want-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.studio-search-field {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  outline: none;
+  width: 100%;
+}
+
+.want-cards-scroll-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.want-card-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.want-card-item-btn:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+}
+
+.want-card-item-btn.active {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #fde047;
+}
+
+.want-meta strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+
+.want-meta small {
+  font-size: 8px;
+  color: #94a3b8;
+}
+
+.studio-submit-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.studio-publish-btn {
+  padding: 12px 36px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 50%, #d97706 100%);
+  border: 1.5px solid #fef08a;
+  color: #030611;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
+  transition: all 0.2s ease;
+}
+
+.studio-publish-btn:hover {
+  transform: scale(1.03);
+}
+
+.studio-publish-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ================= TAB 3: DUPLICATES VAULT ================= */
+.v200-duplicates-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.v200-vault-summary-card {
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.8) 0%, rgba(10, 16, 30, 0.95) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  border-radius: 20px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.summary-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.summary-left h3 {
+  font-size: 15px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+  text-transform: uppercase;
+}
+
+.summary-left p {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.summary-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vault-stats-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.vault-stats-box small {
+  font-size: 9px;
+  font-weight: 900;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vault-stats-box strong {
+  font-size: 16px;
+  font-weight: 1000;
+  color: #fde047;
+}
+
+.recycle-all-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fde047, #f59e0b);
   border: 1px solid #fef08a;
-  color: #000000;
+  color: #030611;
   font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.v200-duplicates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.v200-dup-card-slot {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.dup-badge {
+  font-size: 9px;
+  font-weight: 1000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  width: fit-content;
+}
+
+.dup-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dup-rarity-pill {
+  font-size: 8px;
+  font-weight: 900;
+  color: #fde047;
+}
+
+.dup-card-meta h4 {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0;
+}
+
+.dup-card-meta small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.dup-recycle-btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde047;
+  font-size: 11px;
   font-weight: 900;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  transition: all 0.2s ease;
 }
 
-.v200-pin-card-box {
+.dup-recycle-btn:hover {
+  background: rgba(245, 158, 11, 0.3);
+  color: #ffffff;
+}
+
+/* ================= TAB 4: PIN STAGE ================= */
+.v200-pin-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.v200-pin-dual-stage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .v200-pin-dual-stage {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pin-panel-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 16px;
 }
 
-.v200-pin-form {
+.pin-panel-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pin-panel-head h4 {
+  font-size: 14px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.pin-panel-head small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.pin-display-big {
+  display: flex;
+  gap: 10px;
+}
+
+.pin-digit-box {
+  width: 48px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #f59e0b;
+  color: #fde047;
+  font-size: 28px;
+  font-weight: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.pin-copy-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pin-entry-form {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 280px;
+  max-width: 240px;
 }
 
-.v200-pin-input-field {
+.pin-input-big {
   width: 100%;
-  padding: 12px;
-  border-radius: 14px;
+  padding: 10px;
+  border-radius: 12px;
   background: rgba(0, 0, 0, 0.8);
-  border: 2px solid #f59e0b;
-  color: #fde047;
+  border: 2px solid #10b981;
+  color: #6ee7b7;
   font-size: 24px;
   font-weight: 1000;
-  letter-spacing: 0.4em;
+  letter-spacing: 0.3em;
   text-align: center;
+  outline: none;
 }
 
-.v200-pin-submit-btn {
+.pin-confirm-btn {
   width: 100%;
-  padding: 12px;
+  padding: 10px 16px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #38bdf8, #0284c7);
-  border: 1px solid #7dd3fc;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: 1px solid #6ee7b7;
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 }
+
 
 /* ================= 5. PANINI SQUAD STICKER ALBUM ================= */
 .v200-collection-view-tabs {
