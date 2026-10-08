@@ -3051,7 +3051,175 @@ export default function TeamHub(props:{
         <div className="v108-chronicle-hero devil-card"><div><span className="eyebrow gold">KRONIKA SEZONU • {currentSeason}</span><h2>KAŻDY MECZ.<br/><em>NOWY ROZDZIAŁ.</em></h2><p>Nie zapisujemy wyłącznie wyników. Zbieramy emocje, bohaterów, gole i chwile, do których drużyna będzie wracać.</p><span className="v110-chronicle-sign">DELTA 2018 GM • ARCHIWUM DRUŻYNY</span></div><div className="v108-season-minute"><span>SEZON W JEDNEJ MINUCIE</span><div><b>{chronicleMatches.length}<small>MECZÓW</small></b><b>{chronicleWins}<small>WYGRANYCH</small></b><b>{chronicleGoals}<small>GOLI</small></b></div></div></div>
         <nav className="v151-chronicle-seasons" aria-label="Wybierz sezon kroniki"><button className={chronicleSeason==="all"?"active":""} onClick={()=>setChronicleSeason("all")}>CAŁA HISTORIA</button>{seasonOptions.map(label=><button key={label} className={chronicleSeason===label?"active":""} onClick={()=>setChronicleSeason(label)}>SEZON {label}</button>)}</nav>
         <div className="v151-chronicle-gallery">{visibleChronicle.slice(0,6).map((m,index)=><button key={m.id} className="v151-chronicle-cover devil-card" onClick={()=>openMatch(m,"summary")}><span>ROZDZIAŁ {String(visibleChronicle.length-index).padStart(2,"0")}</span><b>{m.home_score}:{m.away_score}</b><strong>{m.home_team===CLUB?m.away_team:m.home_team}</strong><small>{datePL(m.match_date)} · KOLEJKA {m.round_no||"—"}</small></button>)}{visibleChronicle.length===0&&<p>Brak rozegranych spotkań w tym sezonie.</p>}</div>
-        <div className="v108-timeline">{visibleChronicle.length?visibleChronicle.map((m,index)=>{const matchEvents=events.filter(e=>e.match_id===m.id);const starters=lineup.filter(l=>l.match_id===m.id&&l.is_starter).map(l=>players.find(p=>p.id===l.player_id)?.display_name).filter(Boolean);const captain=lineup.find(l=>l.match_id===m.id&&l.is_captain);const captainName=players.find(p=>p.id===captain?.player_id)?.display_name;const mvpName=players.find(p=>p.id===matchEvents.find(e=>e.event_type==="mvp")?.player_id)?.display_name;const result=recentResult(m);return <article className={`v108-story-card devil-card result-${result.toLowerCase()}`} key={m.id}><div className="v108-timeline-marker"><span>{String(visibleChronicle.length-index).padStart(2,"0")}</span></div><div className="v108-story-cover"><div className="v108-story-date"><span>ROZDZIAŁ {String(visibleChronicle.length-index).padStart(2,"0")} • KOLEJKA {m.round_no||"—"}</span><b>{datePL(m.match_date)}</b></div><div className="v108-story-score"><span><Logo team={m.home_team} size={54}/>{m.home_team}</span><strong>{m.home_score}:{m.away_score}</strong><span><Logo team={m.away_team} size={54}/>{m.away_team}</span></div><div className="v108-story-result">{result==="W"?"ZWYCIĘSTWO":result==="R"?"REMIS":"LEKCJA NA PRZYSZŁOŚĆ"}</div></div><div className="v108-story-content"><div><small>BOHATER SPOTKANIA</small><h3>{mvpName||captainName||"Cała drużyna"}</h3><p>{result==="W"?"Wspólna praca, odwaga i konsekwencja przyniosły drużynie kolejne zwycięstwo.":"Każdy mecz daje doświadczenie, z którego drużyna buduje kolejny krok."}</p></div><div className="v108-story-details"><span><Goal size={15}/>{matchEvents.filter(e=>e.event_type==="goal").length} akcji bramkowych</span><span><Crown size={15}/>Kapitan: {captainName||"—"}</span><span><Users size={15}/>{starters.length} w wyjściowym składzie</span></div><MatchGallery matchId={m.id} media={matchMedia}/><button className="v110-story-open" onClick={()=>openMatch(m,"summary")}>OTWÓRZ CENTRUM MECZU <ChevronRight size={14}/></button></div></article>}):<div className="v108-chronicle-empty devil-card"><History size={42}/><h3>Pierwszy rozdział jeszcze przed nami</h3><p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p></div>}</div>
+        <div className="v200-chronicle-timeline">
+          {visibleChronicle.length ? (
+            visibleChronicle.map((m, index) => {
+              const matchEvents = events.filter(e => e.match_id === m.id);
+              const goals = matchEvents.filter(e => e.event_type === "goal");
+              const starters = lineup.filter(l => l.match_id === m.id && l.is_starter).map(l => players.find(p => p.id === l.player_id)?.display_name).filter(Boolean);
+              const captain = lineup.find(l => l.match_id === m.id && l.is_captain);
+              const captainName = players.find(p => p.id === captain?.player_id)?.display_name;
+              const mvpEvent = matchEvents.find(e => e.event_type === "mvp");
+              const mvpPlayer = players.find(p => p.id === mvpEvent?.player_id);
+              const heroPlayer = mvpPlayer || (captain ? players.find(p => p.id === captain.player_id) : null) || (goals[0] ? players.find(p => p.id === goals[0].player_id) : null) || players[0];
+              const result = recentResult(m);
+
+              return (
+                <article className={`v200-chronicle-card devil-card result-${result.toLowerCase()}`} key={m.id}>
+                  {/* TOP CHAPTER BANNER */}
+                  <div className="chronicle-card-top-bar">
+                    <div className="chronicle-chapter-tag">
+                      <span className="chapter-badge">ROZDZIAŁ {String(visibleChronicle.length - index).padStart(2, "0")}</span>
+                      <span className="round-badge">KOLEJKA {m.round_no || "—"}</span>
+                    </div>
+                    <div className="chronicle-date-badge">
+                      <CalendarDays size={14} className="text-amber-400" />
+                      <span>{datePL(m.match_date)}</span>
+                      {m.match_time && <small>• {m.match_time.slice(0, 5)}</small>}
+                    </div>
+                    <div className={`chronicle-result-pill ${result.toLowerCase()}`}>
+                      {result === "W" ? "🏆 ZWYCIĘSTWO DELTY" : result === "R" ? "🤝 REMIS" : "🛡️ LEKCJA NA PRZYSZŁOŚĆ"}
+                    </div>
+                  </div>
+
+                  {/* MAIN MATCH BROADCAST STAGE */}
+                  <div className="chronicle-score-stage">
+                    {/* Home Team */}
+                    <div className="chronicle-team-box home">
+                      <div className="team-logo-wrap">
+                        <Logo team={m.home_team} size={64} />
+                      </div>
+                      <strong className="team-name">{m.home_team}</strong>
+                      <span className="team-role-tag">GOSPODARZ</span>
+                    </div>
+
+                    {/* Center Score Core */}
+                    <div className="chronicle-score-center">
+                      <div className="score-numbers-display">
+                        <span className="score-num">{m.home_score ?? 0}</span>
+                        <span className="score-divider">:</span>
+                        <span className="score-num">{m.away_score ?? 0}</span>
+                      </div>
+                      <div className="score-venue-tag">
+                        <span>{m.venue || "Twierdza Jordanek / Boisko ligowe"}</span>
+                      </div>
+                    </div>
+
+                    {/* Away Team */}
+                    <div className="chronicle-team-box away">
+                      <div className="team-logo-wrap">
+                        <Logo team={m.away_team} size={64} />
+                      </div>
+                      <strong className="team-name">{m.away_team}</strong>
+                      <span className="team-role-tag">GOŚĆ</span>
+                    </div>
+                  </div>
+
+                  {/* THREE-COLUMN STORY & STATS HIGHLIGHTS */}
+                  <div className="chronicle-details-grid">
+                    {/* Col 1: Hero of the Match (Bohater Spotkania) */}
+                    <div className="chronicle-hero-panel">
+                      <div className="panel-title-chip">
+                        <Star size={14} className="text-amber-400" />
+                        <span>BOHATER SPOTKANIA (MVP)</span>
+                      </div>
+                      <div className="hero-player-showcase">
+                        <div className="hero-avatar-circle">
+                          {heroPlayer ? (
+                            isRyszardPlayer(heroPlayer) ? (
+                              <img src="/assets/ryszard-player-card.png" alt="" className="hero-avatar-img" />
+                            ) : (
+                              <PlayerPhoto playerId={heroPlayer.id} className="hero-avatar-img" />
+                            )
+                          ) : (
+                            <Users size={28} className="text-amber-400" />
+                          )}
+                        </div>
+                        <div className="hero-player-info">
+                          <h4 className="hero-name">{mvpPlayer?.display_name || captainName || "Cała Drużyna DELTA"}</h4>
+                          <p className="hero-quote">
+                            {result === "W"
+                              ? "Wspólna praca, odwaga i determinacja przyniosły drużynie zasłużone punkty."
+                              : "Cenne doświadczenie boiskowe, które buduje charakter i siłę zespołu."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Col 2: Goals & Timeline (Bramki i Asysty) */}
+                    <div className="chronicle-goals-panel">
+                      <div className="panel-title-chip">
+                        <Goal size={14} className="text-amber-400" />
+                        <span>BRAMKI I WYDARZENIA ({goals.length})</span>
+                      </div>
+                      <div className="goals-timeline-scroll">
+                        {goals.length > 0 ? (
+                          goals.slice(0, 4).map((ev, gIdx) => {
+                            const scorer = players.find(p => p.id === ev.player_id);
+                            const assist = players.find(p => p.id === ev.assist_player_id);
+                            return (
+                              <div key={ev.id || gIdx} className="goal-timeline-row">
+                                <span className="goal-minute-badge">{ev.minute ? `${ev.minute}'` : `⚽`}</span>
+                                <div className="goal-scorer-info">
+                                  <strong className="scorer-name">{scorer?.display_name || "Gol drużyny"}</strong>
+                                  {assist && <small className="assist-name">Asysta: {assist.display_name}</small>}
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="no-goals-msg">
+                            <Shield size={16} className="text-slate-500" />
+                            <span>Brak zarejestrowanych bramek</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 3: Lineup & Match Facts (Skład & Fakty) */}
+                    <div className="chronicle-facts-panel">
+                      <div className="panel-title-chip">
+                        <Shield size={14} className="text-amber-400" />
+                        <span>FAKTY MECZOWE</span>
+                      </div>
+                      <div className="facts-chips-list">
+                        <div className="fact-item-chip">
+                          <Crown size={14} className="text-amber-400" />
+                          <span>Kapitan: <b>{captainName || "Brak"}</b></span>
+                        </div>
+                        <div className="fact-item-chip">
+                          <Users size={14} className="text-blue-400" />
+                          <span>W wyjściowym: <b>{starters.length} zawodników</b></span>
+                        </div>
+                        <div className="fact-item-chip">
+                          <Zap size={14} className="text-emerald-400" />
+                          <span>Akcji bramkowych: <b>{goals.length}</b></span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="chronicle-open-center-btn"
+                        onClick={() => openMatch(m, "summary")}
+                      >
+                        <span>OTWÓRZ CENTRUM MECZU</span>
+                        <ChevronRight size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Optional Photo Gallery if images exist */}
+                  <MatchGallery matchId={m.id} media={matchMedia} />
+                </article>
+              );
+            })
+          ) : (
+            <div className="v108-chronicle-empty devil-card">
+              <History size={42} />
+              <h3>Pierwszy rozdział jeszcze przed nami</h3>
+              <p>Po rozegranym meczu pojawi się tutaj wynik, bohaterowie i historia spotkania.</p>
+            </div>
+          )}
+        </div>
       </section>}
 
       {tab==="club"&&<section className="section v8-section-page v876-club-page">
