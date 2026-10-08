@@ -1,7 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, CalendarDays, Plus, MapPin, Clock, Users, Sparkles, Check, Trash2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { 
+  X, 
+  CalendarDays, 
+  Plus, 
+  MapPin, 
+  Clock, 
+  Users, 
+  Sparkles, 
+  Check, 
+  Trash2, 
+  Trophy, 
+  Gamepad2, 
+  HeartHandshake, 
+  Bus, 
+  BrainCircuit,
+  Info
+} from "lucide-react";
 
 interface CustomEvent {
   id: string;
@@ -23,14 +40,24 @@ interface DeltaAdminCustomEventsModalProps {
   onEventCreated?: () => void;
 }
 
+const EVENT_TYPES = [
+  { id: "mini_game", label: "Mini-Gry / Gierka", icon: Gamepad2, color: "#38bdf8" },
+  { id: "tournament", label: "Turniej Wewnętrzny", icon: Trophy, color: "#f1c95c" },
+  { id: "integration", label: "Integracja Drużyny", icon: HeartHandshake, color: "#ec4899" },
+  { id: "trip", label: "Wyjazd / Wyjście", icon: Bus, color: "#34d399" },
+  { id: "workshop", label: "Odprawa / Warsztaty", icon: BrainCircuit, color: "#a78bfa" },
+];
+
 export default function DeltaAdminCustomEventsModal({
   isOpen,
   onClose,
   onEventCreated
 }: DeltaAdminCustomEventsModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [events, setEvents] = useState<CustomEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -40,6 +67,10 @@ export default function DeltaAdminCustomEventsModal({
   const [startTime, setStartTime] = useState("17:00");
   const [location, setLocation] = useState("Boisko Jordanek");
   const [maxParticipants, setMaxParticipants] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadEvents = () => {
     setLoading(true);
@@ -53,15 +84,23 @@ export default function DeltaAdminCustomEventsModal({
   };
 
   useEffect(() => {
-    if (isOpen) loadEvents();
+    if (isOpen) {
+      loadEvents();
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !eventDate) {
-      alert("Tytuł i data są wymagane!");
+    if (!title.trim() || !eventDate) {
+      alert("Proszę podać nazwę wydarzenia oraz datę!");
       return;
     }
 
@@ -71,19 +110,20 @@ export default function DeltaAdminCustomEventsModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          description,
+          title: title.trim(),
+          description: description.trim() || null,
           event_type: eventType,
           event_date: eventDate,
-          start_time: startTime,
-          location,
-          max_participants: maxParticipants ? parseInt(maxParticipants) : null
+          start_time: startTime || null,
+          location: location.trim() || null,
+          max_participants: maxParticipants ? parseInt(maxParticipants, 10) : null
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setTitle("");
         setDescription("");
+        setMaxParticipants("");
         loadEvents();
         if (onEventCreated) onEventCreated();
       } else {
@@ -96,168 +136,300 @@ export default function DeltaAdminCustomEventsModal({
     }
   };
 
-  return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="v200-modal-container max-w-2xl" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-modal-head">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              <CalendarDays size={22} />
+  const handleDeleteEvent = async (id: string, eventTitle: string) => {
+    if (!confirm(`Czy na pewno chcesz usunąć wydarzenie "${eventTitle}"?`)) return;
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/events/custom?id=${id}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEvents(prev => prev.filter(ev => ev.id !== id));
+        if (onEventCreated) onEventCreated();
+      } else {
+        alert(data.error || "Nie udało się usunąć wydarzenia.");
+      }
+    } catch (err: any) {
+      alert("Błąd połączenia: " + err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const getTypeMeta = (typeId: string) => {
+    return EVENT_TYPES.find(t => t.id === typeId) || EVENT_TYPES[0];
+  };
+
+  return createPortal(
+    <div 
+      className="delta-events-modal-overlay" 
+      onClick={onClose} 
+      role="dialog" 
+      aria-modal="true"
+    >
+      <div 
+        className="delta-events-modal-dialog" 
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Dekoracyjne podświetlenie nagłówka */}
+        <div className="delta-events-modal-glow" aria-hidden="true" />
+
+        {/* Nagłówek Modalu */}
+        <header className="delta-events-header">
+          <div className="delta-events-header-left">
+            <div className="delta-events-header-icon-box">
+              <CalendarDays size={24} className="text-gold" />
             </div>
             <div>
-              <span className="eyebrow gold">ADMINISTRACJA WYDARZENIAMI</span>
-              <h2 className="text-xl font-black text-white m-0">DODATKOWE WYDARZENIA DRUŻYNY</h2>
+              <span className="delta-events-eyebrow">
+                <Sparkles size={13} /> ADMINISTRACJA WYDARZENIAMI DELTA
+              </span>
+              <h2>DODATKOWE WYDARZENIA DRUŻYNY</h2>
+              <p>Twórz i zarządzaj specjalnymi grami, turniejami wewnętrznymi i wyjazdami.</p>
             </div>
           </div>
-          <button type="button" className="v200-modal-close" onClick={onClose} aria-label="Zamknij">
+          <button 
+            type="button" 
+            className="delta-events-close-btn" 
+            onClick={onClose} 
+            aria-label="Zamknij"
+          >
             <X size={20} />
           </button>
-        </div>
+        </header>
 
-        {/* Content */}
-        <div className="p-5 max-h-[70vh] overflow-y-auto space-y-6">
-          {/* Form */}
-          <form onSubmit={handleCreateEvent} className="p-4 rounded-xl bg-slate-900/90 border border-white/10 space-y-3">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider m-0 flex items-center gap-1.5">
-              <Plus size={14} /> Utwórz Nowe Wydarzenie Specjalne
-            </h3>
+        {/* Zawartość modalu */}
+        <div className="delta-events-modal-body">
+          {/* Formularz tworzenia nowego wydarzenia */}
+          <form onSubmit={handleCreateEvent} className="delta-events-form">
+            <div className="delta-events-form-title">
+              <Plus size={16} className="text-gold" />
+              <span>UTWÓRZ NOWE WYDARZENIE SPECJALNE</span>
+            </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-300 block mb-1">Nazwa Wydarzenia *</label>
+            {/* Nazwa wydarzenia */}
+            <div className="delta-events-field">
+              <label className="delta-events-label">Nazwa Wydarzenia *</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="np. Mini-Gry na Jordanku / Turniej Wewnętrzny / Wyjście do kina"
-                className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
+                className="delta-events-input"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">Typ Wydarzenia</label>
-                <select
-                  value={eventType}
-                  onChange={e => setEventType(e.target.value)}
-                  className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
-                >
-                  <option value="mini_game">⚽ Mini-Gry / Gierka</option>
-                  <option value="tournament">🏆 Turniej Wewnętrzny</option>
-                  <option value="integration">🤝 Spotkanie Integracyjne</option>
-                  <option value="trip">🚌 Wyjście Drużyny</option>
-                  <option value="workshop">🧠 Warsztaty / Odprawa</option>
-                </select>
+            {/* Typ wydarzenia - Pigułki wyboru */}
+            <div className="delta-events-field">
+              <label className="delta-events-label">Kategoria Wydarzenia</label>
+              <div className="delta-events-type-grid">
+                {EVENT_TYPES.map(type => {
+                  const IconComp = type.icon;
+                  const isSelected = eventType === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setEventType(type.id)}
+                      className={`delta-events-type-chip ${isSelected ? "selected" : ""}`}
+                      style={{
+                        borderColor: isSelected ? type.color : undefined,
+                        boxShadow: isSelected ? `0 0 14px ${type.color}40` : undefined
+                      }}
+                    >
+                      <IconComp size={15} style={{ color: type.color }} />
+                      <span>{type.label}</span>
+                      {isSelected && <Check size={14} className="delta-chip-check" />}
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">Data *</label>
+            {/* 3-kolumnowy wiersz: Data, Godzina, Limit Miejsc */}
+            <div className="delta-events-grid-3">
+              <div className="delta-events-field">
+                <label className="delta-events-label">
+                  <CalendarDays size={13} className="text-gold" /> Data Spotkania *
+                </label>
                 <input
                   type="date"
                   required
                   value={eventDate}
                   onChange={e => setEventDate(e.target.value)}
-                  className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
+                  className="delta-events-input"
                 />
               </div>
 
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">Godzina</label>
+              <div className="delta-events-field">
+                <label className="delta-events-label">
+                  <Clock size={13} className="text-gold" /> Godzina Rozpoczęcia
+                </label>
                 <input
                   type="time"
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
-                  className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
+                  className="delta-events-input"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">Miejsce</label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={e => setLocation(e.target.value)}
-                  placeholder="np. Boisko Jordanek / Mokotów"
-                  className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1">Limit Miejsc (opcjonalny)</label>
+              <div className="delta-events-field">
+                <label className="delta-events-label">
+                  <Users size={13} className="text-gold" /> Limit Miejsc (opcjonalny)
+                </label>
                 <input
                   type="number"
+                  min="1"
+                  max="100"
                   value={maxParticipants}
                   onChange={e => setMaxParticipants(e.target.value)}
                   placeholder="Brak limitu"
-                  className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
+                  className="delta-events-input"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-300 block mb-1">Opis & Szczegóły dla Rodziców</label>
+            {/* Lokalizacja */}
+            <div className="delta-events-field">
+              <label className="delta-events-label">
+                <MapPin size={13} className="text-gold" /> Miejsce / Boisko
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="np. Boisko Jordanek / Mokotów"
+                className="delta-events-input"
+              />
+            </div>
+
+            {/* Opis dla rodziców */}
+            <div className="delta-events-field">
+              <label className="delta-events-label">
+                <Info size={13} className="text-gold" /> Opis & Szczegóły dla Rodziców
+              </label>
               <textarea
                 rows={2}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Dodatkowe informacje, co zabrać, zbiórka itp."
-                className="w-full bg-slate-950 text-white text-xs p-2.5 rounded-lg border border-white/15 outline-none focus:border-amber-400"
+                placeholder="Dodatkowe informacje, wymagany strój, zbiórka, zasady..."
+                className="delta-events-textarea"
               />
             </div>
 
-            <div className="text-right pt-2">
+            {/* Przycisk publikacji */}
+            <div className="delta-events-form-actions">
               <button
                 type="submit"
                 disabled={creating}
-                className="v200-tc-action-btn gold"
+                className="delta-events-submit-btn"
               >
-                <Plus size={14} /> {creating ? "Tworzenie…" : "OPUBLIKUJ WYDARZENIE"}
+                <Plus size={16} /> 
+                <span>{creating ? "Publikowanie…" : "OPUBLIKUJ WYDARZENIE SPECJALNE"}</span>
               </button>
             </div>
           </form>
 
-          {/* List of active events */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider m-0">
-              Zaplanowane Wydarzenia ({events.length})
-            </h3>
+          {/* Lista zaplanowanych wydarzeń */}
+          <div className="delta-events-list-section">
+            <div className="delta-events-list-header">
+              <h3>
+                ZAPLANOWANE WYDARZENIA 
+                <span className="delta-events-count-badge">{events.length}</span>
+              </h3>
+            </div>
 
-            {events.map(ev => (
-              <div key={ev.id} className="p-3.5 rounded-xl bg-slate-900/60 border border-white/10 flex items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <strong className="text-xs text-white">{ev.title}</strong>
-                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold">
-                      {ev.event_type.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                    <span className="flex items-center gap-1"><CalendarDays size={12}/> {ev.event_date} {ev.start_time || ""}</span>
-                    <span className="flex items-center gap-1"><MapPin size={12}/> {ev.location || "Mokotów"}</span>
-                    {ev.max_participants && (
-                      <span className="flex items-center gap-1"><Users size={12}/> Max: {ev.max_participants}</span>
-                    )}
-                  </div>
-                  {ev.description && <p className="text-[11px] text-slate-300 mt-1">{ev.description}</p>}
-                </div>
+            {loading ? (
+              <div className="delta-events-loading">
+                <Sparkles size={20} className="animate-spin text-gold" />
+                <span>Ładowanie listy wydarzeń...</span>
               </div>
-            ))}
+            ) : events.length > 0 ? (
+              <div className="delta-events-grid">
+                {events.map(ev => {
+                  const meta = getTypeMeta(ev.event_type);
+                  const IconComp = meta.icon;
+                  const isDeleting = deletingId === ev.id;
 
-            {events.length === 0 && !loading && (
-              <p className="text-xs text-slate-500 text-center py-4">Brak zaplanowanych wydarzeń specjalnych.</p>
+                  return (
+                    <article key={ev.id} className="delta-events-card">
+                      <div className="delta-events-card-left">
+                        <div className="delta-events-date-badge">
+                          <span className="delta-date-day">{ev.event_date.split("-")[2] || ev.event_date}</span>
+                          <span className="delta-date-month">{ev.event_date.split("-")[1] || "PAŹ"}</span>
+                        </div>
+                        <div className="delta-events-card-info">
+                          <div className="delta-events-card-top-row">
+                            <h4>{ev.title}</h4>
+                            <span 
+                              className="delta-events-card-tag"
+                              style={{ 
+                                color: meta.color,
+                                background: `${meta.color}18`,
+                                borderColor: `${meta.color}40`
+                              }}
+                            >
+                              <IconComp size={12} /> {meta.label}
+                            </span>
+                          </div>
+
+                          <div className="delta-events-card-meta-row">
+                            {ev.start_time && (
+                              <span><Clock size={12} /> {ev.start_time}</span>
+                            )}
+                            <span><MapPin size={12} /> {ev.location || "Mokotów"}</span>
+                            {ev.max_participants && (
+                              <span><Users size={12} /> Limit: {ev.max_participants} os.</span>
+                            )}
+                          </div>
+
+                          {ev.description && (
+                            <p className="delta-events-card-desc">{ev.description}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                        disabled={isDeleting}
+                        className="delta-events-delete-btn"
+                        title="Usuń wydarzenie"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="delta-events-empty">
+                <div className="delta-events-empty-icon">
+                  <CalendarDays size={32} />
+                </div>
+                <h4>Brak zaplanowanych wydarzeń specjalnych</h4>
+                <p>Wypełnij powyższy formularz, aby zaplanować mini-grę, turniej lub wyjazd dla drużyny.</p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-black/60 border-t border-white/10 flex justify-end">
-          <button type="button" className="v200-tc-action-btn" onClick={onClose}>
-            ZAMKNIJ
+        {/* Stopka modalu */}
+        <footer className="delta-events-footer">
+          <button 
+            type="button" 
+            className="delta-events-close-footer-btn" 
+            onClick={onClose}
+          >
+            ZAMKNIJ OKNO
           </button>
-        </div>
+        </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

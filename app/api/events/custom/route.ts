@@ -106,3 +106,55 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: (c) => c.forEach((cookie) => cookieStore.set(cookie.name, cookie.value, cookie.options))
+        }
+      }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || (profile.role !== "admin" && profile.role !== "coach")) {
+      return NextResponse.json({ error: "Brak uprawnień do usuwania wydarzeń." }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const eventId = searchParams.get("id");
+
+    if (!eventId) {
+      return NextResponse.json({ error: "Brak ID wydarzenia." }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from("custom_team_events")
+      .delete()
+      .eq("id", eventId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
