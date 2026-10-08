@@ -93,10 +93,21 @@ export default function AchievementsHub({
   return (
     <div className="v200-achievements-hub">
       {/* 1. GŁÓWNY BANER STATYSTYK OSIĄGNIĘĆ Z GRAFIKĄ STADIONOWĄ I TROFEUM */}
-      <header className="v200-ach-banner devil-card">
+      <header className="v200-ach-banner">
         <div className="v200-ach-banner-bg" aria-hidden="true" />
         <div className="v200-ach-banner-overlay" aria-hidden="true" />
         <div className="v200-ach-banner-glow" aria-hidden="true" />
+
+        <div className="v200-ach-banner-topbar">
+          <div className="v200-ach-banner-brand">
+            <span className="v200-ach-pill-brand">DELTA 2018 GM</span>
+            <span className="v200-ach-pill-sub">GABINETY PRESTIŻU & REKORDÓW</span>
+          </div>
+          <div className="v200-ach-banner-season">
+            <Sparkles size={13} className="text-gold" />
+            <span>SEZON LIGOWY 2026/27</span>
+          </div>
+        </div>
 
         <div className="v200-ach-banner-main">
           {/* LEWA STRONA - INFO, TYTUŁ I MINI-STATYSTYKI */}
