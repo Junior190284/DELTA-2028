@@ -93,9 +93,38 @@ const RIVAL_TEAMS: RivalTeamConfig[] = [
   }
 ];
 
+const DEFAULT_FALLBACK_CARD: CardDefinition = {
+  id: "card_fallback_default",
+  player_id: "p_default",
+  season: "2026",
+  card_name: "Zawodnik DELTA",
+  card_type: "base",
+  rarity: "rare",
+  title: "Zawodnik DELTA",
+  description: "Karta Zawodnika Rocznika 2018",
+  artwork_url: "/teamlogos/gm.png",
+  artwork_pose: null,
+  frame_theme: "gold",
+  card_number: 1,
+  is_active: true,
+  is_limited: false,
+  edition_size: null,
+  lore: null,
+  match_id: null,
+  special_event_id: null,
+  created_at: new Date().toISOString(),
+  player: {
+    id: "p_default",
+    display_name: "Zawodnik DELTA",
+    shirt_number: "10",
+    position: "POM",
+    photo_path: null
+  }
+};
+
 export default function CardBattleCompareModal({
-  cards,
-  userCardsMap,
+  cards = [],
+  userCardsMap = new Map(),
   initialCardA,
   initialCardB,
   onClose,
@@ -113,30 +142,40 @@ export default function CardBattleCompareModal({
     };
   }, []);
 
-  // 1v1 State
-  const [cardAId, setCardAId] = useState<string>(initialCardA?.id || cards[0]?.id || "");
-  const [cardBId, setCardBId] = useState<string>(initialCardB?.id || cards[1]?.id || cards[0]?.id || "");
+  const safeCards = useMemo(() => {
+    return (cards && cards.length > 0) ? cards : [DEFAULT_FALLBACK_CARD];
+  }, [cards]);
 
-  const cardA = useMemo(() => cards.find(c => c.id === cardAId) || cards[0], [cards, cardAId]);
-  const cardB = useMemo(() => cards.find(c => c.id === cardBId) || cards[1] || cards[0], [cards, cardBId]);
+  // 1v1 State
+  const [cardAId, setCardAId] = useState<string>(initialCardA?.id || safeCards[0]?.id || DEFAULT_FALLBACK_CARD.id);
+  const [cardBId, setCardBId] = useState<string>(initialCardB?.id || safeCards[1]?.id || safeCards[0]?.id || DEFAULT_FALLBACK_CARD.id);
+
+  const cardA = useMemo(() => {
+    return safeCards.find(c => c.id === cardAId) || initialCardA || safeCards[0] || DEFAULT_FALLBACK_CARD;
+  }, [safeCards, cardAId, initialCardA]);
+
+  const cardB = useMemo(() => {
+    return safeCards.find(c => c.id === cardBId) || initialCardB || safeCards[1] || safeCards[0] || DEFAULT_FALLBACK_CARD;
+  }, [safeCards, cardBId, initialCardB]);
 
   // Available user cards or fallback to system cards
   const ownedCardsList = useMemo(() => {
-    const owned = cards.filter(c => userCardsMap.has(c.id));
-    return owned.length >= 3 ? owned : cards;
-  }, [cards, userCardsMap]);
+    if (!userCardsMap || userCardsMap.size === 0) return safeCards;
+    const owned = safeCards.filter(c => userCardsMap.has(c.id));
+    return owned.length >= 3 ? owned : safeCards;
+  }, [safeCards, userCardsMap]);
 
   // 3v3 Squad State
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [teamSquad, setTeamSquad] = useState<CardDefinition[]>([
-    ownedCardsList[0],
-    ownedCardsList[1] || ownedCardsList[0],
-    ownedCardsList[2] || ownedCardsList[0]
+    ownedCardsList[0] || DEFAULT_FALLBACK_CARD,
+    ownedCardsList[1] || ownedCardsList[0] || DEFAULT_FALLBACK_CARD,
+    ownedCardsList[2] || ownedCardsList[0] || DEFAULT_FALLBACK_CARD
   ]);
 
   // Rival Selection
   const [selectedRivalIndex, setSelectedRivalIndex] = useState<number>(0);
-  const currentRival = RIVAL_TEAMS[selectedRivalIndex];
+  const currentRival = RIVAL_TEAMS[selectedRivalIndex] || RIVAL_TEAMS[0];
 
   // Match Simulation State
   const [matchRunning, setMatchRunning] = useState(false);
@@ -426,7 +465,7 @@ export default function CardBattleCompareModal({
                       onChange={e => setCardAId(e.target.value)}
                       className="v200-battle-select-field"
                     >
-                      {cards.map(c => (
+                      {safeCards.map(c => (
                         <option key={`a_${c.id}`} value={c.id}>
                           {c.player?.display_name || c.card_name} ({c.rarity?.toUpperCase()}) · OVR {getCardPower(c)}
                         </option>
@@ -447,7 +486,7 @@ export default function CardBattleCompareModal({
                   <div className="fighter-3d-card-wrapper">
                     <CollectibleCard3D
                       card={cardA}
-                      userCard={userCardsMap.get(cardA.id) || null}
+                      userCard={userCardsMap?.get(cardA?.id || "") || null}
                       isLocked={false}
                       size="md"
                       interactive={true}
@@ -479,7 +518,7 @@ export default function CardBattleCompareModal({
                       onChange={e => setCardBId(e.target.value)}
                       className="v200-battle-select-field"
                     >
-                      {cards.map(c => (
+                      {safeCards.map(c => (
                         <option key={`b_${c.id}`} value={c.id}>
                           {c.player?.display_name || c.card_name} ({c.rarity?.toUpperCase()}) · OVR {getCardPower(c)}
                         </option>
@@ -500,7 +539,7 @@ export default function CardBattleCompareModal({
                   <div className="fighter-3d-card-wrapper">
                     <CollectibleCard3D
                       card={cardB}
-                      userCard={userCardsMap.get(cardB.id) || null}
+                      userCard={userCardsMap?.get(cardB?.id || "") || null}
                       isLocked={false}
                       size="md"
                       interactive={true}
