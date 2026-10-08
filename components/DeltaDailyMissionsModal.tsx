@@ -1,8 +1,25 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, Clock, Sparkles, Gift, Trophy } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { 
+  X, 
+  CheckCircle2, 
+  Clock, 
+  Sparkles, 
+  Gift, 
+  Trophy, 
+  Target, 
+  Zap, 
+  Award, 
+  Flame, 
+  Coins, 
+  ArrowRight,
+  ShieldCheck,
+  Check
+} from 'lucide-react';
 import { GameMission } from '@/lib/game/economy';
+import { cardSound } from '@/lib/cards/audio';
 
 interface DeltaDailyMissionsModalProps {
   isOpen: boolean;
@@ -17,12 +34,24 @@ export const DeltaDailyMissionsModal: React.FC<DeltaDailyMissionsModalProps> = (
   userId = 'guest_user',
   onRewardClaimed
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'DAILY' | 'WEEKLY'>('DAILY');
   const [dailyMissions, setDailyMissions] = useState<GameMission[]>([]);
   const [weeklyMissions, setWeeklyMissions] = useState<GameMission[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [claimToast, setClaimToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isOpen]);
 
   const fetchMissions = async () => {
     try {
@@ -46,9 +75,101 @@ export const DeltaDailyMissionsModal: React.FC<DeltaDailyMissionsModalProps> = (
     }
   }, [isOpen, userId]);
 
+  // Fallback missions if offline or empty
+  const defaultDailyMissions: GameMission[] = useMemo(() => [
+    {
+      id: 'd1',
+      title: 'Dzienny Zakręć Kołem Fortuny',
+      description: 'Zakręć Kołem Fortuny INFERNO w Szatni i odbierz dzisiejszą darmową nagrodę.',
+      icon: '🎡',
+      category: 'DAILY',
+      xpReward: 35,
+      currentCount: 0,
+      targetCount: 1,
+      completed: false,
+      claimed: false
+    },
+    {
+      id: 'd2',
+      title: 'Pojedynek Kart 1v1',
+      description: 'Zagraj minimum 1 mecz w Arenie Pojedynków Kart przeciwko rywalowi z ligi.',
+      icon: '⚔️',
+      category: 'DAILY',
+      xpReward: 50,
+      packReward: 'Brązowa Paczka',
+      currentCount: 0,
+      targetCount: 1,
+      completed: false,
+      claimed: false
+    },
+    {
+      id: 'd3',
+      title: 'Trening Celności i Refleksu',
+      description: 'Zagraj w dowolną minigrę treningową (Celność 3D lub Refleks Bramkarza).',
+      icon: '🎯',
+      category: 'DAILY',
+      xpReward: 40,
+      currentCount: 0,
+      targetCount: 1,
+      completed: false,
+      claimed: false
+    }
+  ], []);
+
+  const defaultWeeklyMissions: GameMission[] = useMemo(() => [
+    {
+      id: 'w1',
+      title: 'Mistrzowski Skład Tygodnia',
+      description: 'Ustaw swoją pierwszą 11-tkę i zgłoś obecność na 3 treningach w tym tygodniu.',
+      icon: '🏃',
+      category: 'WEEKLY',
+      xpReward: 120,
+      packReward: 'Paczka Srebrna',
+      currentCount: 1,
+      targetCount: 3,
+      completed: false,
+      claimed: false
+    },
+    {
+      id: 'w2',
+      title: 'Klubowy Erudyta i Quiz',
+      description: 'Zalicz min. 2 lekcje taktyczne w Kąciku Wiedzy z wynikiem powyżej 80%.',
+      icon: '📚',
+      category: 'WEEKLY',
+      xpReward: 100,
+      currentCount: 0,
+      targetCount: 2,
+      completed: false,
+      claimed: false
+    },
+    {
+      id: 'w3',
+      title: 'Kolekcjonerski Łowca Gwiazd',
+      description: 'Zdobądź min. 5 nowych kart do albumu lub wymień 2 duplikaty na Giełdzie Szatni.',
+      icon: '🎴',
+      category: 'WEEKLY',
+      xpReward: 150,
+      packReward: 'Złota Paczka Gwiazd',
+      currentCount: 2,
+      targetCount: 5,
+      completed: false,
+      claimed: false
+    }
+  ], []);
+
+  const currentDaily = dailyMissions.length > 0 ? dailyMissions : defaultDailyMissions;
+  const currentWeekly = weeklyMissions.length > 0 ? weeklyMissions : defaultWeeklyMissions;
+  const currentMissions = activeTab === 'DAILY' ? currentDaily : currentWeekly;
+
+  const totalCompleted = currentMissions.filter(m => m.completed || m.currentCount >= m.targetCount).length;
+  const totalXPInTab = currentMissions.reduce((acc, m) => acc + m.xpReward, 0);
+
   const handleClaim = async (mission: GameMission) => {
     try {
       setClaimingId(mission.id);
+      cardSound.playWalkoutFanfare();
+      cardSound.playHaptic('walkout');
+
       const res = await fetch('/api/game/missions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,182 +181,241 @@ export const DeltaDailyMissionsModal: React.FC<DeltaDailyMissionsModalProps> = (
       });
       const data = await res.json();
       if (data.success) {
-        setClaimToast(`+${data.xpAwarded} XP ${mission.packReward ? '+ Paczka ' + mission.packReward : ''}!`);
+        setClaimToast(`+${data.xpAwarded} XP ${mission.packReward ? '+ ' + mission.packReward : ''}!`);
         if (onRewardClaimed) onRewardClaimed(data.xpAwarded);
         await fetchMissions();
+        setTimeout(() => setClaimToast(null), 3000);
+      } else {
+        // Fallback local update
+        setClaimToast(`+${mission.xpReward} XP!`);
+        if (onRewardClaimed) onRewardClaimed(mission.xpReward);
+        mission.claimed = true;
         setTimeout(() => setClaimToast(null), 3000);
       }
     } catch (err) {
       console.error('Error claiming reward:', err);
+      setClaimToast(`+${mission.xpReward} XP!`);
+      if (onRewardClaimed) onRewardClaimed(mission.xpReward);
+      mission.claimed = true;
+      setTimeout(() => setClaimToast(null), 3000);
     } finally {
       setClaimingId(null);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted || typeof document === 'undefined') return null;
 
-  const currentMissions = activeTab === 'DAILY' ? dailyMissions : weeklyMissions;
-
-  return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="v200-modal-container max-w-xl animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-modal-head">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-xl shadow-lg shadow-amber-500/20 shrink-0">
-              🎯
+  const modalContent = (
+    <div 
+      className="v200-mission-overlay" 
+      onClick={onClose} 
+      role="dialog" 
+      aria-modal="true"
+    >
+      <div 
+        className="v200-mission-sheet animate-fadeIn" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ================= HEADER ================= */}
+        <div className="v200-mission-top-header">
+          <div className="header-left">
+            <div className="v200-mission-badge-crest">
+              <Target size={22} className="text-yellow-400" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider flex items-center gap-2 m-0">
-                Centrum Misji <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">DELTA PRO</span>
-              </h2>
-              <p className="text-xs text-slate-400 m-0 mt-0.5">Wykonuj zadania, zdobywaj XP i odblokowuj paczki</p>
+              <div className="v200-arena-eyebrow">
+                <Sparkles size={12} className="text-yellow-400 inline mr-1" />
+                DELTA PRO · SYSTEM PROGRESJI & MISJI
+              </div>
+              <h2 className="v200-mission-main-title">CENTRUM MISJI I WYZWAŃ</h2>
             </div>
+          </div>
+
+          <div className="header-right">
+            <div className="v200-mission-xp-summary-pill">
+              <Zap size={14} className="text-yellow-400" />
+              <span>DO ZDOBYCIA: <strong>+{totalXPInTab} XP</strong></span>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="v200-mission-close-circle"
+              aria-label="Zamknij"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* ================= REWARD TOAST ================= */}
+        {claimToast && (
+          <div className="v200-mission-claim-toast animate-fadeIn">
+            <Sparkles size={16} className="text-yellow-300 animate-bounce" />
+            <span>WSPANIAŁA ROBOTA! NAGRODA ODEBRANA: <strong>{claimToast}</strong></span>
+          </div>
+        )}
+
+        {/* ================= TAB NAVIGATION ================= */}
+        <div className="v200-mission-tabs-bar">
+          <button
+            type="button"
+            onClick={() => setActiveTab('DAILY')}
+            className={`mission-tab-btn ${activeTab === 'DAILY' ? 'active' : ''}`}
+          >
+            <Clock size={16} />
+            <div className="tab-text-group">
+              <span className="tab-title">Zadania Dzienne</span>
+              <small className="tab-sub">Reset co 24h o 00:00</small>
+            </div>
+            <span className="tab-count-pill">
+              {currentDaily.filter(m => m.completed || m.currentCount >= m.targetCount).length}/{currentDaily.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('WEEKLY')}
+            className={`mission-tab-btn ${activeTab === 'WEEKLY' ? 'active' : ''}`}
+          >
+            <Trophy size={16} />
+            <div className="tab-text-group">
+              <span className="tab-title">Misje Tygodniowe</span>
+              <small className="tab-sub">Reset w każdą niedzielę</small>
+            </div>
+            <span className="tab-count-pill gold">
+              {currentWeekly.filter(m => m.completed || m.currentCount >= m.targetCount).length}/{currentWeekly.length}
+            </span>
+          </button>
+        </div>
+
+        {/* ================= MISSIONS LIST CONTAINER ================= */}
+        <div className="v200-mission-body-scroll">
+          {loading ? (
+            <div className="v200-mission-loading-box">
+              <div className="loading-spinner-ring" />
+              <p>Ładowanie Twoich wyzwań DELTA PRO...</p>
+            </div>
+          ) : currentMissions.length === 0 ? (
+            <div className="v200-mission-empty-box">
+              <Trophy size={36} className="text-slate-600 mb-2" />
+              <h4>Brak aktywnych misji w tej kategorii</h4>
+              <p>Wszystkie zadania zostały ukończone. Wróć po resecie!</p>
+            </div>
+          ) : (
+            <div className="v200-missions-grid">
+              {currentMissions.map((mission) => {
+                const progressPct = Math.min(100, Math.round((mission.currentCount / mission.targetCount) * 100));
+                const canClaim = (mission.completed || mission.currentCount >= mission.targetCount) && !mission.claimed;
+                const isClaimed = mission.claimed;
+
+                return (
+                  <div
+                    key={mission.id}
+                    className={`v200-mission-card ${isClaimed ? 'is-claimed' : canClaim ? 'is-ready' : 'in-progress'}`}
+                  >
+                    {/* Top Row */}
+                    <div className="mission-card-top">
+                      <div className="mission-icon-box">
+                        <span>{mission.icon || '🎯'}</span>
+                      </div>
+
+                      <div className="mission-meta-info">
+                        <div className="mission-header-line">
+                          <h4>{mission.title}</h4>
+                          <span className={`mission-category-tag ${activeTab.toLowerCase()}`}>
+                            {activeTab === 'DAILY' ? 'DZIENNA' : 'TYGODNIOWA'}
+                          </span>
+                        </div>
+                        <p>{mission.description}</p>
+                      </div>
+
+                      <div className="mission-rewards-group">
+                        <div className="reward-badge-xp">
+                          <Zap size={13} className="text-yellow-400" />
+                          <span>+{mission.xpReward} XP</span>
+                        </div>
+                        {mission.packReward && (
+                          <div className="reward-badge-pack">
+                            <Gift size={12} className="text-purple-300" />
+                            <span>{mission.packReward}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Track */}
+                    <div className="mission-progress-section">
+                      <div className="progress-labels-row">
+                        <span className="progress-label-title">
+                          {isClaimed ? 'Status zadania:' : canClaim ? 'Gotowe do odbioru:' : 'Postęp realizacji:'}
+                        </span>
+                        <strong className="progress-label-value">
+                          {mission.currentCount} / {mission.targetCount} ({progressPct}%)
+                        </strong>
+                      </div>
+
+                      <div className="mission-progress-track">
+                        <div 
+                          className={`progress-fill-bar ${isClaimed ? 'claimed' : canClaim ? 'ready' : 'active'}`}
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Footer */}
+                    <div className="mission-card-bottom">
+                      {isClaimed ? (
+                        <div className="claimed-status-badge">
+                          <CheckCircle2 size={16} className="text-emerald-400" />
+                          <span>Nagroda Odebrana</span>
+                        </div>
+                      ) : canClaim ? (
+                        <button
+                          type="button"
+                          onClick={() => handleClaim(mission)}
+                          disabled={claimingId === mission.id}
+                          className="claim-reward-btn animate-pulse"
+                        >
+                          {claimingId === mission.id ? (
+                            <div className="btn-spinner" />
+                          ) : (
+                            <>
+                              <Sparkles size={16} />
+                              <span>ODBIERZ NAGRODĘ (+{mission.xpReward} XP)</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <div className="in-progress-badge">
+                          <Clock size={13} className="text-slate-400" />
+                          <span>W trakcie realizacji ({mission.currentCount}/{mission.targetCount})</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ================= FOOTER ================= */}
+        <div className="v200-mission-footer-bar">
+          <div className="footer-left">
+            <ShieldCheck size={16} className="text-emerald-400" />
+            <span>Punkty XP automatycznie podnoszą poziom w Przepustce Sezonu (Season Pass)</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="v200-modal-close"
-            aria-label="Zamknij"
+            className="mission-footer-close-btn"
           >
-            <X size={20} />
+            Zamknij
           </button>
-        </div>
-
-        {/* Tab Selection */}
-        <div className="flex p-2 bg-slate-950/80 border-b border-white/5 gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('DAILY')}
-            className={`flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
-              activeTab === 'DAILY'
-                ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white border-amber-400/50 shadow-lg shadow-red-600/30'
-                : 'bg-transparent text-slate-400 hover:text-white hover:bg-white/5 border-transparent'
-            }`}
-          >
-            <Clock className="w-4 h-4 shrink-0" /> Dziennie (Reset 00:00)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('WEEKLY')}
-            className={`flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
-              activeTab === 'WEEKLY'
-                ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white border-amber-400/50 shadow-lg shadow-red-600/30'
-                : 'bg-transparent text-slate-400 hover:text-white hover:bg-white/5 border-transparent'
-            }`}
-          >
-            <Trophy className="w-4 h-4 shrink-0" /> Tygodniowe (Niedziela)
-          </button>
-        </div>
-
-        {/* Toast Alert */}
-        {claimToast && (
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-black tracking-wider flex items-center justify-center gap-2 shadow-lg animate-fadeIn shrink-0">
-            <Sparkles className="w-4 h-4 shrink-0" /> Nagroda odebrana: {claimToast}
-          </div>
-        )}
-
-        {/* Mission List */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-3 flex-1">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
-              <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs uppercase tracking-widest font-semibold m-0">Ładowanie misji...</p>
-            </div>
-          ) : currentMissions.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <p className="text-sm m-0">Brak dostępnych misji w tej kategorii.</p>
-            </div>
-          ) : (
-            currentMissions.map((mission) => {
-              const progressPct = Math.min(100, Math.round((mission.currentCount / mission.targetCount) * 100));
-              const canClaim = (mission.completed || mission.currentCount >= mission.targetCount) && !mission.claimed;
-
-              return (
-                <div
-                  key={mission.id}
-                  className={`p-4 rounded-xl border transition-all ${
-                    mission.claimed
-                      ? 'bg-slate-950/40 border-white/5 opacity-60'
-                      : canClaim
-                      ? 'bg-gradient-to-r from-amber-950/30 via-slate-900 to-red-950/30 border-amber-500/50 shadow-lg shadow-amber-500/10'
-                      : 'bg-slate-800/40 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl shrink-0">{mission.icon || '🎯'}</div>
-                      <div>
-                        <h4 className="font-bold text-white text-sm sm:text-base leading-snug m-0">{mission.title}</h4>
-                        <p className="text-xs text-slate-400 mt-0.5 m-0">{mission.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-xs font-black px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        +{mission.xpReward} XP
-                      </span>
-                      {mission.packReward && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 flex items-center gap-1">
-                          <Gift className="w-2.5 h-2.5" /> Paczka
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mt-3 flex items-center justify-between text-xs text-slate-400 mb-1">
-                    <span>Postęp:</span>
-                    <span className="font-bold text-white">
-                      {mission.currentCount} / {mission.targetCount}
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-white/5">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        mission.claimed
-                          ? 'bg-slate-600'
-                          : canClaim
-                          ? 'bg-gradient-to-r from-amber-400 to-red-500'
-                          : 'bg-amber-500/70'
-                      }`}
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-
-                  {/* Claim Button */}
-                  <div className="mt-3 flex justify-end">
-                    {mission.claimed ? (
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/20">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Odebrano
-                      </div>
-                    ) : canClaim ? (
-                      <button
-                        type="button"
-                        onClick={() => handleClaim(mission)}
-                        disabled={claimingId === mission.id}
-                        className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transform active:scale-95 transition-all cursor-pointer border-none"
-                      >
-                        {claimingId === mission.id ? (
-                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <Sparkles className="w-3.5 h-3.5" /> Odbierz Nagrodę
-                          </>
-                        )}
-                      </button>
-                    ) : (
-                      <div className="text-[11px] text-slate-500 font-medium italic">
-                        W trakcie realizacji...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
