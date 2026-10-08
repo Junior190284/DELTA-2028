@@ -33239,3 +33239,621 @@ body > main,
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45) !important;
 }
+
+
+/* ==========================================================================
+   DELTA HALL OF FAME 2.0 (v200-hof-*)
+   ========================================================================== */
+
+.v200-hof-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.25rem !important;
+}
+
+.v200-hof-meta-chips {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  margin-top: 0.85rem !important;
+  flex-wrap: wrap !important;
+}
+
+.v200-meta-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 8px !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  color: #e2e8f0 !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.v200-meta-chip b {
+  color: #fbbf24 !important;
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+}
+
+.v200-season-tag {
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  padding: 0.2rem 0.55rem !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  margin-left: auto !important;
+}
+
+/* 4 Team Stats Summary Strip */
+.v200-hof-team-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0.85rem !important;
+}
+
+@media (max-width: 768px) {
+  .v200-hof-team-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+.v200-stat-box {
+  background: rgba(14, 23, 46, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 14px !important;
+  padding: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 0.25rem !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.v200-stat-box:hover {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: rgba(18, 30, 58, 0.9) !important;
+}
+
+.v200-stat-val {
+  font-size: 1.75rem !important;
+  font-weight: 950 !important;
+  color: #ffffff !important;
+  line-height: 1.1 !important;
+}
+
+.v200-stat-label {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+/* 6 Record Leader Cards */
+.v200-hof-leaders-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1rem !important;
+}
+
+@media (max-width: 960px) {
+  .v200-hof-leaders-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .v200-hof-leaders-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.v200-leader-card {
+  position: relative !important;
+  background: linear-gradient(145deg, #0d162d 0%, #080d1c 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  padding: 1.1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 175px !important;
+  text-align: left !important;
+  cursor: default !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.v200-leader-card.is-clickable {
+  cursor: pointer !important;
+}
+
+.v200-leader-card.is-clickable:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Card Themes */
+.v200-leader-card.gold {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.1) 0%, #090e1f 100%) !important;
+}
+.v200-leader-card.gold:hover {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.2) !important;
+}
+.v200-leader-card.gold .leader-icon-badge {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+}
+.v200-leader-card.gold .leader-avatar-frame {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.3) !important;
+}
+
+.v200-leader-card.sky {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.1) 0%, #090e1f 100%) !important;
+}
+.v200-leader-card.sky:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2) !important;
+}
+.v200-leader-card.sky .leader-icon-badge {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+}
+.v200-leader-card.sky .leader-avatar-frame {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important;
+}
+
+.v200-leader-card.purple {
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  background: linear-gradient(145deg, rgba(168, 85, 247, 0.1) 0%, #090e1f 100%) !important;
+}
+.v200-leader-card.purple:hover {
+  border-color: #c084fc !important;
+  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.2) !important;
+}
+.v200-leader-card.purple .leader-icon-badge {
+  background: rgba(168, 85, 247, 0.18) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+}
+.v200-leader-card.purple .leader-avatar-frame {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3) !important;
+}
+
+.v200-leader-card.amber {
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.1) 0%, #090e1f 100%) !important;
+}
+.v200-leader-card.amber:hover {
+  border-color: #f59e0b !important;
+  box-shadow: 0 10px 30px rgba(251, 191, 36, 0.2) !important;
+}
+.v200-leader-card.amber .leader-icon-badge {
+  background: rgba(251, 191, 36, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.4) !important;
+}
+.v200-leader-card.amber .leader-avatar-frame {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.3) !important;
+}
+
+.v200-leader-card.emerald {
+  border-color: rgba(52, 211, 153, 0.4) !important;
+  background: linear-gradient(145deg, rgba(52, 211, 153, 0.1) 0%, #090e1f 100%) !important;
+}
+.v200-leader-card.emerald:hover {
+  border-color: #34d399 !important;
+  box-shadow: 0 10px 30px rgba(52, 211, 153, 0.2) !important;
+}
+.v200-leader-card.emerald .leader-icon-badge {
+  background: rgba(52, 211, 153, 0.18) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+}
+.v200-leader-card.emerald .leader-avatar-frame {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.3) !important;
+}
+
+.v200-leader-card.crimson {
+  border-color: rgba(248, 113, 113, 0.4) !important;
+  background: linear-gradient(145deg, rgba(248, 113, 113, 0.1) 0%, #090e1f 100%) !important;
+}
+.v200-leader-card.crimson:hover {
+  border-color: #f87171 !important;
+  box-shadow: 0 10px 30px rgba(248, 113, 113, 0.2) !important;
+}
+.v200-leader-card.crimson .leader-icon-badge {
+  background: rgba(248, 113, 113, 0.18) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(248, 113, 113, 0.4) !important;
+}
+.v200-leader-card.crimson .leader-avatar-frame {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 15px rgba(248, 113, 113, 0.3) !important;
+}
+
+/* Card Header */
+.leader-card-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.leader-icon-badge {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  shrink: 0 !important;
+}
+
+.leader-title-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.1rem !important;
+}
+
+.leader-category-tag {
+  font-size: 0.6rem !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+.leader-card-title {
+  font-size: 0.85rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Card Body */
+.leader-card-body {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  padding: 0.4rem 0 !important;
+}
+
+.leader-avatar-frame {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  background: #030712 !important;
+  border: 2px solid #fbbf24 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  shrink: 0 !important;
+}
+
+.leader-avatar-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.leader-player-meta {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.2rem !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.leader-player-name {
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.leader-score-badge {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.35rem !important;
+}
+
+.score-num {
+  font-size: 1.45rem !important;
+  font-weight: 950 !important;
+  color: #fbbf24 !important;
+  line-height: 1 !important;
+}
+
+.score-unit {
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  color: #cbd5e1 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.leader-card-empty {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.2rem 0 !important;
+  color: #94a3b8 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+}
+
+.leader-card-hover-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.25rem !important;
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  color: #94a3b8 !important;
+  margin-top: 0.4rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.v200-leader-card.is-clickable:hover .leader-card-hover-hint {
+  color: #fbbf24 !important;
+}
+
+/* Seasons Comparison */
+.v200-hof-seasons-card {
+  padding: 1.25rem !important;
+}
+
+.v200-seasons-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  gap: 0.85rem !important;
+  margin-top: 0.75rem !important;
+}
+
+.v200-season-item {
+  background: rgba(14, 23, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 0.85rem 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+}
+
+.season-item-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.season-year-badge {
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+  color: #fbbf24 !important;
+}
+
+.season-goals-total {
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+}
+
+.season-chips-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+}
+
+.season-chip {
+  padding: 0.2rem 0.55rem !important;
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+}
+
+.season-chip.success {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Monthly Summary */
+.v200-hof-month-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1.25rem !important;
+  gap: 1.2rem !important;
+  flex-wrap: wrap !important;
+}
+
+.month-card-left {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+  flex: 1 !important;
+  min-width: 240px !important;
+}
+
+.month-eyebrow {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  color: #fbbf24 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.month-title {
+  font-size: 1.35rem !important;
+  font-weight: 950 !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+}
+
+.month-stats-chips {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+  margin-top: 0.2rem !important;
+}
+
+.month-chip {
+  padding: 0.25rem 0.65rem !important;
+  border-radius: 6px !important;
+  background: rgba(14, 23, 46, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+  font-size: 0.75rem !important;
+}
+
+.month-chip b {
+  color: #fbbf24 !important;
+}
+
+.v200-copy-month-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.65rem 1.25rem !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border: 1px solid #fbbf24 !important;
+  color: #000000 !important;
+  font-size: 0.75rem !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3) !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+}
+
+.v200-copy-month-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45) !important;
+}
+
+/* Duos Chemistry List */
+.v200-hof-duos-card {
+  padding: 1.25rem !important;
+}
+
+.v200-duos-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.6rem !important;
+  margin-top: 0.75rem !important;
+}
+
+.v200-duo-row {
+  display: grid !important;
+  grid-template-columns: 38px 1fr auto 65px !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  padding: 0.75rem 1rem !important;
+  background: rgba(14, 23, 46, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+@media (max-width: 680px) {
+  .v200-duo-row {
+    grid-template-columns: 32px 1fr 55px !important;
+  }
+  .duo-stats-summary {
+    display: none !important;
+  }
+}
+
+.v200-duo-row:hover {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  background: rgba(18, 30, 58, 0.95) !important;
+}
+
+.duo-rank-badge {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: #fbbf24 !important;
+  font-size: 0.85rem !important;
+  font-weight: 950 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.duo-players-names {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  min-width: 0 !important;
+}
+
+.duo-plus-sign {
+  color: #fbbf24 !important;
+  font-weight: 900 !important;
+}
+
+.duo-stats-summary {
+  font-size: 0.72rem !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+}
+
+.duo-score-badge {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+.score-pct {
+  padding: 0.25rem 0.55rem !important;
+  border-radius: 6px !important;
+  background: rgba(192, 132, 252, 0.18) !important;
+  border: 1px solid rgba(192, 132, 252, 0.4) !important;
+  color: #e9d5ff !important;
+  font-size: 0.85rem !important;
+  font-weight: 900 !important;
+}
+
+.v200-empty-notice {
+  text-align: center !important;
+  padding: 1.5rem !important;
+  color: #94a3b8 !important;
+  font-size: 0.8rem !important;
+}
