@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Sparkles, 
@@ -478,7 +479,14 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
   const isContentVisible = phase === 'content' || phase === 'ready' || isReducedMotion;
   const isGleamActive = phase === 'gleam' || phase === 'particles' || phase === 'content' || phase === 'ready';
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       className="v200-unlock-overlay"
       onClick={handleDismiss}
@@ -851,19 +859,97 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
                       </text>
                     </svg>
                   ) : (
-                    /* Default Generic Shield */
+                    /* Default Generic Shield: Royal Gold & Onyx Championship Trophy Shield */
                     <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="defGoldRim" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#fff2a3" />
+                          <stop offset="25%" stopColor="#d99b26" />
+                          <stop offset="50%" stopColor="#ffea79" />
+                          <stop offset="75%" stopColor="#b37814" />
+                          <stop offset="100%" stopColor="#ffe685" />
+                        </linearGradient>
+                        <linearGradient id="defPlateGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#1e180c" />
+                          <stop offset="45%" stopColor="#0d0a06" />
+                          <stop offset="100%" stopColor="#040301" />
+                        </linearGradient>
+                        <linearGradient id="trophyMetalGrad" x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#ffffff" />
+                          <stop offset="30%" stopColor="#fde047" />
+                          <stop offset="70%" stopColor="#eab308" />
+                          <stop offset="100%" stopColor="#a16207" />
+                        </linearGradient>
+                        <radialGradient id="defCenterGlow" cx="100" cy="105" r="70" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="rgba(245, 158, 11, 0.45)" />
+                          <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                        </radialGradient>
+                      </defs>
+
+                      {/* Outer Rim */}
                       <path
                         d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
-                        fill="#f59e0b"
+                        fill="url(#defGoldRim)"
+                        filter="drop-shadow(0 10px 28px rgba(245,158,11,0.5))"
                       />
+                      {/* Inner Plate */}
                       <path
                         d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
-                        fill="#0f172a"
+                        fill="url(#defPlateGrad)"
+                        stroke="rgba(255, 234, 121, 0.4)"
+                        strokeWidth="1.5"
                       />
-                      <g transform="translate(100, 110)">
-                        {badgeIcon || <Trophy size={48} className="text-amber-400 -translate-x-6 -translate-y-6" />}
+
+                      {/* Center Glow */}
+                      <circle cx="100" cy="105" r="65" fill="url(#defCenterGlow)" />
+
+                      {/* Star Header */}
+                      <g transform="translate(100, 50)">
+                        <polygon points="0,-8 2.5,-2.5 8,-2 4,2 5.5,7.5 0,4.5 -5.5,7.5 -4,2 -8,-2 -2.5,-2.5" fill="#fde047" filter="drop-shadow(0 0 6px #f59e0b)" />
+                        <polygon points="-24,-5 -22,-1 -17,-1 -20,2 -19,6 -24,4 -29,6 -28,2 -31,-1 -26,-1" fill="#fde047" opacity="0.8" />
+                        <polygon points="24,-5 26,-1 31,-1 28,2 29,6 24,4 19,6 20,2 17,-1 22,-1" fill="#fde047" opacity="0.8" />
                       </g>
+
+                      {/* Vector Metallic Trophy in Center */}
+                      <g transform="translate(100, 106)">
+                        {/* Trophy Cup */}
+                        <path
+                          d="M-22,-36 L22,-36 C22,-36 24,-6 0,6 C-24,-6 -22,-36 -22,-36 Z"
+                          fill="url(#trophyMetalGrad)"
+                          stroke="#ca8a04"
+                          strokeWidth="1.5"
+                          filter="drop-shadow(0 4px 10px rgba(0,0,0,0.8))"
+                        />
+                        {/* Left Handle */}
+                        <path
+                          d="M-22,-30 C-34,-30 -34,-10 -20,-10"
+                          fill="none"
+                          stroke="url(#trophyMetalGrad)"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                        />
+                        {/* Right Handle */}
+                        <path
+                          d="M22,-30 C34,-30 34,-10 20,-10"
+                          fill="none"
+                          stroke="url(#trophyMetalGrad)"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                        />
+                        {/* Center Star on Cup */}
+                        <polygon points="0,-22 2,-17 7,-17 3,-14 4.5,-9 0,-12 -4.5,-9 -3,-14 -7,-17 -2,-17" fill="#ffffff" />
+                        {/* Stem */}
+                        <rect x="-4" y="6" width="8" height="12" fill="url(#trophyMetalGrad)" stroke="#ca8a04" strokeWidth="1" />
+                        {/* Base */}
+                        <path d="M-14,18 L14,18 L18,28 L-18,28 Z" fill="url(#trophyMetalGrad)" stroke="#ca8a04" strokeWidth="1" />
+                        <rect x="-20" y="28" width="40" height="7" rx="2" fill="#0f172a" stroke="#eab308" strokeWidth="1.5" />
+                      </g>
+
+                      {/* Ribbon Banner */}
+                      <rect x="36" y="156" width="128" height="24" rx="6" fill="#171206" stroke="#f59e0b" strokeWidth="1.5" />
+                      <text x="100" y="172" textAnchor="middle" fill="#fde047" fontSize="11" fontWeight="1000" letterSpacing="0.12em">
+                        DELTA GM 2018
+                      </text>
                     </svg>
                   )}
                 </div>
@@ -1017,29 +1103,30 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
               type="button"
               onClick={handleExportPoster}
               disabled={exporting}
-              className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2"
+              className="v200-unlock-poster-btn"
             >
               {exportSuccess ? (
                 <>
-                  <Check size={14} className="text-emerald-400" />
-                  <span className="text-emerald-400">Pamiątka Gotowa!</span>
+                  <Check size={15} className="text-emerald-400" />
+                  <span className="text-emerald-300">Pamiątka Zapisana (Pobrano PNG)!</span>
                 </>
               ) : exporting ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                  <span>Generowanie Pamiątki HD…</span>
+                  <div className="v200-btn-spinner" />
+                  <span>Generowanie Pamiątki HD (9:16)…</span>
                 </>
               ) : (
                 <>
-                  <Camera size={14} className="text-amber-400" />
-                  <span>Zapisz Pamiątkę / Udostępnij Rodzicom</span>
+                  <Camera size={15} className="text-yellow-400" />
+                  <span>Pobierz Plakat Pamiątkowy (Story / WhatsApp)</span>
                 </>
               )}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

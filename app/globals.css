@@ -26954,10 +26954,10 @@ body > main,
   bottom: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: radial-gradient(circle at 50% 35%, rgba(14, 18, 28, 0.96) 0%, rgba(4, 5, 8, 0.99) 70%, #020204 100%) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  z-index: 100000 !important;
+  background: rgba(3, 7, 18, 0.985) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  z-index: 999999 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -27222,6 +27222,51 @@ body > main,
 .v200-unlock-cta-btn:focus-visible {
   outline: 3px solid #f59e0b;
   outline-offset: 3px;
+}
+
+/* Commemorative Poster Button (WhatsApp / Story) */
+.v200-unlock-poster-btn {
+  width: 100%;
+  max-width: 360px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(20, 28, 48, 0.9), rgba(12, 17, 30, 0.95));
+  border: 1.5px solid rgba(245, 158, 11, 0.35);
+  color: #fde047;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  outline: none;
+}
+
+.v200-unlock-poster-btn:hover {
+  background: linear-gradient(135deg, rgba(30, 42, 70, 0.95), rgba(18, 26, 45, 0.98));
+  border-color: rgba(245, 158, 11, 0.7);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.25);
+}
+
+.v200-unlock-poster-btn:active {
+  transform: scale(0.98);
+}
+
+.v200-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #f59e0b;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 /* Close top corner button */
