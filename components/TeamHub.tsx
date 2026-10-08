@@ -16,6 +16,7 @@ import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
 import DeltaLiveBar from "./DeltaLiveBar";
 import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
+import AchievementUnlock from "./AchievementUnlock";
 import DeltaTyperModal from "./DeltaTyperModal";
 import DeltaKnowledgeCornerModal from "./DeltaKnowledgeCornerModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
@@ -1135,6 +1136,59 @@ export default function TeamHub(props:{
     const unlockedAch = allPlayerAchievements.filter(a => a.isUnlocked).length;
     return calculatePlayerRecords(primaryPlayer.id, stats, trainingPlayerStats, maxGoalsSingleMatch, 8, unlockedAch);
   }, [primaryPlayer, stats, trainingPlayerStats, maxGoalsSingleMatch, allPlayerAchievements]);
+
+  const [autoUnlockQueue, setAutoUnlockQueue] = useState<any[]>([]);
+  const [autoUnlockIndex, setAutoUnlockIndex] = useState<number>(0);
+
+  useEffect(() => {
+    if (!primaryPlayer?.id) return;
+    let isCancelled = false;
+    const checkUnclaimedAchievements = async () => {
+      try {
+        const res = await fetch(`/api/achievements/sync?playerId=${primaryPlayer.id}`);
+        const data = await res.json();
+        if (!isCancelled && data.success && Array.isArray(data.achievements)) {
+          const unclaimed = data.achievements.filter((a: any) => a.is_unlocked && !a.claimed_reward);
+          if (unclaimed.length > 0) {
+            setAutoUnlockQueue(unclaimed);
+            setAutoUnlockIndex(0);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not check unclaimed achievements", err);
+      }
+    };
+    checkUnclaimedAchievements();
+    return () => {
+      isCancelled = true;
+    };
+  }, [primaryPlayer?.id]);
+
+  const handleAutoUnlockClaim = async () => {
+    const current = autoUnlockQueue[autoUnlockIndex];
+    if (current) {
+      try {
+        await fetch("/api/achievements/claim-reward", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            achievementId: current.id,
+            playerId: primaryPlayer?.id || null
+          })
+        });
+        fetchGameProfile();
+      } catch (e) {
+        console.error("Auto-claim error", e);
+      }
+    }
+
+    if (autoUnlockIndex + 1 < autoUnlockQueue.length) {
+      setAutoUnlockIndex(prev => prev + 1);
+    } else {
+      setAutoUnlockQueue([]);
+      setAutoUnlockIndex(0);
+    }
+  };
 
   function handleGoHomeTop() {
     setTab("home");
@@ -3712,6 +3766,56 @@ export default function TeamHub(props:{
         onClose={() => setAchievementsModalOpen(false)}
         playerId={achievementsTargetPlayer?.id || null}
         playerName={achievementsTargetPlayer?.display_name || undefined}
+      />
+    )}
+
+    {autoUnlockQueue.length > 0 && autoUnlockQueue[autoUnlockIndex] && (
+      <AchievementUnlock
+        grantId={autoUnlockQueue[autoUnlockIndex].id}
+        title={autoUnlockQueue[autoUnlockIndex].title}
+        description={autoUnlockQueue[autoUnlockIndex].description}
+        variant={
+          autoUnlockQueue[autoUnlockIndex].tier === "diamond" || autoUnlockQueue[autoUnlockIndex].id?.includes("inferno")
+            ? "inferno"
+            : autoUnlockQueue[autoUnlockIndex].tier === "silver"
+            ? "platinum" as any
+            : "gold"
+        }
+        eyebrow={
+          autoUnlockQueue[autoUnlockIndex].tier === "diamond"
+            ? "LEGENDARNE OSIĄGNIĘCIE DIAMENTOWE"
+            : "ODBLOKOWANA ODZNAKA DELTA"
+        }
+        grantDate={
+          autoUnlockQueue[autoUnlockIndex].unlocked_at
+            ? new Date(autoUnlockQueue[autoUnlockIndex].unlocked_at).toLocaleDateString("pl-PL", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+              })
+            : new Date().toLocaleDateString("pl-PL", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+              })
+        }
+        serialNumber={`#${(autoUnlockQueue[autoUnlockIndex].sort_order || 1).toString().padStart(3, "0")} / 2018 GM`}
+        playerName={primaryPlayer?.display_name || props.profile.display_name || "Zawodnik DELTA"}
+        playerNumber={primaryPlayer?.shirt_number || "10"}
+        queueIndex={autoUnlockIndex + 1}
+        queueTotal={autoUnlockQueue.length}
+        progress={
+          autoUnlockQueue[autoUnlockIndex].target_value > 1
+            ? {
+                current: Math.min(autoUnlockQueue[autoUnlockIndex].current_value, autoUnlockQueue[autoUnlockIndex].target_value),
+                max: autoUnlockQueue[autoUnlockIndex].target_value,
+                unit: autoUnlockQueue[autoUnlockIndex].unit,
+                label: "Zrealizowany cel:"
+              }
+            : undefined
+        }
+        onClose={handleAutoUnlockClaim}
+        onClaim={handleAutoUnlockClaim}
       />
     )}
 

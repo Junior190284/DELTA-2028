@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useId } from 'react';
-import { X, Sparkles, Trophy, Flame, ChevronRight, RotateCw, Award, CheckCircle2 } from 'lucide-react';
+import { 
+  X, 
+  Sparkles, 
+  Trophy, 
+  Flame, 
+  ChevronRight, 
+  RotateCw, 
+  Award, 
+  CheckCircle2,
+  Share2,
+  Download,
+  Camera,
+  Check
+} from 'lucide-react';
 import { cinematicAudio } from '@/lib/cinematic/audio';
 
 export type AchievementVariant = 'gold' | 'inferno' | 'silver' | 'bronze' | 'epic' | 'legendary';
@@ -82,6 +95,9 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
   const [specularPos, setSpecularPos] = useState({ x: 50, y: 50 });
   const [isFlipped, setIsFlipped] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -222,7 +238,7 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
         aliveCount++;
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.06; // subtle gravity
+        p.vy += 0.06;
         p.vx *= 0.98;
         p.alpha -= p.decay;
         p.rotation += p.rotationSpeed;
@@ -306,6 +322,157 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
       onClaim(grantId);
     }
     onClose();
+  };
+
+  // Export Commemorative Poster (9:16 HD Card for WhatsApp / Instagram Story)
+  const handleExportPoster = async () => {
+    setExporting(true);
+    try {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = 1080;
+      exportCanvas.height = 1920;
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. Background Gradient & Stadium Vignette
+      const bgGrad = ctx.createRadialGradient(540, 600, 100, 540, 960, 1000);
+      bgGrad.addColorStop(0, isInferno ? '#2b0909' : '#1e1406');
+      bgGrad.addColorStop(0.5, '#0c0e14');
+      bgGrad.addColorStop(1, '#020305');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Gold / Red Ambient Glow behind shield
+      const glow = ctx.createRadialGradient(540, 720, 50, 540, 720, 450);
+      glow.addColorStop(0, isInferno ? 'rgba(239, 68, 68, 0.45)' : 'rgba(245, 158, 11, 0.4)');
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 200, 1080, 1100);
+
+      // 2. Top Club Header
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '900 28px Inter, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.letterSpacing = '6px';
+      ctx.fillText('K.S. DELTA WARSZAWA · GÓRNY MOKOTÓW', 540, 220);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 42px Inter, Arial, sans-serif';
+      ctx.fillText('OFICJALNY CERTYFIKAT OSIĄGNIĘCIA', 540, 290);
+
+      // 3. Draw Shield
+      ctx.save();
+      ctx.translate(540, 740);
+
+      // Draw Shield Path
+      ctx.shadowColor = isInferno ? 'rgba(239, 68, 68, 0.6)' : 'rgba(245, 158, 11, 0.5)';
+      ctx.shadowBlur = 50;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -320);
+      ctx.lineTo(260, -240);
+      ctx.bezierCurveTo(260, 140, 140, 280, 0, 350);
+      ctx.bezierCurveTo(-140, 280, -260, 140, -260, -240);
+      ctx.closePath();
+
+      const shieldGrad = ctx.createLinearGradient(-260, -320, 260, 350);
+      shieldGrad.addColorStop(0, isInferno ? '#ef4444' : '#fff2a3');
+      shieldGrad.addColorStop(0.5, isInferno ? '#7f1d1d' : '#d99b26');
+      shieldGrad.addColorStop(1, isInferno ? '#dc2626' : '#ffe685');
+      ctx.fillStyle = shieldGrad;
+      ctx.fill();
+
+      // Inner Plate
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.moveTo(0, -290);
+      ctx.lineTo(230, -220);
+      ctx.bezierCurveTo(230, 110, 120, 240, 0, 310);
+      ctx.bezierCurveTo(-120, 240, -230, 110, -230, -220);
+      ctx.closePath();
+      ctx.fillStyle = isInferno ? '#160404' : '#0a0804';
+      ctx.fill();
+      ctx.strokeStyle = isInferno ? '#ef4444' : '#f59e0b';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Shield Big Text / Icon
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '1000 110px Inter, Arial, sans-serif';
+      if (title.toLowerCase().includes('trening') || title.includes('10')) {
+        ctx.fillText('10', 0, 30);
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '900 32px Inter, Arial, sans-serif';
+        ctx.fillText('TRENINGÓW', 0, 110);
+      } else if (title.toLowerCase().includes('hat')) {
+        ctx.font = '1000 70px Inter, Arial, sans-serif';
+        ctx.fillText('⚽ ⚽ ⚽', 0, 10);
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '900 32px Inter, Arial, sans-serif';
+        ctx.fillText('HAT-TRICK!', 0, 100);
+      } else {
+        ctx.font = '1000 80px Inter, Arial, sans-serif';
+        ctx.fillText('🔥', 0, 30);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '900 32px Inter, Arial, sans-serif';
+        ctx.fillText('INFERNO', 0, 110);
+      }
+      ctx.restore();
+
+      // 4. Player Name & Badge Title Section
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '900 30px Inter, Arial, sans-serif';
+      ctx.fillText(`ZAWODNIK: ${playerName.toUpperCase()} #${playerNumber}`, 540, 1250);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '1000 68px Inter, Arial, sans-serif';
+      ctx.fillText(title, 540, 1340);
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '500 30px Inter, Arial, sans-serif';
+      ctx.fillText(description, 540, 1420);
+
+      // 5. Verification & Stamp Section
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(180, 1520);
+      ctx.lineTo(900, 1520);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 24px Inter, Arial, sans-serif';
+      ctx.fillText(`Seria: ${serialNumber}  ·  Data przyznania: ${grantDate}`, 540, 1590);
+
+      ctx.fillStyle = '#22c55e';
+      ctx.font = '900 28px Inter, Arial, sans-serif';
+      ctx.fillText('✓ CERTYFIKOWANE PRZEZ SZTAB SZKOLENIOWY DELTA WARSZAWA 2018', 540, 1660);
+
+      // 6. Convert & Trigger Share / Download
+      const dataUrl = exportCanvas.toDataURL('image/png');
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], `delta-odznaka-${title.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `Odznaka DELTA: ${title}`,
+          text: `Zawodnik ${playerName} zdobył odznakę ${title} w K.S. Delta Warszawa 2018!`,
+          files: [file]
+        });
+      } else {
+        const link = document.createElement('a');
+        link.download = `delta-odznaka-${title.toLowerCase().replace(/\s+/g, '-')}.png`;
+        link.href = dataUrl;
+        link.click();
+      }
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (err) {
+      console.error('Export error:', err);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const isContentVisible = phase === 'content' || phase === 'ready' || isReducedMotion;
@@ -562,6 +729,61 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
                         HAT-TRICK!
                       </text>
                     </svg>
+                  ) : title.toLowerCase().includes('czyste') || title.toLowerCase().includes('bramkarz') ? (
+                    /* Variant 4: Czyste Konto / Bramkarz (Emerald, Silver & Fortress Shield) */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="emeraldRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#a7f3d0" />
+                          <stop offset="50%" stopColor="#059669" />
+                          <stop offset="100%" stopColor="#064e3b" />
+                        </linearGradient>
+                        <linearGradient id="gkInnerGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#064e3b" />
+                          <stop offset="60%" stopColor="#022c22" />
+                          <stop offset="100%" stopColor="#011612" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z" fill="url(#emeraldRimGrad)" filter="drop-shadow(0 8px 24px rgba(16,185,129,0.4))" />
+                      <path d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z" fill="url(#gkInnerGrad)" stroke="rgba(167,243,208,0.5)" strokeWidth="1.5" />
+                      <g transform="translate(100, 100)">
+                        <circle cx="0" cy="0" r="34" fill="#042f2e" stroke="#10b981" strokeWidth="2.5" />
+                        <text x="0" y="10" textAnchor="middle" fill="#6ee7b7" fontSize="36">🧤</text>
+                      </g>
+                      <rect x="36" y="152" width="128" height="26" rx="6" fill="#022c22" stroke="#10b981" strokeWidth="1.5" />
+                      <text x="100" y="170" textAnchor="middle" fill="#a7f3d0" fontSize="12" fontWeight="1000" letterSpacing="0.1em">CZYSTE KONTO</text>
+                    </svg>
+                  ) : title.toLowerCase().includes('kapitan') ? (
+                    /* Variant 5: Kapitan Zespołu (Royal Navy & Gold with Crown & 'C') */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="captRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#fde047" />
+                          <stop offset="50%" stopColor="#ca8a04" />
+                          <stop offset="100%" stopColor="#854d0e" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z" fill="url(#captRimGrad)" filter="drop-shadow(0 8px 24px rgba(234,179,8,0.5))" />
+                      <path d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z" fill="#0f172a" stroke="rgba(253,224,71,0.5)" strokeWidth="1.5" />
+                      <g transform="translate(100, 100)">
+                        <polygon points="0,-42 12,-20 32,-30 20,5 -20,5 -32,-30 -12,-20" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5" />
+                        <circle cx="0" cy="18" r="26" fill="#1e293b" stroke="#eab308" strokeWidth="2" />
+                        <text x="0" y="29" textAnchor="middle" fill="#fde047" fontSize="28" fontWeight="1000">C</text>
+                      </g>
+                      <rect x="36" y="152" width="128" height="26" rx="6" fill="#0f172a" stroke="#eab308" strokeWidth="1.5" />
+                      <text x="100" y="170" textAnchor="middle" fill="#fef08a" fontSize="12" fontWeight="1000" letterSpacing="0.1em">KAPITAN GM</text>
+                    </svg>
+                  ) : title.toLowerCase().includes('but') || title.toLowerCase().includes('snajper') ? (
+                    /* Variant 6: Złoty But / Snajper (24K Gold) */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z" fill="url(#goldRimGrad)" filter="drop-shadow(0 8px 24px rgba(245,158,11,0.6))" />
+                      <path d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z" fill="#171206" stroke="rgba(255,234,121,0.5)" strokeWidth="1.5" />
+                      <g transform="translate(100, 95)">
+                        <text x="0" y="15" textAnchor="middle" fill="#fde047" fontSize="48" filter="drop-shadow(0 0 12px #f59e0b)">👟</text>
+                      </g>
+                      <rect x="36" y="152" width="128" height="26" rx="6" fill="#241a06" stroke="#f59e0b" strokeWidth="1.5" />
+                      <text x="100" y="170" textAnchor="middle" fill="#fef08a" fontSize="12" fontWeight="1000" letterSpacing="0.1em">ZŁOTY BUT</text>
+                    </svg>
                   ) : isInferno || title.toLowerCase().includes('inferno') ? (
                     /* Variant 3: INFERNO (Volcanic Titanium & Burning Ruby Shield) */
                     <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -722,7 +944,7 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
           <span>{isFlipped ? 'Kliknij, aby zobaczyć przód' : 'Kliknij odznakę, aby zobaczyć certyfikat'}</span>
         </button>
 
-        {/* Content Section: Eyebrow, Title, Description, Progress & Button */}
+        {/* Content Section: Eyebrow, Title, Description, Progress & Actions */}
         <div className={`w-full flex flex-col items-center mt-3 ${isContentVisible ? 'v200-animate-text-reveal' : 'opacity-0'}`}>
           {/* Eyebrow */}
           <div className="v200-unlock-eyebrow">
@@ -777,16 +999,44 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
             </div>
           )}
 
-          {/* Red CTA Action Button: "ODBIERZ ODZNAKĘ" */}
-          <button
-            ref={closeBtnRef}
-            type="button"
-            onClick={handleDismiss}
-            className="v200-unlock-cta-btn"
-          >
-            <span>{queueTotal && queueIndex && queueIndex < queueTotal ? 'NASTĘPNA ODZNAKA' : 'ODBIERZ ODZNAKĘ'}</span>
-            <ChevronRight size={17} />
-          </button>
+          {/* Primary & Secondary Actions Stack */}
+          <div className="w-full max-w-[360px] space-y-2 mt-1">
+            {/* Red CTA Action Button: "ODBIERZ ODZNAKĘ" */}
+            <button
+              ref={closeBtnRef}
+              type="button"
+              onClick={handleDismiss}
+              className="v200-unlock-cta-btn"
+            >
+              <span>{queueTotal && queueIndex && queueIndex < queueTotal ? 'NASTĘPNA ODZNAKA' : 'ODBIERZ ODZNAKĘ'}</span>
+              <ChevronRight size={17} />
+            </button>
+
+            {/* Commemorative Poster Export Button (WhatsApp / Instagram Story) */}
+            <button
+              type="button"
+              onClick={handleExportPoster}
+              disabled={exporting}
+              className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2"
+            >
+              {exportSuccess ? (
+                <>
+                  <Check size={14} className="text-emerald-400" />
+                  <span className="text-emerald-400">Pamiątka Gotowa!</span>
+                </>
+              ) : exporting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  <span>Generowanie Pamiątki HD…</span>
+                </>
+              ) : (
+                <>
+                  <Camera size={14} className="text-amber-400" />
+                  <span>Zapisz Pamiątkę / Udostępnij Rodzicom</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

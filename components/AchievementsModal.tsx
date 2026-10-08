@@ -32,6 +32,7 @@ import {
   X, 
   Check
 } from "lucide-react";
+import AchievementUnlock from "./AchievementUnlock";
 
 interface Achievement {
   id: string;
@@ -101,6 +102,7 @@ export default function AchievementsModal({
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [claimFeedback, setClaimFeedback] = useState<string | null>(null);
+  const [selectedUnlockAchievement, setSelectedUnlockAchievement] = useState<Achievement | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -285,6 +287,11 @@ export default function AchievementsModal({
                 return (
                   <div
                     key={ach.id}
+                    onClick={() => {
+                      if (ach.is_unlocked) {
+                        setSelectedUnlockAchievement(ach);
+                      }
+                    }}
                     style={{
                       padding: 14,
                       borderRadius: 14,
@@ -293,7 +300,9 @@ export default function AchievementsModal({
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
-                      gap: 10
+                      gap: 10,
+                      cursor: ach.is_unlocked ? "pointer" : "default",
+                      transition: "transform 0.15s ease, border-color 0.15s ease"
                     }}
                   >
                     <div>
@@ -345,12 +354,15 @@ export default function AchievementsModal({
                       <div>
                         {ach.claimed_reward ? (
                           <span style={{ color: "#34d399", fontWeight: 800, fontSize: 10, display: "flex", alignItems: "center", gap: 2 }}>
-                            ✓ Odebrano
+                            ✓ Zobacz
                           </span>
                         ) : ach.is_unlocked ? (
                           <button
                             type="button"
-                            onClick={() => claimReward(ach)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedUnlockAchievement(ach);
+                            }}
                             disabled={claimingId === ach.id}
                             style={{ padding: "5px 12px", borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "1px solid #fde047", color: "#000", fontWeight: 900, fontSize: 10, cursor: "pointer", textTransform: "uppercase" }}
                           >
@@ -376,6 +388,66 @@ export default function AchievementsModal({
           </button>
         </div>
       </div>
+
+      {/* ACHIEVEMENT UNLOCK CELEBRATION MODAL */}
+      {selectedUnlockAchievement && (
+        <AchievementUnlock
+          grantId={selectedUnlockAchievement.id}
+          title={selectedUnlockAchievement.title}
+          description={selectedUnlockAchievement.description}
+          variant={
+            selectedUnlockAchievement.tier === "diamond" || selectedUnlockAchievement.id.includes("inferno")
+              ? "inferno"
+              : selectedUnlockAchievement.tier === "silver"
+              ? "platinum" as any
+              : "gold"
+          }
+          eyebrow={
+            selectedUnlockAchievement.tier === "diamond"
+              ? "LEGENDARNE OSIĄGNIĘCIE DIAMENTOWE"
+              : "ODBLOKOWANA ODZNAKA DELTA"
+          }
+          grantDate={
+            selectedUnlockAchievement.unlocked_at
+              ? new Date(selectedUnlockAchievement.unlocked_at).toLocaleDateString("pl-PL", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric"
+                })
+              : new Date().toLocaleDateString("pl-PL", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric"
+                })
+          }
+          serialNumber={`#${selectedUnlockAchievement.sort_order.toString().padStart(3, "0")} / 2018 GM`}
+          playerName={playerName || "Zawodnik DELTA"}
+          progress={
+            selectedUnlockAchievement.target_value > 1
+              ? {
+                  current: Math.min(selectedUnlockAchievement.current_value, selectedUnlockAchievement.target_value),
+                  max: selectedUnlockAchievement.target_value,
+                  unit: selectedUnlockAchievement.unit,
+                  label: "Zrealizowany cel:"
+                }
+              : undefined
+          }
+          onClose={() => {
+            const achToClaim = selectedUnlockAchievement;
+            setSelectedUnlockAchievement(null);
+            if (achToClaim && !achToClaim.claimed_reward) {
+              claimReward(achToClaim);
+            }
+          }}
+          onClaim={async () => {
+            const achToClaim = selectedUnlockAchievement;
+            setSelectedUnlockAchievement(null);
+            if (achToClaim && !achToClaim.claimed_reward) {
+              await claimReward(achToClaim);
+            }
+          }}
+        />
+      )}
     </div>,
     document.body
   );
