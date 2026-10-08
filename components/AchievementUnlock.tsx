@@ -1057,36 +1057,36 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
             {description}
           </p>
 
-          {/* Optional Progress Box */}
-          {progress && (
-            <div className="v200-unlock-progress-box">
-              <div className="v200-unlock-progress-header">
-                <span>{progress.label || 'Postęp odznaki:'}</span>
-                <strong className="text-white font-black">
-                  {progress.current} / {progress.max} {progress.unit || ''}
-                </strong>
-              </div>
-              <div className="v200-unlock-progress-bar-bg">
-                <div
-                  className="v200-unlock-progress-bar-fill"
-                  style={{
-                    width: `${Math.min(100, Math.round((progress.current / progress.max) * 100))}%`
-                  }}
-                />
-              </div>
-
-              {/* Optional Next Goal Section (ONLY shown if nextGoal exists) */}
-              {nextGoal && (
-                <div className="v200-unlock-next-goal">
-                  <span>{nextGoal.label} ({nextGoal.target})</span>
-                  {nextGoal.rewardLabel && <b>{nextGoal.rewardLabel}</b>}
+          {/* Unified Bottom Stack: Progress Box + Actions */}
+          <div className="v200-unlock-bottom-stack">
+            {/* Optional Progress Box */}
+            {progress && (
+              <div className="v200-unlock-progress-box">
+                <div className="v200-unlock-progress-header">
+                  <span>{progress.label || 'Zrealizowany cel:'}</span>
+                  <strong className="text-white font-black">
+                    {progress.current} / {progress.max} {progress.unit || ''}
+                  </strong>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="v200-unlock-progress-bar-bg">
+                  <div
+                    className="v200-unlock-progress-bar-fill"
+                    style={{
+                      width: `${Math.min(100, Math.round((progress.current / progress.max) * 100))}%`
+                    }}
+                  />
+                </div>
 
-          {/* Primary & Secondary Actions Stack */}
-          <div className="w-full max-w-[360px] space-y-2 mt-1">
+                {/* Optional Next Goal Section (ONLY shown if nextGoal exists) */}
+                {nextGoal && (
+                  <div className="v200-unlock-next-goal">
+                    <span>{nextGoal.label} ({nextGoal.target})</span>
+                    {nextGoal.rewardLabel && <b>{nextGoal.rewardLabel}</b>}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Red CTA Action Button: "ODBIERZ ODZNAKĘ" */}
             <button
               ref={closeBtnRef}

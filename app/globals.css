@@ -26954,9 +26954,7 @@ body > main,
   bottom: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: rgba(3, 7, 18, 0.985) !important;
-  backdrop-filter: blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  background: #030611 !important;
   z-index: 999999 !important;
   display: flex !important;
   align-items: center !important;
@@ -27131,18 +27129,30 @@ body > main,
   max-width: 380px;
 }
 
+/* Unified Bottom Stack: Progress Box + Actions */
+.v200-unlock-bottom-stack {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 14px;
+  box-sizing: border-box;
+}
+
 /* Progress Box (Only when progress exists) */
 .v200-unlock-progress-box {
   width: 100%;
-  max-width: 360px;
-  padding: 12px 14px;
+  box-sizing: border-box;
+  padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(15, 20, 30, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 16px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin: 0;
 }
 
 .v200-unlock-progress-header {
@@ -27188,30 +27198,31 @@ body > main,
 /* Red CTA Button: "ODBIERZ ODZNAKĘ" */
 .v200-unlock-cta-btn {
   width: 100%;
-  max-width: 360px;
-  min-height: 50px;
-  padding: 14px 24px;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 14px 20px;
   border-radius: 14px;
   background: linear-gradient(135deg, #e51d2f 0%, #b91c1c 60%, #991b1b 100%);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
   color: #ffffff;
   font-size: 14px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(229, 29, 47, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(229, 29, 47, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  margin: 0;
   outline: none;
 }
 
 .v200-unlock-cta-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 40px rgba(229, 29, 47, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 35px rgba(229, 29, 47, 0.65);
   filter: brightness(1.08);
 }
 
@@ -27227,10 +27238,10 @@ body > main,
 /* Commemorative Poster Button (WhatsApp / Story) */
 .v200-unlock-poster-btn {
   width: 100%;
-  max-width: 360px;
-  min-height: 44px;
-  padding: 10px 18px;
-  border-radius: 12px;
+  box-sizing: border-box;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 14px;
   background: linear-gradient(135deg, rgba(20, 28, 48, 0.9), rgba(12, 17, 30, 0.95));
   border: 1.5px solid rgba(245, 158, 11, 0.35);
   color: #fde047;
@@ -27242,7 +27253,7 @@ body > main,
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 10px;
+  margin: 0;
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   outline: none;
