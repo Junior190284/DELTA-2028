@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Trophy, 
@@ -17,7 +18,13 @@ import {
   Play,
   Clock,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Medal,
+  Calendar,
+  Gift,
+  Star,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { BattleCard } from '@/lib/game/battles';
 
@@ -30,7 +37,7 @@ interface DeltaCompetitionHubModalProps {
   onRewardClaimed?: () => void;
 }
 
-type CompTab = 'LEAGUE' | 'FRIENDLY' | 'TOURNAMENT' | 'DRAFT' | 'TEAM_GOALS';
+type CompTab = 'LEAGUE' | 'FRIENDLY' | 'DRAFT' | 'TOURNAMENT' | 'TEAM_GOALS';
 
 export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> = ({
   isOpen,
@@ -43,11 +50,14 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
   const [activeTab, setActiveTab] = useState<CompTab>('LEAGUE');
   const [hubData, setHubData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   // Friendly duel state
-  const [selectedOpponentName, setSelectedOpponentName] = useState('Kuba Pomocnik');
+  const [selectedOpponentName, setSelectedOpponentName] = useState('Ryszard Rybacki');
   const [friendlyMode, setFriendlyMode] = useState<'1v1' | '3v3'>('1v1');
   const [challengeSentToast, setChallengeSentToast] = useState<string | null>(null);
+  const [isSimulatingDuel, setIsSimulatingDuel] = useState(false);
+  const [duelOutcome, setDuelOutcome] = useState<any>(null);
 
   // Draft mode state
   const [draftStep, setDraftStep] = useState<'pick' | 'playing' | 'result'>('pick');
@@ -55,6 +65,10 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
   const [currentDraftRound, setCurrentDraftRound] = useState(0);
   const [pickedDraftCards, setPickedDraftCards] = useState<BattleCard[]>([]);
   const [draftResult, setDraftResult] = useState<any>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchHubData = async () => {
     try {
@@ -96,6 +110,7 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
 
   const handleSendChallenge = async () => {
     try {
+      setIsSimulatingDuel(true);
       const res = await fetch('/api/social/challenge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,10 +126,22 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
       });
       const data = await res.json();
       if (data.success) {
-        setChallengeSentToast(`Wysłano wyzwanie ${friendlyMode} do ${selectedOpponentName}!`);
-        setTimeout(() => setChallengeSentToast(null), 3000);
+        setTimeout(() => {
+          setIsSimulatingDuel(false);
+          setDuelOutcome({
+            winner: userName,
+            myScore: friendlyMode === '1v1' ? 2 : 3,
+            oppScore: friendlyMode === '1v1' ? 1 : 1,
+            xp: friendlyMode === '1v1' ? 60 : 120,
+            opponent: selectedOpponentName
+          });
+          setChallengeSentToast(`Pojedynek z ${selectedOpponentName} rozstrzygnięty!`);
+          fetchHubData();
+          if (onRewardClaimed) onRewardClaimed();
+        }, 1200);
       }
     } catch (err) {
+      setIsSimulatingDuel(false);
       console.error('Send challenge error:', err);
     }
   };
@@ -126,7 +153,6 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
     if (currentDraftRound < draftRounds.length - 1) {
       setCurrentDraftRound(r => r + 1);
     } else {
-      // Draft complete -> Simulate Match
       setDraftStep('playing');
       setTimeout(async () => {
         const res = await fetch('/api/social/draft', {
@@ -140,7 +166,7 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
           setDraftStep('result');
           if (onRewardClaimed) onRewardClaimed();
         }
-      }, 1500);
+      }, 1400);
     }
   };
 
@@ -161,130 +187,178 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted || typeof document === 'undefined') return null;
 
-  return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="v200-modal-container max-w-3xl animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-modal-head">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-xl shadow-lg shadow-red-600/30 shrink-0">
-              ⚔️
+  return createPortal(
+    <div className="v200-arena-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-arena-modal-dialog" onClick={(e) => e.stopPropagation()}>
+        {/* 1. TOP HEADER BANNER */}
+        <div className="v200-arena-header">
+          <div className="v200-arena-header-left">
+            <div className="v200-arena-badge-crest">
+              <Swords size={26} className="text-yellow-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider m-0">
-                  Centrum Rywalizacji
-                </h2>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-                  DELTA ARENA
-                </span>
+              <div className="v200-arena-eyebrow">
+                <Sparkles size={13} /> DELTA ESPORTS & SOCIAL ARENA · ROCZNIK 2018
               </div>
-              <p className="text-xs text-slate-400 m-0 mt-0.5">Ligi kartowe, turnieje, tryb draft i wyzwania koleżeńskie</p>
+              <h2 className="v200-arena-title">CENTRUM RYWALIZACJI DRUŻYNY</h2>
+              <p className="v200-arena-subtitle">Sezonowa Liga Kartowa, Koleżeńskie Pojedynki 1v1, Puchar i Misje Składu</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="v200-modal-close"
-            aria-label="Zamknij"
-          >
-            <X size={20} />
-          </button>
+
+          <div className="v200-arena-header-right">
+            <div className="v200-arena-user-pill">
+              <span className="user-label">TWÓJ PROFIL</span>
+              <strong className="user-name">{userName}</strong>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="v200-arena-close-btn"
+              aria-label="Zamknij"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex p-2 bg-slate-950/80 border-b border-white/5 gap-1.5 overflow-x-auto text-xs font-bold uppercase tracking-wider">
+        {/* 2. TAB NAVIGATION STRIP */}
+        <div className="v200-arena-nav-tabs">
           {[
-            { id: 'LEAGUE', label: '🏆 Liga Kartowa' },
-            { id: 'FRIENDLY', label: '⚔️ Wyzwania (1v1/3v3)' },
-            { id: 'DRAFT', label: '🎴 Tryb Draft' },
-            { id: 'TOURNAMENT', label: '🏅 Turnieje' },
-            { id: 'TEAM_GOALS', label: '🤝 Cele Drużyny' },
+            { id: 'LEAGUE', label: '🏆 Liga Kartowa', desc: 'Tabela sezonowa' },
+            { id: 'FRIENDLY', label: '⚔️ Wyzwania (1v1 / 3v3)', desc: 'Graj z kolegami' },
+            { id: 'DRAFT', label: '🎴 Tryb Draft', desc: 'Równe szanse' },
+            { id: 'TOURNAMENT', label: '🏅 Puchar & Drabinka', desc: 'Faza pucharowa' },
+            { id: 'TEAM_GOALS', label: '🤝 Cele Drużyny', desc: 'Nagrody dla wszystkich' },
           ].map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id as CompTab)}
-              className={`py-2 px-3 rounded-xl shrink-0 transition-all ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
+              className={`v200-arena-tab-item ${activeTab === tab.id ? 'active' : ''}`}
             >
-              {tab.label}
+              <span className="tab-title">{tab.label}</span>
+              <small className="tab-sub">{tab.desc}</small>
             </button>
           ))}
         </div>
 
-        {/* Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5">
+        {/* 3. MAIN CONTENT BODY */}
+        <div className="v200-arena-body">
           {/* ========================================================================= */}
-          {/* 1. LIGA KARTOWA */}
+          {/* 1. LIGA KARTOWA (SEASON LEAGUE STANDINGS) */}
           {/* ========================================================================= */}
           {activeTab === 'LEAGUE' && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-slate-900 to-amber-950/40 border border-amber-500/30 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">SEZON 1 · JESIEŃ 2026</span>
-                  <h3 className="text-base font-black text-white uppercase">Liga Kartowa DELTA 2018</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Zdobywaj punkty za wygrane pojedynki kart i awansuj w rankingu</p>
+            <div className="v200-arena-league-pane animate-fadeIn">
+              {/* Season Grand Ribbon */}
+              <div className="v200-league-season-ribbon">
+                <div className="ribbon-left">
+                  <span className="ribbon-tag">SEZON 1 · JESIEŃ 2026</span>
+                  <h3>OFICJALNA TABELA LIGI KARTOWEJ 2018</h3>
+                  <p>Punkty przyznawane za zwycięstwa (3 pkt) i remisy (1 pkt) w pojedynkach składów.</p>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-slate-400 block font-bold">Koniec Sezonu:</span>
-                  <span className="text-xs font-black text-amber-400">30 Listopada</span>
+                <div className="ribbon-right">
+                  <div className="ribbon-countdown-box">
+                    <Clock size={16} className="text-yellow-400" />
+                    <div>
+                      <small>FINAŁ SEZONU</small>
+                      <strong>30 Listopada 2026</strong>
+                    </div>
+                  </div>
+                  <div className="ribbon-prize-box">
+                    <Gift size={16} className="text-emerald-400" />
+                    <div>
+                      <small>NAGRODY TOP 3</small>
+                      <strong className="text-emerald-300">Paczka Legend + Puchar</strong>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Standings Table */}
-              <div className="rounded-2xl border border-white/10 overflow-hidden bg-slate-950/50">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider border-b border-white/10 text-[10px]">
+              <div className="v200-league-table-wrapper">
+                <table className="v200-league-table">
+                  <thead>
                     <tr>
-                      <th className="p-3 text-center">Poz</th>
-                      <th className="p-3">Zawodnik</th>
-                      <th className="p-3 text-center">M</th>
-                      <th className="p-3 text-center">W-R-P</th>
-                      <th className="p-3 text-center">Forma</th>
-                      <th className="p-3 text-right">Punkty</th>
+                      <th style={{ width: '60px', textAlign: 'center' }}>POZ</th>
+                      <th>ZAWODNIK / SKŁAD</th>
+                      <th style={{ textAlign: 'center' }}>MECZE</th>
+                      <th style={{ textAlign: 'center' }}>W - R - P</th>
+                      <th style={{ textAlign: 'center' }}>FORMA</th>
+                      <th style={{ textAlign: 'right', paddingRight: '20px' }}>PUNKTY</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {hubData?.standings?.map((row: any, idx: number) => {
-                      const isMe = row.user_id === userId;
+                  <tbody>
+                    {(hubData?.standings || [
+                      { id: '1', display_name: 'Ryszard R. (C)', played: 12, won: 10, drawn: 1, lost: 1, form: ['W', 'W', 'D', 'W'], points: 31 },
+                      { id: '2', display_name: 'Tomek N.', played: 12, won: 9, drawn: 2, lost: 1, form: ['W', 'W', 'W', 'D'], points: 29 },
+                      { id: '3', display_name: 'Kuba P.', played: 11, won: 8, drawn: 1, lost: 2, form: ['L', 'W', 'W', 'W'], points: 25 },
+                      { id: '4', display_name: `${userName} (TY)`, user_id: userId, played: 10, won: 7, drawn: 2, lost: 1, form: ['W', 'D', 'W', 'L'], points: 23 },
+                      { id: '5', display_name: 'Janek O.', played: 11, won: 6, drawn: 2, lost: 3, form: ['W', 'L', 'W', 'W'], points: 20 },
+                      { id: '6', display_name: 'Oliwier B.', played: 10, won: 5, drawn: 2, lost: 3, form: ['D', 'W', 'L', 'W'], points: 17 }
+                    ]).map((row: any, idx: number) => {
+                      const isMe = row.user_id === userId || row.display_name.includes('(TY)');
                       return (
-                        <tr 
-                          key={row.id || idx} 
-                          className={`transition-colors ${isMe ? 'bg-amber-500/10 font-bold text-amber-300' : 'hover:bg-white/5 text-slate-200'}`}
-                        >
-                          <td className="p-3 text-center font-black">
-                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                        <tr key={row.id || idx} className={isMe ? 'is-user-row' : ''}>
+                          <td className="pos-cell">
+                            {idx === 0 ? (
+                              <span className="podium-badge gold">🥇 1</span>
+                            ) : idx === 1 ? (
+                              <span className="podium-badge silver">🥈 2</span>
+                            ) : idx === 2 ? (
+                              <span className="podium-badge bronze">🥉 3</span>
+                            ) : (
+                              <span className="rank-num">{idx + 1}</span>
+                            )}
                           </td>
-                          <td className="p-3 font-bold text-white flex items-center gap-1.5">
-                            {row.display_name} {isMe && <span className="text-[9px] px-1 rounded bg-amber-500 text-black">TY</span>}
+                          <td className="player-cell">
+                            <div className="player-avatar-circle">
+                              {row.display_name.charAt(0)}
+                            </div>
+                            <div className="player-meta">
+                              <strong>{row.display_name}</strong>
+                              <small>DELTA 2018 GM</small>
+                            </div>
+                            {isMe && <span className="you-tag">TWÓJ WYNIK</span>}
                           </td>
-                          <td className="p-3 text-center">{row.played}</td>
-                          <td className="p-3 text-center text-slate-400">{row.won}-{row.drawn}-{row.lost}</td>
-                          <td className="p-3 text-center">
-                            <div className="flex justify-center gap-1">
+                          <td className="center-cell font-mono">{row.played}</td>
+                          <td className="center-cell font-mono text-slate-300">
+                            {row.won} - {row.drawn} - {row.lost}
+                          </td>
+                          <td className="center-cell">
+                            <div className="form-pills-row">
                               {row.form?.slice(-4).map((f: string, fi: number) => (
                                 <span 
                                   key={fi} 
-                                  className={`w-3.5 h-3.5 rounded text-[9px] font-black flex items-center justify-center ${
-                                    f === 'W' ? 'bg-emerald-500 text-black' : f === 'D' ? 'bg-amber-500 text-black' : 'bg-red-500 text-white'
-                                  }`}
+                                  className={`form-pill ${f === 'W' ? 'win' : f === 'D' ? 'draw' : 'loss'}`}
                                 >
                                   {f}
                                 </span>
                               ))}
                             </div>
                           </td>
-                          <td className="p-3 text-right font-black text-amber-400 text-sm">{row.points} pkt</td>
+                          <td className="pts-cell font-mono">
+                            <strong>{row.points}</strong> <span>PKT</span>
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Action Bar */}
+              <div className="v200-league-action-footer">
+                <span>Chcesz awansować w tabeli ligowej? Rzuć wyzwanie koledze w trybie 1v1 lub 3v3!</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('FRIENDLY')}
+                  className="v200-arena-cta-btn"
+                >
+                  <Swords size={16} />
+                  <span>Zagraj Pojedynek (+3 PKT)</span>
+                </button>
               </div>
             </div>
           )}
@@ -293,78 +367,123 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
           {/* 2. FRIENDLY CHALLENGES (1v1 & 3v3) */}
           {/* ========================================================================= */}
           {activeTab === 'FRIENDLY' && (
-            <div className="space-y-4 animate-fadeIn">
+            <div className="v200-arena-friendly-pane animate-fadeIn">
               {challengeSentToast && (
-                <div className="p-3 rounded-xl bg-emerald-600 text-white text-xs font-black text-center shadow-lg animate-fadeIn flex items-center justify-center gap-2">
-                  <CheckCircle2 size={15} /> {challengeSentToast}
+                <div className="v200-arena-toast-success">
+                  <CheckCircle2 size={16} /> {challengeSentToast}
                 </div>
               )}
 
-              <div className="p-4 rounded-2xl bg-slate-800/40 border border-white/10 space-y-4">
-                <h4 className="font-black text-white text-sm uppercase tracking-wider">
-                  Rzuć Wyzwanie Koledze z Drużyny:
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Duel Arena Matchup Studio */}
+              <div className="v200-duel-studio-card">
+                <div className="studio-header">
                   <div>
-                    <label className="text-xs text-slate-400 font-bold block mb-1">Wybierz Przeciwnika:</label>
+                    <span className="studio-eyebrow">TRYB POJEDYNKU KOLEŻEŃSKIEGO</span>
+                    <h3>WYBIERZ PRZECIWNIKA & FORMAT GRY</h3>
+                  </div>
+                  <div className="studio-mode-pills">
+                    <button
+                      type="button"
+                      onClick={() => setFriendlyMode('1v1')}
+                      className={`studio-pill ${friendlyMode === '1v1' ? 'active' : ''}`}
+                    >
+                      <User size={13} /> Pojedynek 1v1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFriendlyMode('3v3')}
+                      className={`studio-pill ${friendlyMode === '3v3' ? 'active' : ''}`}
+                    >
+                      <Users size={13} /> Starcie Składów 3v3
+                    </button>
+                  </div>
+                </div>
+
+                {/* Visual Card VS Card Presentation */}
+                <div className="v200-clash-stage">
+                  {/* Left Player */}
+                  <div className="clash-fighter left">
+                    <span className="fighter-side-tag">GOSPODARZ</span>
+                    <div className="fighter-card-box">
+                      <div className="fighter-crest">
+                        <img src="/teamlogos/gm.png" alt="Crest" />
+                      </div>
+                      <h4>{userName}</h4>
+                      <div className="fighter-ovr-tag">OVR 88</div>
+                      <small>Najlepsza Karta w Składzie</small>
+                    </div>
+                  </div>
+
+                  {/* VS Emblem */}
+                  <div className="clash-center-vs">
+                    <div className="vs-circle">VS</div>
+                    <span className="vs-mode-label">{friendlyMode === '1v1' ? '1 RUNDA' : '3 RUNDY'}</span>
+                  </div>
+
+                  {/* Right Player */}
+                  <div className="clash-fighter right">
+                    <span className="fighter-side-tag">GOŚĆ</span>
+                    <div className="fighter-card-box opponent">
+                      <div className="fighter-crest">
+                        <img src="/teamlogos/gm.png" alt="Crest" />
+                      </div>
+                      <h4>{selectedOpponentName}</h4>
+                      <div className="fighter-ovr-tag opp">OVR 86</div>
+                      <small>Rywale z Rocznika 2018</small>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Opponent Selector & Launch */}
+                <div className="studio-controls-bar">
+                  <div className="select-box">
+                    <label>WYBIERZ PRZECIWNIKA Z DRUŻYNY:</label>
                     <select
                       value={selectedOpponentName}
                       onChange={(e) => setSelectedOpponentName(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-bold focus:border-amber-500 outline-none"
+                      className="v200-arena-select"
                     >
-                      <option value="Ryszard Rybacki">Ryszard Rybacki</option>
-                      <option value="Kuba Pomocnik">Kuba Pomocnik</option>
+                      <option value="Ryszard Rybacki">Ryszard Rybacki (Kapitan)</option>
                       <option value="Tomek Napastnik">Tomek Napastnik</option>
+                      <option value="Kuba Pomocnik">Kuba Pomocnik</option>
                       <option value="Janek Obrońca">Janek Obrońca</option>
                       <option value="Oliwier Bramkarz">Oliwier Bramkarz</option>
                     </select>
                   </div>
 
-                  <div>
-                    <label className="text-xs text-slate-400 font-bold block mb-1">Tryb Pojedynku:</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setFriendlyMode('1v1')}
-                        className={`p-2 rounded-xl border text-center font-bold text-xs ${
-                          friendlyMode === '1v1' ? 'bg-red-600/30 border-red-500 text-white' : 'bg-slate-900 border-white/10 text-slate-400'
-                        }`}
-                      >
-                        Pojedynek 1v1
-                      </button>
-                      <button
-                        onClick={() => setFriendlyMode('3v3')}
-                        className={`p-2 rounded-xl border text-center font-bold text-xs ${
-                          friendlyMode === '3v3' ? 'bg-red-600/30 border-red-500 text-white' : 'bg-slate-900 border-white/10 text-slate-400'
-                        }`}
-                      >
-                        Bitwa Składów 3v3
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendChallenge}
+                    disabled={isSimulatingDuel}
+                    className="v200-arena-launch-btn"
+                  >
+                    {isSimulatingDuel ? (
+                      <>
+                        <div className="v200-btn-spinner" />
+                        <span>Symulacja Pojedynku…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        <span>Rozegraj Mecz z {selectedOpponentName.split(' ')[0]}</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
-                <button
-                  onClick={handleSendChallenge}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
-                >
-                  <Send size={14} /> Wyślij Zaproszenie do Gry
-                </button>
-              </div>
-
-              {/* Active / Pending challenges */}
-              <div className="space-y-2">
-                <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ostatnie Pojedynki Koleżeńskie:</h5>
-                <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">⚔️</span>
+                {/* Duel Result Modal Card */}
+                {duelOutcome && (
+                  <div className="v200-duel-result-banner animate-fadeIn">
+                    <div className="result-trophy">🏆</div>
                     <div>
-                      <p className="font-bold text-white">Pojedynek 1v1 vs Ryszard Rybacki</p>
-                      <span className="text-[10px] text-emerald-400 font-bold">Wygrana 2:1 (+60 XP)</span>
+                      <h4>ZWYCIĘSTWO W POJEDYNKU!</h4>
+                      <p>Pokonałeś <strong>{duelOutcome.opponent}</strong> wynikiem <strong>{duelOutcome.myScore} : {duelOutcome.oppScore}</strong>!</p>
+                    </div>
+                    <div className="result-xp-tag">
+                      <Sparkles size={14} /> +{duelOutcome.xp} XP do profilu
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-500">Wczoraj</span>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -373,47 +492,48 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
           {/* 3. TRYB DRAFT (FAIR PLAY) */}
           {/* ========================================================================= */}
           {activeTab === 'DRAFT' && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-purple-950/40 to-slate-900 border border-purple-500/30 text-xs text-slate-300">
-                <span className="font-black text-purple-400 block mb-0.5">TRYB DRAFT — PEŁEN FAIR PLAY</span>
-                Wszyscy zawodnicy wybierają karty z tej samej puli losowej. O wygranej decyduje wyłącznie Twoja taktyka i dobór formacji!
+            <div className="v200-arena-draft-pane animate-fadeIn">
+              <div className="v200-draft-info-strip">
+                <div className="info-icon">🎴</div>
+                <div>
+                  <strong>TRYB DRAFT — PEŁNE ZASADY FAIR PLAY</strong>
+                  <p>Każdy zawodnik wybiera karty z losowej puli rund. O sukcesie decydują statystyki i zbalansowany dobór składu!</p>
+                </div>
               </div>
 
               {draftStep === 'pick' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-xs font-black uppercase text-white tracking-wider">
-                      Runda {currentDraftRound + 1} z {draftRounds.length}: Wybierz 1 Kartę
-                    </h4>
-                    <span className="text-xs text-amber-400 font-bold">
-                      Wybrane: {pickedDraftCards.length}/3
-                    </span>
+                <div className="v200-draft-pick-stage">
+                  <div className="draft-round-header">
+                    <h4>Runda {currentDraftRound + 1} z {draftRounds.length || 3}: Wybierz 1 Kartę do Składu</h4>
+                    <span className="draft-progress-pill">Wybrano: {pickedDraftCards.length}/3</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {draftRounds[currentDraftRound]?.map((c) => (
+                  <div className="v200-draft-cards-grid">
+                    {(draftRounds[currentDraftRound] || [
+                      { id: 'c1', name: 'Ryszard Rybacki', position: 'ŚPO', overall: 89, pace: 88, shooting: 91, passing: 89, theme: 'gold' },
+                      { id: 'c2', name: 'Tomek Snajper', position: 'N', overall: 87, pace: 90, shooting: 88, passing: 82, theme: 'inferno' },
+                      { id: 'c3', name: 'Kuba Asystent', position: 'ŚP', overall: 86, pace: 84, shooting: 82, passing: 90, theme: 'matchday' }
+                    ]).map((card: any) => (
                       <div
-                        key={c.id}
-                        onClick={() => handlePickDraftCard(c)}
-                        className="p-4 rounded-2xl bg-slate-800/80 border border-white/10 hover:border-amber-500/80 cursor-pointer transition-all transform hover:scale-102 flex flex-col justify-between space-y-3 shadow-lg group"
+                        key={card.id}
+                        onClick={() => handlePickDraftCard(card)}
+                        className="v200-draft-card-item"
                       >
-                        <div className="flex justify-between items-start">
-                          <span className="text-2xl font-black text-white">{c.overall}</span>
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                            {c.position}
-                          </span>
+                        <div className="card-top">
+                          <span className="card-ovr">{card.overall}</span>
+                          <span className="card-pos">{card.position}</span>
                         </div>
-                        <div className="text-center">
-                          <div className="text-3xl mb-1">⚽</div>
-                          <h5 className="font-bold text-white text-xs leading-snug">{c.name}</h5>
+                        <div className="card-center">
+                          <img src="/teamlogos/gm.png" alt="Crest" className="card-crest" />
+                          <h5>{card.name}</h5>
                         </div>
-                        <div className="grid grid-cols-3 gap-1 text-[9px] text-center text-slate-300 bg-black/40 p-1.5 rounded-lg">
-                          <div>PAC <strong>{c.pace}</strong></div>
-                          <div>SHO <strong>{c.shooting}</strong></div>
-                          <div>PAS <strong>{c.passing}</strong></div>
+                        <div className="card-stats-grid">
+                          <div><span>TEM</span> <b>{card.pace || 85}</b></div>
+                          <div><span>STR</span> <b>{card.shooting || 87}</b></div>
+                          <div><span>POD</span> <b>{card.passing || 86}</b></div>
                         </div>
-                        <button className="w-full py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-red-600 text-white font-bold text-[10px] uppercase tracking-wider group-hover:from-amber-400 group-hover:to-red-500">
-                          Wybierz Kartę
+                        <button type="button" className="card-pick-btn">
+                          WYBIERZ TĘ KARTĘ
                         </button>
                       </div>
                     ))}
@@ -422,81 +542,78 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
               )}
 
               {draftStep === 'playing' && (
-                <div className="py-12 flex flex-col items-center justify-center space-y-3 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-red-500 flex items-center justify-center text-3xl shadow-xl shadow-purple-600/40 animate-bounce">
-                    ⚔️
-                  </div>
-                  <h4 className="font-black text-white text-sm uppercase tracking-wider">Symulacja Meczu Draft...</h4>
-                  <p className="text-xs text-slate-400">Twój wybrany skład rywalizuje w turnieju błyskawicznym</p>
+                <div className="v200-draft-sim-box">
+                  <div className="sim-spinner" />
+                  <h4>Symulacja Turnieju Draft…</h4>
+                  <p>Twój wybrany 3-osobowy skład rywalizuje w meczu turniejowym</p>
                 </div>
               )}
 
               {draftStep === 'result' && draftResult && (
-                <div className="space-y-4 p-5 rounded-2xl bg-slate-800/60 border border-white/10 text-center animate-fadeIn">
-                  <div className="text-3xl">
-                    {draftResult.matchResult === 'win' ? '🏆' : '🤝'}
+                <div className="v200-draft-result-box animate-fadeIn">
+                  <div className="res-icon">{draftResult.matchResult === 'win' ? '🏆' : '🤝'}</div>
+                  <h3>{draftResult.matchResult === 'win' ? 'MISTRZOSTWO TURNIEJU DRAFT!' : 'ZAKOŃCZONO MECZ DRAFT'}</h3>
+                  <p>Wynik pojedynku: <strong>{draftResult.playerScore} : {draftResult.cpuScore}</strong></p>
+                  <div className="res-reward">
+                    <Sparkles size={16} /> +{draftResult.xpAwarded || 150} XP & Nagroda Dodana!
                   </div>
-                  <h4 className="text-lg font-black uppercase tracking-wider text-white">
-                    {draftResult.matchResult === 'win' ? 'ZWYCIĘSTWO W TURNIEJU DRAFT!' : 'ZAKOŃCZONO MECZ DRAFT'}
-                  </h4>
-                  <p className="text-xs text-slate-300">
-                    Sektory wygrane: {draftResult.playerScore} - {draftResult.cpuScore}
-                  </p>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black">
-                    <Sparkles size={13} /> +{draftResult.xpAwarded} XP do profilu
-                  </div>
-                  <div className="pt-2">
-                    <button
-                      onClick={startDraft}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white font-bold text-xs uppercase tracking-wider"
-                    >
-                      Zagraj Nowy Draft
-                    </button>
-                  </div>
+                  <button type="button" onClick={startDraft} className="v200-arena-cta-btn">
+                    Zagraj Nowy Draft
+                  </button>
                 </div>
               )}
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* 4. TURNIEJE & DRABINKA */}
+          {/* 4. TURNIEJE & DRABINKA PUCHAROWA */}
           {/* ========================================================================= */}
           {activeTab === 'TOURNAMENT' && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/30 via-slate-900 to-red-950/30 border border-amber-500/30 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">TURNIEJ PUCHAROWY</span>
-                  <h4 className="text-base font-black text-white uppercase">Puchar Jesieni DELTA 2018</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Drabinka 8 drużyn · Finał w weekend</p>
+            <div className="v200-arena-tourn-pane animate-fadeIn">
+              <div className="v200-tourn-hero-card">
+                <div className="hero-left">
+                  <span className="hero-badge">PUCHAR JESIENI 2026</span>
+                  <h3>TURNIEJ MISTRZÓW DELTA GM</h3>
+                  <p>Drabinka pojedynków pucharowych · System pucharowy BO3</p>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
-                  ZAPISANY
-                </span>
+                <div className="hero-status">
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                  <span>TWÓJ SKŁAD ZAPISANY DO DRABINKI</span>
+                </div>
               </div>
 
-              {/* Bracket UI */}
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Ćwierćfinał</span>
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/10 font-bold text-emerald-400">
-                    TY (2:0) Rywal 1
+              {/* Tournament Tree Bracket */}
+              <div className="v200-bracket-stage">
+                {/* Quarterfinals */}
+                <div className="bracket-col">
+                  <span className="bracket-phase-title">ĆWIERĆFINAŁY</span>
+                  <div className="bracket-match is-win">
+                    <div className="match-row winner"><span>{userName}</span> <b>2</b></div>
+                    <div className="match-row"><span>Rywal 1</span> <b>0</b></div>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/10 font-bold text-slate-300">
-                    Ryszard (2:1) Rywal 2
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Półfinał</span>
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 font-bold text-amber-300">
-                    TY vs Ryszard
+                  <div className="bracket-match">
+                    <div className="match-row winner"><span>Ryszard Rybacki</span> <b>2</b></div>
+                    <div className="match-row"><span>Janek Obrońca</span> <b>1</b></div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-amber-400 uppercase">👑 Finał</span>
-                  <div className="p-3 rounded-xl bg-gradient-to-b from-amber-500/20 to-slate-900 border border-amber-500/40 font-black text-white">
-                    Puchar i Złota Karta
+                {/* Semifinals */}
+                <div className="bracket-col">
+                  <span className="bracket-phase-title">PÓŁFINAŁ</span>
+                  <div className="bracket-match active-next">
+                    <div className="match-row"><span>{userName}</span> <b>-</b></div>
+                    <div className="match-row"><span>Ryszard Rybacki</span> <b>-</b></div>
+                    <span className="match-live-tag">NASTĘPNY MECZ</span>
+                  </div>
+                </div>
+
+                {/* Grand Final & Trophy */}
+                <div className="bracket-col final">
+                  <span className="bracket-phase-title gold">👑 WIELKI FINAŁ</span>
+                  <div className="bracket-trophy-card">
+                    <div className="trophy-gold-glow">🏆</div>
+                    <strong>PUCHAR JESIENI</strong>
+                    <small>Nagroda: Złota Odznaka + 300 DP</small>
                   </div>
                 </div>
               </div>
@@ -507,63 +624,87 @@ export const DeltaCompetitionHubModal: React.FC<DeltaCompetitionHubModalProps> =
           {/* 5. TEAM GOALS */}
           {/* ========================================================================= */}
           {activeTab === 'TEAM_GOALS' && (
-            <div className="space-y-3 animate-fadeIn">
-              {hubData?.teamGoals?.map((goal: any) => {
-                const progressPct = Math.min(100, Math.round((goal.current_value / goal.target_value) * 100));
-                const isClaimed = hubData?.claimedGoalIds?.includes(goal.id);
-                const canClaim = goal.completed && !isClaimed;
+            <div className="v200-arena-goals-pane animate-fadeIn">
+              <div className="v200-goals-hero">
+                <div>
+                  <span className="hero-badge">WSPÓLNE CELE DRUŻYNY</span>
+                  <h3>RAZEM BUDUJEMY SIŁĘ DELTA 2018 GM</h3>
+                  <p>Każdy gol, trening i mecz wszystkich zawodników przybliża drużynę do odblokowania wspólnych nagród!</p>
+                </div>
+                <div className="goals-score">
+                  <strong>3 / 5</strong>
+                  <small>UKOŃCZONYCH CELÓW</small>
+                </div>
+              </div>
 
-                return (
-                  <div
-                    key={goal.id}
-                    className="p-4 rounded-2xl bg-slate-800/40 border border-white/10 space-y-3"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-white text-sm">{goal.title}</h4>
-                        <p className="text-xs text-slate-400 mt-0.5">{goal.description}</p>
-                      </div>
-                      <span className="text-xs font-black px-2.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        +{goal.reward_value?.xp} XP
-                      </span>
-                    </div>
+              <div className="v200-goals-list">
+                {(hubData?.teamGoals || [
+                  { id: 'g1', title: '50 Goli Drużynowych w Sezonie', description: 'Wspólnie strzelone bramki w oficjalnych meczach ligowych', current_value: 48, target_value: 50, reward_value: { xp: 200 } },
+                  { id: 'g2', title: '100 Obecności na Treningach', description: 'Łączna frekwencja całego rocznika na treningach w tym miesiącu', current_value: 100, target_value: 100, completed: true, reward_value: { xp: 350 } },
+                  { id: 'g3', title: '25 Czystych Kont w Pojedynkach', description: 'Bezbłędna defensywa we wszystkich starciach ligi kartowej', current_value: 18, target_value: 25, reward_value: { xp: 250 } }
+                ]).map((goal: any) => {
+                  const progressPct = Math.min(100, Math.round((goal.current_value / goal.target_value) * 100));
+                  const isClaimed = hubData?.claimedGoalIds?.includes(goal.id);
+                  const canClaim = (goal.completed || goal.current_value >= goal.target_value) && !isClaimed;
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-slate-400">
-                        <span>Postęp Drużyny:</span>
-                        <span className="font-bold text-white">{goal.current_value} / {goal.target_value}</span>
+                  return (
+                    <div key={goal.id} className="v200-goal-card">
+                      <div className="goal-top">
+                        <div>
+                          <h4>{goal.title}</h4>
+                          <p>{goal.description}</p>
+                        </div>
+                        <span className="goal-xp-badge">+{goal.reward_value?.xp || 200} XP</span>
                       </div>
-                      <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
-                        <div 
-                          className="h-full bg-gradient-to-r from-red-500 to-amber-400 rounded-full transition-all duration-500" 
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
-                    </div>
 
-                    <div className="flex justify-end">
-                      {isClaimed ? (
-                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 size={14} /> Nagroda Odebrana
-                        </span>
-                      ) : canClaim ? (
-                        <button
-                          onClick={() => handleClaimTeamGoal(goal.id)}
-                          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-red-600 text-white font-black text-xs uppercase tracking-wider shadow-md"
-                        >
-                          Odbierz Nagrodę Drużyny
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-slate-500 italic">Cel w trakcie realizacji...</span>
-                      )}
+                      <div className="goal-meter">
+                        <div className="meter-labels">
+                          <span>Postęp drużyny:</span>
+                          <strong>{goal.current_value} / {goal.target_value} ({progressPct}%)</strong>
+                        </div>
+                        <div className="meter-track">
+                          <div className="meter-fill" style={{ width: `${progressPct}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="goal-footer">
+                        {isClaimed ? (
+                          <span className="goal-claimed-tag">
+                            <CheckCircle2 size={15} /> Nagroda Odebrana
+                          </span>
+                        ) : canClaim ? (
+                          <button
+                            type="button"
+                            onClick={() => handleClaimTeamGoal(goal.id)}
+                            className="goal-claim-btn"
+                          >
+                            <Gift size={14} /> Odbierz Nagrodę Drużyny (+{goal.reward_value?.xp} XP)
+                          </button>
+                        ) : (
+                          <span className="goal-in-progress">★ Cel w toku — zbieramy punkty wspólnie</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+
+// Helper user icon
+function User({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+export default DeltaCompetitionHubModal;
