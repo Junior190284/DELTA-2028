@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useId } from 'react';
-import { X, Sparkles, Trophy, Flame, ChevronRight, Zap } from 'lucide-react';
+import { X, Sparkles, Trophy, Flame, ChevronRight, RotateCw, Award, CheckCircle2 } from 'lucide-react';
+import { cinematicAudio } from '@/lib/cinematic/audio';
 
 export type AchievementVariant = 'gold' | 'inferno' | 'silver' | 'bronze' | 'epic' | 'legendary';
 
@@ -13,6 +14,8 @@ export interface AchievementUnlockProps {
   badgeIcon?: React.ReactNode;
   variant?: AchievementVariant;
   eyebrow?: string;
+  grantDate?: string;
+  serialNumber?: string;
   effectColors?: {
     primary?: string;
     glow?: string;
@@ -32,6 +35,8 @@ export interface AchievementUnlockProps {
   };
   playerName?: string;
   playerNumber?: string | number;
+  queueIndex?: number;
+  queueTotal?: number;
   onClose: () => void;
   onClaim?: (grantId: string) => Promise<void> | void;
   isDevPreview?: boolean;
@@ -59,17 +64,23 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
   badgeIcon,
   variant = 'gold',
   eyebrow = 'ODBLOKOWANO NOWĄ ODZNAKĘ',
+  grantDate = new Date().toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' }),
+  serialNumber = '#042 / 2018 GM',
   effectColors,
   progress,
   nextGoal,
-  playerName,
-  playerNumber,
+  playerName = 'Ryszard Rybacki',
+  playerNumber = '10',
+  queueIndex,
+  queueTotal,
   onClose,
   onClaim,
   isDevPreview = false
 }) => {
   const [phase, setPhase] = useState<'enter' | 'badge' | 'gleam' | 'particles' | 'content' | 'ready'>('enter');
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [specularPos, setSpecularPos] = useState({ x: 50, y: 50 });
+  const [isFlipped, setIsFlipped] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -85,7 +96,7 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
   const glowColor = effectColors?.glow || (isInferno ? 'rgba(239, 68, 68, 0.5)' : 'rgba(245, 158, 11, 0.45)');
   const accentColor = effectColors?.accent || (isInferno ? '#fca5a5' : '#fde047');
 
-  // Check prefers-reduced-motion on mount
+  // Check prefers-reduced-motion & trigger multi-phase entrance sequence
   useEffect(() => {
     previousActiveElement.current = document.activeElement as HTMLElement;
 
@@ -94,11 +105,32 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
       setIsReducedMotion(true);
       setPhase('ready');
     } else {
-      // Execute multi-phase timed entrance animation (1.5 - 2.0s total)
-      const t1 = setTimeout(() => setPhase('badge'), 150);
-      const t2 = setTimeout(() => setPhase('gleam'), 600);
-      const t3 = setTimeout(() => setPhase('particles'), 850);
+      // 1. Badge Reveal (150ms)
+      const t1 = setTimeout(() => {
+        setPhase('badge');
+        cinematicAudio.playBadgeReveal();
+      }, 150);
+
+      // 2. Metallic Gleam Sweep (600ms)
+      const t2 = setTimeout(() => {
+        setPhase('gleam');
+        cinematicAudio.playBadgeGleam();
+      }, 600);
+
+      // 3. Particle Burst & Mobile Haptic Vibration (850ms)
+      const t3 = setTimeout(() => {
+        setPhase('particles');
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try {
+            navigator.vibrate([12, 35, 18]);
+          } catch (e) {}
+        }
+      }, 850);
+
+      // 4. Content Reveal (1200ms)
       const t4 = setTimeout(() => setPhase('content'), 1200);
+
+      // 5. Resting State (1600ms)
       const t5 = setTimeout(() => setPhase('ready'), 1600);
 
       return () => {
@@ -122,7 +154,6 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
 
-    // Focus primary CTA button once content is visible
     if (phase === 'content' || phase === 'ready') {
       closeBtnRef.current?.focus();
     }
@@ -242,7 +273,7 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
     };
   }, [phase, isReducedMotion, isInferno]);
 
-  // Desktop 3D Parallax Tilt Handler (max ±8 degrees)
+  // Desktop 3D Parallax Tilt Handler (max ±8 degrees + dynamic specular highlight)
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isReducedMotion) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -253,10 +284,21 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
     const rotateY = Math.max(-8, Math.min(8, (x / (rect.width / 2)) * 8));
 
     setTilt({ x: rotateX, y: rotateY });
+    setSpecularPos({
+      x: 50 - (rotateY * 3.5),
+      y: 50 + (rotateX * 3.5)
+    });
   };
 
   const handleMouseLeave = () => {
     setTilt({ x: 0, y: 0 });
+    setSpecularPos({ x: 50, y: 50 });
+  };
+
+  // Toggle 3D Flip
+  const handleToggleFlip = () => {
+    setIsFlipped(prev => !prev);
+    cinematicAudio.playBadgeFlip();
   };
 
   const handleDismiss = () => {
@@ -303,7 +345,15 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
           <X size={20} />
         </button>
 
-        {/* 3D Shield Presentation Area */}
+        {/* Multi-Badge Queue Indicator (e.g. "ODZNAKA 1 Z 2") */}
+        {queueTotal && queueTotal > 1 && (
+          <div className="v200-unlock-queue-tag">
+            <Sparkles size={12} />
+            <span>ODZNAKA {queueIndex || 1} Z {queueTotal}</span>
+          </div>
+        )}
+
+        {/* 3D Shield Presentation Area with Parallax Tilt */}
         <div
           className="v200-unlock-shield-stage"
           onMouseMove={handleMouseMove}
@@ -317,273 +367,363 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
                 : `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`
             }}
           >
-            {/* Metallic Gleam Ray Overlay */}
-            <div className="v200-unlock-gleam-ray">
-              <div className={`v200-unlock-gleam-shimmer ${isGleamActive ? 'active' : ''}`} />
-            </div>
+            {/* 3D Flip Container */}
+            <div
+              className={`v200-unlock-shield-flipper ${isFlipped ? 'is-flipped' : ''}`}
+              onClick={handleToggleFlip}
+              title="Kliknij, aby odwrócić odznakę"
+            >
+              {/* FRONT SIDE OF SHIELD */}
+              <div className="v200-unlock-shield-front">
+                {/* Metallic Gleam Ray Overlay */}
+                <div className="v200-unlock-gleam-ray">
+                  <div className={`v200-unlock-gleam-shimmer ${isGleamActive ? 'active' : ''}`} />
+                </div>
 
-            {/* Render Metallic Badge Graphic */}
-            <div className="v200-unlock-shield-svg-wrap">
-              {badgeImage ? (
-                <img
-                  src={badgeImage}
-                  alt={title}
-                  className="w-full h-full object-contain"
+                {/* Dynamic Specular Sheen Layer (Follows Mouse Cursor) */}
+                <div
+                  className="v200-unlock-specular-sheen"
+                  style={{
+                    background: `radial-gradient(circle 120px at ${specularPos.x}% ${specularPos.y}%, rgba(255, 255, 255, 0.45) 0%, transparent 70%)`
+                  }}
                 />
-              ) : title.toLowerCase().includes('trening') || title.includes('10') ? (
-                /* Variant 1: 10 Treningów (Gold Metallic Shield) */
-                <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="goldRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#fff2a3" />
-                      <stop offset="25%" stopColor="#d99b26" />
-                      <stop offset="50%" stopColor="#ffea79" />
-                      <stop offset="75%" stopColor="#b37814" />
-                      <stop offset="100%" stopColor="#ffe685" />
-                    </linearGradient>
-                    <linearGradient id="goldInnerGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#1a1408" />
-                      <stop offset="45%" stopColor="#0c0a06" />
-                      <stop offset="100%" stopColor="#050402" />
-                    </linearGradient>
-                    <linearGradient id="goldTextGrad" x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#ffffff" />
-                      <stop offset="40%" stopColor="#ffea79" />
-                      <stop offset="100%" stopColor="#d99b26" />
-                    </linearGradient>
-                    <radialGradient id="goldCenterGlow" cx="100" cy="110" r="80" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="rgba(245, 158, 11, 0.35)" />
-                      <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
-                    </radialGradient>
-                    <filter id="goldBevel">
-                      <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
-                    </filter>
-                  </defs>
 
-                  {/* Outer Shield Rim */}
-                  <path
-                    d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
-                    fill="url(#goldRimGrad)"
-                    filter="url(#goldBevel)"
-                  />
-                  {/* Inner Dark Metal Plate */}
-                  <path
-                    d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
-                    fill="url(#goldInnerGrad)"
-                    stroke="rgba(255, 234, 121, 0.4)"
-                    strokeWidth="1.5"
-                  />
-                  {/* Center Glow */}
-                  <circle cx="100" cy="110" r="75" fill="url(#goldCenterGlow)" />
-
-                  {/* Embossed Shield Details */}
-                  <path
-                    d="M100 25 L165 44 C165 130 134 175 100 198 C66 175 35 130 35 44 Z"
-                    fill="none"
-                    stroke="rgba(255, 255, 255, 0.1)"
-                    strokeWidth="1"
-                    strokeDasharray="4 2"
-                  />
-
-                  {/* Top Crown / Laurel Arch */}
-                  <path
-                    d="M75 52 Q100 45 125 52"
-                    stroke="#f59e0b"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                  <polygon points="100,40 104,49 114,49 106,55 109,64 100,58 91,64 94,55 86,49 96,49" fill="#fde047" />
-
-                  {/* Big Embossed "10" Number */}
-                  <text
-                    x="100"
-                    y="132"
-                    textAnchor="middle"
-                    fill="url(#goldTextGrad)"
-                    fontSize="64"
-                    fontWeight="1000"
-                    fontFamily="Inter, Arial, sans-serif"
-                    letterSpacing="-0.03em"
-                    filter="drop-shadow(0 4px 12px rgba(0,0,0,0.9))"
-                  >
-                    10
-                  </text>
-
-                  {/* Bottom Ribbon / Banner: "TRENINGÓW" */}
-                  <rect x="42" y="148" width="116" height="24" rx="6" fill="#1e1406" stroke="url(#goldRimGrad)" strokeWidth="1.5" />
-                  <text
-                    x="100"
-                    y="164"
-                    textAnchor="middle"
-                    fill="#fef08a"
-                    fontSize="11"
-                    fontWeight="900"
-                    letterSpacing="0.12em"
-                  >
-                    TRENINGÓW
-                  </text>
-
-                  {/* Delta GM Stars */}
-                  <circle cx="56" cy="160" r="2" fill="#ffd700" />
-                  <circle cx="144" cy="160" r="2" fill="#ffd700" />
-                </svg>
-              ) : title.toLowerCase().includes('hat') || title.toLowerCase().includes('trick') ? (
-                /* Variant 2: Hat-trick (Platinum / Gold & Onyx Shield) */
-                <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="platRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#ffffff" />
-                      <stop offset="25%" stopColor="#94a3b8" />
-                      <stop offset="50%" stopColor="#f8fafc" />
-                      <stop offset="75%" stopColor="#64748b" />
-                      <stop offset="100%" stopColor="#cbd5e1" />
-                    </linearGradient>
-                    <linearGradient id="onyxInnerGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#1e293b" />
-                      <stop offset="50%" stopColor="#0f172a" />
-                      <stop offset="100%" stopColor="#020617" />
-                    </linearGradient>
-                    <linearGradient id="fireBallGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#fef08a" />
-                      <stop offset="50%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#ef4444" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Outer Shield Rim */}
-                  <path
-                    d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
-                    fill="url(#platRimGrad)"
-                    filter="drop-shadow(0 8px 24px rgba(0,0,0,0.8))"
-                  />
-                  {/* Inner Onyx Plate */}
-                  <path
-                    d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
-                    fill="url(#onyxInnerGrad)"
-                    stroke="rgba(255, 255, 255, 0.3)"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* 3 Golden / Fiery Soccer Balls / Triple Strike Crest */}
-                  <g transform="translate(100, 100)">
-                    {/* Center Top Ball */}
-                    <circle cx="0" cy="-28" r="22" fill="#0f172a" stroke="#f59e0b" strokeWidth="2.5" />
-                    <circle cx="0" cy="-28" r="18" fill="url(#fireBallGrad)" opacity="0.9" />
-                    <text x="0" y="-23" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">⚽</text>
-
-                    {/* Bottom Left Ball */}
-                    <circle cx="-28" cy="16" r="19" fill="#0f172a" stroke="#f59e0b" strokeWidth="2" />
-                    <circle cx="-28" cy="16" r="15" fill="url(#fireBallGrad)" opacity="0.9" />
-                    <text x="-28" y="21" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="900">⚽</text>
-
-                    {/* Bottom Right Ball */}
-                    <circle cx="28" cy="16" r="19" fill="#0f172a" stroke="#f59e0b" strokeWidth="2" />
-                    <circle cx="28" cy="16" r="15" fill="url(#fireBallGrad)" opacity="0.9" />
-                    <text x="28" y="21" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="900">⚽</text>
-                  </g>
-
-                  {/* Banner: "HAT-TRICK" */}
-                  <rect x="36" y="152" width="128" height="26" rx="6" fill="#090d16" stroke="#f59e0b" strokeWidth="1.5" />
-                  <text
-                    x="100"
-                    y="170"
-                    textAnchor="middle"
-                    fill="#ffffff"
-                    fontSize="13"
-                    fontWeight="1000"
-                    letterSpacing="0.1em"
-                  >
-                    HAT-TRICK!
-                  </text>
-                </svg>
-              ) : isInferno || title.toLowerCase().includes('inferno') ? (
-                /* Variant 3: INFERNO (Volcanic Titanium & Burning Ruby Shield) */
-                <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="infernoRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#fca5a5" />
-                      <stop offset="25%" stopColor="#ef4444" />
-                      <stop offset="50%" stopColor="#991b1b" />
-                      <stop offset="75%" stopColor="#450a0a" />
-                      <stop offset="100%" stopColor="#b91c1c" />
-                    </linearGradient>
-                    <linearGradient id="magmaCoreGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#2b0d0d" />
-                      <stop offset="50%" stopColor="#140505" />
-                      <stop offset="100%" stopColor="#050101" />
-                    </linearGradient>
-                    <radialGradient id="infernoFireGlow" cx="100" cy="115" r="75" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="rgba(239, 68, 68, 0.45)" />
-                      <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
-                    </radialGradient>
-                  </defs>
-
-                  {/* Outer Ruby Metal Shield Rim */}
-                  <path
-                    d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
-                    fill="url(#infernoRimGrad)"
-                    filter="drop-shadow(0 8px 26px rgba(239, 68, 68, 0.4))"
-                  />
-                  {/* Inner Charred Titanium Plate */}
-                  <path
-                    d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
-                    fill="url(#magmaCoreGrad)"
-                    stroke="rgba(239, 68, 68, 0.6)"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* Magma Flame Glow */}
-                  <circle cx="100" cy="115" r="70" fill="url(#infernoFireGlow)" />
-
-                  {/* Inferno Devil / Flame Crest */}
-                  <g transform="translate(100, 105) scale(1.15)">
-                    <path
-                      d="M0 -35 C15 -20 30 -5 20 18 C15 28 5 35 0 35 C-5 35 -15 28 -20 18 C-30 -5 -15 -20 0 -35 Z"
-                      fill="#ef4444"
-                      filter="drop-shadow(0 0 10px #f97316)"
+                {/* Render Metallic Badge Graphic */}
+                <div className="v200-unlock-shield-svg-wrap">
+                  {badgeImage ? (
+                    <img
+                      src={badgeImage}
+                      alt={title}
+                      className="w-full h-full object-contain"
                     />
-                    <path
-                      d="M0 -22 C8 -12 18 0 12 15 C8 22 3 25 0 25 C-3 25 -8 22 -12 15 C-18 0 -8 -12 0 -22 Z"
-                      fill="#fef08a"
-                    />
-                  </g>
+                  ) : title.toLowerCase().includes('trening') || title.includes('10') ? (
+                    /* Variant 1: 10 Treningów (Gold Metallic Shield) */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="goldRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#fff2a3" />
+                          <stop offset="25%" stopColor="#d99b26" />
+                          <stop offset="50%" stopColor="#ffea79" />
+                          <stop offset="75%" stopColor="#b37814" />
+                          <stop offset="100%" stopColor="#ffe685" />
+                        </linearGradient>
+                        <linearGradient id="goldInnerGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#1a1408" />
+                          <stop offset="45%" stopColor="#0c0a06" />
+                          <stop offset="100%" stopColor="#050402" />
+                        </linearGradient>
+                        <linearGradient id="goldTextGrad" x1="0" y1="0" x2="0" y2="100" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#ffffff" />
+                          <stop offset="40%" stopColor="#ffea79" />
+                          <stop offset="100%" stopColor="#d99b26" />
+                        </linearGradient>
+                        <radialGradient id="goldCenterGlow" cx="100" cy="110" r="80" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="rgba(245, 158, 11, 0.35)" />
+                          <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                        </radialGradient>
+                        <filter id="goldBevel">
+                          <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
+                        </filter>
+                      </defs>
 
-                  {/* INFERNO Banner */}
-                  <rect x="36" y="152" width="128" height="26" rx="6" fill="#1c0505" stroke="#ef4444" strokeWidth="1.5" />
-                  <text
-                    x="100"
-                    y="170"
-                    textAnchor="middle"
-                    fill="#fca5a5"
-                    fontSize="13"
-                    fontWeight="1000"
-                    letterSpacing="0.14em"
-                  >
-                    INFERNO PRO
-                  </text>
-                </svg>
-              ) : (
-                /* Default Generic Shield */
-                <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
-                    fill="#f59e0b"
-                  />
-                  <path
-                    d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
-                    fill="#0f172a"
-                  />
-                  <g transform="translate(100, 110)">
-                    {badgeIcon || <Trophy size={48} className="text-amber-400 -translate-x-6 -translate-y-6" />}
-                  </g>
-                </svg>
-              )}
+                      {/* Outer Shield Rim */}
+                      <path
+                        d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
+                        fill="url(#goldRimGrad)"
+                        filter="url(#goldBevel)"
+                      />
+                      {/* Inner Dark Metal Plate */}
+                      <path
+                        d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
+                        fill="url(#goldInnerGrad)"
+                        stroke="rgba(255, 234, 121, 0.4)"
+                        strokeWidth="1.5"
+                      />
+                      {/* Center Glow */}
+                      <circle cx="100" cy="110" r="75" fill="url(#goldCenterGlow)" />
+
+                      {/* Embossed Shield Details */}
+                      <path
+                        d="M100 25 L165 44 C165 130 134 175 100 198 C66 175 35 130 35 44 Z"
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.1)"
+                        strokeWidth="1"
+                        strokeDasharray="4 2"
+                      />
+
+                      {/* Top Crown / Laurel Arch */}
+                      <path
+                        d="M75 52 Q100 45 125 52"
+                        stroke="#f59e0b"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      />
+                      <polygon points="100,40 104,49 114,49 106,55 109,64 100,58 91,64 94,55 86,49 96,49" fill="#fde047" />
+
+                      {/* Big Embossed "10" Number */}
+                      <text
+                        x="100"
+                        y="132"
+                        textAnchor="middle"
+                        fill="url(#goldTextGrad)"
+                        fontSize="64"
+                        fontWeight="1000"
+                        fontFamily="Inter, Arial, sans-serif"
+                        letterSpacing="-0.03em"
+                        filter="drop-shadow(0 4px 12px rgba(0,0,0,0.9))"
+                      >
+                        10
+                      </text>
+
+                      {/* Bottom Ribbon / Banner: "TRENINGÓW" */}
+                      <rect x="42" y="148" width="116" height="24" rx="6" fill="#1e1406" stroke="url(#goldRimGrad)" strokeWidth="1.5" />
+                      <text
+                        x="100"
+                        y="164"
+                        textAnchor="middle"
+                        fill="#fef08a"
+                        fontSize="11"
+                        fontWeight="900"
+                        letterSpacing="0.12em"
+                      >
+                        TRENINGÓW
+                      </text>
+
+                      {/* Delta GM Stars */}
+                      <circle cx="56" cy="160" r="2" fill="#ffd700" />
+                      <circle cx="144" cy="160" r="2" fill="#ffd700" />
+                    </svg>
+                  ) : title.toLowerCase().includes('hat') || title.toLowerCase().includes('trick') ? (
+                    /* Variant 2: Hat-trick (Platinum / Gold & Onyx Shield) */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="platRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#ffffff" />
+                          <stop offset="25%" stopColor="#94a3b8" />
+                          <stop offset="50%" stopColor="#f8fafc" />
+                          <stop offset="75%" stopColor="#64748b" />
+                          <stop offset="100%" stopColor="#cbd5e1" />
+                        </linearGradient>
+                        <linearGradient id="onyxInnerGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#1e293b" />
+                          <stop offset="50%" stopColor="#0f172a" />
+                          <stop offset="100%" stopColor="#020617" />
+                        </linearGradient>
+                        <linearGradient id="fireBallGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#fef08a" />
+                          <stop offset="50%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#ef4444" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Outer Shield Rim */}
+                      <path
+                        d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
+                        fill="url(#platRimGrad)"
+                        filter="drop-shadow(0 8px 24px rgba(0,0,0,0.8))"
+                      />
+                      {/* Inner Onyx Plate */}
+                      <path
+                        d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
+                        fill="url(#onyxInnerGrad)"
+                        stroke="rgba(255, 255, 255, 0.3)"
+                        strokeWidth="1.5"
+                      />
+
+                      {/* 3 Golden / Fiery Soccer Balls / Triple Strike Crest */}
+                      <g transform="translate(100, 100)">
+                        {/* Center Top Ball */}
+                        <circle cx="0" cy="-28" r="22" fill="#0f172a" stroke="#f59e0b" strokeWidth="2.5" />
+                        <circle cx="0" cy="-28" r="18" fill="url(#fireBallGrad)" opacity="0.9" />
+                        <text x="0" y="-23" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="900">⚽</text>
+
+                        {/* Bottom Left Ball */}
+                        <circle cx="-28" cy="16" r="19" fill="#0f172a" stroke="#f59e0b" strokeWidth="2" />
+                        <circle cx="-28" cy="16" r="15" fill="url(#fireBallGrad)" opacity="0.9" />
+                        <text x="-28" y="21" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="900">⚽</text>
+
+                        {/* Bottom Right Ball */}
+                        <circle cx="28" cy="16" r="19" fill="#0f172a" stroke="#f59e0b" strokeWidth="2" />
+                        <circle cx="28" cy="16" r="15" fill="url(#fireBallGrad)" opacity="0.9" />
+                        <text x="28" y="21" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="900">⚽</text>
+                      </g>
+
+                      {/* Banner: "HAT-TRICK" */}
+                      <rect x="36" y="152" width="128" height="26" rx="6" fill="#090d16" stroke="#f59e0b" strokeWidth="1.5" />
+                      <text
+                        x="100"
+                        y="170"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="13"
+                        fontWeight="1000"
+                        letterSpacing="0.1em"
+                      >
+                        HAT-TRICK!
+                      </text>
+                    </svg>
+                  ) : isInferno || title.toLowerCase().includes('inferno') ? (
+                    /* Variant 3: INFERNO (Volcanic Titanium & Burning Ruby Shield) */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="infernoRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#fca5a5" />
+                          <stop offset="25%" stopColor="#ef4444" />
+                          <stop offset="50%" stopColor="#991b1b" />
+                          <stop offset="75%" stopColor="#450a0a" />
+                          <stop offset="100%" stopColor="#b91c1c" />
+                        </linearGradient>
+                        <linearGradient id="magmaCoreGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#2b0d0d" />
+                          <stop offset="50%" stopColor="#140505" />
+                          <stop offset="100%" stopColor="#050101" />
+                        </linearGradient>
+                        <radialGradient id="infernoFireGlow" cx="100" cy="115" r="75" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="rgba(239, 68, 68, 0.45)" />
+                          <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                        </radialGradient>
+                      </defs>
+
+                      {/* Outer Ruby Metal Shield Rim */}
+                      <path
+                        d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
+                        fill="url(#infernoRimGrad)"
+                        filter="drop-shadow(0 8px 26px rgba(239, 68, 68, 0.4))"
+                      />
+                      {/* Inner Charred Titanium Plate */}
+                      <path
+                        d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
+                        fill="url(#magmaCoreGrad)"
+                        stroke="rgba(239, 68, 68, 0.6)"
+                        strokeWidth="1.5"
+                      />
+
+                      {/* Magma Flame Glow */}
+                      <circle cx="100" cy="115" r="70" fill="url(#infernoFireGlow)" />
+
+                      {/* Inferno Devil / Flame Crest */}
+                      <g transform="translate(100, 105) scale(1.15)">
+                        <path
+                          d="M0 -35 C15 -20 30 -5 20 18 C15 28 5 35 0 35 C-5 35 -15 28 -20 18 C-30 -5 -15 -20 0 -35 Z"
+                          fill="#ef4444"
+                          filter="drop-shadow(0 0 10px #f97316)"
+                        />
+                        <path
+                          d="M0 -22 C8 -12 18 0 12 15 C8 22 3 25 0 25 C-3 25 -8 22 -12 15 C-18 0 -8 -12 0 -22 Z"
+                          fill="#fef08a"
+                        />
+                      </g>
+
+                      {/* INFERNO Banner */}
+                      <rect x="36" y="152" width="128" height="26" rx="6" fill="#1c0505" stroke="#ef4444" strokeWidth="1.5" />
+                      <text
+                        x="100"
+                        y="170"
+                        textAnchor="middle"
+                        fill="#fca5a5"
+                        fontSize="13"
+                        fontWeight="1000"
+                        letterSpacing="0.14em"
+                      >
+                        INFERNO PRO
+                      </text>
+                    </svg>
+                  ) : (
+                    /* Default Generic Shield */
+                    <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
+                        fill="#f59e0b"
+                      />
+                      <path
+                        d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
+                        fill="#0f172a"
+                      />
+                      <g transform="translate(100, 110)">
+                        {badgeIcon || <Trophy size={48} className="text-amber-400 -translate-x-6 -translate-y-6" />}
+                      </g>
+                    </svg>
+                  )}
+                </div>
+              </div>
+
+              {/* BACK SIDE OF SHIELD (Official Certificate of Authenticity) */}
+              <div className="v200-unlock-shield-back">
+                <div className="v200-unlock-shield-svg-wrap">
+                  <svg viewBox="0 0 200 240" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="backRimGrad" x1="0" y1="0" x2="200" y2="240" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#cbd5e1" />
+                        <stop offset="50%" stopColor="#475569" />
+                        <stop offset="100%" stopColor="#1e293b" />
+                      </linearGradient>
+                      <linearGradient id="backPlateGrad" x1="100" y1="10" x2="100" y2="230" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#0f172a" />
+                        <stop offset="100%" stopColor="#020617" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Outer Rim */}
+                    <path
+                      d="M100 8 L188 32 C188 150 148 205 100 232 C52 205 12 150 12 32 Z"
+                      fill="url(#backRimGrad)"
+                    />
+                    {/* Inner Plate */}
+                    <path
+                      d="M100 18 L176 39 C176 142 140 192 100 218 C60 192 24 142 24 39 Z"
+                      fill="url(#backPlateGrad)"
+                      stroke="rgba(245, 158, 11, 0.4)"
+                      strokeWidth="1.5"
+                    />
+
+                    {/* Verification Header */}
+                    <text x="100" y="52" textAnchor="middle" fill="#94a3b8" fontSize="8.5" fontWeight="900" letterSpacing="0.16em">
+                      K.S. DELTA WARSZAWA
+                    </text>
+                    <text x="100" y="65" textAnchor="middle" fill="#f59e0b" fontSize="10" fontWeight="1000" letterSpacing="0.1em">
+                      OFICJALNY CERTYFIKAT
+                    </text>
+
+                    {/* Serial Number Box */}
+                    <rect x="36" y="80" width="128" height="24" rx="6" fill="#1e293b" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" />
+                    <text x="100" y="95" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="900" letterSpacing="0.08em">
+                      SERIA: {serialNumber}
+                    </text>
+
+                    {/* Player Info */}
+                    <text x="100" y="125" textAnchor="middle" fill="#e2e8f0" fontSize="11" fontWeight="900">
+                      {playerName} #{playerNumber}
+                    </text>
+                    <text x="100" y="140" textAnchor="middle" fill="#94a3b8" fontSize="8.5">
+                      Zdobyto: {grantDate}
+                    </text>
+
+                    {/* Verified Club Stamp */}
+                    <g transform="translate(100, 180)">
+                      <circle cx="0" cy="0" r="22" fill="#0b1329" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="3 2" />
+                      <text x="0" y="-3" textAnchor="middle" fill="#f59e0b" fontSize="7" fontWeight="900">DELTA</text>
+                      <text x="0" y="6" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="800">2018 GM</text>
+                      <text x="0" y="14" textAnchor="middle" fill="#22c55e" fontSize="6" fontWeight="900">✓ VERIFIED</text>
+                    </g>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* 3D Flip Hint Pill */}
+        <button
+          type="button"
+          onClick={handleToggleFlip}
+          className="v200-unlock-flip-hint"
+        >
+          <RotateCw size={11} className={isFlipped ? 'rotate-180 transition-transform' : ''} />
+          <span>{isFlipped ? 'Kliknij, aby zobaczyć przód' : 'Kliknij odznakę, aby zobaczyć certyfikat'}</span>
+        </button>
+
         {/* Content Section: Eyebrow, Title, Description, Progress & Button */}
-        <div className={`w-full flex flex-col items-center ${isContentVisible ? 'v200-animate-text-reveal' : 'opacity-0'}`}>
+        <div className={`w-full flex flex-col items-center mt-3 ${isContentVisible ? 'v200-animate-text-reveal' : 'opacity-0'}`}>
           {/* Eyebrow */}
           <div className="v200-unlock-eyebrow">
             <Sparkles size={13} />
@@ -644,7 +784,7 @@ export const AchievementUnlock: React.FC<AchievementUnlockProps> = ({
             onClick={handleDismiss}
             className="v200-unlock-cta-btn"
           >
-            <span>ODBIERZ ODZNAKĘ</span>
+            <span>{queueTotal && queueIndex && queueIndex < queueTotal ? 'NASTĘPNA ODZNAKA' : 'ODBIERZ ODZNAKĘ'}</span>
             <ChevronRight size={17} />
           </button>
         </div>

@@ -177,6 +177,62 @@ class CinematicAudioEngine {
       });
     } catch (e) {}
   }
+
+  // 6. Subtle Badge Reveal Impact (Soft sub-bass)
+  public playBadgeReveal() {
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain || this.isMuted) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(38, this.ctx.currentTime + 0.45);
+
+      gain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.45);
+    } catch (e) {}
+  }
+
+  // 7. Subtle Metallic Gleam / Shimmer Sweep
+  public playBadgeGleam() {
+    try {
+      this.initContext();
+      if (!this.ctx || !this.masterGain || this.isMuted) return;
+
+      const freqs = [880, 1174.66, 1479.98, 1760];
+      freqs.forEach((f, i) => {
+        if (!this.ctx || !this.masterGain) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, this.ctx.currentTime + i * 0.05);
+
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime + i * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45 + i * 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+
+        osc.start(this.ctx.currentTime + i * 0.05);
+        osc.stop(this.ctx.currentTime + 0.5 + i * 0.05);
+      });
+    } catch (e) {}
+  }
+
+  // 8. Badge 3D Flip
+  public playBadgeFlip() {
+    this.playCardFlip();
+  }
 }
 
 export const cinematicAudio = new CinematicAudioEngine();
