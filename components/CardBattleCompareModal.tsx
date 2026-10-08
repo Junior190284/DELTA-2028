@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { 
   Swords, 
@@ -17,7 +17,13 @@ import {
   Award, 
   Coins, 
   Shield, 
-  CheckCircle2 
+  CheckCircle2,
+  Users,
+  User,
+  Target,
+  Activity,
+  FlameKindling,
+  Timer
 } from "lucide-react";
 import { CardDefinition, UserCard, RARITY_CONFIG } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
@@ -31,6 +37,61 @@ interface CardBattleCompareModalProps {
   onClose: () => void;
   onRewardClaimed?: (points: number) => void;
 }
+
+interface RivalTeamConfig {
+  id: string;
+  name: string;
+  logo: string;
+  ovr: number;
+  players: { name: string; pos: string; ovr: number; pac: number; sho: number; pas: number; dri: number; def: number; phy: number; photo?: string }[];
+}
+
+const RIVAL_TEAMS: RivalTeamConfig[] = [
+  {
+    id: "legia",
+    name: "Legia Warszawa 2018",
+    logo: "/teamlogos/gm.png",
+    ovr: 87,
+    players: [
+      { name: "Maksymilian K.", pos: "NAP", ovr: 88, pac: 89, sho: 87, pas: 80, dri: 88, def: 65, phy: 78 },
+      { name: "Filip W.", pos: "POM", ovr: 86, pac: 82, sho: 79, pas: 89, dri: 84, def: 78, phy: 80 },
+      { name: "Aleksander B.", pos: "OBR", ovr: 85, pac: 80, sho: 60, pas: 75, dri: 74, def: 88, phy: 86 },
+    ]
+  },
+  {
+    id: "escola",
+    name: "Escola Varsovia 2018",
+    logo: "/teamlogos/gm.png",
+    ovr: 86,
+    players: [
+      { name: "Mateusz Z.", pos: "NAP", ovr: 86, pac: 87, sho: 85, pas: 82, dri: 86, def: 60, phy: 74 },
+      { name: "Wiktor N.", pos: "POM", ovr: 87, pac: 84, sho: 81, pas: 88, dri: 86, def: 76, phy: 79 },
+      { name: "Szymon S.", pos: "OBR", ovr: 84, pac: 78, sho: 58, pas: 76, dri: 72, def: 86, phy: 85 },
+    ]
+  },
+  {
+    id: "znicz",
+    name: "Znicz Pruszków 2018",
+    logo: "/teamlogos/gm.png",
+    ovr: 84,
+    players: [
+      { name: "Kacper M.", pos: "NAP", ovr: 84, pac: 85, sho: 83, pas: 76, dri: 82, def: 55, phy: 81 },
+      { name: "Bartosz P.", pos: "POM", ovr: 85, pac: 80, sho: 77, pas: 85, dri: 81, def: 79, phy: 82 },
+      { name: "Jakub K.", pos: "OBR", ovr: 84, pac: 77, sho: 55, pas: 72, dri: 70, def: 87, phy: 87 },
+    ]
+  },
+  {
+    id: "semp",
+    name: "SEMP Ursynów 2018",
+    logo: "/teamlogos/gm.png",
+    ovr: 85,
+    players: [
+      { name: "Antoni G.", pos: "NAP", ovr: 85, pac: 86, sho: 84, pas: 78, dri: 84, def: 58, phy: 76 },
+      { name: "Piotr L.", pos: "POM", ovr: 86, pac: 81, sho: 80, pas: 87, dri: 83, def: 77, phy: 80 },
+      { name: "Marcel D.", pos: "OBR", ovr: 84, pac: 79, sho: 59, pas: 74, dri: 71, def: 85, phy: 84 },
+    ]
+  }
+];
 
 export default function CardBattleCompareModal({
   cards,
@@ -53,152 +114,220 @@ export default function CardBattleCompareModal({
   }, []);
 
   // 1v1 State
-  const [cardA, setCardA] = useState<CardDefinition>(initialCardA || cards[0]);
-  const [cardB, setCardB] = useState<CardDefinition>(initialCardB || cards[1] || cards[0]);
+  const [cardAId, setCardAId] = useState<string>(initialCardA?.id || cards[0]?.id || "");
+  const [cardBId, setCardBId] = useState<string>(initialCardB?.id || cards[1]?.id || cards[0]?.id || "");
 
-  // 3v3 Match State
-  const ownedCardsList = cards.filter(c => userCardsMap.has(c.id));
-  const availableUserCards = ownedCardsList.length >= 3 ? ownedCardsList : cards;
+  const cardA = useMemo(() => cards.find(c => c.id === cardAId) || cards[0], [cards, cardAId]);
+  const cardB = useMemo(() => cards.find(c => c.id === cardBId) || cards[1] || cards[0], [cards, cardBId]);
 
-  const [selectedTeam, setSelectedTeam] = useState<CardDefinition[]>([
-    availableUserCards[0],
-    availableUserCards[1] || availableUserCards[0],
-    availableUserCards[2] || availableUserCards[0]
+  // Available user cards or fallback to system cards
+  const ownedCardsList = useMemo(() => {
+    const owned = cards.filter(c => userCardsMap.has(c.id));
+    return owned.length >= 3 ? owned : cards;
+  }, [cards, userCardsMap]);
+
+  // 3v3 Squad State
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
+  const [teamSquad, setTeamSquad] = useState<CardDefinition[]>([
+    ownedCardsList[0],
+    ownedCardsList[1] || ownedCardsList[0],
+    ownedCardsList[2] || ownedCardsList[0]
   ]);
 
-  const [opponentName, setOpponentName] = useState("Legia Warszawa 2018");
+  // Rival Selection
+  const [selectedRivalIndex, setSelectedRivalIndex] = useState<number>(0);
+  const currentRival = RIVAL_TEAMS[selectedRivalIndex];
+
+  // Match Simulation State
   const [matchRunning, setMatchRunning] = useState(false);
-  const [currentRound, setCurrentRound] = useState(0);
-  const [matchScore, setMatchScore] = useState({ delta: 0, rival: 0 });
-  const [roundLogs, setRoundLogs] = useState<string[]>([]);
+  const [currentRound, setCurrentRound] = useState<0 | 1 | 2 | 3>(0);
+  const [matchScore, setMatchScore] = useState<{ delta: number; rival: number }>({ delta: 0, rival: 0 });
+  const [roundLogs, setRoundLogs] = useState<{ round: number; text: string; win: boolean | null; deltaScore: number; rivalScore: number }[]>([]);
   const [matchWinner, setMatchWinner] = useState<"delta" | "rival" | "draw" | null>(null);
   const [rewardClaimed, setRewardClaimed] = useState(false);
 
   // Helper for computing authentic FIFA stats
   const getCardPower = (c: CardDefinition) => {
-    switch (c?.rarity?.toLowerCase()) {
+    if (!c) return 75;
+    switch (c.rarity?.toLowerCase()) {
       case "inferno": return 95;
-      case "legendary": return 89;
-      case "epic": return 84;
-      case "rare": return 79;
-      default: return 74;
+      case "legendary": return 90;
+      case "epic": return 85;
+      case "rare": return 80;
+      default: return 75;
     }
   };
 
   const getStats = (c: CardDefinition) => {
-    const isInferno = c?.rarity === "inferno";
-    const isLegend = c?.rarity === "legendary";
-    const isEpic = c?.rarity === "epic";
+    if (!c) {
+      return {
+        ovr: 75,
+        pac: 75,
+        sho: 72,
+        pas: 74,
+        dri: 75,
+        def: 70,
+        phy: 73,
+        goals: 4,
+        matches: 10
+      };
+    }
+    const isInferno = c.rarity === "inferno";
+    const isLegend = c.rarity === "legendary";
+    const isEpic = c.rarity === "epic";
     const ovr = getCardPower(c);
+    
+    // Hash based variability so different players feel unique
+    const hash = (c.player?.display_name || c.card_name || "DELTA").split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    const bonusPac = (hash % 5) - 2;
+    const bonusSho = ((hash * 3) % 5) - 2;
+    const bonusPas = ((hash * 7) % 5) - 2;
+
     return {
       ovr,
-      pac: ovr - (isInferno ? 1 : isLegend ? 3 : 5),
-      sho: isInferno ? 94 : isLegend ? 87 : isEpic ? 81 : 73,
-      pas: isInferno ? 92 : isLegend ? 86 : isEpic ? 80 : 75,
-      dri: isInferno ? 95 : isLegend ? 88 : isEpic ? 82 : 76,
-      def: isInferno ? 88 : isLegend ? 83 : isEpic ? 78 : 72,
-      phy: isInferno ? 91 : isLegend ? 85 : isEpic ? 80 : 74,
-      goals: isInferno ? 18 : isLegend ? 12 : isEpic ? 7 : 3,
-      matches: isInferno ? 22 : isLegend ? 18 : isEpic ? 14 : 9
+      pac: Math.min(99, Math.max(60, ovr - (isInferno ? 1 : isLegend ? 3 : 5) + bonusPac)),
+      sho: Math.min(99, Math.max(60, (isInferno ? 94 : isLegend ? 87 : isEpic ? 81 : 73) + bonusSho)),
+      pas: Math.min(99, Math.max(60, (isInferno ? 92 : isLegend ? 86 : isEpic ? 80 : 75) + bonusPas)),
+      dri: Math.min(99, Math.max(60, (isInferno ? 95 : isLegend ? 88 : isEpic ? 82 : 76) + (hash % 3))),
+      def: Math.min(99, Math.max(60, (isInferno ? 88 : isLegend ? 83 : isEpic ? 78 : 72) - bonusSho)),
+      phy: Math.min(99, Math.max(60, (isInferno ? 91 : isLegend ? 85 : isEpic ? 80 : 74) + (hash % 4))),
+      goals: isInferno ? 24 : isLegend ? 16 : isEpic ? 9 : 4,
+      matches: isInferno ? 28 : isLegend ? 22 : isEpic ? 16 : 10
     };
   };
 
-  const statsA = getStats(cardA);
-  const statsB = getStats(cardB);
+  const statsA = useMemo(() => getStats(cardA), [cardA]);
+  const statsB = useMemo(() => getStats(cardB), [cardB]);
 
-  // Determine 1v1 winner
-  let winsA = 0;
-  let winsB = 0;
-  if (statsA.ovr > statsB.ovr) winsA++; else if (statsB.ovr > statsA.ovr) winsB++;
-  if (statsA.pac > statsB.pac) winsA++; else if (statsB.pac > statsA.pac) winsB++;
-  if (statsA.sho > statsB.sho) winsA++; else if (statsB.sho > statsA.sho) winsB++;
-  if (statsA.pas > statsB.pas) winsA++; else if (statsB.pas > statsA.pas) winsB++;
-  if (statsA.dri > statsB.dri) winsA++; else if (statsB.dri > statsA.dri) winsB++;
-  if (statsA.def > statsB.def) winsA++; else if (statsB.def > statsA.def) winsB++;
-  if (statsA.phy > statsB.phy) winsA++; else if (statsB.phy > statsA.phy) winsB++;
+  // 1v1 Comparison calculations
+  const comparisonList = useMemo(() => {
+    return [
+      { key: "ovr", label: "OCENA OGÓLNA (OVR)", valA: statsA.ovr, valB: statsB.ovr, color: "gold" },
+      { key: "pac", label: "PAC · TEMPO & SZYBKOŚĆ", valA: statsA.pac, valB: statsB.pac, color: "cyan" },
+      { key: "sho", label: "SHO · STRZAŁY & WYKOŃCZENIE", valA: statsA.sho, valB: statsB.sho, color: "gold" },
+      { key: "pas", label: "PAS · PODANIA & ROZEGRANIE", valA: statsA.pas, valB: statsB.pas, color: "emerald" },
+      { key: "dri", label: "DRI · DRYBLING & ZWINNOŚĆ", valA: statsA.dri, valB: statsB.dri, color: "purple" },
+      { key: "def", label: "DEF · OBRONA & INTERWENCJE", valA: statsA.def, valB: statsB.def, color: "blue" },
+      { key: "phy", label: "PHY · FIZYCZNOŚĆ & WALECZNOŚĆ", valA: statsA.phy, valB: statsB.phy, color: "red" },
+      { key: "goals", label: "GOLE W SEZONIE", valA: statsA.goals, valB: statsB.goals, color: "amber" },
+      { key: "matches", label: "MECZE ROZEGRANE", valA: statsA.matches, valB: statsB.matches, color: "slate" },
+    ];
+  }, [statsA, statsB]);
 
-  // Opponent Squad for 3v3
-  const rivalCards = [
-    cards.find(c => c.rarity === "epic") || cards[0],
-    cards.find(c => c.rarity === "rare") || cards[1] || cards[0],
-    cards.find(c => c.rarity === "legendary") || cards[2] || cards[0]
-  ];
+  const winsA = comparisonList.filter(c => c.valA > c.valB).length;
+  const winsB = comparisonList.filter(c => c.valB > c.valA).length;
+
+  // Handle card slot swap in 3v3
+  const handleAssignCardToSlot = (slotIdx: number, newCard: CardDefinition) => {
+    setTeamSquad(prev => {
+      const next = [...prev];
+      next[slotIdx] = newCard;
+      return next;
+    });
+    setSelectedSlotIndex(null);
+    cardSound.playHaptic("light");
+  };
 
   // Start 3v3 Match Simulation
   const handleStart3v3Match = () => {
     setMatchRunning(true);
     setCurrentRound(1);
     setMatchScore({ delta: 0, rival: 0 });
-    setRoundLogs(["⚡ Sędzia rozpoczyna mecz w EA FC Arenie DELTA 2018!"]);
+    setRoundLogs([
+      {
+        round: 0,
+        text: `⚡ Sędzia rozpoczyna hitowe starcie: DELTA 2018 vs ${currentRival.name}!`,
+        win: null,
+        deltaScore: 0,
+        rivalScore: 0
+      }
+    ]);
     setMatchWinner(null);
     setRewardClaimed(false);
     cardSound.playPackTear();
     cardSound.playHaptic("medium");
 
-    // Round 1: Pace & Dribble
+    // ROUND 1: Szybkość & Rajd Skrzydłem (Atak vs Obrona)
     setTimeout(() => {
-      const p1 = getStats(selectedTeam[0]);
-      const r1 = getStats(rivalCards[0]);
-      const scoreDelta = p1.pac + p1.dri;
-      const scoreRival = r1.pac + r1.dri;
-      const round1Win = scoreDelta > scoreRival || (scoreDelta === scoreRival && Math.random() >= 0.5);
+      const p1 = getStats(teamSquad[0]);
+      const r1 = currentRival.players[0];
+      const deltaPower1 = p1.pac + p1.dri + Math.floor(Math.random() * 8);
+      const rivalPower1 = r1.pac + r1.dri + Math.floor(Math.random() * 8);
+      const r1Won = deltaPower1 >= rivalPower1;
 
       setMatchScore(prev => ({
-        delta: prev.delta + (round1Win ? 1 : 0),
-        rival: prev.rival + (!round1Win ? 1 : 0)
+        delta: prev.delta + (r1Won ? 1 : 0),
+        rival: prev.rival + (!r1Won ? 1 : 0)
       }));
 
       setRoundLogs(prev => [
         ...prev,
-        round1Win
-          ? `⚽ RUNDA 1 (Szybkość & Drybling): GOL DLA DELTA! ${selectedTeam[0].player?.display_name || "Zawodnik"} mija obronę (${scoreDelta} vs ${scoreRival})!`
-          : `⚽ RUNDA 1 (Szybkość & Drybling): Rywal trafia po kontrze (${scoreRival} vs ${scoreDelta})!`
+        {
+          round: 1,
+          text: r1Won
+            ? `⚽ RUNDA 1 (Tempo & Rajd): GOL DLA DELTA! ${teamSquad[0].player?.display_name || teamSquad[0].card_name} urywa się obrońcy (${deltaPower1} vs ${rivalPower1})!`
+            : `⚽ RUNDA 1 (Tempo & Rajd): Rywal ${r1.name} wykorzystuje kontrę (${rivalPower1} vs ${deltaPower1})!`,
+          win: r1Won,
+          deltaScore: deltaPower1,
+          rivalScore: rivalPower1
+        }
       ]);
       setCurrentRound(2);
       cardSound.playTeaserHit(1);
-      cardSound.playHaptic(round1Win ? "heavy" : "medium");
+      cardSound.playHaptic(r1Won ? "heavy" : "medium");
 
-      // Round 2: Tactics & Passing
+      // ROUND 2: Środek Pola & Rozegranie (Pomoc vs Pomoc)
       setTimeout(() => {
-        const p2 = getStats(selectedTeam[1]);
-        const r2 = getStats(rivalCards[1]);
-        const scoreDelta2 = p2.pas + p2.def;
-        const scoreRival2 = r2.pas + r2.def;
-        const round2Win = scoreDelta2 > scoreRival2 || (scoreDelta2 === scoreRival2 && Math.random() >= 0.5);
+        const p2 = getStats(teamSquad[1]);
+        const r2 = currentRival.players[1];
+        const deltaPower2 = p2.pas + p2.def + Math.floor(Math.random() * 8);
+        const rivalPower2 = r2.pas + r2.def + Math.floor(Math.random() * 8);
+        const r2Won = deltaPower2 >= rivalPower2;
 
         setMatchScore(prev => ({
-          delta: prev.delta + (round2Win ? 1 : 0),
-          rival: prev.rival + (!round2Win ? 1 : 0)
+          delta: prev.delta + (r2Won ? 1 : 0),
+          rival: prev.rival + (!r2Won ? 1 : 0)
         }));
 
         setRoundLogs(prev => [
           ...prev,
-          round2Win
-            ? `🎯 RUNDA 2 (Rozegranie & Obrona): Wspaniała asysta i GOL DELTA (${scoreDelta2} vs ${scoreRival2})!`
-            : `🎯 RUNDA 2 (Rozegranie & Obrona): Rywal przejmuje piłkę i strzela (${scoreRival2} vs ${scoreDelta2})!`
+          {
+            round: 2,
+            text: r2Won
+              ? `🎯 RUNDA 2 (Rozegranie & Kontrola): Precyzyjny prostopadły pas ${teamSquad[1].player?.display_name || "Pomocnika"} i GOL! (${deltaPower2} vs ${rivalPower2})!`
+              : `🎯 RUNDA 2 (Rozegranie & Kontrola): ${r2.name} dominuje środek boiska i trafia do siatki (${rivalPower2} vs ${deltaPower2})!`,
+            win: r2Won,
+            deltaScore: deltaPower2,
+            rivalScore: rivalPower2
+          }
         ]);
         setCurrentRound(3);
         cardSound.playTeaserHit(2);
-        cardSound.playHaptic(round2Win ? "heavy" : "medium");
+        cardSound.playHaptic(r2Won ? "heavy" : "medium");
 
-        // Round 3: Shot & Physical Clash
+        // ROUND 3: Wykończenie & Strzały (Decydujące Starcie)
         setTimeout(() => {
-          const p3 = getStats(selectedTeam[2]);
-          const r3 = getStats(rivalCards[2]);
-          const scoreDelta3 = p3.sho + p3.phy;
-          const scoreRival3 = r3.sho + r3.phy;
-          const round3Win = scoreDelta3 > scoreRival3 || (scoreDelta3 === scoreRival3 && Math.random() >= 0.5);
+          const p3 = getStats(teamSquad[2]);
+          const r3 = currentRival.players[2];
+          const deltaPower3 = p3.sho + p3.phy + Math.floor(Math.random() * 8);
+          const rivalPower3 = r3.def + r3.phy + Math.floor(Math.random() * 8);
+          const r3Won = deltaPower3 >= rivalPower3;
 
-          const finalDelta = (round1Win ? 1 : 0) + (round2Win ? 1 : 0) + (round3Win ? 1 : 0);
-          const finalRival = (!round1Win ? 1 : 0) + (!round2Win ? 1 : 0) + (!round3Win ? 1 : 0);
+          const finalDelta = (r1Won ? 1 : 0) + (r2Won ? 1 : 0) + (r3Won ? 1 : 0);
+          const finalRival = (!r1Won ? 1 : 0) + (!r2Won ? 1 : 0) + (!r3Won ? 1 : 0);
 
           setMatchScore({ delta: finalDelta, rival: finalRival });
           setRoundLogs(prev => [
             ...prev,
-            round3Win
-              ? `🔥 RUNDA 3 (Strzały & Siła): Potężny wolej w okienko dla DELTA (${scoreDelta3} vs ${scoreRival3})!`
-              : `🔥 RUNDA 3 (Strzały & Siła): Rywal odpowiada mocnym uderzeniem (${scoreRival3} vs ${scoreDelta3})!`,
-            `🏁 KONIEC SPOTKANIA! Wynik: DELTA ${finalDelta} - ${finalRival} ${opponentName}`
+            {
+              round: 3,
+              text: r3Won
+                ? `🔥 RUNDA 3 (Strzały & Finał): Bomba w samo okienko dla DELTY (${deltaPower3} vs ${rivalPower3})!`
+                : `🔥 RUNDA 3 (Strzały & Finał): ${r3.name} blokuje uderzenie i wyprowadza zwycięski cios (${rivalPower3} vs ${deltaPower3})!`,
+              win: r3Won,
+              deltaScore: deltaPower3,
+              rivalScore: rivalPower3
+            }
           ]);
 
           const winner = finalDelta > finalRival ? "delta" : finalDelta < finalRival ? "rival" : "draw";
@@ -212,9 +341,9 @@ export default function CardBattleCompareModal({
             cardSound.playFlip();
             cardSound.playHaptic("medium");
           }
-        }, 1400);
-      }, 1400);
-    }, 1400);
+        }, 1300);
+      }, 1300);
+    }, 1300);
   };
 
   if (!mounted || typeof document === "undefined") {
@@ -223,420 +352,539 @@ export default function CardBattleCompareModal({
 
   const modalContent = (
     <div 
-      className="v200-battle-backdrop" 
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100dvh",
-        zIndex: 9999999,
-        background: "#030508",
-        overflow: "hidden",
-        isolation: "isolate"
-      }}
+      className="v200-battle-overlay" 
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
-      <div className="v200-battle-modal" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-battle-header">
-          <div className="v200-battle-badge">
-            <Swords size={16} className="text-yellow-400" />
-            <span>DELTA EA FC BATTLE ARENA</span>
-          </div>
-          <h2>POJEDYNKI KART & MINI-MECZE 3D</h2>
-          <p>Porównuj atrybuty kart lub wystaw swój 3-osobowy skład do dynamicznej symulacji meczowej!</p>
-
-          <button 
-            type="button" 
-            onClick={onClose}
-            className="v200-battle-close-btn"
-            aria-label="Zamknij"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Mode Switcher */}
-        <div className="v200-battle-modes-row">
-          <button
-            type="button"
-            onClick={() => setBattleMode("1v1")}
-            className={`v200-battle-mode-tab ${battleMode === "1v1" ? "active" : ""}`}
-          >
-            <Swords size={15} />
-            <span>POJEDYNEK 1v1 (STATYSTYKI)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setBattleMode("match3v3")}
-            className={`v200-battle-mode-tab ${battleMode === "match3v3" ? "active" : ""}`}
-          >
-            <Trophy size={15} />
-            <span>MINI-MECZ 3v3 (DELTA ARENA)</span>
-          </button>
-        </div>
-
-        {/* ================= MODE 1: 1v1 STATS CLASH ================= */}
-        {battleMode === "1v1" && (
-          <div className="v200-battle-1v1-content">
-            {/* DUAL CARDS 3D ARENA */}
-            <div className="v200-battle-arena">
-              {/* CARD A */}
-              <div className="v200-battle-card-col">
-                <div className="v200-battle-selector-wrap">
-                  <select
-                    value={cardA?.id}
-                    onChange={e => {
-                      const target = cards.find(c => c.id === e.target.value);
-                      if (target) setCardA(target);
-                    }}
-                    className="v200-battle-select"
-                  >
-                    {cards.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.player?.display_name || c.card_name} ({c.rarity.toUpperCase()})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="v200-battle-winner-slot">
-                  {winsA > winsB ? (
-                    <div className="v200-winner-crown-badge animate-bounce">
-                      <Crown size={14} /> ZWYCIĘZCA POJEDYNKU
-                    </div>
-                  ) : (
-                    <div className="v200-winner-crown-placeholder" />
-                  )}
-                </div>
-
-                <div className="v200-battle-card-stage">
-                  <CollectibleCard3D
-                    card={cardA}
-                    userCard={userCardsMap.get(cardA.id) || null}
-                    isLocked={false}
-                    size="md"
-                    interactive={true}
-                    showFlip={true}
-                  />
-                </div>
-              </div>
-
-              {/* VS FLAME BADGE */}
-              <div className="v200-battle-vs-badge">
-                <Flame size={24} className="text-red-500 animate-pulse" />
-                <span>VS</span>
-              </div>
-
-              {/* CARD B */}
-              <div className="v200-battle-card-col">
-                <div className="v200-battle-selector-wrap">
-                  <select
-                    value={cardB?.id}
-                    onChange={e => {
-                      const target = cards.find(c => c.id === e.target.value);
-                      if (target) setCardB(target);
-                    }}
-                    className="v200-battle-select"
-                  >
-                    {cards.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.player?.display_name || c.card_name} ({c.rarity.toUpperCase()})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="v200-battle-winner-slot">
-                  {winsB > winsA ? (
-                    <div className="v200-winner-crown-badge animate-bounce">
-                      <Crown size={14} /> ZWYCIĘZCA POJEDYNKU
-                    </div>
-                  ) : (
-                    <div className="v200-winner-crown-placeholder" />
-                  )}
-                </div>
-
-                <div className="v200-battle-card-stage">
-                  <CollectibleCard3D
-                    card={cardB}
-                    userCard={userCardsMap.get(cardB.id) || null}
-                    isLocked={false}
-                    size="md"
-                    interactive={true}
-                    showFlip={true}
-                  />
-                </div>
-              </div>
+      <div 
+        className="v200-battle-sheet" 
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ================= MODAL HEADER ================= */}
+        <div className="v200-battle-top-nav">
+          <div className="nav-left">
+            <div className="v200-battle-crest-glow">
+              <Swords size={22} className="text-yellow-400" />
             </div>
-
-            {/* ATTRIBUTES MATRIX */}
-            <div className="v200-battle-metrics-table">
-              {/* OVR */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.ovr >= statsB.ovr ? "win" : ""}`}>
-                  {statsA.ovr} {statsA.ovr > statsB.ovr && <Crown size={12} className="inline ml-1" />}
-                </span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">OCENA OGÓLNA (OVR)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left" style={{ width: `${(statsA.ovr / 99) * 100}%` }} />
-                    <div className="bar-right" style={{ width: `${(statsB.ovr / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.ovr >= statsA.ovr ? "win" : ""}`}>
-                  {statsB.ovr} {statsB.ovr > statsA.ovr && <Crown size={12} className="inline ml-1" />}
-                </span>
+            <div>
+              <div className="v200-arena-eyebrow">
+                <Sparkles size={12} className="text-yellow-400 inline mr-1" />
+                DELTA BATTLE ARENA · EA FC BROADCAST
               </div>
-
-              {/* PACE */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.pac >= statsB.pac ? "win" : ""}`}>{statsA.pac}</span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">PAC (TEMPO & SZYBKOŚĆ)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left cyan" style={{ width: `${(statsA.pac / 99) * 100}%` }} />
-                    <div className="bar-right cyan" style={{ width: `${(statsB.pac / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.pac >= statsA.pac ? "win" : ""}`}>{statsB.pac}</span>
-              </div>
-
-              {/* SHOOTING */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.sho >= statsB.sho ? "win" : ""}`}>{statsA.sho}</span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">SHO (STRZAŁY & WYKOŃCZENIE)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left gold" style={{ width: `${(statsA.sho / 99) * 100}%` }} />
-                    <div className="bar-right gold" style={{ width: `${(statsB.sho / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.sho >= statsA.sho ? "win" : ""}`}>{statsB.sho}</span>
-              </div>
-
-              {/* PASSING */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.pas >= statsB.pas ? "win" : ""}`}>{statsA.pas}</span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">PAS (PODANIA & ROZEGRANIE)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left" style={{ width: `${(statsA.pas / 99) * 100}%` }} />
-                    <div className="bar-right" style={{ width: `${(statsB.pas / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.pas >= statsA.pas ? "win" : ""}`}>{statsB.pas}</span>
-              </div>
-
-              {/* DRIBBLE */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.dri >= statsB.dri ? "win" : ""}`}>{statsA.dri}</span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">DRI (DRYBLING & ZWINNOŚĆ)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left emerald" style={{ width: `${(statsA.dri / 99) * 100}%` }} />
-                    <div className="bar-right emerald" style={{ width: `${(statsB.dri / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.dri >= statsA.dri ? "win" : ""}`}>{statsB.dri}</span>
-              </div>
-
-              {/* DEFENSE */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.def >= statsB.def ? "win" : ""}`}>{statsA.def}</span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">DEF (OBRONA & ODBIORY)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left slate" style={{ width: `${(statsA.def / 99) * 100}%` }} />
-                    <div className="bar-right slate" style={{ width: `${(statsB.def / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.def >= statsA.def ? "win" : ""}`}>{statsB.def}</span>
-              </div>
-
-              {/* PHYSICAL */}
-              <div className="v200-metric-row">
-                <span className={`v200-metric-val left ${statsA.phy >= statsB.phy ? "win" : ""}`}>{statsA.phy}</span>
-                <div className="v200-metric-center">
-                  <span className="v200-metric-label">PHY (FIZYCZNOŚĆ & WALECZNOŚĆ)</span>
-                  <div className="v200-metric-bar-dual">
-                    <div className="bar-left red" style={{ width: `${(statsA.phy / 99) * 100}%` }} />
-                    <div className="bar-right red" style={{ width: `${(statsB.phy / 99) * 100}%` }} />
-                  </div>
-                </div>
-                <span className={`v200-metric-val right ${statsB.phy >= statsA.phy ? "win" : ""}`}>{statsB.phy}</span>
-              </div>
+              <h2 className="v200-arena-sheet-title">POJEDYNKI KART & MINI-MECZE 3v3</h2>
             </div>
           </div>
-        )}
 
-        {/* ================= MODE 2: 3v3 MINI-MECZ ARENA ================= */}
-        {battleMode === "match3v3" && (
-          <div className="v200-battle-3v3-content">
-            {/* Scoreboard */}
-            <div className="v200-scoreboard-card">
-              <div className="v200-score-team left">
-                <img src="/teamlogos/gm.png" alt="DELTA" className="w-9 h-9 object-contain" />
-                <div>
-                  <span className="text-xs text-yellow-400 font-bold uppercase block">TWOJA DRUŻYNA</span>
-                  <h4 className="text-base font-extrabold text-white">DELTA 2018 GM</h4>
-                </div>
-              </div>
-
-              <div className="v200-score-board">
-                <span className="text-3xl font-black text-white">{matchScore.delta}</span>
-                <span className="text-xl font-bold text-slate-500">:</span>
-                <span className="text-3xl font-black text-white">{matchScore.rival}</span>
-              </div>
-
-              <div className="v200-score-team right">
-                <div className="text-right">
-                  <span className="text-xs text-red-400 font-bold uppercase block">PRZECIWNIK</span>
-                  <h4 className="text-base font-extrabold text-white">{opponentName}</h4>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-black text-slate-300">
-                  ⚔️
-                </div>
-              </div>
+          <div className="nav-right">
+            {/* Mode Switcher Tabs */}
+            <div className="v200-arena-mode-tabs">
+              <button
+                type="button"
+                onClick={() => setBattleMode("1v1")}
+                className={`v200-arena-mode-btn ${battleMode === "1v1" ? "active" : ""}`}
+              >
+                <User size={15} />
+                <span>POJEDYNEK 1v1</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBattleMode("match3v3")}
+                className={`v200-arena-mode-btn ${battleMode === "match3v3" ? "active" : ""}`}
+              >
+                <Users size={15} />
+                <span>MINI-MECZ 3v3</span>
+              </button>
             </div>
 
-            {/* Lineup Selection & Versus Stage */}
-            <div className="v200-lineup-match-grid">
-              {/* Delta 3 Cards */}
-              <div className="v200-lineup-col">
-                <h5 className="text-xs font-bold text-yellow-400 uppercase mb-2 flex items-center gap-1">
-                  <Shield size={13} /> TWÓJ SKŁAD (3 KARTY)
-                </h5>
-                <div className="v200-lineup-cards-row">
-                  {selectedTeam.map((c, idx) => (
-                    <div key={idx} className="v200-lineup-card-slot">
-                      <CollectibleCard3D
-                        card={c}
-                        userCard={userCardsMap.get(c.id) || null}
-                        isLocked={false}
-                        size="xs"
-                        interactive={false}
-                        showFlip={false}
-                      />
-                    </div>
-                  ))}
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="v200-arena-close-circle"
+              aria-label="Zamknij"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* ================= MODAL BODY ================= */}
+        <div className="v200-battle-scrollable-body">
+          {/* ========================================================================= */}
+          {/* 1. MODE: 1v1 CARD STATS COMPARISON */}
+          {/* ========================================================================= */}
+          {battleMode === "1v1" && (
+            <div className="v200-1v1-pane animate-fadeIn">
+              {/* Head-to-Head Clash Stage */}
+              <div className="v200-1v1-stage-card">
+                {/* Fighter A (Left) */}
+                <div className="v200-fighter-column left">
+                  <div className="fighter-selector-tray">
+                    <label>WYBIERZ KARTĘ A (LEWA):</label>
+                    <select
+                      value={cardAId}
+                      onChange={e => setCardAId(e.target.value)}
+                      className="v200-battle-select-field"
+                    >
+                      {cards.map(c => (
+                        <option key={`a_${c.id}`} value={c.id}>
+                          {c.player?.display_name || c.card_name} ({c.rarity?.toUpperCase()}) · OVR {getCardPower(c)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="fighter-crown-indicator">
+                    {winsA > winsB ? (
+                      <span className="crown-badge gold animate-bounce">
+                        <Crown size={14} /> DOMINUJE ({winsA} / {comparisonList.length})
+                      </span>
+                    ) : (
+                      <span className="crown-badge neutral">{winsA} pkt</span>
+                    )}
+                  </div>
+
+                  <div className="fighter-3d-card-wrapper">
+                    <CollectibleCard3D
+                      card={cardA}
+                      userCard={userCardsMap.get(cardA.id) || null}
+                      isLocked={false}
+                      size="md"
+                      interactive={true}
+                      showFlip={true}
+                    />
+                  </div>
+                </div>
+
+                {/* Center VS Emblem */}
+                <div className="v200-vs-center-column">
+                  <div className="vs-blast-ring">
+                    <Flame size={28} className="text-red-500 animate-pulse" />
+                    <span className="vs-text">VS</span>
+                  </div>
+                  <div className="vs-tagline">STARCIE ATRYBUTÓW</div>
+                  <div className="vs-score-indicator">
+                    <span className={`score-digit ${winsA > winsB ? 'lead' : ''}`}>{winsA}</span>
+                    <span className="colon">:</span>
+                    <span className={`score-digit ${winsB > winsA ? 'lead' : ''}`}>{winsB}</span>
+                  </div>
+                </div>
+
+                {/* Fighter B (Right) */}
+                <div className="v200-fighter-column right">
+                  <div className="fighter-selector-tray">
+                    <label>WYBIERZ KARTĘ B (PRAWA):</label>
+                    <select
+                      value={cardBId}
+                      onChange={e => setCardBId(e.target.value)}
+                      className="v200-battle-select-field"
+                    >
+                      {cards.map(c => (
+                        <option key={`b_${c.id}`} value={c.id}>
+                          {c.player?.display_name || c.card_name} ({c.rarity?.toUpperCase()}) · OVR {getCardPower(c)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="fighter-crown-indicator">
+                    {winsB > winsA ? (
+                      <span className="crown-badge gold animate-bounce">
+                        <Crown size={14} /> DOMINUJE ({winsB} / {comparisonList.length})
+                      </span>
+                    ) : (
+                      <span className="crown-badge neutral">{winsB} pkt</span>
+                    )}
+                  </div>
+
+                  <div className="fighter-3d-card-wrapper">
+                    <CollectibleCard3D
+                      card={cardB}
+                      userCard={userCardsMap.get(cardB.id) || null}
+                      isLocked={false}
+                      size="md"
+                      interactive={true}
+                      showFlip={true}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Rival 3 Cards */}
-              <div className="v200-lineup-col">
-                <h5 className="text-xs font-bold text-red-400 uppercase mb-2 flex items-center gap-1">
-                  <Swords size={13} /> SKŁAD RYWALA
-                </h5>
-                <div className="v200-lineup-cards-row">
-                  {rivalCards.map((c, idx) => (
-                    <div key={idx} className="v200-lineup-card-slot">
-                      <CollectibleCard3D
-                        card={c}
-                        isLocked={false}
-                        size="xs"
-                        interactive={false}
-                        showFlip={false}
-                      />
-                    </div>
-                  ))}
+              {/* Attributes Comparison Matrix */}
+              <div className="v200-stats-matrix-card">
+                <div className="matrix-header">
+                  <h3>SZCZEGÓŁOWE PORÓWNANIE ATRYBUTÓW FIFA / EA FC</h3>
+                  <p>Bezpośrednie zestawienie kluczowych parametrów i statystyk boiskowych</p>
                 </div>
-              </div>
-            </div>
 
-            {/* Match Action & Commentary */}
-            <div className="v200-match-commentary-box">
-              <h5 className="text-xs font-extrabold text-slate-400 uppercase mb-1">KOMENTARZ MECZOWY NA ŻYWO:</h5>
-              {roundLogs.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">Wybierz skład i kliknij „ROZPOCZNIJ MINI-MECZ”, aby przeprowadzić symulację pojedynku 3 rund.</p>
-              ) : (
-                <div className="v200-commentary-list">
-                  {roundLogs.map((log, i) => (
-                    <div key={i} className="v200-commentary-item animate-fadeIn">
-                      {log}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                <div className="matrix-rows-list">
+                  {comparisonList.map((metric) => {
+                    const aWon = metric.valA > metric.valB;
+                    const bWon = metric.valB > metric.valA;
+                    const isDraw = metric.valA === metric.valB;
+                    const diff = Math.abs(metric.valA - metric.valB);
 
-            {/* Match Controls & Winner Claim */}
-            <div className="v200-match-bottom-controls">
-              {!matchRunning && !matchWinner && (
-                <button
-                  type="button"
-                  onClick={handleStart3v3Match}
-                  className="v200-start-match-btn"
-                >
-                  <Play size={17} /> ROZPOCZNIJ MINI-MECZ 3v3
-                </button>
-              )}
+                    return (
+                      <div key={metric.key} className="matrix-row-item">
+                        {/* Left Value */}
+                        <div className={`metric-num left ${aWon ? 'winner' : ''}`}>
+                          {metric.valA}
+                          {aWon && diff > 0 && <span className="diff-pill plus">+{diff}</span>}
+                        </div>
 
-              {matchRunning && (
-                <div className="v200-match-running-pill animate-pulse">
-                  <Zap size={16} className="text-yellow-400 animate-bounce" />
-                  <span>TRWA RUNDA {currentRound}/3... POJEDYNEK W TOKU!</span>
-                </div>
-              )}
+                        {/* Center Bars & Label */}
+                        <div className="metric-center-track">
+                          <span className="metric-title">{metric.label}</span>
+                          <div className="metric-dual-progress-bar">
+                            <div 
+                              className={`bar-fill left ${metric.color} ${aWon ? 'is-winner' : ''}`}
+                              style={{ width: `${Math.min(100, (metric.valA / (metric.key === 'goals' || metric.key === 'matches' ? 35 : 99)) * 100)}%` }}
+                            />
+                            <div 
+                              className={`bar-fill right ${metric.color} ${bWon ? 'is-winner' : ''}`}
+                              style={{ width: `${Math.min(100, (metric.valB / (metric.key === 'goals' || metric.key === 'matches' ? 35 : 99)) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
 
-              {matchWinner && (
-                <div className="v200-match-result-actions">
-                  {matchWinner === "delta" && (
-                    <div className="v200-match-win-banner">
-                      <Crown size={22} className="text-yellow-400" />
-                      <div>
-                        <b className="text-sm text-yellow-300 block">ZWYCIĘSTWO DELTA WARSZAWA!</b>
-                        <span className="text-xs text-slate-300">Świetna taktyka Twoich kart! Zdobywasz nagrodę bitewną.</span>
+                        {/* Right Value */}
+                        <div className={`metric-num right ${bWon ? 'winner' : ''}`}>
+                          {metric.valB}
+                          {bWon && diff > 0 && <span className="diff-pill plus">+{diff}</span>}
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
-                      {!rewardClaimed ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRewardClaimed(true);
-                            if (onRewardClaimed) onRewardClaimed(25);
-                            cardSound.playPurchase();
-                            cardSound.playHaptic("medium");
-                          }}
-                          className="v200-claim-dp-btn"
+          {/* ========================================================================= */}
+          {/* 2. MODE: MINI-MECZ 3v3 (EA FC BROADCAST ARENA) */}
+          {/* ========================================================================= */}
+          {battleMode === "match3v3" && (
+            <div className="v200-3v3-pane animate-fadeIn">
+              {/* Rival & Settings Bar */}
+              <div className="v200-rival-bar-card">
+                <div className="rival-picker-box">
+                  <label className="rival-label">WYBIERZ PRZECIWNIKA (RYWALE Z MAZOWSZA):</label>
+                  <div className="rival-clubs-scroll">
+                    {RIVAL_TEAMS.map((rival, rIdx) => (
+                      <button
+                        key={rival.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedRivalIndex(rIdx);
+                          if (!matchRunning) setMatchWinner(null);
+                        }}
+                        className={`rival-club-btn ${selectedRivalIndex === rIdx ? 'active' : ''}`}
+                      >
+                        <span className="club-badge">OVR {rival.ovr}</span>
+                        <strong className="club-name">{rival.name}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Broadcast Scoreboard Banner */}
+              <div className="v200-broadcast-scoreboard">
+                {/* DELTA TEAM */}
+                <div className="scoreboard-team left">
+                  <div className="team-crest-box">
+                    <img src="/teamlogos/gm.png" alt="DELTA" />
+                  </div>
+                  <div className="team-meta">
+                    <span className="team-badge-tag gold">GOSPODARZE</span>
+                    <h4>DELTA WARSZAWA 2018</h4>
+                    <small>Skład 3 Wybranych Kart</small>
+                  </div>
+                </div>
+
+                {/* Score & Match Clock Center */}
+                <div className="scoreboard-center-display">
+                  <div className="scoreboard-status-pill">
+                    {matchRunning ? (
+                      <span className="live-pill animate-pulse">
+                        <Activity size={13} className="inline mr-1" />
+                        RUNDA {currentRound}/3 NA ŻYWO
+                      </span>
+                    ) : matchWinner ? (
+                      <span className="final-pill">🏁 KONIEC SPOTKANIA</span>
+                    ) : (
+                      <span className="ready-pill">⚡ GOTOWY DO GRY</span>
+                    )}
+                  </div>
+
+                  <div className="scoreboard-digits">
+                    <span className="score-num delta">{matchScore.delta}</span>
+                    <span className="score-colon">:</span>
+                    <span className="score-num rival">{matchScore.rival}</span>
+                  </div>
+
+                  <div className="scoreboard-sub-info">
+                    {currentRound === 1 && "⚽ RUNDA 1: TEMPO & RAJD"}
+                    {currentRound === 2 && "🎯 RUNDA 2: ROZEGRANIE & POMOC"}
+                    {currentRound === 3 && "🔥 RUNDA 3: STRZAŁY & WYKOŃCZENIE"}
+                    {currentRound === 0 && !matchWinner && "Format: 3 Rundy · OVR i Atrybuty"}
+                  </div>
+                </div>
+
+                {/* RIVAL TEAM */}
+                <div className="scoreboard-team right">
+                  <div className="team-meta right">
+                    <span className="team-badge-tag red">GOŚCIE</span>
+                    <h4>{currentRival.name}</h4>
+                    <small>OVR Średnie: {currentRival.ovr}</small>
+                  </div>
+                  <div className="team-crest-box rival">
+                    <span>⚔️</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* TACTICAL PITCH STAGE (3 SLOTS vs 3 SLOTS) */}
+              <div className="v200-tactical-pitch-stage">
+                {/* DELTA SQUAD COLUMN */}
+                <div className="pitch-squad-column delta">
+                  <div className="squad-column-header">
+                    <Shield size={14} className="text-yellow-400" />
+                    <span>TWÓJ SKŁAD (KLIKNIJ, ABY ZMIENIĆ KARTĘ)</span>
+                  </div>
+
+                  <div className="squad-slots-grid">
+                    {teamSquad.map((cardItem, slotIdx) => {
+                      const stats = getStats(cardItem);
+                      const roleName = slotIdx === 0 ? "NAPAD (TEMPO)" : slotIdx === 1 ? "POMOC (PODANIA)" : "OBRONA (FIZYCZNOŚĆ)";
+                      const isCurrentRoundHero = currentRound === (slotIdx + 1);
+
+                      return (
+                        <div
+                          key={`delta_slot_${slotIdx}`}
+                          className={`pitch-card-slot ${isCurrentRoundHero ? 'active-round-hero' : ''}`}
+                          onClick={() => setSelectedSlotIndex(slotIdx)}
                         >
-                          <Coins size={15} /> ODBIERZ +25 DP
+                          <div className="slot-role-tag">{roleName}</div>
+                          
+                          <div className="slot-card-preview">
+                            <div className="mini-card-badge">
+                              <span className="mini-ovr">{stats.ovr}</span>
+                              <span className="mini-pos">{slotIdx === 0 ? 'NAP' : slotIdx === 1 ? 'POM' : 'OBR'}</span>
+                            </div>
+                            <div className="mini-player-name">{cardItem?.player?.display_name || cardItem?.card_name}</div>
+                            <div className="mini-rarity-tag">{cardItem?.rarity?.toUpperCase()}</div>
+                          </div>
+
+                          <div className="slot-stat-strip">
+                            {slotIdx === 0 && <span>PAC: <strong>{stats.pac}</strong> · DRI: <strong>{stats.dri}</strong></span>}
+                            {slotIdx === 1 && <span>PAS: <strong>{stats.pas}</strong> · DEF: <strong>{stats.def}</strong></span>}
+                            {slotIdx === 2 && <span>SHO: <strong>{stats.sho}</strong> · PHY: <strong>{stats.phy}</strong></span>}
+                          </div>
+
+                          <div className="slot-swap-hint">Zmień kartę ▾</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* CENTER MATCH PITCH CONNECTOR */}
+                <div className="pitch-center-divider">
+                  <div className="center-circle-ring">
+                    <Swords size={20} className="text-yellow-400 animate-spin-slow" />
+                  </div>
+                </div>
+
+                {/* RIVAL SQUAD COLUMN */}
+                <div className="pitch-squad-column rival">
+                  <div className="squad-column-header right">
+                    <Swords size={14} className="text-red-400" />
+                    <span>SKŁAD RYWALA: {currentRival.name}</span>
+                  </div>
+
+                  <div className="squad-slots-grid">
+                    {currentRival.players.map((rPlayer, rIdx) => {
+                      const roleName = rIdx === 0 ? "NAPAD (TEMPO)" : rIdx === 1 ? "POMOC (PODANIA)" : "OBRONA (FIZYCZNOŚĆ)";
+                      const isCurrentRoundHero = currentRound === (rIdx + 1);
+
+                      return (
+                        <div
+                          key={`rival_slot_${rIdx}`}
+                          className={`pitch-card-slot rival ${isCurrentRoundHero ? 'active-round-hero' : ''}`}
+                        >
+                          <div className="slot-role-tag rival">{roleName}</div>
+                          
+                          <div className="slot-card-preview rival">
+                            <div className="mini-card-badge rival">
+                              <span className="mini-ovr">{rPlayer.ovr}</span>
+                              <span className="mini-pos">{rPlayer.pos}</span>
+                            </div>
+                            <div className="mini-player-name">{rPlayer.name}</div>
+                            <div className="mini-rarity-tag rival">RYWAL 2018</div>
+                          </div>
+
+                          <div className="slot-stat-strip">
+                            {rIdx === 0 && <span>PAC: <strong>{rPlayer.pac}</strong> · DRI: <strong>{rPlayer.dri}</strong></span>}
+                            {rIdx === 1 && <span>PAS: <strong>{rPlayer.pas}</strong> · DEF: <strong>{rPlayer.def}</strong></span>}
+                            {rIdx === 2 && <span>SHO: <strong>{rPlayer.sho}</strong> · PHY: <strong>{rPlayer.phy}</strong></span>}
+                          </div>
+
+                          <div className="slot-swap-hint rival">AI Bot</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD PICKER MODAL/DRAWER (When user clicks a slot) */}
+              {selectedSlotIndex !== null && (
+                <div className="v200-slot-card-picker animate-fadeIn">
+                  <div className="picker-header">
+                    <h4>
+                      Wybierz kartę na pozycję: {selectedSlotIndex === 0 ? "NAPAD" : selectedSlotIndex === 1 ? "POMOC" : "OBRONA"}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSlotIndex(null)}
+                      className="picker-close-btn"
+                    >
+                      <X size={16} /> Zamknij
+                    </button>
+                  </div>
+                  <div className="picker-grid">
+                    {ownedCardsList.map(c => {
+                      const cStats = getStats(c);
+                      return (
+                        <button
+                          key={`pick_${c.id}`}
+                          type="button"
+                          onClick={() => handleAssignCardToSlot(selectedSlotIndex, c)}
+                          className="picker-item-btn"
+                        >
+                          <div className="picker-ovr-tag">{cStats.ovr}</div>
+                          <div className="picker-meta">
+                            <strong>{c.player?.display_name || c.card_name}</strong>
+                            <small>{c.rarity?.toUpperCase()} · PAC {cStats.pac} / SHO {cStats.sho} / PAS {cStats.pas}</small>
+                          </div>
                         </button>
-                      ) : (
-                        <span className="text-xs font-bold text-green-400 flex items-center gap-1">
-                          <CheckCircle2 size={15} /> Odebrano +25 DP!
-                        </span>
-                      )}
-                    </div>
-                  )}
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-                  {matchWinner === "rival" && (
-                    <div className="v200-match-lose-banner">
-                      <ShieldCheck size={20} className="text-red-400" />
-                      <span className="text-xs text-slate-300">Tym razem rywal był minimalnie lepszy. Wzmocnij karty w paczkach i spróbuj ponownie!</span>
-                    </div>
-                  )}
+              {/* Live Commentary & Event Log */}
+              <div className="v200-broadcast-commentary-box">
+                <div className="commentary-header">
+                  <Timer size={14} className="text-yellow-400" />
+                  <span>KOMENTARZ MECZOWY NA ŻYWO (BROADCAST FEED):</span>
+                </div>
 
-                  {matchWinner === "draw" && (
-                    <div className="v200-match-lose-banner">
-                      <ShieldCheck size={20} className="text-slate-400" />
-                      <span className="text-xs text-slate-300">Zacięty remis 1:1! Obie drużyny pokazały mistrzowski poziom.</span>
+                <div className="commentary-scroll">
+                  {roundLogs.map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`commentary-line animate-fadeIn ${item.win === true ? 'win' : item.win === false ? 'loss' : 'neutral'}`}
+                    >
+                      <span className="line-icon">{item.win === true ? '🟢' : item.win === false ? '🔴' : '⚡'}</span>
+                      <span className="line-text">{item.text}</span>
                     </div>
-                  )}
+                  ))}
+                </div>
+              </div>
 
+              {/* Match Action Button & Results Panel */}
+              <div className="v200-match-action-bottom">
+                {!matchRunning && !matchWinner && (
                   <button
                     type="button"
                     onClick={handleStart3v3Match}
-                    className="v200-restart-match-btn"
+                    className="v200-big-start-match-btn"
                   >
-                    <RotateCcw size={15} /> ZAGRAJ REWANŻ
+                    <Play size={20} className="fill-current" />
+                    <span>ROZPOCZNIJ MINI-MECZ 3v3</span>
                   </button>
-                </div>
-              )}
+                )}
+
+                {matchRunning && (
+                  <div className="v200-match-in-progress-banner">
+                    <Zap size={20} className="text-yellow-400 animate-bounce" />
+                    <span>TRWA SYMULACJA RUNDY {currentRound}/3... OBLICZANIE WYNIKU!</span>
+                  </div>
+                )}
+
+                {matchWinner && (
+                  <div className="v200-match-outcome-stage animate-scaleUp">
+                    {matchWinner === "delta" && (
+                      <div className="match-outcome-card victory">
+                        <div className="outcome-icon">
+                          <Crown size={32} className="text-yellow-400 animate-bounce" />
+                        </div>
+                        <div className="outcome-text">
+                          <h3>WSPANIAŁE ZWYCIĘSTWO DELTY!</h3>
+                          <p>Twoje karty zdominowały rywala w kluczowych pojedynkach meczowych.</p>
+                        </div>
+
+                        {!rewardClaimed ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRewardClaimed(true);
+                              if (onRewardClaimed) onRewardClaimed(25);
+                              cardSound.playPurchase();
+                              cardSound.playHaptic("medium");
+                            }}
+                            className="outcome-claim-btn"
+                          >
+                            <Coins size={16} /> ODBIERZ NAGRODĘ: +25 DP
+                          </button>
+                        ) : (
+                          <div className="outcome-claimed-pill">
+                            <CheckCircle2 size={16} className="text-green-400" /> Nagroda +25 DP odebrana!
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {matchWinner === "rival" && (
+                      <div className="match-outcome-card defeat">
+                        <div className="outcome-icon">
+                          <ShieldCheck size={32} className="text-red-400" />
+                        </div>
+                        <div className="outcome-text">
+                          <h3>MINIMALNA PORAŻKA SKŁADU</h3>
+                          <p>Rywal okazał się skuteczniejszy w pojedynkach. Wzmocnij skład w paczkach i weź rewanż!</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {matchWinner === "draw" && (
+                      <div className="match-outcome-card draw">
+                        <div className="outcome-icon">
+                          <ShieldCheck size={32} className="text-slate-400" />
+                        </div>
+                        <div className="outcome-text">
+                          <h3>ZACIĘTY REMIS 1 : 1</h3>
+                          <p>Wyrównany bój dwóch świetnych zespołów z rocznika 2018.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleStart3v3Match}
+                      className="outcome-replay-btn"
+                    >
+                      <RotateCcw size={16} /> ZAGRAJ REWANŻ
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
