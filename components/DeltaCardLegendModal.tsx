@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Sparkles, Shield, Zap, Info, Award, HelpCircle, Trophy, Target, Crown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { 
+  X, Sparkles, Shield, Zap, Info, Award, HelpCircle, 
+  Trophy, Target, Crown, Flame, Star, Compass, CheckCircle2, ChevronRight
+} from "lucide-react";
 import { CENTRAL_CARD_TYPES, POLISH_CARD_STATS, CentralCardTypeKey } from "@/lib/cards/central-types";
 import { RARITY_CONFIG, CardRarity } from "@/lib/cards/types";
 
@@ -11,77 +15,83 @@ interface DeltaCardLegendModalProps {
 }
 
 export default function DeltaCardLegendModal({ isOpen, onClose }: DeltaCardLegendModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"stats" | "rarity" | "types" | "ovr">("stats");
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="v200-modal-container max-w-2xl" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="v200-modal-head">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              <HelpCircle size={22} />
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
+    <div className="v200-guide-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="v200-guide-sheet" onClick={e => e.stopPropagation()}>
+        {/* ================= HEADER ================= */}
+        <div className="v200-guide-header">
+          <div className="guide-header-brand">
+            <div className="guide-icon-badge">
+              <HelpCircle size={24} className="text-amber-400" />
             </div>
             <div>
-              <span className="eyebrow gold">PRZEWODNIK KOLEKCJONERA</span>
-              <h2 className="text-xl font-black text-white m-0">JAK CZYTAĆ KARTĘ DELTA?</h2>
+              <div className="guide-eyebrow-tag">PRZEWODNIK KOLEKCJONERA • PORADNIK PRO</div>
+              <h2 className="guide-modal-title">JAK CZYTAĆ KARTĘ DELTA?</h2>
             </div>
           </div>
-          <button type="button" className="v200-modal-close" onClick={onClose} aria-label="Zamknij">
+
+          <button type="button" className="guide-close-btn" onClick={onClose} aria-label="Zamknij">
             <X size={20} />
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex gap-2 p-3 bg-black/40 border-b border-white/10 overflow-x-auto">
+        {/* ================= NAVIGATION TABS ================= */}
+        <div className="v200-guide-nav-bar">
           {[
             { id: "stats", label: "Współczynniki (Stats)", icon: Zap },
             { id: "rarity", label: "Rzadkość (Rarity)", icon: Sparkles },
-            { id: "types", label: "Typy Kart", icon: Award },
+            { id: "types", label: "10 Typów Kart", icon: Award },
             { id: "ovr", label: "Ocena Ogólna (OVR)", icon: Crown }
           ].map(tab => (
             <button
               key={tab.id}
               type="button"
-              className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? "bg-amber-500 text-black shadow-lg"
-                  : "bg-white/5 text-slate-300 hover:bg-white/10"
-              }`}
+              className={`guide-nav-pill ${activeTab === tab.id ? "active" : ""}`}
               onClick={() => setActiveTab(tab.id as any)}
             >
-              <tab.icon size={14} />
-              {tab.label}
+              <tab.icon size={15} />
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="p-5 max-h-[70vh] overflow-y-auto space-y-4">
+        {/* ================= CONTENT BODY ================= */}
+        <div className="v200-guide-body-scroll">
           {/* TAB 1: POLSKIE STATYSTYKI */}
           {activeTab === "stats" && (
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/20 text-xs text-slate-300">
-                <strong className="text-amber-400 block mb-1">🇵🇱 Polskie Oznaczenia Statystyk</strong>
-                Każda karta zawodnika posiada 6 kluczowych współczynników piłkarskich oraz dane z oficjalnych meczów i treningów.
+            <div className="guide-tab-content">
+              <div className="guide-intro-callout">
+                <div className="callout-header">
+                  <Zap size={18} className="text-amber-400" />
+                  <h4>Polskie Oznaczenia Statystyk Piłkarskich</h4>
+                </div>
+                <p>
+                  Każda oficjalna karta zawodnika klubu DELTA posiada 6 kluczowych współczynników piłkarskich 
+                  odzwierciedlających formę z meczów ligowych i zaangażowanie na treningach.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="guide-stats-grid">
                 {Object.values(POLISH_CARD_STATS).map(st => (
-                  <div key={st.key} className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-black/60 border border-amber-500/30 flex items-center justify-center text-lg shrink-0">
-                      {st.icon}
+                  <div key={st.key} className="guide-stat-card">
+                    <div className="stat-card-icon-box">
+                      <span>{st.icon}</span>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-black tracking-wider">
-                          {st.codePL}
-                        </span>
-                        <strong className="text-xs text-white font-bold">{st.fullNamePL}</strong>
+                    <div className="stat-card-details">
+                      <div className="stat-card-header">
+                        <span className="stat-code-pill">{st.codePL}</span>
+                        <strong className="stat-name-title">{st.fullNamePL}</strong>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-snug">{st.descriptionPL}</p>
+                      <p className="stat-description-text">{st.descriptionPL}</p>
                     </div>
                   </div>
                 ))}
@@ -89,44 +99,60 @@ export default function DeltaCardLegendModal({ isOpen, onClose }: DeltaCardLegen
             </div>
           )}
 
-          {/* TAB 2: RZADKOŚĆ */}
+          {/* TAB 2: RZADKOŚĆ KART */}
           {activeTab === "rarity" && (
-            <div className="space-y-3">
-              <p className="text-xs text-slate-300">
-                Rzadkość określa unikalność karty, efekty wizualne folii oraz dodatkowy bonus do oceny OVR w Squad Builderze:
-              </p>
+            <div className="guide-tab-content">
+              <div className="guide-intro-callout">
+                <div className="callout-header">
+                  <Sparkles size={18} className="text-amber-400" />
+                  <h4>Poziomy Rzadkości i Efekty Holograficzne</h4>
+                </div>
+                <p>
+                  Rzadkość decyduje o unikalności karty w paczkach, wyglądzie folii oraz zapewnia 
+                  bonus do Oceny Ogólnej (OVR) we Własnej Drużynie (Squad Builder).
+                </p>
+              </div>
 
-              <div className="space-y-2">
+              <div className="guide-rarity-cards-stack">
                 {(["common", "rare", "epic", "legendary", "inferno"] as CardRarity[]).map(r => {
                   const cfg = RARITY_CONFIG[r];
                   return (
                     <div
                       key={r}
-                      className="p-3.5 rounded-xl border flex items-center justify-between gap-3"
+                      className="guide-rarity-row-card"
                       style={{
                         background: cfg.bgGradient,
                         borderColor: cfg.borderGlow
                       }}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="rarity-row-left">
                         <div
-                          className="px-2.5 py-1 rounded-lg text-xs font-black tracking-wider text-black"
+                          className="rarity-badge-chip"
                           style={{ background: cfg.color }}
                         >
                           {cfg.label}
                         </div>
-                        <div>
-                          <strong className="text-xs text-white block">
-                            {r === "inferno" ? "Najwyższa rzadkość DELTA INFERNO" : `Karta ${cfg.label}`}
+                        <div className="rarity-text-info">
+                          <strong className="rarity-card-name">
+                            {r === "inferno" ? "Najwyższa Rzadkość DELTA INFERNO" : `Karta ${cfg.label}`}
                           </strong>
-                          <small className="text-[11px] text-slate-300">
-                            Wartość duplikatu: <b className="text-amber-400">{cfg.duplicatePoints} DP</b>
-                          </small>
+                          <span className="rarity-points-val">
+                            Wartość na Giełdzie / Duplikat: <b>{cfg.duplicatePoints} DP</b>
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-[10px] uppercase font-bold text-amber-300 block">
-                          {r === "inferno" ? "+9 OVR Bonus" : r === "legendary" ? "+6 OVR Bonus" : r === "epic" ? "+4 OVR Bonus" : r === "rare" ? "+2 OVR Bonus" : "Standard"}
+
+                      <div className="rarity-row-right">
+                        <span className="rarity-ovr-boost-badge">
+                          {r === "inferno" 
+                            ? "+9 OVR Bonus" 
+                            : r === "legendary" 
+                            ? "+6 OVR Bonus" 
+                            : r === "epic" 
+                            ? "+4 OVR Bonus" 
+                            : r === "rare" 
+                            ? "+2 OVR Bonus" 
+                            : "Standard (+0)"}
                         </span>
                       </div>
                     </div>
@@ -136,38 +162,44 @@ export default function DeltaCardLegendModal({ isOpen, onClose }: DeltaCardLegen
             </div>
           )}
 
-          {/* TAB 3: TYPY KART */}
+          {/* TAB 3: 10 TYPÓW KART */}
           {activeTab === "types" && (
-            <div className="space-y-2.5">
-              <p className="text-xs text-slate-300">
-                W kolekcji DELTA 2018 GM istnieje 10 dedykowanych typów kart:
-              </p>
+            <div className="guide-tab-content">
+              <div className="guide-intro-callout">
+                <div className="callout-header">
+                  <Award size={18} className="text-amber-400" />
+                  <h4>10 Dedykowanych Edycji Kart w Sezonie 2026/27</h4>
+                </div>
+                <p>
+                  Każda edycja karty odblokowuje specjalne cechy taktyczne i bonusy do zgrania drużyny.
+                </p>
+              </div>
 
-              <div className="space-y-2">
+              <div className="guide-types-list">
                 {Object.values(CENTRAL_CARD_TYPES).map(t => (
-                  <div key={t.type} className="p-3 rounded-xl bg-slate-900/80 border border-white/10 flex items-center gap-3">
-                    <div className="text-2xl shrink-0 p-2 rounded-lg bg-black/40 border border-white/5">
-                      {t.icon}
+                  <div key={t.type} className="guide-type-card-item">
+                    <div className="type-icon-box">
+                      <span>{t.icon}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <strong className="text-xs text-white font-bold">{t.displayName}</strong>
-                        <span className="px-1.5 py-0.5 rounded bg-white/10 text-amber-400 text-[10px] font-bold">
-                          {t.badgeLabel}
-                        </span>
+
+                    <div className="type-content-box">
+                      <div className="type-header-row">
+                        <strong className="type-title-text">{t.displayName}</strong>
+                        <span className="type-badge-pill">{t.badgeLabel}</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{t.description}</p>
+                      <p className="type-desc-text">{t.description}</p>
                     </div>
-                    {t.ratingBonus > 0 && (
-                      <div className="shrink-0 px-2 py-1 rounded bg-amber-500/20 text-amber-400 text-xs font-black">
-                        +{t.ratingBonus} OVR
-                      </div>
-                    )}
-                    {t.squadBonusDescription && (
-                      <div className="shrink-0 text-right">
-                        <span className="text-[10px] text-emerald-400 font-bold block">{t.squadBonusDescription}</span>
-                      </div>
-                    )}
+
+                    <div className="type-bonuses-box">
+                      {t.ratingBonus > 0 && (
+                        <div className="type-rating-bonus-chip">
+                          +{t.ratingBonus} OVR
+                        </div>
+                      )}
+                      {t.squadBonusDescription && (
+                        <span className="type-squad-desc-text">{t.squadBonusDescription}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -176,38 +208,74 @@ export default function DeltaCardLegendModal({ isOpen, onClose }: DeltaCardLegen
 
           {/* TAB 4: SYSTEM OCENY OVR */}
           {activeTab === "ovr" && (
-            <div className="space-y-3.5">
-              <div className="p-4 rounded-xl bg-gradient-to-r from-red-950/60 to-black border border-red-500/30 text-xs text-slate-200 space-y-2">
-                <strong className="text-amber-400 text-sm block flex items-center gap-1.5">
-                  <Crown size={16} /> Jak obliczany jest Overall Rating (OVR)?
-                </strong>
-                <p>
-                  Rating karty w DELTA 2018 GM nie jest przypadkowy. Powstaje na podstawie 3 spójnych filarów:
+            <div className="guide-tab-content">
+              {/* 3 Pillars Callout */}
+              <div className="guide-ovr-pillars-box">
+                <div className="pillars-header">
+                  <Crown size={20} className="text-amber-400" />
+                  <h3>3 Filary Oceny Ogólnej (OVR)</h3>
+                </div>
+                <p className="pillars-subtitle">
+                  Ocena karty (OVR) w DELTA 2018 GM powstaje na bazie rzetelnych, przejrzystych reguł:
                 </p>
-                <ol className="list-decimal pl-4 space-y-1.5 text-slate-300">
-                  <li><b>Baza zawodnika (70 OVR)</b>: Wyjściowy poziom młodego adepta piłki nożnej.</li>
-                  <li><b>Realne Statystyki</b>: Gole, asysty, czyste konta bramkarza, frekwencja treningowa oraz tytuły MVP meczu bezpośrednio podnoszą ocenę.</li>
-                  <li><b>Edycja & Rzadkość Karty</b>: Karty Training Hero (+3), Matchday Hero (+5), Gold Master (+8), Delta Icon (+12) i INFERNO (+16) zapewniają potężne wzmocnienie składu!</li>
-                </ol>
+
+                <div className="pillars-grid">
+                  <div className="pillar-item">
+                    <div className="pillar-num-badge">1</div>
+                    <strong className="pillar-title">Baza Zawodnika (70 OVR)</strong>
+                    <p className="pillar-desc">
+                      Wyjściowy poziom każdego młodego adepta piłki nożnej w akademii DELTA.
+                    </p>
+                  </div>
+
+                  <div className="pillar-item">
+                    <div className="pillar-num-badge">2</div>
+                    <strong className="pillar-title">Realne Statystyki z Meczy</strong>
+                    <p className="pillar-desc">
+                      Gole, asysty, czyste konta bramkarza, frekwencja treningowa oraz tytuły MVP bezpośrednio windują OVR.
+                    </p>
+                  </div>
+
+                  <div className="pillar-item">
+                    <div className="pillar-num-badge">3</div>
+                    <strong className="pillar-title">Rzadkość & Edycja Karty</strong>
+                    <p className="pillar-desc">
+                      Karty Matchday (+5), Gold Master (+8), Delta Icon (+12) i INFERNO (+16) zapewniają potężne wzmocnienie!
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-black/60 border border-white/10 text-xs space-y-2">
-                <strong className="text-white block">💡 Wskazówka dla Trenerów i Rodziców</strong>
-                <p className="text-slate-400">
-                  Własna drużyna (Squad Builder) zyskuje dodatkowe premie za ustawienie Kapitana (+2 OVR), Kartę Trenera (+2 Taktyka) oraz Kartę Twierdzy Jordanek (+1 OVR Gospodarza).
+              {/* Pro Tips Box */}
+              <div className="guide-tips-card">
+                <div className="tips-card-head">
+                  <Sparkles size={16} className="text-amber-400" />
+                  <strong>Wskazówki dla Trenerów i Zawodników</strong>
+                </div>
+                <p>
+                  We Własnej Drużynie (Squad Builder) zyskasz dodatkowe premie: 
+                  <b> +2 OVR</b> za wyznaczenie Kapitana drużyny, 
+                  <b> +2 Zgranie</b> za Kartę Trenera oraz 
+                  <b> +1 OVR Gospodarza</b> za Kartę Twierdzy Jordanek.
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-black/60 border-t border-white/10 flex justify-end">
-          <button type="button" className="v200-tc-action-btn gold" onClick={onClose}>
+        {/* ================= FOOTER ================= */}
+        <div className="v200-guide-footer">
+          <div className="footer-left-info">
+            <CheckCircle2 size={16} className="text-emerald-400" />
+            <span>Karty są automatycznie synchronizowane z oficjalnym systemem DELTA 2018 GM</span>
+          </div>
+          <button type="button" className="guide-primary-close-btn" onClick={onClose}>
             ROZUMIEM, DZIĘKUJĘ!
           </button>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
