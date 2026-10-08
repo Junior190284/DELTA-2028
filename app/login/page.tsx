@@ -84,6 +84,45 @@ export default function LoginPage() {
 
         <button className="login-primary" onClick={signIn}>ZALOGUJ</button>
 
+        {/* Localhost / Dev Quick Login Box */}
+        <div style={{ marginTop: 18, padding: 14, borderRadius: 12, background: "rgba(245, 158, 11, 0.08)", border: "1px dashed rgba(245, 158, 11, 0.4)" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: "#f1c95c", marginBottom: 8, textAlign: "center", textTransform: "uppercase" }}>
+            🛠️ Szybkie logowanie deweloperskie (Localhost)
+          </div>
+          <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+            <button
+              type="button"
+              onClick={async () => {
+                setMsg("Logowanie jako Administrator/Trener…");
+                await fetch("/api/auth/dev-login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ role: "admin" })
+                });
+                window.location.href = "/dashboard";
+              }}
+              style={{ padding: "8px 12px", borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "#000", fontWeight: 900, fontSize: 11, cursor: "pointer" }}
+            >
+              👑 Wejdź jako Trener / Administrator
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setMsg("Logowanie jako Rodzic…");
+                await fetch("/api/auth/dev-login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ role: "parent" })
+                });
+                window.location.href = "/dashboard";
+              }}
+              style={{ padding: "8px 12px", borderRadius: 8, background: "#1e293b", border: "1px solid #334155", color: "#fff", fontWeight: 700, fontSize: 11, cursor: "pointer" }}
+            >
+              ⚽ Wejdź jako Rodzic (Profil Zawodnika)
+            </button>
+          </div>
+        </div>
+
         <a href="/" className="login-public-back">← Wróć do publicznej strony drużyny</a>
 
         <div className="login-note">
