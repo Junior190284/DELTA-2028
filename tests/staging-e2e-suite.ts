@@ -5,7 +5,7 @@
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { openPackServerSide } from "../lib/cards/engine";
-import { emitDeltaEvent } from "../lib/events/emitter";
+import { emitSystemEvent } from "../lib/events/emitter";
 
 interface TestResult {
   name: string;
@@ -345,7 +345,7 @@ export async function runStagingE2ESuite(): Promise<{ results: TestResult[]; sum
     const eventKey = "MATCH_LIVE_TEST_101";
     
     // Podwójna emisja tego samego zdarzenia
-    await emitDeltaEvent({
+    await emitSystemEvent({
       id: eventKey,
       type: "MATCH_RESULT_UPDATED",
       title: "Mecz Testowy DELTA 2018",
@@ -353,7 +353,7 @@ export async function runStagingE2ESuite(): Promise<{ results: TestResult[]; sum
       importance: "IMPORTANT"
     });
 
-    await emitDeltaEvent({
+    await emitSystemEvent({
       id: eventKey,
       type: "MATCH_RESULT_UPDATED",
       title: "Mecz Testowy DELTA 2018",
