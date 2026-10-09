@@ -37,3 +37,10 @@ USING (user_id = (SELECT auth.uid()));
 
 -- No direct client insert/update/delete.
 -- Writes are performed exclusively by server-side service role during push dispatch.
+
+-- Grants for PostgREST & Supabase Roles (RLS strictly governs access)
+GRANT ALL ON public.push_deliveries TO postgres, service_role;
+GRANT SELECT ON public.push_deliveries TO authenticated, anon;
+
+NOTIFY pgrst, 'reload schema';
+
