@@ -3649,26 +3649,57 @@ export default function TeamHub(props:{
             {unreadNewsCount > 0 && (
               <button
                 type="button"
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                style={{
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  color: "#f5f5f5",
+                  height: "38px",
+                  cursor: "pointer"
+                }}
                 onClick={handleMarkAllNewsRead}
               >
                 <Check size={14} className="text-emerald-400" />
-                <span>Oznacz wszystkie jako przeczytane</span>
+                <span>Oznacz jako przeczytane</span>
               </button>
             )}
             {staff && (
               <button
                 type="button"
-                className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-xs font-black text-amber-400 hover:bg-amber-500/30 transition-all flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
+                style={{
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  background: "rgba(212, 175, 55, 0.10)",
+                  border: "1px solid rgba(212, 175, 55, 0.28)",
+                  color: "#d6b04c",
+                  height: "38px",
+                  cursor: "pointer"
+                }}
                 onClick={() => setSyncControlModalOpen(true)}
               >
                 <RefreshCw size={14} />
-                <span>DELTA SYNC 2.0</span>
+                <span>Sync</span>
               </button>
             )}
             {(staff||props.userPermissions.can_manage_news)&&(
-              <button className="btn gold-btn" onClick={openAddNewsModal}>
-                <Newspaper size={16}/> Dodaj komunikat
+              <button 
+                type="button"
+                className="px-3 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
+                style={{
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  background: "rgba(212, 175, 55, 0.15)",
+                  border: "1px solid rgba(212, 175, 55, 0.40)",
+                  color: "#ffffff",
+                  height: "38px",
+                  cursor: "pointer"
+                }}
+                onClick={openAddNewsModal}
+              >
+                <Newspaper size={15}/> <span>+ Dodaj</span>
               </button>
             )}
           </div>
@@ -3676,14 +3707,32 @@ export default function TeamHub(props:{
 
         {/* WHAT'S NEW SINCE LAST VISIT */}
         {unreadNewsCount > 0 && (
-          <div className="mb-3 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-slate-900/80 to-amber-950/30 border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div 
+            className="mb-3 p-3 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg"
+            style={{
+              background: "linear-gradient(90deg, rgba(20, 10, 12, 0.95), rgba(12, 14, 18, 0.95))",
+              border: "1px solid rgba(212, 175, 55, 0.20)",
+              boxShadow: "0 0 16px rgba(180, 20, 20, 0.08)"
+            }}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/40 flex items-center justify-center shrink-0">
+              <div 
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: "rgba(185, 28, 28, 0.18)",
+                  border: "1px solid rgba(185, 28, 28, 0.35)",
+                  color: "#ef4444"
+                }}
+              >
                 <Bell size={20} />
               </div>
               <div>
                 <h4 className="text-white font-bold text-sm m-0">
-                  {unreadNewsCount === 1 ? "1 nowa informacja od ostatniej wizyty" : `${unreadNewsCount} nowe informacje od ostatniej wizyty`}
+                  {unreadNewsCount === 1 
+                    ? "1 nowa informacja od ostatniej wizyty" 
+                    : (unreadNewsCount % 10 >= 2 && unreadNewsCount % 10 <= 4 && (unreadNewsCount % 100 < 10 || unreadNewsCount % 100 >= 20))
+                    ? `${unreadNewsCount} nowe informacje od ostatniej wizyty`
+                    : `${unreadNewsCount} nowych informacji od ostatniej wizyty`}
                 </h4>
                 <p className="text-xs text-slate-400 m-0 mt-0.5">
                   Sprawdź najnowsze powiadomienia, aktualności klubowe i zmiany w harmonogramie.
@@ -3692,17 +3741,26 @@ export default function TeamHub(props:{
             </div>
             <button
               type="button"
-              className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black self-start sm:self-auto transition-all shadow-md flex items-center gap-1"
+              className="px-3.5 py-2 rounded-xl text-xs font-black self-start sm:self-auto transition-all flex items-center gap-1.5"
+              style={{
+                appearance: "none",
+                WebkitAppearance: "none",
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(212, 175, 55, 0.22)",
+                color: "#ffffff",
+                height: "40px",
+                cursor: "pointer"
+              }}
               onClick={() => setNewsFilter("unread")}
             >
               <span>Pokaż nieprzeczytane</span>
-              <ChevronRight size={14} />
+              <ChevronRight size={14} color="#d6b04c" />
             </button>
           </div>
         )}
 
         {/* 8 FILTER CHIPS */}
-        <div className="v200-news-filter-chips flex items-center gap-2 overflow-x-auto py-3 no-scrollbar">
+        <div className="v200-news-filter-chips flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar">
           {[
             { id: "all", label: "Wszystkie", count: unifiedNewsItems.length },
             { id: "unread", label: "Nieprzeczytane", count: unreadNewsCount },
@@ -3712,25 +3770,39 @@ export default function TeamHub(props:{
             { id: "achievements", label: "Osiągnięcia", count: unifiedNewsItems.filter(i => i.category === "achievements" || i.category === "fantasy").length },
             { id: "multimedia", label: "Multimedia", count: unifiedNewsItems.filter(i => i.category === "multimedia" || i.category === "gallery").length },
             ...(staff ? [{ id: "system", label: "System / Sync", count: unifiedNewsItems.filter(i => i.category === "system" || i.category === "sync").length }] : []),
-          ].map(chip => (
-            <button
-              key={chip.id}
-              type="button"
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                newsFilter === chip.id
-                  ? "bg-red-600 text-white shadow-lg shadow-red-600/30 font-black border border-red-500"
-                  : "bg-slate-900/80 text-slate-400 border border-white/10 hover:border-white/20 hover:text-white"
-              }`}
-              onClick={() => setNewsFilter(chip.id)}
-            >
-              <span>{chip.label}</span>
-              {chip.count > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${newsFilter === chip.id ? "bg-black/40 text-white" : "bg-white/10 text-slate-400"}`}>
-                  {chip.count > 99 ? "99+" : chip.count}
-                </span>
-              )}
-            </button>
-          ))}
+          ].map(chip => {
+            const isActive = newsFilter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                className="px-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0"
+                style={{
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  height: "34px",
+                  background: isActive ? "rgba(185, 28, 28, 0.25)" : "rgba(255, 255, 255, 0.035)",
+                  border: isActive ? "1px solid rgba(212, 175, 55, 0.35)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  color: isActive ? "#ffffff" : "rgba(255, 255, 255, 0.70)",
+                  cursor: "pointer"
+                }}
+                onClick={() => setNewsFilter(chip.id)}
+              >
+                <span>{chip.label}</span>
+                {chip.count > 0 && (
+                  <span 
+                    className="text-[10px] px-1.5 py-0.2 rounded-full font-mono"
+                    style={{
+                      background: isActive ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.1)",
+                      color: isActive ? "#ffffff" : "rgba(255, 255, 255, 0.6)"
+                    }}
+                  >
+                    {chip.count > 99 ? "99+" : chip.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* UNIFIED NEWS FEED GRID */}
@@ -3743,8 +3815,12 @@ export default function TeamHub(props:{
               <article 
                 className={`news-card devil-card ${isUrgent ? "is-urgent" : isImportant ? "is-important" : ""} ${isRead ? "is-read" : "is-unread"}`} 
                 key={item.id}
+                style={{
+                  background: "rgba(10, 12, 16, 0.90)",
+                  border: isUrgent ? "1px solid rgba(239, 68, 68, 0.4)" : isImportant ? "1px solid rgba(245, 158, 11, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)"
+                }}
               >
-                <div className="v200-news-topline">
+                <div className="v200-news-topline flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     <span className={`tag ${isUrgent ? "priority-urgent" : isImportant ? "priority-important" : "bg-slate-800 text-slate-300"}`}>
                       {isUrgent ? "🔴 PILNE" : isImportant ? "🟡 WAŻNE" : item.typeLabel}
@@ -3754,11 +3830,19 @@ export default function TeamHub(props:{
                     </span>
                   </div>
 
-                  <div className="v200-news-actions-mini">
+                  <div className="v200-news-actions-mini flex items-center gap-2">
                     {staff && item.originalNewsItem && (
                       <button 
                         type="button" 
-                        className="v200-news-edit-btn" 
+                        className="v200-news-edit-btn text-xs font-bold text-slate-400 hover:text-white transition-colors"
+                        style={{
+                          appearance: "none",
+                          WebkitAppearance: "none",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#d6b04c"
+                        }}
                         onClick={() => openEditNewsModal(item.originalNewsItem!)} 
                         title="Edytuj wiadomość"
                       >
@@ -3768,6 +3852,18 @@ export default function TeamHub(props:{
                     <button 
                       type="button" 
                       className={`v200-read-toggle-btn ${isRead ? "is-confirmed" : ""}`}
+                      style={{
+                        appearance: "none",
+                        WebkitAppearance: "none",
+                        background: isRead ? "rgba(16, 185, 129, 0.10)" : "rgba(255, 255, 255, 0.04)",
+                        border: isRead ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid rgba(212, 175, 55, 0.22)",
+                        color: isRead ? "#10b981" : "#f5f5f5",
+                        borderRadius: "8px",
+                        padding: "4px 10px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
                       onClick={() => handleToggleReadNews(item.id)}
                       title={isRead ? "Wiadomość została odczytana" : "Kliknij, aby potwierdzić przeczytanie"}
                     >
@@ -3788,6 +3884,14 @@ export default function TeamHub(props:{
                       <button
                         type="button"
                         className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                        style={{
+                          appearance: "none",
+                          WebkitAppearance: "none",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#d6b04c"
+                        }}
                         onClick={() => {
                           setTab(item.deepLinkTab as any);
                         }}

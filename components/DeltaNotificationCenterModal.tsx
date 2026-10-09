@@ -429,25 +429,32 @@ export const DeltaNotificationCenterModal: React.FC<DeltaNotificationCenterModal
                 ? unreadCount
                 : events.filter((e) => mapEventToCategory(e) === filter.id).length;
 
+            const isActive = activeFilter === filter.id;
+
             return (
               <button
                 key={filter.id}
                 type="button"
                 onClick={() => setActiveFilter(filter.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 ${
-                  activeFilter === filter.id
-                    ? 'bg-red-600 text-white font-black shadow-md shadow-red-600/30 border border-red-500'
-                    : 'bg-slate-900/80 text-slate-400 border border-white/5 hover:border-white/20 hover:text-white'
-                }`}
+                className="px-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0"
+                style={{
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  height: '34px',
+                  background: isActive ? 'rgba(185, 28, 28, 0.25)' : 'rgba(255, 255, 255, 0.035)',
+                  border: isActive ? '1px solid rgba(212, 175, 55, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+                  color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.70)',
+                  cursor: 'pointer'
+                }}
               >
                 <span>{filter.label}</span>
                 {count > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      activeFilter === filter.id
-                        ? 'bg-black/40 text-white'
-                        : 'bg-white/10 text-slate-400'
-                    }`}
+                    className="text-[10px] px-1.5 py-0.2 rounded-full font-mono"
+                    style={{
+                      background: isActive ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)',
+                      color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.6)'
+                    }}
                   >
                     {count > 99 ? '99+' : count}
                   </span>
@@ -471,9 +478,17 @@ export const DeltaNotificationCenterModal: React.FC<DeltaNotificationCenterModal
             <button
               onClick={handleMarkAllRead}
               className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors text-[11px]"
+              style={{
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#d6b04c'
+              }}
             >
               <CheckCheck className="w-3.5 h-3.5" />
-              <span>Oznacz wszystkie jako przeczytane</span>
+              <span>Oznacz jako przeczytane</span>
             </button>
           )}
         </div>
