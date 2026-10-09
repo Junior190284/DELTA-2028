@@ -80,13 +80,20 @@ export default function DailyInfernoSpin({
   const [canSpin, setCanSpin] = useState<boolean>(true);
   const [streakCount, setStreakCount] = useState<number>(1);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
+  const [isReducedMotion, setIsReducedMotion] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setIsReducedMotion(mediaQuery.matches);
+    const listener = (e: MediaQueryListEvent) => setIsReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prevOverflow;
+      mediaQuery.removeEventListener("change", listener);
     };
   }, []);
 
@@ -280,7 +287,7 @@ export default function DailyInfernoSpin({
       onClick={onClose}
     >
       {/* Dynamic Celebration Particles */}
-      {showWinCelebration && (
+      {showWinCelebration && !isReducedMotion && (
         <CanvasParticles theme="gold" active={true} />
       )}
 
@@ -339,6 +346,12 @@ export default function DailyInfernoSpin({
               </div>
             ))}
           </div>
+
+          {streakCount === 1 && !canSpin && (
+            <p className="text-[11px] text-slate-400 text-center mt-2 font-medium">
+              ✨ Dzień 1/7 zaliczony! Wracaj codziennie, by utrzymać serię aż do Gold Boostera!
+            </p>
+          )}
         </div>
 
         {/* ================= MEGA WHEEL STAGE ================= */}
@@ -355,7 +368,9 @@ export default function DailyInfernoSpin({
               className="v200-wheel-disk"
               style={{
                 transform: `rotate(${rotation}deg)`,
-                transition: spinning ? "transform 4.5s cubic-bezier(0.12, 0.95, 0.25, 1)" : "none"
+                transition: spinning 
+                  ? (isReducedMotion ? "transform 1s ease-out" : "transform 4.5s cubic-bezier(0.12, 0.95, 0.25, 1)") 
+                  : "none"
               }}
             >
               {/* SVG Segments */}
