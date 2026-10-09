@@ -76,6 +76,17 @@ export interface PriorityEngineOutput {
   hasPriority: boolean;
 }
 
+export function formatUnreadMessagesText(count: number): string {
+  if (count === 0) return 'Brak nowych wiadomości';
+  if (count === 1) return '1 nowa wiadomość';
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return `${count} nowe wiadomości`;
+  }
+  return `${count} nowych wiadomości`;
+}
+
 /**
  * Computes deterministic priority hierarchy for Home/Dashboard based strictly
  * on real operational event importance and required actions without arbitrary time thresholds.
@@ -306,33 +317,33 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
   // 6. TIER 6: UNREAD COMMUNICATION IN NOTIFICATION CENTER
   const unreadCount = input.unreadMessagesCount || 0;
   if (unreadCount > 0) {
+    const text = formatUnreadMessagesText(unreadCount);
     actions.push({
       id: 'unread_messages_summary',
       tier: 'UNREAD_MESSAGES',
       priorityScore: 40,
       importance: 'NORMAL',
       category: 'club',
-      headline:
-        unreadCount === 1 ? 'Masz 1 nieprzeczytaną wiadomość' : `Masz ${unreadCount} nieprzeczytane wiadomości`,
-      subtext: 'Sprawdź najnowsze komunikaty i powiadomienia w Centrum Wiadomości.',
-      ctaLabel: 'Otwórz Wiadomości',
-      targetTab: 'news',
-      badgeText: `${unreadCount} NOWYCH`,
+      headline: text,
+      subtext: 'Sprawdź komunikaty i powiadomienia klubowe.',
+      ctaLabel: 'Wiadomości',
+      targetTab: 'notifications',
+      badgeText: '',
     });
   }
 
   // 7. TIER 7: GAMIFICATION / RETENTION (Strictly secondary / tertiary)
   if ((input.unopenedPacksCount || 0) > 0) {
+    const packsCount = input.unopenedPacksCount!;
+    const packText = packsCount === 1 ? '1 nowa paczka' : `${packsCount} nowe paczki`;
     actions.push({
       id: 'gamification_packs',
       tier: 'GAMIFICATION',
       priorityScore: 25,
       importance: 'LOW',
       category: 'gamification',
-      headline: 'Masz nieotwarte paczki kart!',
-      subtext: `Czeka na Ciebie ${input.unopenedPacksCount} ${
-        input.unopenedPacksCount === 1 ? 'paczka' : 'paczki'
-      } do otwarcia.`,
+      headline: packText,
+      subtext: 'Otwórz paczki kart zawodników.',
       ctaLabel: 'Otwórz paczki',
       targetTab: 'collection',
       badgeText: 'KARTY',
@@ -344,11 +355,13 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
       priorityScore: 20,
       importance: 'LOW',
       category: 'gamification',
-      headline: 'Daily Spin jest gotowy!',
-      subtext: 'Zakręć kołem fortuny i odbierz darmowe nagrody klubowe.',
-      ctaLabel: 'Zakręć kołem',
-      targetTab: 'home',
-      badgeText: 'SPIN',
+      headline: 'Koło fortuny • zakręć',
+      subtext: 'Zakręć kołem i odbierz darmowe nagrody klubowe.',
+      ctaLabel: 'Zakręć',
+      targetTab: 'collection',
+      targetPayload: { openSpin: true },
+      badgeText: '',
+      entityId: 'spin_ready',
     });
   }
 

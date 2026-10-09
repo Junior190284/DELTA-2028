@@ -181,7 +181,7 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C.1)', () => {
 
     assert.equal(output.primaryAction?.tier, 'TRAINING_SOON');
     assert.equal(output.secondaryActions[0].tier, 'UNREAD_MESSAGES');
-    assert.match(output.secondaryActions[0].headline, /3 nieprzeczytane/);
+    assert.match(output.secondaryActions[0].headline, /3 nowe wiadomości/);
   });
 
   // TEST 8: Gamification is strictly tertiary (never beats sports ops or unread messages)
@@ -358,5 +358,35 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C.1)', () => {
       });
       assert.ok(res);
     });
+  });
+
+  // TEST 16: Polish grammar for unread messages handles 1, 2-4, 5-21, 22-24, 99
+  it('TEST 16: Polish grammar format for unread messages', () => {
+    const out1 = computeHomePriorities({ user: { role: 'parent' }, unreadMessagesCount: 1, nowDate: NOW_REF });
+    assert.equal(out1.primaryAction?.headline, '1 nowa wiadomość');
+
+    const out2 = computeHomePriorities({ user: { role: 'parent' }, unreadMessagesCount: 2, nowDate: NOW_REF });
+    assert.equal(out2.primaryAction?.headline, '2 nowe wiadomości');
+
+    const out4 = computeHomePriorities({ user: { role: 'parent' }, unreadMessagesCount: 4, nowDate: NOW_REF });
+    assert.equal(out4.primaryAction?.headline, '4 nowe wiadomości');
+
+    const out17 = computeHomePriorities({ user: { role: 'parent' }, unreadMessagesCount: 17, nowDate: NOW_REF });
+    assert.equal(out17.primaryAction?.headline, '17 nowych wiadomości');
+
+    const out22 = computeHomePriorities({ user: { role: 'parent' }, unreadMessagesCount: 22, nowDate: NOW_REF });
+    assert.equal(out22.primaryAction?.headline, '22 nowe wiadomości');
+
+    const out99 = computeHomePriorities({ user: { role: 'parent' }, unreadMessagesCount: 99, nowDate: NOW_REF });
+    assert.equal(out99.primaryAction?.headline, '99 nowych wiadomości');
+  });
+
+  // TEST 17: Daily Spin user-facing labels without debug placeholders
+  it('TEST 17: Daily Spin clean copy without debug labels', () => {
+    const outAvail = computeHomePriorities({ user: { role: 'parent' }, dailySpinAvailable: true, nowDate: NOW_REF });
+    assert.equal(outAvail.primaryAction?.headline, 'Koło fortuny • zakręć');
+
+    const outUsed = computeHomePriorities({ user: { role: 'parent' }, dailySpinAvailable: false, nowDate: NOW_REF });
+    assert.equal(outUsed.hasPriority, false);
   });
 });

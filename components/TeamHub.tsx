@@ -2311,8 +2311,12 @@ export default function TeamHub(props:{
         {/* COMMUNICATION PRIORITY LAYER (ETAP 12C: "NAJWAŻNIEJSZE TERAZ") */}
         <DeltaHomePrioritySection
           priorityData={homePriorityData}
+          unreadCount={unreadNewsCount}
+          dailySpinAvailable={!gameProfile?.dailySpinUsedToday}
           onNavigate={(targetTab, payload) => {
-            if (targetTab === "matches" && payload?.matchId) {
+            if (targetTab === "notifications") {
+              setNotificationsModalOpen(true);
+            } else if (targetTab === "matches" && payload?.matchId) {
               const m = matches.find(item => item.id === payload.matchId);
               if (m) {
                 setSelectedMatch(m);
