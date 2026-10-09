@@ -1874,11 +1874,14 @@ export default function TeamHub(props:{
       {/* IN-APP LIVE ALERTS (TOASTS / IMPORTANT BANNERS) */}
       <DeltaLiveAlertBanner
         events={systemEvents}
-        onDismiss={(id) => {
-          setSystemEvents(prev => prev.filter(e => e.id !== id));
-        }}
-        onNavigate={(targetTab, extra) => {
+        userId={props.profile.id}
+        userRole={props.profile.role}
+        parentPlayerIds={props.parentPlayerIds}
+        onNavigate={(targetTab) => {
           setTab(targetTab as any);
+        }}
+        onOpenNotifications={() => {
+          setNotificationsModalOpen(true);
         }}
       />
 
