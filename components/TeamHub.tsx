@@ -1386,10 +1386,14 @@ export default function TeamHub(props:{
       originalNewsItem?: News;
     }> = [];
 
+    const seenKeys = new Set<string>();
+
     // 1. Team News
     news.forEach(n => {
       const isUrgent = n.priority === "urgent" || n.type === "wazne";
       const isImportant = n.priority === "important";
+      seenKeys.add(n.id);
+      seenKeys.add(n.title.trim().toLowerCase());
       list.push({
         id: n.id,
         category: "general",
@@ -1406,10 +1410,15 @@ export default function TeamHub(props:{
     // 2. Club Updates (DELTA Sync)
     clubUpdates.forEach(c => {
       const isUrgent = c.priority >= 90 || /odwołan|zmiana/i.test(c.title);
+      const cleanTitle = decodeHtmlEntities(c.title);
+      seenKeys.add(c.source_key);
+      if (c.id) seenKeys.add(c.id);
+      seenKeys.add(cleanTitle.trim().toLowerCase());
+
       list.push({
         id: c.id || c.source_key,
         category: "club",
-        title: decodeHtmlEntities(c.title),
+        title: cleanTitle,
         body: decodeHtmlEntities(c.body || ""),
         published_at: c.published_at,
         source_name: "K.S. Delta Warszawa",
@@ -1419,8 +1428,15 @@ export default function TeamHub(props:{
       });
     });
 
-    // 3. Central System Events
+    // 3. Central System Events (Filtered by deduplication against existing keys)
     systemEvents.forEach(e => {
+      // Deduplicate if this system event already mirrors an existing club article or news
+      if (e.related_entity_id && seenKeys.has(e.related_entity_id)) return;
+      if (seenKeys.has(e.id)) return;
+      if (e.type === "CLUB_NEWS" && seenKeys.has(e.title.trim().toLowerCase())) return;
+
+      seenKeys.add(e.id);
+
       let category: any = "general";
       let deepLinkTab = "news";
 

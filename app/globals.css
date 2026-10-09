@@ -40143,4 +40143,16 @@ body > main,
   box-shadow: 0 0 6px #ef4444;
 }
 
+/* Mobile Safe-Area and Spacing Fixes */
+.hub-main {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 20px)) !important;
+}
+
+@media (max-width: 640px) {
+  .hub-main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 24px)) !important;
+  }
+}
+
+
 
