@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "test:delta-sync": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/delta-sync-parser.test.ts"
   },
   "dependencies": {
