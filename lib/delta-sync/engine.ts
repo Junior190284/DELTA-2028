@@ -211,7 +211,7 @@ export async function runDeltaSync(options?: { triggeredBy?: string }): Promise<
 
     const durationMs = Date.now() - startedAt;
 
-    // 5. Log to delta_sync_log and sync_logs
+    // 5. Log to delta_sync_history
     const logDetails = {
       source: DELTA_URL,
       duration_ms: durationMs,
@@ -221,28 +221,21 @@ export async function runDeltaSync(options?: { triggeredBy?: string }): Promise<
       triggeredBy: options?.triggeredBy || "cron"
     };
 
-    await admin.from("delta_sync_log").insert({
-      status: "SUCCESS",
-      items_found: parsedItems.length,
-      items_inserted: newCount,
-      items_updated: updatedCount,
-      changes_detected: changesCount,
-      duration_ms: durationMs,
-      details: JSON.stringify(logDetails),
-      created_at: now
-    });
-
-    // Also write to sync_logs for admin dashboard compatibility
     try {
-      await admin.from("sync_logs").insert({
-        source: "delta.warszawa.pl",
+      await admin.from("delta_sync_history").insert({
         status: "SUCCESS",
-        records_synced: parsedItems.length,
-        conflicts_count: changesCount,
+        items_found: parsedItems.length,
+        items_inserted: newCount,
+        items_updated: updatedCount,
+        changes_detected: changesCount,
+        errors_count: 0,
+        duration_ms: durationMs,
         details: logDetails,
-        synced_at: now
+        created_at: now
       });
-    } catch {}
+    } catch (logErr) {
+      console.warn("Could not insert into delta_sync_history:", logErr);
+    }
 
     return {
       success: true,
@@ -267,14 +260,15 @@ export async function runDeltaSync(options?: { triggeredBy?: string }): Promise<
 
     // Log failure
     try {
-      await admin.from("delta_sync_log").insert({
+      await admin.from("delta_sync_history").insert({
         status,
         items_found: 0,
         items_inserted: 0,
         items_updated: 0,
         changes_detected: 0,
+        errors_count: 1,
         duration_ms: durationMs,
-        details: errorMessage,
+        details: { error: errorMessage },
         created_at: new Date().toISOString()
       });
 
