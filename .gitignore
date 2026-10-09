@@ -3,3 +3,6 @@
 !.env.local.example
 node_modules/
 .next/
+backup_*/
+*.tsbuildinfo
+.temp/
