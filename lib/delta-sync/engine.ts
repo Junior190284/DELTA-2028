@@ -1,6 +1,6 @@
-import { createAdminClient } from "@/lib/supabase/admin";
-import { decodeDeltaHtml, parseDeltaUpdates, type ClubItem } from "./parser";
-import { emitSystemEvent, recordChangeHistory } from "@/lib/events/emitter";
+import { createAdminClient } from "../supabase/admin.ts";
+import { decodeDeltaHtml, parseDeltaUpdates, type ClubItem } from "./parser.ts";
+import { emitSystemEvent, recordChangeHistory } from "../events/emitter.ts";
 
 export const DELTA_URL = "https://www.delta.warszawa.pl/pilka.php?a=druzyny&druzyna=108";
 const FETCH_TIMEOUT_MS = 15_000;

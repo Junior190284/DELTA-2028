@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
-import type { DeltaSystemEvent, SystemEventType, EventImportance, DeltaChangeRecord, PushNotificationPreferences } from "./types";
+import { createAdminClient } from "../supabase/admin.ts";
+import type { DeltaSystemEvent, SystemEventType, EventImportance, DeltaChangeRecord, PushNotificationPreferences } from "./types.ts";
 import webpush from "web-push";
 
 /**
