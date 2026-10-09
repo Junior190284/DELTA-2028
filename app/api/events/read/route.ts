@@ -3,10 +3,20 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId") || "guest_user";
+    const userId = searchParams.get("userId");
+
+    if (!userId || !isUUID(userId)) {
+      return NextResponse.json({
+        success: true,
+        userId: userId || "guest_user",
+        readIds: []
+      });
+    }
 
     const admin = createAdminClient();
     const { data: reads, error } = await admin
@@ -31,7 +41,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const userId = body.userId || "guest_user";
+    const userId = body.userId;
     const eventIds: string[] = Array.isArray(body.eventIds)
       ? body.eventIds
       : body.eventId
@@ -40,6 +50,15 @@ export async function POST(req: NextRequest) {
 
     if (!eventIds.length) {
       return NextResponse.json({ success: false, message: "No event IDs provided" }, { status: 400 });
+    }
+
+    if (!userId || !isUUID(userId)) {
+      // Guest or unauthenticated user: acknowledge without DB write
+      return NextResponse.json({
+        success: true,
+        userId: userId || "guest_user",
+        markedReadCount: eventIds.length
+      });
     }
 
     const admin = createAdminClient();

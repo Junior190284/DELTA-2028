@@ -7,6 +7,8 @@ import type { DeltaSystemEvent } from "@/lib/events/types";
 
 export const dynamic = "force-dynamic";
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
     let userRole = "parent";
     let userPlayerIds: string[] = [];
 
-    if (userId && userId !== "guest_user") {
+    if (userId && isUUID(userId)) {
       const { data: profile } = await admin
         .from("profiles")
         .select("id,role")
@@ -61,7 +63,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch user read states
     const readMap: Record<string, boolean> = {};
-    if (userId) {
+    if (userId && isUUID(userId)) {
       const { data: reads } = await admin
         .from("user_event_reads")
         .select("event_id,read_at,seen_at")
