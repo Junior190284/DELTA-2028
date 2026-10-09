@@ -179,14 +179,14 @@ DROP POLICY IF EXISTS "Own wallet select" ON public.user_wallets;
 CREATE POLICY "Own wallet select" ON public.user_wallets FOR SELECT USING (user_id = auth.uid() OR public.is_staff());
 
 -- ------------------------------------------------------------------------------
--- 5. BEZPIECZEŃSTWO FUNKCJI (REVOKE EXECUTE FROM anon)
+-- 5. BEZPIECZEŃSTWO FUNKCJI (REVOKE EXECUTE FROM PUBLIC & anon)
 -- ------------------------------------------------------------------------------
-REVOKE EXECUTE ON FUNCTION public.is_staff() FROM anon;
-REVOKE EXECUTE ON FUNCTION public.is_parent_of(UUID) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.current_role() FROM anon;
-REVOKE EXECUTE ON FUNCTION public.has_permission(TEXT) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_staff() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.is_parent_of(UUID) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.current_role() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.has_permission(TEXT) FROM PUBLIC, anon;
 
-GRANT EXECUTE ON FUNCTION public.is_staff() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_parent_of(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.current_role() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.has_permission(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_staff() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_parent_of(UUID) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.current_role() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.has_permission(TEXT) TO authenticated, service_role;
