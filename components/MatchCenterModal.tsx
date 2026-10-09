@@ -11,7 +11,8 @@ import DeltaFanVotingModal from "./DeltaFanVotingModal";
 import { formatTeamName } from "@/lib/teams";
 import {
   CalendarDays, Check, ChevronRight, Crown, Goal, Save, ShieldCheck,
-  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles, Send, Heart
+  Star, Trophy, UserCheck, Users, X, Download, Share2, Sparkles, Send, Heart,
+  UserX, HelpCircle, Filter
 } from "lucide-react";
 
 type Player={id:string;display_name:string;shirt_number:string|null;position:string|null;photo_path:string|null;active:boolean};
@@ -86,6 +87,7 @@ export default function MatchCenterModal(props:{
   const [posterOpen,setPosterOpen]=useState(false);
   const [briefOpen,setBriefOpen]=useState(false);
   const [fanVotingOpen,setFanVotingOpen]=useState(false);
+  const [attendanceFilter, setAttendanceFilter] = useState<"all" | "present" | "absent" | "undecided">("all");
 
   const matchAttendance=props.attendance.filter(a=>a.match_id===match.id);
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
@@ -100,6 +102,44 @@ export default function MatchCenterModal(props:{
   const displayStatus=match.status==="played"?"ZAKOŃCZONY":match.status==="cancelled"?"ODWOŁANY":matchStarted?"TRWA":"PRZED MECZEM";
   const deltaScore=deltaIsHome?match.home_score:match.away_score;
   const opponentScore=deltaIsHome?match.away_score:match.home_score;
+
+  // Obliczenia podsumowania obecności (Obecni, Nieobecni, Niezdecydowani, Razem)
+  const attendanceStats = useMemo(() => {
+    let present = 0;
+    let absent = 0;
+    let undecided = 0;
+
+    players.forEach(p => {
+      const row = matchAttendance.find(a => a.player_id === p.id);
+      const s = row?.status;
+      if (s === "present" || s === "yes") {
+        present++;
+      } else if (s === "no") {
+        absent++;
+      } else {
+        undecided++;
+      }
+    });
+
+    return {
+      present,
+      absent,
+      undecided,
+      total: players.length
+    };
+  }, [players, matchAttendance]);
+
+  const filteredAttendancePlayers = useMemo(() => {
+    if (attendanceFilter === "all") return players;
+    return players.filter(p => {
+      const row = matchAttendance.find(a => a.player_id === p.id);
+      const s = row?.status;
+      if (attendanceFilter === "present") return s === "present" || s === "yes";
+      if (attendanceFilter === "absent") return s === "no";
+      if (attendanceFilter === "undecided") return s !== "present" && s !== "yes" && s !== "no";
+      return true;
+    });
+  }, [players, matchAttendance, attendanceFilter]);
 
   const selectedStarterIds=useMemo(
     ()=>new Set(matchLineup.filter(l=>l.is_starter).map(l=>l.player_id)),
@@ -415,7 +455,7 @@ export default function MatchCenterModal(props:{
         {tabs.filter(t=>t.allowed!==false).map(({id,label,icon:Icon})=>
           <button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>
             <Icon size={16}/><span>{label}</span>
-            {id==="attendance"&&<em>{presentCount}/{players.length}</em>}
+            {id==="attendance"&&<em>{attendanceStats.present}/{attendanceStats.total}</em>}
           </button>
         )}
       </nav>
@@ -425,7 +465,7 @@ export default function MatchCenterModal(props:{
           <div className="v105-match-headline"><span>{match.status==="played"?"WYNIK KOŃCOWY":matchStarted?"WYNIK NA ŻYWO":"NADCHODZĄCE SPOTKANIE"}</span><strong>{formatTeamName(match.home_team)}</strong><b>{match.status==="played"||matchStarted?`${match.home_score??0} : ${match.away_score??0}`:"VS"}</b><strong>{formatTeamName(match.away_team)}</strong></div><div className="v85-summary-grid">
             <div className="v85-summary-card"><span>TERMIN</span><b>{datePL(match.match_date)}</b><small>{match.match_time||"—"}</small></div>
             <div className="v85-summary-card"><span>MIEJSCE</span><b>{match.venue||"Do ustalenia"}</b><small>Kolejka {match.round_no||"—"}</small></div>
-            <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>OBECNI</span><b>{presentCount}/{players.length}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>
+            <button className="v85-summary-card clickable" onClick={()=>setTab("attendance")}><span>OBECNI</span><b>{attendanceStats.present}/{attendanceStats.total}</b><small>Otwórz listę obecności <ChevronRight size={12}/></small></button>
             <div className="v85-summary-card"><span>WYJŚCIOWA 6</span><b>{selectedStarterIds.size}/6</b><small>{matchLineup.find(l=>l.is_captain)?"Kapitan wybrany":"Kapitan do ustalenia"}</small></div>
           </div>
 
@@ -459,42 +499,262 @@ export default function MatchCenterModal(props:{
           {!canManageMatch&&!canEditEvents&&<button className="v85-parent-cta" onClick={()=>setTab("attendance")}><UserCheck size={18}/> POTWIERDŹ OBECNOŚĆ ZAWODNIKA <ChevronRight size={16}/></button>}
         </>}
 
-        {tab==="attendance"&&<>
-          <div className="v85-attendance-head">
-            <div><UserCheck size={20}/><div><b>Lista obecności</b><span>Potwierdzono {responseCount} z {players.length}</span></div></div>
-            <div className="v85-progress"><i style={{width:`${players.length?Math.min(100,responseCount/players.length*100):0}%`}}/></div>
-          </div>
+        {tab==="attendance"&& (
+          <div className="delta-att-tab-container">
+            {/* 1. GŁÓWNA KARTA PODSUMOWANIA Z 4 KAFELKAMI KPI */}
+            <div className="delta-att-header-card">
+              <div className="delta-att-header-top">
+                <div className="delta-att-title-wrap">
+                  <div className="delta-att-icon-badge">
+                    <UserCheck size={20} />
+                  </div>
+                  <div>
+                    <h3>PODSUMOWANIE OBECNOŚCI</h3>
+                    <p>Centrum zbiórki i weryfikacji składu meczowego DELTA</p>
+                  </div>
+                </div>
 
-          {canManageMatch?<div className="v85-attendance-table">
-            {players.map(p=>{
-              const response=responseStatus(p.id);
-              const actual=actualAttendance(p.id);
-              return <div className="v85-attendance-row" key={p.id}>
-                <span className="v82-shirt">#{p.shirt_number||"—"}</span>
-                <div className="v85-player-name"><b>{p.display_name}</b><small>{p.position||"Zawodnik"}</small></div>
-                <span className={`v82-status ${response||"empty"}`}>{response==="yes"?"Będzie":response==="no"?"Nie będzie":response==="maybe"?"Nie wiem":"Brak odpowiedzi"}</span>
-                <div className="v85-actual-actions">
-                  <button className={actual==="present"?"active yes":""} onClick={()=>setAttendance(p.id,"present")}><Check size={13}/> Obecny</button>
-                  <button className={actual==="no"?"active no":""} onClick={()=>setAttendance(p.id,"no")}><X size={13}/> Nieobecny</button>
-                  <button className={actual==="maybe"?"active maybe":""} onClick={()=>setAttendance(p.id,"maybe")}>Brak decyzji</button>
+                <div className="delta-att-progress-bar-wrap">
+                  <div className="delta-att-progress-labels">
+                    <span>Zweryfikowano zawodników</span>
+                    <strong>{attendanceStats.present + attendanceStats.absent} z {attendanceStats.total} ({attendanceStats.total > 0 ? Math.round(((attendanceStats.present + attendanceStats.absent) / attendanceStats.total) * 100) : 0}%)</strong>
+                  </div>
+                  <div className="delta-att-progress-track">
+                    <div 
+                      className="delta-att-progress-fill" 
+                      style={{ width: `${Math.min(100, attendanceStats.total > 0 ? Math.round(((attendanceStats.present + attendanceStats.absent) / attendanceStats.total) * 100) : 0)}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            })}
-          </div>:<div className="v85-parent-list">
-            {parentPlayers.length===0&&<div className="v82-rsvp-empty">Do konta nie przypisano jeszcze zawodnika.</div>}
-            {parentPlayers.map(p=>{
-              const status=responseStatus(p.id);
-              return <div className="v85-parent-player" key={p.id}>
-                <div className="v85-parent-player-name"><span className="v82-shirt">#{p.shirt_number||"—"}</span><div><b>{p.display_name}</b><small>{p.position||"Zawodnik"}</small></div></div>
-                <div className="v82-rsvp-actions v85-parent-actions">
-                  <button className={status==="yes"?"active yes":""} onClick={()=>setAttendance(p.id,"yes")}><Check size={15}/> Będzie</button>
-                  <button className={status==="no"?"active no":""} onClick={()=>setAttendance(p.id,"no")}><X size={15}/> Nie będzie</button>
-                  <button className={status==="maybe"?"active maybe":""} onClick={()=>setAttendance(p.id,"maybe")}>Nie wiem</button>
-                </div>
+
+              {/* 4 KAFELKI / BADGE (2x2 na mobile, 4x1 na desktopie) */}
+              <div className="delta-att-kpi-grid">
+                {/* 1. OBECNI (ZIELONY) */}
+                <button 
+                  type="button" 
+                  className={`delta-att-kpi-tile tile-present ${attendanceFilter === "present" ? "active-filter" : ""}`}
+                  onClick={() => setAttendanceFilter(prev => prev === "present" ? "all" : "present")}
+                  title="Kliknij, aby filtrować tylko obecnych"
+                >
+                  <div className="delta-att-kpi-icon-wrap icon-present">
+                    <UserCheck size={18} />
+                  </div>
+                  <div className="delta-att-kpi-body">
+                    <span className="delta-att-kpi-label">OBECNI</span>
+                    <strong className="delta-att-kpi-value value-present">{attendanceStats.present}</strong>
+                  </div>
+                  <span className="delta-att-kpi-badge badge-present">
+                    {attendanceStats.total > 0 ? Math.round((attendanceStats.present / attendanceStats.total) * 100) : 0}%
+                  </span>
+                </button>
+
+                {/* 2. NIEOBECNI (CZERWONY) */}
+                <button 
+                  type="button" 
+                  className={`delta-att-kpi-tile tile-absent ${attendanceFilter === "absent" ? "active-filter" : ""}`}
+                  onClick={() => setAttendanceFilter(prev => prev === "absent" ? "all" : "absent")}
+                  title="Kliknij, aby filtrować tylko nieobecnych"
+                >
+                  <div className="delta-att-kpi-icon-wrap icon-absent">
+                    <UserX size={18} />
+                  </div>
+                  <div className="delta-att-kpi-body">
+                    <span className="delta-att-kpi-label">NIEOBECNI</span>
+                    <strong className="delta-att-kpi-value value-absent">{attendanceStats.absent}</strong>
+                  </div>
+                  <span className="delta-att-kpi-badge badge-absent">
+                    {attendanceStats.total > 0 ? Math.round((attendanceStats.absent / attendanceStats.total) * 100) : 0}%
+                  </span>
+                </button>
+
+                {/* 3. NIEZDECYDOWANI (SZARY / BURSZTYN) */}
+                <button 
+                  type="button" 
+                  className={`delta-att-kpi-tile tile-undecided ${attendanceFilter === "undecided" ? "active-filter" : ""}`}
+                  onClick={() => setAttendanceFilter(prev => prev === "undecided" ? "all" : "undecided")}
+                  title="Kliknij, aby filtrować niezdecydowanych"
+                >
+                  <div className="delta-att-kpi-icon-wrap icon-undecided">
+                    <HelpCircle size={18} />
+                  </div>
+                  <div className="delta-att-kpi-body">
+                    <span className="delta-att-kpi-label">NIEZDECYDOWANI</span>
+                    <strong className="delta-att-kpi-value value-undecided">{attendanceStats.undecided}</strong>
+                  </div>
+                  <span className="delta-att-kpi-badge badge-undecided">
+                    {attendanceStats.total > 0 ? Math.round((attendanceStats.undecided / attendanceStats.total) * 100) : 0}%
+                  </span>
+                </button>
+
+                {/* 4. RAZEM (NEUTRALNY KLUBOWY ZŁOTY) */}
+                <button 
+                  type="button" 
+                  className={`delta-att-kpi-tile tile-total ${attendanceFilter === "all" ? "active-filter" : ""}`}
+                  onClick={() => setAttendanceFilter("all")}
+                  title="Kliknij, aby pokazać wszystkich zawodników"
+                >
+                  <div className="delta-att-kpi-icon-wrap icon-total">
+                    <Users size={18} />
+                  </div>
+                  <div className="delta-att-kpi-body">
+                    <span className="delta-att-kpi-label">RAZEM</span>
+                    <strong className="delta-att-kpi-value value-total">{attendanceStats.total}</strong>
+                  </div>
+                  <span className="delta-att-kpi-badge badge-total">100%</span>
+                </button>
               </div>
-            })}
-          </div>}
-        </>}
+
+              {/* Aktywny wskaźnik filtra */}
+              {attendanceFilter !== "all" && (
+                <div className="delta-att-filter-indicator">
+                  <span>Filtr: <strong>{attendanceFilter === "present" ? "Tylko obecni" : attendanceFilter === "absent" ? "Tylko nieobecni" : "Tylko niezdecydowani"}</strong> ({filteredAttendancePlayers.length})</span>
+                  <button type="button" onClick={() => setAttendanceFilter("all")} className="delta-att-clear-filter">
+                    <X size={12} /> Pokaż wszystkich ({attendanceStats.total})
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 2. LISTA ZAWODNIKÓW — KOMPAKTOWA, ERGONOMICZNA, TOUCH-FRIENDLY */}
+            {canManageMatch ? (
+              <div className="delta-att-players-list">
+                {filteredAttendancePlayers.map(p => {
+                  const actual = actualAttendance(p.id);
+                  const response = responseStatus(p.id);
+
+                  return (
+                    <article key={p.id} className={`delta-att-row ${actual === "present" ? "row-present" : actual === "no" ? "row-absent" : "row-undecided"}`}>
+                      {/* Lewa strona: Numer koszulki + Imię i Nazwisko + Pozycja + RSVP */}
+                      <div className="delta-att-row-left">
+                        <span className="delta-att-shirt-badge">#{p.shirt_number || "—"}</span>
+                        <div className="delta-att-name-box">
+                          <strong className="delta-att-player-name">{p.display_name}</strong>
+                          <div className="delta-att-sub-info">
+                            <span className="delta-att-pos">{p.position || "Zawodnik"}</span>
+                            {response && (
+                              <span className={`delta-att-rsvp-mini rsvp-${response}`}>
+                                RSVP: {response === "yes" ? "Będzie" : response === "no" ? "Nie będzie" : "Nie wie"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Środkowa część: Plakietka Statusu */}
+                      <div className="delta-att-row-status">
+                        <span className={`delta-att-status-pill status-${actual}`}>
+                          {actual === "present" ? (
+                            <><Check size={12} /> OBECNY</>
+                          ) : actual === "no" ? (
+                            <><X size={12} /> NIEOBECNY</>
+                          ) : (
+                            <><HelpCircle size={12} /> BRAK DECYZJI</>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Prawa część: Przyciski akcji (Obecny, Nieobecny, Brak decyzji) */}
+                      <div className="delta-att-action-buttons">
+                        <button
+                          type="button"
+                          onClick={() => setAttendance(p.id, "present")}
+                          className={`delta-att-btn btn-present ${actual === "present" ? "active" : ""}`}
+                          title="Oznacz jako obecny"
+                        >
+                          <Check size={14} />
+                          <span>Obecny</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendance(p.id, "no")}
+                          className={`delta-att-btn btn-absent ${actual === "no" ? "active" : ""}`}
+                          title="Oznacz jako nieobecny"
+                        >
+                          <X size={14} />
+                          <span>Nieobecny</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendance(p.id, "maybe")}
+                          className={`delta-att-btn btn-undecided ${actual === "maybe" ? "active" : ""}`}
+                          title="Resetuj status do braku decyzji"
+                        >
+                          <HelpCircle size={14} />
+                          <span>Reset</span>
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="delta-att-parent-container">
+                {parentPlayers.length === 0 ? (
+                  <div className="delta-att-empty-state">
+                    <UserCheck size={32} className="text-gold" />
+                    <h4>Brak przypisanego zawodnika</h4>
+                    <p>Do Twojego konta rodzica nie przypisano jeszcze profilu zawodnika. Skontaktuj się z trenerem drużyny.</p>
+                  </div>
+                ) : (
+                  <div className="delta-att-players-list">
+                    {parentPlayers.map(p => {
+                      const status = responseStatus(p.id);
+
+                      return (
+                        <article key={p.id} className={`delta-att-row ${status === "yes" ? "row-present" : status === "no" ? "row-absent" : "row-undecided"}`}>
+                          <div className="delta-att-row-left">
+                            <span className="delta-att-shirt-badge">#{p.shirt_number || "—"}</span>
+                            <div className="delta-att-name-box">
+                              <strong className="delta-att-player-name">{p.display_name}</strong>
+                              <span className="delta-att-pos">{p.position || "Zawodnik DELTA"}</span>
+                            </div>
+                          </div>
+
+                          <div className="delta-att-row-status">
+                            <span className={`delta-att-status-pill status-${status === "yes" ? "present" : status === "no" ? "no" : "maybe"}`}>
+                              {status === "yes" ? "Deklaracja: Będzie" : status === "no" ? "Deklaracja: Nie będzie" : "Brak deklaracji"}
+                            </span>
+                          </div>
+
+                          <div className="delta-att-action-buttons">
+                            <button
+                              type="button"
+                              onClick={() => setAttendance(p.id, "yes")}
+                              className={`delta-att-btn btn-present ${status === "yes" ? "active" : ""}`}
+                            >
+                              <Check size={14} />
+                              <span>Będzie</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAttendance(p.id, "no")}
+                              className={`delta-att-btn btn-absent ${status === "no" ? "active" : ""}`}
+                            >
+                              <X size={14} />
+                              <span>Nie będzie</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAttendance(p.id, "maybe")}
+                              className={`delta-att-btn btn-undecided ${status === "maybe" ? "active" : ""}`}
+                            >
+                              <HelpCircle size={14} />
+                              <span>Nie wiem</span>
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Bezpieczny odstęp dolny na telefonach zapobiegający zasłanianiu przez dolne menu */}
+            <div className="delta-att-bottom-spacer" aria-hidden="true" />
+          </div>
+        )}
 
         {canManageMatch&&tab==="lineup"&&<>
           <div className="v85-section-intro"><Users size={19}/><div><b>Wyjściowa 6 i kapitan</b><span>Wybierz do sześciu zawodników. „Usuń z 6” zwalnia miejsce bez zmiany obecności.</span></div><strong>{selectedStarterIds.size}/6</strong></div>
