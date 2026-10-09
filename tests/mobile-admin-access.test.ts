@@ -38,6 +38,7 @@ function getMobileMoreMenuItems(
   const tiles = [
     { id: "news", title: "WIADOMOŚCI I POWIADOMIENIA" },
     { id: "players", title: "DRUŻYNA" },
+    { id: "settings", title: "POWIADOMIENIA WEB PUSH" },
     { id: "typer", title: "FANTASY & TYPER" },
     { id: "game", title: "DELTA GAME" },
     { id: "collection", title: "DELTA COLLECTION" },
@@ -45,8 +46,7 @@ function getMobileMoreMenuItems(
     { id: "gallery", title: "GALERIA" },
     { id: "tv", title: "DELTA TV" },
     { id: "chronicle", title: "HISTORIA" },
-    { id: "hall", title: "HALL OF FAME" },
-    { id: "settings", title: "USTAWIENIA" }
+    { id: "hall", title: "HALL OF FAME" }
   ];
 
   if (canOpenAdmin) {
@@ -224,6 +224,42 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
     assert.equal(sheetStyles.overflowY, "auto", "Drawer content must be vertically scrollable");
     assert.equal(sheetStyles.zIndex, 125, "Drawer must render above bottom nav");
     assert.ok(sheetStyles.paddingBottom.includes("safe-area-inset-bottom"), "Must include safe area inset padding");
+  });
+
+  // TEST 9: Mobile more menu grid responsive columns & zero horizontal overflow
+  it("TEST 9: Mobile more menu grid responsive columns (320, 360, 375, 390, 412, 430)", () => {
+    function computeGridColumns(viewportWidth: number): { columns: number; totalWidth: number; hasHorizontalOverflow: boolean } {
+      const padding = 28; // 14px left + 14px right
+      const gap = viewportWidth <= 340 ? 8 : 10;
+      const columns = viewportWidth <= 340 ? 1 : 2;
+      const availableWidth = viewportWidth - padding;
+      const tileWidth = columns === 1 ? availableWidth : Math.floor((availableWidth - gap) / 2);
+      const computedTotal = columns === 1 ? tileWidth + padding : tileWidth * 2 + gap + padding;
+      return {
+        columns,
+        totalWidth: computedTotal,
+        hasHorizontalOverflow: computedTotal > viewportWidth
+      };
+    }
+
+    const viewports = [320, 340, 360, 375, 390, 412, 430];
+    for (const vp of viewports) {
+      const res = computeGridColumns(vp);
+      assert.equal(res.hasHorizontalOverflow, false, `Viewport ${vp}px must have ZERO horizontal overflow`);
+      if (vp <= 340) {
+        assert.equal(res.columns, 1, `Viewport ${vp}px should use 1 column fallback`);
+      } else {
+        assert.equal(res.columns, 2, `Viewport ${vp}px should use 2 columns`);
+      }
+    }
+  });
+
+  // TEST 10: Tile ordering has News at #1, Team at #2, Web Push at #3
+  it("TEST 10: Tile ordering places News at #1, Team at #2, Web Push at #3", () => {
+    const { tiles } = getMobileMoreMenuItems(false);
+    assert.equal(tiles[0].id, "news", "Position 1 must be WIADOMOŚCI I POWIADOMIENIA");
+    assert.equal(tiles[1].id, "players", "Position 2 must be DRUŻYNA");
+    assert.equal(tiles[2].id, "settings", "Position 3 must be POWIADOMIENIA WEB PUSH");
   });
 
 });

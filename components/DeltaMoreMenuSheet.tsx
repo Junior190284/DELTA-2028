@@ -143,7 +143,25 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 2. FANTASY & TYPER */}
+            {/* 3. POWIADOMIENIA WEB PUSH */}
+            <button
+              type="button"
+              className={`delta-more-tile ${activeTab === "settings" ? "active" : ""}`}
+              onClick={() => handleTileClick("settings")}
+            >
+              <div className="delta-tile-icon-box icon-settings">
+                <Settings size={22} />
+              </div>
+              <div className="delta-tile-text">
+                <strong className="delta-tile-title">POWIADOMIENIA WEB PUSH</strong>
+                <small className="delta-tile-subtitle">Włącz powiadomienia na telefonie</small>
+              </div>
+              <span className="delta-tile-status-chip gold">
+                PUSH
+              </span>
+            </button>
+
+            {/* 4. FANTASY & TYPER */}
             <button
               type="button"
               className="delta-more-tile"
@@ -161,7 +179,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 3. DELTA GAME */}
+            {/* 5. DELTA GAME */}
             <button
               type="button"
               className="delta-more-tile"
@@ -179,7 +197,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 4. DELTA COLLECTION */}
+            {/* 6. DELTA COLLECTION */}
             <button
               type="button"
               className={`delta-more-tile ${activeTab === "collection" ? "active" : ""}`}
@@ -197,7 +215,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 5. OSIĄGNIĘCIA 2.0 */}
+            {/* 7. OSIĄGNIĘCIA 2.0 */}
             <button
               type="button"
               className={`delta-more-tile ${activeTab === "achievements" ? "active" : ""}`}
@@ -215,7 +233,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 6. GALERIA & FOTO-BUDKA */}
+            {/* 8. GALERIA & FOTO-BUDKA */}
             <button
               type="button"
               className="delta-more-tile"
@@ -235,7 +253,7 @@ export default function DeltaMoreMenuSheet({
               )}
             </button>
 
-            {/* 7. DELTA TV */}
+            {/* 9. DELTA TV */}
             <button
               type="button"
               className="delta-more-tile"
@@ -253,7 +271,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 8. HISTORIA & KRONIKA */}
+            {/* 10. HISTORIA & KRONIKA */}
             <button
               type="button"
               className={`delta-more-tile ${activeTab === "chronicle" ? "active" : ""}`}
@@ -268,7 +286,7 @@ export default function DeltaMoreMenuSheet({
               </div>
             </button>
 
-            {/* 9. HALL OF FAME */}
+            {/* 11. HALL OF FAME */}
             <button
               type="button"
               className={`delta-more-tile ${activeTab === "hall" ? "active" : ""}`}
@@ -286,25 +304,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 10. POWIADOMIENIA WEB PUSH */}
-            <button
-              type="button"
-              className="delta-more-tile"
-              onClick={() => handleTileClick("settings")}
-            >
-              <div className="delta-tile-icon-box icon-settings">
-                <Settings size={22} />
-              </div>
-              <div className="delta-tile-text">
-                <strong className="delta-tile-title">POWIADOMIENIA WEB PUSH</strong>
-                <small className="delta-tile-subtitle">Włącz powiadomienia na telefonie</small>
-              </div>
-              <span className="delta-tile-status-chip gold">
-                PUSH
-              </span>
-            </button>
-
-            {/* 11. PANEL ADMINISTRATORA (tylko dla admin / coach / pomocnik) */}
+            {/* 12. PANEL ADMINISTRATORA (tylko dla admin / coach / pomocnik) */}
             {canOpenAdmin && (
               <button
                 type="button"

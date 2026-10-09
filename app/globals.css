@@ -39390,7 +39390,8 @@ body > main,
   bottom: 0;
   left: 0;
   right: 0;
-  max-width: 580px;
+  width: 100%;
+  max-width: min(580px, 100vw);
   margin: 0 auto;
   max-height: 88vh;
   display: flex;
@@ -39401,22 +39402,28 @@ body > main,
   border-top-right-radius: 24px;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85);
   z-index: 125;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: hidden;
   padding-bottom: env(safe-area-inset-bottom, 16px);
-  overflow: hidden;
 }
 
 .delta-more-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px 14px;
+  padding: 16px 16px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .delta-more-title-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .delta-more-logo {
@@ -39424,6 +39431,7 @@ body > main,
   height: 32px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(227, 29, 47, 0.4));
+  flex-shrink: 0;
 }
 
 .delta-more-kicker {
@@ -39433,14 +39441,20 @@ body > main,
   letter-spacing: 0.12em;
   display: block;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .delta-more-heading {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 1000;
   color: #ffffff;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .delta-more-close-btn {
@@ -39453,6 +39467,7 @@ body > main,
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #94a3b8;
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
@@ -39463,16 +39478,28 @@ body > main,
 
 .delta-more-content {
   overflow-y: auto;
-  padding: 16px 18px 24px;
+  overflow-x: hidden;
+  padding: 14px 14px 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .delta-more-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 340px) {
+  .delta-more-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 .delta-more-tile {
@@ -39480,6 +39507,10 @@ body > main,
   flex-direction: column;
   justify-content: space-between;
   min-height: 104px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 12px;
   border-radius: 14px;
   background: rgba(15, 20, 28, 0.85);
@@ -39487,7 +39518,10 @@ body > main,
   text-align: left;
   cursor: pointer;
   position: relative;
+  overflow: hidden;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .delta-more-tile:hover {
@@ -39513,8 +39547,10 @@ body > main,
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #94a3b8;
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
+.delta-tile-icon-box.icon-news { color: #ef4444; }
 .delta-tile-icon-box.icon-team { color: #38bdf8; }
 .delta-tile-icon-box.icon-fantasy { color: #f59e0b; }
 .delta-tile-icon-box.icon-game { color: #a855f7; }
@@ -39541,30 +39577,37 @@ body > main,
   box-shadow: 0 6px 20px rgba(241, 201, 92, 0.15);
 }
 
-.delta-more-sublink.admin-sublink {
-  border-color: rgba(241, 201, 92, 0.35);
-  background: rgba(241, 201, 92, 0.08);
-  color: #f1c95c;
-}
-
-.delta-more-sublink.admin-sublink:hover {
-  background: rgba(241, 201, 92, 0.18);
-  border-color: rgba(241, 201, 92, 0.6);
-}
-
 .delta-tile-text {
-  font-size: 11.5px;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.delta-tile-title {
+  display: block;
+  font-size: 11px;
   font-weight: 1000;
   color: #ffffff;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .delta-tile-subtitle {
   font-size: 9.5px;
   color: #718096;
-  white-space: nowrap;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .delta-tile-status-chip {
@@ -39579,6 +39622,10 @@ body > main,
   background: rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  max-width: calc(100% - 48px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .delta-tile-status-chip.gold {
@@ -39602,33 +39649,57 @@ body > main,
 
 .delta-more-footer-links {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
 }
 
 .delta-more-sublink {
-  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 12px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #94a3b8;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   text-decoration: none;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
   transition: all 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.delta-more-sublink span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .delta-more-sublink:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.16);
+}
+
+.delta-more-sublink.admin-sublink {
+  border-color: rgba(241, 201, 92, 0.35);
+  background: rgba(241, 201, 92, 0.08);
+  color: #f1c95c;
+}
+
+.delta-more-sublink.admin-sublink:hover {
+  background: rgba(241, 201, 92, 0.18);
+  border-color: rgba(241, 201, 92, 0.6);
 }
 
 /* 3. NAVIGATION 2.0 (BOTTOM BAR 5 ITEMS) */
