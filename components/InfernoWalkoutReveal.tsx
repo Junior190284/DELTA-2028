@@ -64,7 +64,7 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const stageTimersRef = useRef<NodeJS.Timeout[]>([]);
 
-  const themeConfig = useMemo(() => getRarityTheme(data.rarity), [data.rarity]);
+  const themeConfig = useMemo(() => getRarityTheme(data.theme), [data.theme]);
   const accentColor = data.accentColor || themeConfig.accentColor;
 
   // Cleanup timers helper
@@ -166,7 +166,7 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
   useEffect(() => {
     startTimeline();
     return () => clearAllTimers();
-  }, [data.rarity, data.backgroundVideo, data.playerImage, data.cardImage]);
+  }, [data.theme, data.backgroundVideo, data.playerImage, data.cardImage]);
 
   // Keyboard shortcut: ESC to skip
   useEffect(() => {
@@ -501,21 +501,6 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
                 {data.position}
               </span>
             )}
-            {data.rating && (
-              <span 
-                style={{
-                  padding: "6px 16px",
-                  borderRadius: "20px",
-                  background: `linear-gradient(90deg, ${accentColor}, #ff8400)`,
-                  color: "#000000",
-                  fontSize: "13px",
-                  fontWeight: 950,
-                  boxShadow: `0 0 20px ${accentColor}`
-                }}
-              >
-                OVR {data.rating}
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -674,7 +659,7 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
               </h2>
 
               <p style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 700, margin: "0 0 16px 0", fontFamily: "monospace" }}>
-                #{data.rating || "99"} • {data.teamName || "K.S. DELTA WARSZAWA 2018 GM"}
+                {data.teamName || "K.S. DELTA WARSZAWA 2018 GM"}
               </p>
 
               {/* Action Buttons Bar */}

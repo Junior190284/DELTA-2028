@@ -113,7 +113,17 @@ export async function runDeltaSync(options?: { triggeredBy?: string }): Promise<
     const updatedItems: ClubItem[] = [];
 
     for (const item of parsedItems) {
-      const existing = existingByKey.get(item.source_key);
+      // 1. Direct match with current source_key
+      // 2. Compatibility match with legacy source_key to prevent re-importing historical records
+      let existing = existingByKey.get(item.source_key);
+      if (!existing && item.legacy_source_key) {
+        existing = existingByKey.get(item.legacy_source_key);
+        if (existing) {
+          // Adopt existing row's source_key to maintain database consistency and FK integrity
+          item.source_key = existing.source_key;
+        }
+      }
+
       if (!existing) {
         newItems.push(item);
         newCount++;
@@ -196,7 +206,7 @@ export async function runDeltaSync(options?: { triggeredBy?: string }): Promise<
 
     // 4. Save updates to Supabase
     const now = new Date().toISOString();
-    const rowsToUpsert = parsedItems.map(({ content_hash: _, ...item }) => ({
+    const rowsToUpsert = parsedItems.map(({ content_hash: _, legacy_source_key: __, ...item }) => ({
       ...item,
       source_name: "K.S. Delta Warszawa",
       synced_at: now

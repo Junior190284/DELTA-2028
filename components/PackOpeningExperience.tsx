@@ -30,12 +30,14 @@ import { DeltaCardModel, adaptLegacyToDeltaCardModel, DELTA_THEME_CONFIGS } from
 import { CardDetailModal } from "@/components/collection";
 import { cardSound } from "@/lib/cards/audio";
 import { dispatchPackOpened, dispatchCollectionUpdated } from "@/lib/cards/cardSync";
+import InfernoWalkoutReveal from "@/components/InfernoWalkoutReveal";
+import { cardToWalkoutData, normalizeCardTheme, WALKOUT_PRESENTATION_PRIORITY } from "@/lib/cards/walkout-config";
 
 export type PackFlowPhase = 
   | "PACK_READY"
   | "PACK_OPENING_SERVER"
   | "PACK_TEAR"
-  | "RARITY_TEASE"
+  | "WALKOUT"
   | "CARD_REVEAL"
   | "SUMMARY";
 
@@ -182,22 +184,55 @@ export default function DeltaPackOpeningExperience({
     }
   };
 
-  // Transition from Tear -> Tease -> Reveal
+  // 6. Best card selection using purely canonical theme presentation priority (no OVR, no fake rarity)
+  const walkoutCardData = useMemo(() => {
+    if (!openingResult || !openingResult.cards || openingResult.cards.length === 0) return null;
+    
+    const eligible = openingResult.cards
+      .map((item, index) => {
+        const theme = normalizeCardTheme(item.card.card_type || item.card.frame_theme);
+        const priority = WALKOUT_PRESENTATION_PRIORITY[theme] || 0;
+        return { item, index, theme, priority };
+      })
+      .filter(x => x.priority > 0);
+
+    if (eligible.length === 0) return null;
+
+    // Sort strictly by presentation priority (highest priority first)
+    eligible.sort((a, b) => b.priority - a.priority);
+    const best = eligible[0];
+
+    return {
+      data: cardToWalkoutData(best.item.card),
+      cardIndex: best.index,
+      theme: best.theme
+    };
+  }, [openingResult]);
+
+  // Transition from Tear -> Walkout -> Card Reveal -> Summary
   useEffect(() => {
     if (phase === "PACK_TEAR") {
       const timer = setTimeout(() => {
-        setPhase("RARITY_TEASE");
-      }, 1200);
+        if (walkoutCardData) {
+          setPhase("WALKOUT");
+        } else {
+          setPhase("CARD_REVEAL");
+        }
+      }, 1100);
       return () => clearTimeout(timer);
     }
-    if (phase === "RARITY_TEASE") {
-      const timer = setTimeout(() => {
-        cardSound?.playWalkoutFanfare?.();
-        setPhase("CARD_REVEAL");
-      }, 1500);
-      return () => clearTimeout(timer);
+  }, [phase, walkoutCardData]);
+
+  // Handle Walkout Complete -> Move to next cards or summary
+  const handleWalkoutComplete = useCallback(() => {
+    if (drawnCardModels.length > 1) {
+      // If walkout was for card at index 0, start card reveal from next card or let user browse all
+      setCurrentCardIndex(0);
+      setPhase("CARD_REVEAL");
+    } else {
+      setPhase("SUMMARY");
     }
-  }, [phase]);
+  }, [drawnCardModels.length]);
 
   // Skip / Reveal All
   const handleRevealAll = useCallback(() => {
@@ -314,9 +349,9 @@ export default function DeltaPackOpeningExperience({
       )}
 
       {/* ========================================================================= */}
-      {/* PHASE 2 & 3: TEAR & RARITY TEASE / WALKOUT                               */}
+      {/* PHASE 2: PACK TEARING ANIMATION                                           */}
       {/* ========================================================================= */}
-      {(phase === "PACK_TEAR" || phase === "RARITY_TEASE") && (
+      {phase === "PACK_TEAR" && (
         <div className="relative flex-1 flex flex-col items-center justify-center p-4 text-center">
           {/* Full-screen Volumetric Climax Glow */}
           <div
@@ -324,37 +359,29 @@ export default function DeltaPackOpeningExperience({
             style={{ backgroundColor: highestThemeConfig.primaryColor }}
           />
 
-          {phase === "PACK_TEAR" ? (
-            <div className="space-y-4 animate-bounce">
-              <div className="relative w-48 h-72 rounded-2xl border-2 border-white/40 shadow-2xl overflow-hidden animate-pulse">
-                <img src={packImage} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-x-0 top-1/3 h-1 bg-white shadow-[0_0_20px_#fff]" />
-              </div>
-              <span className="text-xs font-black uppercase tracking-widest text-amber-400">
-                Rozdzieranie folii...
-              </span>
+          <div className="space-y-4 animate-bounce">
+            <div className="relative w-48 h-72 rounded-2xl border-2 border-white/40 shadow-2xl overflow-hidden animate-pulse">
+              <img src={packImage} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-x-0 top-1/3 h-1 bg-white shadow-[0_0_20px_#fff]" />
             </div>
-          ) : (
-            /* Rarity Tease & Walkout Announcement */
-            <div className="space-y-4 animate-fadeIn">
-              <div
-                className="px-4 py-1.5 rounded-full text-xs font-[1000] uppercase tracking-widest border inline-flex items-center gap-2 shadow-2xl"
-                style={{
-                  backgroundColor: "rgba(0,0,0,0.8)",
-                  borderColor: highestThemeConfig.primaryColor,
-                  color: highestThemeConfig.fontAccentColor
-                }}
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>WYKRYTO: {highestThemeConfig.label}</span>
-              </div>
-
-              <h2 className="text-3xl md:text-5xl font-[1000] tracking-tight uppercase text-white animate-pulse">
-                {highestThemeConfig.badgePill}
-              </h2>
-            </div>
-          )}
+            <span className="text-xs font-black uppercase tracking-widest text-amber-400">
+              Rozdzieranie folii...
+            </span>
+          </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHASE 3: WALKOUT CINEMATIC SEQUENCE                                       */}
+      {/* ========================================================================= */}
+      {phase === "WALKOUT" && walkoutCardData && (
+        <InfernoWalkoutReveal
+          data={walkoutCardData.data}
+          isEmbedded={false}
+          onCollect={handleWalkoutComplete}
+          onSkip={handleRevealAll}
+          onClose={handleWalkoutComplete}
+        />
       )}
 
       {/* ========================================================================= */}

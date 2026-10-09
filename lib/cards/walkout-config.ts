@@ -1,25 +1,26 @@
-import { MEDIA } from "@/lib/media";
+import { MEDIA } from "../media.ts";
 
-export type WalkoutRarity = 
+export type CanonicalCardTheme = 
   | "INFERNO" 
-  | "STANDARD" 
-  | "TRAINING_HERO" 
-  | "MATCHDAY_HERO" 
+  | "DELTA_ICON" 
   | "GOLD_MASTER" 
-  | "DELTA_ICON"
-  | string;
+  | "MATCHDAY_HERO" 
+  | "SEASONAL_EVENT" 
+  | "CAPTAIN" 
+  | "GOAL_MACHINE" 
+  | "TRAINING_HERO" 
+  | "STANDARD";
 
 export type InfernoWalkoutData = {
-  rarity: WalkoutRarity;
+  theme: CanonicalCardTheme | string;
   playerName: string;
-  rating?: number;
   position?: string;
   teamName?: string;
   playerImage: string;   // PNG cutout zawodnika bez tła
   cardImage: string;     // finalna karta PNG / WebP
   backgroundVideo: string; // mp4 z cinematic stadium/tunnel
   clubLogo?: string;
-  accentColor?: string; // default: klubowa czerwień (#e11d48 / #dc2626)
+  accentColor?: string;
   playerTransform?: {
     x?: number;
     y?: number;
@@ -46,56 +47,67 @@ export interface RarityThemeConfig {
   particleTheme: "inferno" | "gold" | "legend" | "standard";
 }
 
-export const WALKOUT_RARITY_CONFIGS: Record<string, RarityThemeConfig> = {
+export const WALKOUT_THEME_CONFIGS: Record<string, RarityThemeConfig> = {
   INFERNO: {
     id: "INFERNO",
     name: "INFERNO ULTRA",
     title: "INFERNO",
-    kicker: "ULTRA RARE WALKOUT",
+    kicker: "INFERNO SPECIAL",
     accentColor: "#ff2a3b",
     secondaryColor: "#ff8400",
     glowColor: "rgba(255, 42, 59, 0.6)",
-    defaultVideo: MEDIA.packOpening.bgInferno || "/sounds/inferno-bg.mp4",
+    defaultVideo: MEDIA.packOpening.bgInferno || "/media/walkouts/inferno-bg.mp4",
     particleTheme: "inferno"
-  },
-  GOLD_MASTER: {
-    id: "GOLD_MASTER",
-    name: "GOLD MASTER",
-    title: "GOLD MASTER",
-    kicker: "ELITE PACK WALKOUT",
-    accentColor: "#f1c95c",
-    secondaryColor: "#eab308",
-    glowColor: "rgba(241, 201, 92, 0.6)",
-    defaultVideo: MEDIA.packOpening.bgGold,
-    particleTheme: "gold"
   },
   DELTA_ICON: {
     id: "DELTA_ICON",
     name: "DELTA ICON",
     title: "DELTA ICON",
-    kicker: "LEGENDARY WALKOUT",
+    kicker: "DELTA ICON SPECIAL",
     accentColor: "#ffd700",
     secondaryColor: "#ffffff",
     glowColor: "rgba(255, 215, 0, 0.65)",
     defaultVideo: MEDIA.packOpening.bgLegend,
     particleTheme: "legend"
   },
+  GOLD_MASTER: {
+    id: "GOLD_MASTER",
+    name: "GOLD MASTER",
+    title: "GOLD MASTER",
+    kicker: "GOLD MASTER SPECIAL",
+    accentColor: "#f1c95c",
+    secondaryColor: "#eab308",
+    glowColor: "rgba(241, 201, 92, 0.6)",
+    defaultVideo: MEDIA.packOpening.bgGold,
+    particleTheme: "gold"
+  },
   MATCHDAY_HERO: {
     id: "MATCHDAY_HERO",
     name: "MATCHDAY HERO",
     title: "MATCHDAY HERO",
-    kicker: "MATCHDAY SPECIAL",
+    kicker: "MATCHDAY HERO SPECIAL",
     accentColor: "#38bdf8",
     secondaryColor: "#0284c7",
     glowColor: "rgba(56, 189, 248, 0.6)",
     defaultVideo: MEDIA.packOpening.bgMatchday,
     particleTheme: "legend"
   },
+  SEASONAL_EVENT: {
+    id: "SEASONAL_EVENT",
+    name: "SEASONAL EVENT",
+    title: "SEASONAL EVENT",
+    kicker: "SPECIAL EVENT EDITION",
+    accentColor: "#a855f7",
+    secondaryColor: "#6366f1",
+    glowColor: "rgba(168, 85, 247, 0.6)",
+    defaultVideo: MEDIA.packOpening.bgEpicPortal,
+    particleTheme: "legend"
+  },
   TRAINING_HERO: {
     id: "TRAINING_HERO",
     name: "TRAINING HERO",
-    title: "WARRIOR HERO",
-    kicker: "TRAINING MASTERY",
+    title: "TRAINING HERO",
+    kicker: "TRAINING SPECIAL",
     accentColor: "#34d399",
     secondaryColor: "#059669",
     glowColor: "rgba(52, 211, 153, 0.6)",
@@ -104,10 +116,45 @@ export const WALKOUT_RARITY_CONFIGS: Record<string, RarityThemeConfig> = {
   }
 };
 
+/**
+ * Explicit presentation priority for cinematic Walkout selection.
+ * Pure presentation ordering — not a game stat or OVR rating.
+ */
+export const WALKOUT_PRESENTATION_PRIORITY: Record<string, number> = {
+  INFERNO: 100,
+  DELTA_ICON: 80,
+  GOLD_MASTER: 60,
+  MATCHDAY_HERO: 40,
+  SEASONAL_EVENT: 30
+};
+
+export function normalizeCardTheme(rawTypeOrTheme?: string | null): CanonicalCardTheme {
+  if (!rawTypeOrTheme) return "STANDARD";
+  const upper = rawTypeOrTheme.toUpperCase().trim().replace(/[\s-]+/g, "_");
+  if (upper.includes("INFERNO")) return "INFERNO";
+  if (upper.includes("DELTA_ICON") || upper.includes("ICON")) return "DELTA_ICON";
+  if (upper.includes("GOLD_MASTER") || upper.includes("GOLD")) return "GOLD_MASTER";
+  if (upper.includes("MATCHDAY_HERO") || upper.includes("MATCHDAY")) return "MATCHDAY_HERO";
+  if (upper.includes("SEASONAL") || upper.includes("EVENT") || upper.includes("SPECIAL_EVENT")) return "SEASONAL_EVENT";
+  if (upper.includes("CAPTAIN")) return "CAPTAIN";
+  if (upper.includes("GOAL_MACHINE") || upper.includes("GOAL_HUNTER")) return "GOAL_MACHINE";
+  if (upper.includes("TRAINING_HERO") || upper.includes("TRAINING") || upper.includes("WARRIOR")) return "TRAINING_HERO";
+  return "STANDARD";
+}
+
+export function isWalkoutEligibleTheme(theme: string): boolean {
+  const norm = normalizeCardTheme(theme);
+  return (WALKOUT_PRESENTATION_PRIORITY[norm] || 0) > 0;
+}
+
+export function getRarityTheme(theme: string): RarityThemeConfig {
+  const norm = normalizeCardTheme(theme);
+  return WALKOUT_THEME_CONFIGS[norm] || WALKOUT_THEME_CONFIGS.GOLD_MASTER;
+}
+
 export const DEMO_INFERNO_DATA: InfernoWalkoutData = {
-  rarity: "INFERNO",
+  theme: "INFERNO",
   playerName: "Ryszard Rybacki",
-  rating: 99,
   position: "RW / NAPASTNIK",
   teamName: "K.S. DELTA WARSZAWA 2018 GM",
   playerImage: "/demo/player-cutout.png",
@@ -130,9 +177,8 @@ export const DEMO_INFERNO_DATA: InfernoWalkoutData = {
 };
 
 export const DEMO_GOLD_DATA: InfernoWalkoutData = {
-  rarity: "GOLD_MASTER",
+  theme: "GOLD_MASTER",
   playerName: "Stefan Zieliński",
-  rating: 92,
   position: "CAM / POMOCNIK",
   teamName: "K.S. DELTA WARSZAWA 2018 GM",
   playerImage: "/assets/players/ryszard-gold.png",
@@ -154,29 +200,23 @@ export const DEMO_GOLD_DATA: InfernoWalkoutData = {
   }
 };
 
-export function getRarityTheme(rarity: string): RarityThemeConfig {
-  const norm = (rarity || "").toUpperCase().replace(/\s+/g, "_");
-  return WALKOUT_RARITY_CONFIGS[norm] || WALKOUT_RARITY_CONFIGS.INFERNO;
-}
-
 export function cardToWalkoutData(card: any): InfernoWalkoutData {
-  const rarityKey = (card?.rarity || "inferno").toUpperCase();
-  const theme = getRarityTheme(rarityKey);
+  const themeKey = normalizeCardTheme(card?.card_type || card?.frame_theme);
+  const theme = getRarityTheme(themeKey);
   const pName = card?.player?.display_name || card?.title || card?.card_name || "Zawodnik DELTA GM";
   const isRyszard = pName.toLowerCase().includes("ryszard") || pName.toLowerCase().includes("rybacki");
 
-  const playerImg = isRyszard
-    ? (rarityKey === "INFERNO" ? "/assets/players/ryszard-inferno.png" : "/assets/players/ryszard-gold.png")
-    : (card?.player?.photo_path || "/assets/players/ryszard-inferno.png");
+  const playerImg = card?.player?.cutout_url || card?.player?.photo_path || (isRyszard
+    ? (themeKey === "INFERNO" ? "/assets/players/ryszard-inferno.png" : "/assets/players/ryszard-gold.png")
+    : "/assets/players/ryszard-inferno.png");
 
-  const cardImg = isRyszard
-    ? (rarityKey === "INFERNO" ? "/assets/players/ryszard-card-inferno.jpg" : "/assets/players/ryszard-card-gold.jpg")
-    : (card?.artwork_url || "/assets/players/ryszard-card-inferno.jpg");
+  const cardImg = card?.artwork_url || card?.image_url || (isRyszard
+    ? (themeKey === "INFERNO" ? "/assets/players/ryszard-card-inferno.jpg" : "/assets/players/ryszard-card-gold.jpg")
+    : (themeKey === "INFERNO" ? "/assets/players/ryszard-card-inferno.jpg" : "/assets/players/ryszard-card-gold.jpg"));
 
   return {
-    rarity: rarityKey,
+    theme: themeKey,
     playerName: pName,
-    rating: card?.ovr || card?.stats?.overall || (rarityKey === "INFERNO" ? 99 : 92),
     position: card?.player?.position || card?.position || "ZAWODNIK",
     teamName: "K.S. DELTA WARSZAWA 2018 GM",
     playerImage: playerImg,

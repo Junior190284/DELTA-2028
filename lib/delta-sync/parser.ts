@@ -3,6 +3,7 @@ import { decodeHtmlEntities } from "../text.ts";
 
 export type ClubItem = {
   source_key: string;
+  legacy_source_key?: string;
   content_hash: string;
   title: string;
   body: string;
@@ -57,9 +58,27 @@ function digest(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function stableId(title: string, date: string) {
-  // Stable identity format: sha256 of title + publication date
+export function normalizeTextForHash(text: string): string {
+  return (text || "")
+    .replace(/[\u00A0\u1680\u180e\u2000-\u200b\u202f\u205f\u3000\ufeff]/g, " ")
+    .replace(/\r?\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function generateSourceKey(title: string, date: string, body?: string): string {
+  const normTitle = normalizeTextForHash(title);
+  const normDate = normalizeTextForHash(date);
+  const normBody = normalizeTextForHash(body || "");
+  return digest(`${normTitle}|${normDate}|${normBody}`);
+}
+
+export function generateLegacySourceKey(title: string, date: string): string {
   return digest(`${title}|${date}`);
+}
+
+function stableId(title: string, date: string, body?: string) {
+  return generateSourceKey(title, date, body);
 }
 
 function isDateToken(value: string) {
@@ -171,8 +190,12 @@ export function parseDeltaUpdates(html: string, sourceUrl: string): ClubItem[] {
     const publishedAt = `${year}-${month}-${day}T12:00:00+02:00`;
     const priority = itemPriority(head.title);
 
+    const legacyKey = generateLegacySourceKey(head.title, head.date);
+    const sourceKey = generateSourceKey(head.title, head.date, body);
+
     items.push({
-      source_key: stableId(head.title, head.date),
+      source_key: sourceKey,
+      legacy_source_key: legacyKey,
       content_hash: digest(JSON.stringify([head.title, body, publishedAt, priority])),
       title: head.title,
       body,
