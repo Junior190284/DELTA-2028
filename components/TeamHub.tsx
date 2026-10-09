@@ -15,6 +15,10 @@ import PackOpeningModal from "./PackOpeningModal";
 import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
 import DeltaLiveBar from "./DeltaLiveBar";
 import DeltaMoreMenuSheet from "./DeltaMoreMenuSheet";
+import DeltaLiveAlertBanner from "./DeltaLiveAlertBanner";
+import DeltaUrgentEventModal from "./DeltaUrgentEventModal";
+import DeltaSyncControlCenter from "./admin/DeltaSyncControlCenter";
+import type { DeltaSystemEvent } from "@/lib/events/types";
 import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
 import AchievementUnlock from "./AchievementUnlock";
@@ -53,7 +57,7 @@ import { decodeHtmlEntities } from "@/lib/text";
 import { formatTeamName, getTeamLogo } from "@/lib/teams";
 import {
   Bell, CalendarDays, Trophy, Users, Newspaper, History, Shield, Star, MoreHorizontal,
-  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake, Coins, MessageSquare
+  Check, X, Crown, Target, ChevronLeft, ChevronRight, Flame, Award, UserCheck, Goal, Home, UserRound, TrendingUp, Medal, Zap, List, Grid3X3, Layers, Sparkles, LayoutGrid, ExternalLink, BookOpen, Send, Heart, Camera, Cake, Coins, MessageSquare, RefreshCw
 } from "lucide-react";
 
 type Profile={id:string;role:"admin"|"coach"|"parent"|string;display_name:string|null};
@@ -241,8 +245,37 @@ export default function TeamHub(props:{
     }
   };
 
+  const [systemEvents, setSystemEvents] = useState<DeltaSystemEvent[]>([]);
+  const [activeUrgentEvent, setActiveUrgentEvent] = useState<DeltaSystemEvent | null>(null);
+  const [newsFilter, setNewsFilter] = useState<string>("all");
+  const [syncControlModalOpen, setSyncControlModalOpen] = useState(false);
+
+  const fetchSystemEvents = async () => {
+    try {
+      const res = await fetch(`/api/events?userId=${props.profile.id || "guest_user"}`);
+      const data = await res.json();
+      if (data.success && data.events) {
+        setSystemEvents(data.events);
+
+        // Check for urgent unread event for popup
+        const urgent = data.events.find(
+          (e: DeltaSystemEvent) => e.importance === "URGENT" && !e.is_read
+        );
+        if (urgent) {
+          const dismissed = localStorage.getItem(`delta_urgent_dismissed_${urgent.id}`);
+          if (!dismissed) {
+            setActiveUrgentEvent(urgent);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load system events:", e);
+    }
+  };
+
   useEffect(() => {
     fetchGameProfile();
+    fetchSystemEvents();
   }, [props.profile.id]);
   const [readNewsMap, setReadNewsMap] = useState<Record<string, boolean>>({});
   const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
@@ -1219,6 +1252,7 @@ export default function TeamHub(props:{
     if(!error)setAttendance(prev=>[...prev.filter(a=>!(a.match_id===matchId&&a.player_id===playerId)),{match_id:matchId,player_id:playerId,status}]);
   }
   useEffect(() => {
+    // Load cached read map
     try {
       const saved = localStorage.getItem("delta_read_news");
       if (saved) {
@@ -1228,17 +1262,66 @@ export default function TeamHub(props:{
         setReadNewsMap(map);
       }
     } catch {}
-  }, []);
 
-  function handleToggleReadNews(newsId: string) {
+    // Sync from database for current user
+    const syncDbReads = async () => {
+      try {
+        const res = await fetch(`/api/events/read?userId=${props.profile.id || "guest_user"}`);
+        const data = await res.json();
+        if (data.success && data.readIds) {
+          setReadNewsMap(prev => {
+            const next = { ...prev };
+            data.readIds.forEach((id: string) => { next[id] = true; });
+            try {
+              localStorage.setItem("delta_read_news", JSON.stringify(Object.keys(next)));
+            } catch {}
+            return next;
+          });
+        }
+      } catch {}
+    };
+    syncDbReads();
+  }, [props.profile.id]);
+
+  async function handleToggleReadNews(newsId: string) {
+    const nextState = !readNewsMap[newsId];
     setReadNewsMap(prev => {
-      const next = { ...prev, [newsId]: !prev[newsId] };
+      const next = { ...prev, [newsId]: nextState };
       try {
         const readList = Object.keys(next).filter(k => next[k]);
         localStorage.setItem("delta_read_news", JSON.stringify(readList));
       } catch {}
       return next;
     });
+
+    // Save to database
+    try {
+      await fetch("/api/events/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: props.profile.id || "guest_user", eventId: newsId })
+      });
+    } catch {}
+  }
+
+  async function handleMarkAllNewsRead() {
+    const allIds = [
+      ...news.map(n => n.id),
+      ...clubUpdates.map(c => c.id || c.source_key),
+      ...systemEvents.map(e => e.id)
+    ];
+    const map: Record<string, boolean> = {};
+    allIds.forEach(id => { map[id] = true; });
+    setReadNewsMap(map);
+
+    try {
+      localStorage.setItem("delta_read_news", JSON.stringify(allIds));
+      await fetch("/api/events/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: props.profile.id || "guest_user", eventIds: allIds })
+      });
+    } catch {}
   }
 
   function openAddNewsModal() {
@@ -1286,9 +1369,108 @@ export default function TeamHub(props:{
     return trainingSessions.some(t => t.training_date === todayStr);
   }, [trainingSessions, todayStr]);
   const unreadNoticeCount = unanswered.length;
+
+  const unifiedNewsItems = useMemo(() => {
+    const list: Array<{
+      id: string;
+      category: "matches" | "trainings" | "club" | "sync" | "fantasy" | "achievements" | "gallery" | "multimedia" | "general";
+      title: string;
+      body: string;
+      published_at: string;
+      source_name: string;
+      source_url?: string;
+      importance: "INFO" | "NORMAL" | "IMPORTANT" | "URGENT";
+      typeLabel: string;
+      deepLinkTab?: string;
+      deepLinkPayload?: any;
+      originalNewsItem?: News;
+    }> = [];
+
+    // 1. Team News
+    news.forEach(n => {
+      const isUrgent = n.priority === "urgent" || n.type === "wazne";
+      const isImportant = n.priority === "important";
+      list.push({
+        id: n.id,
+        category: "general",
+        title: n.title,
+        body: n.body || "",
+        published_at: n.published_at,
+        source_name: "DELTA 2018 GM",
+        importance: isUrgent ? "URGENT" : isImportant ? "IMPORTANT" : "NORMAL",
+        typeLabel: n.type.toUpperCase(),
+        originalNewsItem: n
+      });
+    });
+
+    // 2. Club Updates (DELTA Sync)
+    clubUpdates.forEach(c => {
+      const isUrgent = c.priority >= 90 || /odwołan|zmiana/i.test(c.title);
+      list.push({
+        id: c.id || c.source_key,
+        category: "club",
+        title: decodeHtmlEntities(c.title),
+        body: decodeHtmlEntities(c.body || ""),
+        published_at: c.published_at,
+        source_name: "K.S. Delta Warszawa",
+        source_url: c.source_url,
+        importance: isUrgent ? "IMPORTANT" : "NORMAL",
+        typeLabel: "Z KLUBU"
+      });
+    });
+
+    // 3. Central System Events
+    systemEvents.forEach(e => {
+      let category: any = "general";
+      let deepLinkTab = "news";
+
+      if (e.type.startsWith("MATCH")) {
+        category = "matches";
+        deepLinkTab = "matches";
+      } else if (e.type.startsWith("TRAINING")) {
+        category = "trainings";
+        deepLinkTab = "training";
+      } else if (e.type === "PLAYER_CARD_UNLOCKED") {
+        category = "fantasy";
+        deepLinkTab = "collection";
+      } else if (e.type === "PLAYER_ACHIEVEMENT") {
+        category = "achievements";
+        deepLinkTab = "achievements";
+      } else if (e.type === "GALLERY_CREATED") {
+        category = "gallery";
+        deepLinkTab = "gallery";
+      } else if (e.type === "VIDEO_PUBLISHED") {
+        category = "multimedia";
+        deepLinkTab = "tv";
+      } else if (e.type === "SYNC_ERROR") {
+        category = "sync";
+      }
+
+      list.push({
+        id: e.id,
+        category,
+        title: e.title,
+        body: e.message,
+        published_at: e.created_at,
+        source_name: e.source,
+        importance: e.importance,
+        typeLabel: e.type.replace(/_/g, " "),
+        deepLinkTab,
+        deepLinkPayload: e.metadata
+      });
+    });
+
+    return list.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+  }, [news, clubUpdates, systemEvents]);
+
   const unreadNewsCount = useMemo(() => {
-    return news.filter(n => !readNewsMap[n.id]).length;
-  }, [news, readNewsMap]);
+    return unifiedNewsItems.filter(item => !readNewsMap[item.id]).length;
+  }, [unifiedNewsItems, readNewsMap]);
+
+  const filteredNewsItems = useMemo(() => {
+    if (newsFilter === "all") return unifiedNewsItems;
+    return unifiedNewsItems.filter(item => item.category === newsFilter);
+  }, [unifiedNewsItems, newsFilter]);
 
   const navCategories = useMemo(() => [
     {
@@ -1664,6 +1846,37 @@ export default function TeamHub(props:{
 
     {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
     <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
+      {/* IN-APP LIVE ALERTS (TOASTS / IMPORTANT BANNERS) */}
+      <DeltaLiveAlertBanner
+        events={systemEvents}
+        onDismiss={(id) => {
+          setSystemEvents(prev => prev.filter(e => e.id !== id));
+        }}
+        onNavigate={(targetTab, extra) => {
+          setTab(targetTab as any);
+        }}
+      />
+
+      {/* URGENT EVENT MODAL (CRITICAL MATCH/TRAINING NOTICES) */}
+      <DeltaUrgentEventModal
+        event={activeUrgentEvent}
+        onClose={() => {
+          if (activeUrgentEvent) {
+            localStorage.setItem(`delta_urgent_dismissed_${activeUrgentEvent.id}`, "true");
+          }
+          setActiveUrgentEvent(null);
+        }}
+        onAction={(event) => {
+          if (event.type.startsWith("MATCH")) {
+            setTab("matches");
+          } else if (event.type.startsWith("TRAINING")) {
+            setTab("training");
+          } else {
+            setTab("news");
+          }
+        }}
+      />
+
       <DeltaLiveBar
         matches={matches}
         trainingSessions={trainingSessions}
@@ -3310,50 +3523,169 @@ export default function TeamHub(props:{
       </section>}
 
       {tab==="news"&&<section className="section v8-section-page">
-        <div className="section-title">
+        <div className="section-title flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2>Aktualności & Komunikaty</h2>
-            <p className="v141-hof-intro">Oficjalne wiadomości, odprawy, informacje o zbiórkach i życiu drużyny.</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="eyebrow gold">CENTRUM WIADOMOŚCI & POWIADOMIEŃ</span>
+              {unreadNewsCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black tracking-wider">
+                  {unreadNewsCount} NOWYCH
+                </span>
+              )}
+            </div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-wider m-0">Wiadomości & Zdarzenia</h2>
+            <p className="v141-hof-intro text-xs text-slate-400 mt-1">
+              Oficjalne komunikaty, aktualności klubowe ze strony DELTY, powołania, zmiany terminów i alerty.
+            </p>
           </div>
-          {(staff||props.userPermissions.can_manage_news)&&<button className="btn gold-btn" onClick={openAddNewsModal}><Newspaper size={16}/> Dodaj komunikat</button>}
+          <div className="flex items-center gap-2 flex-wrap">
+            {unreadNewsCount > 0 && (
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                onClick={handleMarkAllNewsRead}
+              >
+                <Check size={14} className="text-emerald-400" />
+                <span>Oznacz wszystkie jako przeczytane</span>
+              </button>
+            )}
+            {staff && (
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-xs font-black text-amber-400 hover:bg-amber-500/30 transition-all flex items-center gap-1.5"
+                onClick={() => setSyncControlModalOpen(true)}
+              >
+                <RefreshCw size={14} />
+                <span>DELTA SYNC 2.0</span>
+              </button>
+            )}
+            {(staff||props.userPermissions.can_manage_news)&&(
+              <button className="btn gold-btn" onClick={openAddNewsModal}>
+                <Newspaper size={16}/> Dodaj komunikat
+              </button>
+            )}
+          </div>
         </div>
-        <div className="news-grid">
-          {news.map(n=>{
-            const isRead = !!readNewsMap[n.id];
-            const isUrgent = n.priority === "urgent" || n.type === "wazne";
-            const isImportant = n.priority === "important";
+
+        {/* 9 FILTER CHIPS */}
+        <div className="v200-news-filter-chips flex items-center gap-2 overflow-x-auto py-3 no-scrollbar">
+          {[
+            { id: "all", label: "Wszystkie", count: unifiedNewsItems.length },
+            { id: "matches", label: "Mecze", count: unifiedNewsItems.filter(i => i.category === "matches").length },
+            { id: "trainings", label: "Treningi", count: unifiedNewsItems.filter(i => i.category === "trainings").length },
+            { id: "club", label: "Klub", count: unifiedNewsItems.filter(i => i.category === "club").length },
+            { id: "sync", label: "DELTA Sync", count: unifiedNewsItems.filter(i => i.category === "sync").length },
+            { id: "fantasy", label: "Fantasy", count: unifiedNewsItems.filter(i => i.category === "fantasy").length },
+            { id: "achievements", label: "Osiągnięcia", count: unifiedNewsItems.filter(i => i.category === "achievements").length },
+            { id: "gallery", label: "Galeria", count: unifiedNewsItems.filter(i => i.category === "gallery").length },
+            { id: "multimedia", label: "Multimedia", count: unifiedNewsItems.filter(i => i.category === "multimedia").length },
+          ].map(chip => (
+            <button
+              key={chip.id}
+              type="button"
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                newsFilter === chip.id
+                  ? "bg-red-600 text-white shadow-lg shadow-red-600/30 font-black border border-red-500"
+                  : "bg-slate-900/80 text-slate-400 border border-white/10 hover:border-white/20 hover:text-white"
+              }`}
+              onClick={() => setNewsFilter(chip.id)}
+            >
+              <span>{chip.label}</span>
+              {chip.count > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${newsFilter === chip.id ? "bg-black/40 text-white" : "bg-white/10 text-slate-400"}`}>
+                  {chip.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* UNIFIED NEWS FEED GRID */}
+        <div className="news-grid mt-2">
+          {filteredNewsItems.map(item => {
+            const isRead = !!readNewsMap[item.id];
+            const isUrgent = item.importance === "URGENT";
+            const isImportant = item.importance === "IMPORTANT";
             return (
-              <article className={`news-card devil-card ${isUrgent ? "is-urgent" : isImportant ? "is-important" : ""} ${isRead ? "is-read" : "is-unread"}`} key={n.id}>
+              <article 
+                className={`news-card devil-card ${isUrgent ? "is-urgent" : isImportant ? "is-important" : ""} ${isRead ? "is-read" : "is-unread"}`} 
+                key={item.id}
+              >
                 <div className="v200-news-topline">
-                  <span className={`tag tag-${n.type} ${isUrgent ? "priority-urgent" : isImportant ? "priority-important" : ""}`}>
-                    {isUrgent ? "🔴 PILNE" : isImportant ? "🟡 WAŻNE" : n.type.toUpperCase()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`tag ${isUrgent ? "priority-urgent" : isImportant ? "priority-important" : "bg-slate-800 text-slate-300"}`}>
+                      {isUrgent ? "🔴 PILNE" : isImportant ? "🟡 WAŻNE" : item.typeLabel}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      {item.source_name}
+                    </span>
+                  </div>
+
                   <div className="v200-news-actions-mini">
-                    {staff && (
-                      <button type="button" className="v200-news-edit-btn" onClick={()=>openEditNewsModal(n)} title="Edytuj wiadomość">
+                    {staff && item.originalNewsItem && (
+                      <button 
+                        type="button" 
+                        className="v200-news-edit-btn" 
+                        onClick={() => openEditNewsModal(item.originalNewsItem!)} 
+                        title="Edytuj wiadomość"
+                      >
                         ✏️ Edytuj
                       </button>
                     )}
                     <button 
                       type="button" 
                       className={`v200-read-toggle-btn ${isRead ? "is-confirmed" : ""}`}
-                      onClick={()=>handleToggleReadNews(n.id)}
+                      onClick={() => handleToggleReadNews(item.id)}
                       title={isRead ? "Wiadomość została odczytana" : "Kliknij, aby potwierdzić przeczytanie"}
                     >
                       {isRead ? "✓ Przeczytano" : "Potwierdź odczytanie"}
                     </button>
                   </div>
                 </div>
-                <h3>{n.title}</h3>
-                <p style={{whiteSpace:"pre-wrap"}}>{n.body}</p>
-                <div className="v200-news-meta">
-                  <small>{new Date(n.published_at).toLocaleString("pl-PL", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"})}</small>
-                  {isRead && <span className="v200-read-badge">✓ Odczytane</span>}
+
+                <h3 className="text-white font-bold text-base mt-2 mb-1">{item.title}</h3>
+                {item.body && <p style={{whiteSpace:"pre-wrap"}} className="text-xs text-slate-300 leading-relaxed">{item.body}</p>}
+                
+                <div className="v200-news-meta mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+                  <small className="text-slate-500 text-[11px]">
+                    {new Date(item.published_at).toLocaleString("pl-PL", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"})}
+                  </small>
+                  <div className="flex items-center gap-2">
+                    {item.deepLinkTab && (
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                        onClick={() => {
+                          setTab(item.deepLinkTab as any);
+                        }}
+                      >
+                        <span>Przejdź</span>
+                        <ChevronRight size={13} />
+                      </button>
+                    )}
+                    {item.source_url && (
+                      <a 
+                        href={item.source_url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                      >
+                        <span>DELTA.WARSZAWA.PL</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                    {isRead && <span className="v200-read-badge text-[10px] text-emerald-400 font-bold">✓ Odczytane</span>}
+                  </div>
                 </div>
               </article>
             );
           })}
-          {news.length===0&&<div className="v101-empty-stage"><Newspaper size={34}/><b>Brak nowych komunikatów.</b></div>}
+          {filteredNewsItems.length === 0 && (
+            <div className="v101-empty-stage">
+              <Newspaper size={34}/>
+              <b>Brak wiadomości w wybranej kategorii.</b>
+            </div>
+          )}
         </div>
       </section>}
     </main>
@@ -3965,6 +4297,33 @@ export default function TeamHub(props:{
         playerCards={players}
         onTradeCompleted={() => fetchGameProfile()}
       />
+    )}
+
+    {/* DELTA SYNC 2.0 CONTROL CENTER MODAL */}
+    {syncControlModalOpen && (
+      <div className="v200-modal-overlay" onClick={() => setSyncControlModalOpen(false)} role="dialog" aria-modal="true">
+        <div className="v200-modal-container max-w-3xl animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+          <div className="v200-modal-head">
+            <div className="flex items-center gap-2">
+              <RefreshCw size={18} className="text-amber-400" />
+              <h3 className="text-base font-black text-white uppercase tracking-wider m-0">
+                DELTA SYNC 2.0 & EVENT BUS
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSyncControlModalOpen(false)}
+              className="v200-modal-close"
+              aria-label="Zamknij"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-4 sm:p-6 overflow-y-auto max-h-[80vh]">
+            <DeltaSyncControlCenter />
+          </div>
+        </div>
+      </div>
     )}
 
     {/* PWA & Network Resilience Components */}

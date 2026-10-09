@@ -39706,3 +39706,441 @@ body > main,
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.8));
 }
 
+/* =========================================================
+   DELTA INFERNO — ETAP 6: LIVE ALERTS, URGENT MODAL & SYNC CENTER
+   ========================================================= */
+
+/* 1. URGENT EVENT MODAL */
+.delta-urgent-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.delta-urgent-modal-container {
+  width: 100%;
+  max-width: 500px;
+  background: #090c10;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(239, 68, 68, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.delta-urgent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(9, 12, 16, 0.8) 100%);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.delta-urgent-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 1000;
+  color: #ef4444;
+  letter-spacing: 0.08em;
+}
+
+.delta-urgent-icon {
+  animation: pulse-badge 1.5s infinite ease-in-out;
+}
+
+.delta-urgent-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delta-urgent-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.delta-urgent-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delta-urgent-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 1000;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.delta-urgent-message {
+  margin: 0;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.delta-urgent-meta-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.delta-urgent-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.delta-urgent-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.delta-urgent-btn-primary {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: 1px solid rgba(239, 68, 68, 0.8);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+.delta-urgent-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+}
+
+.delta-urgent-btn-secondary {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delta-urgent-btn-secondary:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 2. IMPORTANT ALERT BANNER */
+.delta-important-alert-banner {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 10px;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.delta-alert-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.18) 0%, rgba(15, 20, 28, 0.95) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
+}
+
+.delta-alert-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.delta-alert-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.delta-alert-title {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delta-alert-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delta-alert-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.delta-alert-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: #f59e0b;
+  border: 0;
+  color: #000000;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delta-alert-close-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delta-alert-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 3. DELTA SYNC CONTROL CENTER */
+.delta-sync-panel-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.delta-sync-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 640px) {
+  .delta-sync-panel-header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.delta-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.delta-sync-pill.ok {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.delta-sync-pill.delay {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+}
+
+.delta-sync-pill.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.delta-sync-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f1c95c 0%, #ca8a04 100%);
+  border: 1px solid rgba(241, 201, 92, 0.8);
+  color: #1a1003;
+  font-size: 11.5px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(241, 201, 92, 0.3);
+}
+
+.delta-sync-trigger-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(241, 201, 92, 0.45);
+}
+
+.delta-sync-trigger-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.delta-sync-feedback-banner {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(241, 201, 92, 0.1);
+  border: 1px solid rgba(241, 201, 92, 0.3);
+  color: #f1c95c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.delta-sync-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .delta-sync-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.delta-sync-kpi-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 20, 28, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.delta-sync-kpi-card .kpi-label {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #718096;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.delta-sync-kpi-card .kpi-value {
+  font-size: 18px;
+  font-weight: 1000;
+  line-height: 1.2;
+}
+
+.delta-sync-kpi-card .kpi-sub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.delta-sync-history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.delta-sync-history-heading {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 900;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.delta-sync-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.delta-sync-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.delta-sync-history-row .status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.delta-sync-history-row .status-dot.ok {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.delta-sync-history-row .status-dot.err {
+  background: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+}
+
+
