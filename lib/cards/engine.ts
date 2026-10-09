@@ -275,7 +275,7 @@ export async function openPackServerSide(
 
     const selectedCard = matchingCards[Math.floor(Math.random() * matchingCards.length)] as CardDefinition;
     const isDuplicate = ownedCardIds.has(selectedCard.id);
-    const pointsForDup = isDuplicate ? (RARITY_CONFIG[selectedCard.rarity]?.duplicatePoints || 10) : 0;
+    const pointsForDup = isDuplicate ? (RARITY_CONFIG[selectedCard.rarity]?.duplicatePoints ?? 4) : 0;
 
     if (isDuplicate) {
       totalDeltaPoints += pointsForDup;

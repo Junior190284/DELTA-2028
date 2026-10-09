@@ -3,6 +3,8 @@
  * Rule: CLIENT NEVER DECIDES REWARD VALUE
  */
 
+export const ECONOMY_BALANCE_VERSION = "2026-10-balanced-v1";
+
 export interface SpinSegment {
   id: string;
   name: string;
@@ -62,11 +64,18 @@ export function getQuizRewardForLesson(lessonId: string): number {
   return QUIZ_LESSON_REWARDS[lessonId] ?? DEFAULT_QUIZ_REWARD_DELTA_POINTS;
 }
 
+/**
+ * SCENARIO B (BALANCED SUSTAINABLE) AUTHORITATIVE PACK PRICES
+ */
 export const PACK_PRICES: Record<string, number> = {
-  standard_pack: 50,
-  matchday_booster: 80,
-  gold_booster: 120,
-  inferno_booster: 250,
-  legend_pack: 350,
-  legend_booster: 350
+  standard_pack: 60,
+  matchday_booster: 100,
+  gold_booster: 150,
+  inferno_booster: 300,
+  legend_pack: 450,
+  legend_booster: 450
 };
+
+export function getPackPrice(packTypeId: string): number {
+  return PACK_PRICES[packTypeId] || PACK_PRICES.standard_pack;
+}

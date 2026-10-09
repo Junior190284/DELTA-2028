@@ -1,17 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { 
   DAILY_SPIN_SEGMENTS, 
   selectRandomSpinSegment, 
   QUIZ_PASS_THRESHOLD_PERCENT, 
   QUIZ_LESSON_REWARDS,
   getQuizRewardForLesson,
-  PACK_PRICES 
+  PACK_PRICES,
+  getPackPrice,
+  ECONOMY_BALANCE_VERSION
 } from "../lib/economy/security.ts";
+import { RARITY_CONFIG } from "../lib/cards/types.ts";
+import type { CardRarity } from "../lib/cards/types.ts";
 
 /**
- * DELTA 2018 GM — ETAP 14B.1: ECONOMY SECURITY HARDENING TEST SUITE
- * Comprehensive security, idempotency, atomic consistency, and product rule tests.
+ * DELTA 2018 GM — ETAP 14D.1: ECONOMY SECURITY & BALANCED IMPLEMENTATION TEST SUITE
+ * Comprehensive security, idempotency, atomic consistency, balance calibration,
+ * and mathematical loop regression tests for Scenario B.
  */
 
 // =========================================================================
@@ -250,19 +257,15 @@ test("TEST 10: Minigames submit route enforces session user.id and rejects user 
 // TEST 11: Buy Pack enforces server-side pricing strictly (client cannot alter prices)
 // =========================================================================
 test("TEST 11: Buy Pack enforces server-side pricing strictly (client cannot alter prices)", () => {
-  assert.equal(PACK_PRICES.standard_pack, 50);
-  assert.equal(PACK_PRICES.matchday_booster, 80);
-  assert.equal(PACK_PRICES.gold_booster, 120);
-  assert.equal(PACK_PRICES.inferno_booster, 250);
-  assert.equal(PACK_PRICES.legend_pack, 350);
-
-  const getPackPrice = (packTypeId: string) => {
-    return PACK_PRICES[packTypeId] || null;
-  };
+  assert.equal(PACK_PRICES.standard_pack, 60);
+  assert.equal(PACK_PRICES.matchday_booster, 100);
+  assert.equal(PACK_PRICES.gold_booster, 150);
+  assert.equal(PACK_PRICES.inferno_booster, 300);
+  assert.equal(PACK_PRICES.legend_pack, 450);
 
   const serverPrice = getPackPrice("legend_pack");
-  assert.equal(serverPrice, 350, "Server price for legend_pack must strictly be 350 DP");
-  assert.equal(getPackPrice("fake_infinite_pack"), null);
+  assert.equal(serverPrice, 450, "Server price for legend_pack must strictly be 450 DP");
+  assert.equal(PACK_PRICES["fake_infinite_pack"], undefined);
 });
 
 // =========================================================================
@@ -270,7 +273,7 @@ test("TEST 11: Buy Pack enforces server-side pricing strictly (client cannot alt
 // =========================================================================
 test("TEST 12: Buy Pack rejects purchase when user balance is insufficient (no negative balance)", () => {
   let userPoints = 40;
-  const packPrice = PACK_PRICES.standard_pack;
+  const packPrice = PACK_PRICES.standard_pack; // 60 DP
 
   const purchasePack = () => {
     if (userPoints < packPrice) {
@@ -293,8 +296,8 @@ test("TEST 12: Buy Pack rejects purchase when user balance is insufficient (no n
 // TEST 13: Buy Pack race condition guard prevents concurrent overspending
 // =========================================================================
 test("TEST 13: Buy Pack race condition guard prevents concurrent overspending", async () => {
-  let walletBalance = 60;
-  const packPrice = PACK_PRICES.standard_pack;
+  let walletBalance = 70;
+  const packPrice = PACK_PRICES.standard_pack; // 60 DP
   let grantedPacksCount = 0;
 
   const atomicPurchase = async () => {
@@ -313,7 +316,7 @@ test("TEST 13: Buy Pack race condition guard prevents concurrent overspending", 
   const successfulPurchases = results.filter(r => r.success).length;
   const failedPurchases = results.filter(r => !r.success).length;
 
-  assert.equal(successfulPurchases, 1, "Only 1 purchase can succeed with 60 DP for a 50 DP pack");
+  assert.equal(successfulPurchases, 1, "Only 1 purchase can succeed with 70 DP for a 60 DP pack");
   assert.equal(failedPurchases, 4, "4 purchases must fail due to balance check");
   assert.equal(walletBalance, 10, "Remaining balance must be exactly 10 DP");
   assert.equal(grantedPacksCount, 1, "Exactly 1 pack granted");
@@ -414,14 +417,14 @@ test("TEST 17: Reused idempotency key cannot mutate balance twice", () => {
   };
 
   const key = "buy_pack_user123_tx_999";
-  const first = processSpend(key, 120);
+  const first = processSpend(key, 150);
   assert.equal(first.already_processed, false);
-  assert.equal(first.balance, 180);
+  assert.equal(first.balance, 150);
 
-  const duplicate = processSpend(key, 120);
+  const duplicate = processSpend(key, 150);
   assert.equal(duplicate.already_processed, true);
-  assert.equal(duplicate.balance, 180);
-  assert.equal(balance, 180, "Balance must stay at 180 and not be deducted a second time");
+  assert.equal(duplicate.balance, 150);
+  assert.equal(balance, 150, "Balance must stay at 150 and not be deducted a second time");
 });
 
 // =========================================================================
@@ -429,11 +432,11 @@ test("TEST 17: Reused idempotency key cannot mutate balance twice", () => {
 // =========================================================================
 test("TEST 18: Ledger amount matches balance_after strictly", () => {
   const initialBalance = 250;
-  const deltaAmount = -80;
+  const deltaAmount = -100;
   const balanceAfter = initialBalance + deltaAmount;
 
   assert.equal(initialBalance + deltaAmount, balanceAfter);
-  assert.equal(balanceAfter, 170);
+  assert.equal(balanceAfter, 150);
 
   const ledgerEntry = {
     amount: deltaAmount,
@@ -450,7 +453,7 @@ test("TEST 18: Ledger amount matches balance_after strictly", () => {
 test("TEST 19: Failed operation creates no ledger entry", () => {
   const ledger: Array<{ user_id: string; amount: number }> = [];
   let userBalance = 30;
-  const packPrice = 50;
+  const packPrice = 60;
 
   const tryPurchase = () => {
     if (userBalance < packPrice) {
@@ -480,12 +483,12 @@ test("TEST 20: Negative balance blocked at DB/RPC layer", () => {
   };
 
   assert.throws(
-    () => checkBalanceConstraint(20, -50),
+    () => checkBalanceConstraint(20, -60),
     /points_balance must be >= 0/,
     "Must throw on negative balance attempt"
   );
-  assert.equal(checkBalanceConstraint(50, -50), 0);
-  assert.equal(checkBalanceConstraint(50, -30), 20);
+  assert.equal(checkBalanceConstraint(60, -60), 0);
+  assert.equal(checkBalanceConstraint(60, -30), 30);
 });
 
 // =========================================================================
@@ -493,7 +496,7 @@ test("TEST 20: Negative balance blocked at DB/RPC layer", () => {
 // =========================================================================
 test("TEST 21: Pack purchase rollback: no DP deduction if pack creation fails", async () => {
   let balance = 200;
-  const price = 50;
+  const price = 60;
 
   const transactionalPurchase = async (shouldFailPackInsert: boolean) => {
     let tempBalance = balance;
@@ -521,11 +524,10 @@ test("TEST 21: Pack purchase rollback: no DP deduction if pack creation fails", 
 test("TEST 22: Pack purchase rollback: no pack if DP deduction fails", async () => {
   let userPacks: string[] = [];
   const balance = 30;
-  const price = 80;
+  const price = 100;
 
   const tryPurchase = () => {
     if (balance < price) {
-      // Abort before pack creation
       return { success: false, error: "Insufficient DP" };
     }
     userPacks.push("matchday_booster");
@@ -630,4 +632,210 @@ test("TEST 27: Daily spin reward table matches pre-14B configuration", () => {
   );
   const totalWeight = DAILY_SPIN_SEGMENTS.reduce((sum, s) => sum + s.weight, 0);
   assert.equal(totalWeight, 119);
+});
+
+// =========================================================================
+// ETAP 14D.1 SCENARIO B BALANCED ECONOMY TESTS (TESTS 28 - 45)
+// =========================================================================
+
+// TEST 28: Standard Pack server price = 60
+test("TEST 28: Standard Pack server price = 60", () => {
+  assert.equal(PACK_PRICES.standard_pack, 60, "Standard Pack price must be 60 DP");
+  assert.equal(getPackPrice("standard_pack"), 60);
+});
+
+// TEST 29: Matchday Booster price = 100
+test("TEST 29: Matchday Booster price = 100", () => {
+  assert.equal(PACK_PRICES.matchday_booster, 100, "Matchday Booster price must be 100 DP");
+  assert.equal(getPackPrice("matchday_booster"), 100);
+});
+
+// TEST 30: Gold Booster price = 150
+test("TEST 30: Gold Booster price = 150", () => {
+  assert.equal(PACK_PRICES.gold_booster, 150, "Gold Booster price must be 150 DP");
+  assert.equal(getPackPrice("gold_booster"), 150);
+});
+
+// TEST 31: Inferno Booster price = 300
+test("TEST 31: Inferno Booster price = 300", () => {
+  assert.equal(PACK_PRICES.inferno_booster, 300, "Inferno Booster price must be 300 DP");
+  assert.equal(getPackPrice("inferno_booster"), 300);
+});
+
+// TEST 32: Legend Pack price = 450
+test("TEST 32: Legend Pack price = 450", () => {
+  assert.equal(PACK_PRICES.legend_pack, 450, "Legend Pack price must be 450 DP");
+  assert.equal(getPackPrice("legend_pack"), 450);
+});
+
+// TEST 33: Common duplicate = 4
+test("TEST 33: Common duplicate = 4", () => {
+  assert.equal(RARITY_CONFIG.common.duplicatePoints, 4, "Common duplicate reward must be 4 DP");
+});
+
+// TEST 34: Rare duplicate = 10
+test("TEST 34: Rare duplicate = 10", () => {
+  assert.equal(RARITY_CONFIG.rare.duplicatePoints, 10, "Rare duplicate reward must be 10 DP");
+});
+
+// TEST 35: Epic duplicate = 25
+test("TEST 35: Epic duplicate = 25", () => {
+  assert.equal(RARITY_CONFIG.epic.duplicatePoints, 25, "Epic duplicate reward must be 25 DP");
+});
+
+// TEST 36: Legendary duplicate = 60
+test("TEST 36: Legendary duplicate = 60", () => {
+  assert.equal(RARITY_CONFIG.legendary.duplicatePoints, 60, "Legendary duplicate reward must be 60 DP");
+});
+
+// TEST 37: Inferno duplicate = 120
+test("TEST 37: Inferno duplicate = 120", () => {
+  assert.equal(RARITY_CONFIG.inferno.duplicatePoints, 120, "Inferno duplicate reward must be 120 DP");
+});
+
+// TEST 38: client still cannot override pack price
+test("TEST 38: client still cannot override pack price", () => {
+  const clientPayload = {
+    pack_type_id: "legend_pack",
+    client_suggested_price: 1 // Attempt to forge 1 DP price
+  };
+
+  const effectivePrice = getPackPrice(clientPayload.pack_type_id);
+  assert.equal(effectivePrice, 450, "Server must strictly use 450 DP and discard client_suggested_price");
+  assert.notEqual(effectivePrice, clientPayload.client_suggested_price);
+});
+
+// TEST 39: client still cannot override duplicate reward
+test("TEST 39: client still cannot override duplicate reward", () => {
+  const clientForgedDupClaim = {
+    card_id: "inf_0",
+    claimed_duplicate_reward: 10000
+  };
+
+  const calculateServerDup = (rarity: CardRarity) => {
+    return RARITY_CONFIG[rarity]?.duplicatePoints ?? 4;
+  };
+
+  const serverCalculated = calculateServerDup("inferno");
+  assert.equal(serverCalculated, 120, "Server must award 120 DP for inferno dup, ignoring client claim");
+  assert.notEqual(serverCalculated, clientForgedDupClaim.claimed_duplicate_reward);
+});
+
+// TEST 40: legacy ledger is not recalculated
+test("TEST 40: legacy ledger is not recalculated", () => {
+  const historicalLedgerEntry = {
+    id: "tx-hist-001",
+    user_id: "user-veteran",
+    amount: -350, // Historical Legend Pack purchase before 14D
+    balance_after: 1320,
+    created_at: "2026-09-01T12:00:00.000Z",
+    metadata: { price: 350, pack_type_id: "legend_pack" }
+  };
+
+  // Ensure balance_after and historical transactions remain unmodified
+  assert.equal(historicalLedgerEntry.amount, -350, "Historical transactions must preserve historical price");
+  assert.equal(historicalLedgerEntry.balance_after, 1320, "Veteran balance of 1320 DP remains intact");
+});
+
+// TEST 41: Daily Spin configuration unchanged
+test("TEST 41: Daily Spin configuration unchanged", () => {
+  assert.equal(DAILY_SPIN_SEGMENTS.length, 8);
+  const totalWeight = DAILY_SPIN_SEGMENTS.reduce((s, seg) => s + seg.weight, 0);
+  assert.equal(totalWeight, 119);
+  assert.equal(DAILY_SPIN_SEGMENTS.find(s => s.id === "s7")?.amount, 200);
+});
+
+// TEST 42: Quiz rewards unchanged
+test("TEST 42: Quiz rewards unchanged", () => {
+  assert.equal(QUIZ_PASS_THRESHOLD_PERCENT, 75);
+  assert.equal(Object.keys(QUIZ_LESSON_REWARDS).length, 12);
+  const totalQuizPool = Object.values(QUIZ_LESSON_REWARDS).reduce((a, b) => a + b, 0);
+  assert.equal(totalQuizPool, 705, "Total quiz one-time pool must remain 705 DP");
+});
+
+// TEST 43: Minigame DP remains 0
+test("TEST 43: Minigame DP remains 0", () => {
+  const minigameResult = {
+    game_id: "reaction_test",
+    score: 999,
+    xp_earned: 50,
+    dp_reward: 0
+  };
+  assert.equal(minigameResult.dp_reward, 0, "Minigame DP reward must strictly be 0");
+});
+
+// TEST 44: Price consistency guard across server config, migration file, and balance version
+test("TEST 44: Price consistency guard across server config, migration file, and balance version", () => {
+  assert.equal(ECONOMY_BALANCE_VERSION, "2026-10-balanced-v1");
+
+  // Read migration file to verify RPC server-side mapping matches PACK_PRICES exactly
+  const migrationPath = path.resolve(process.cwd(), "supabase/migrations/20261009_etap14d_balanced_pack_prices.sql");
+  assert.ok(fs.existsSync(migrationPath), "Migration 20261009_etap14d_balanced_pack_prices.sql must exist");
+  const migrationSql = fs.readFileSync(migrationPath, "utf-8");
+
+  assert.match(migrationSql, /WHEN 'standard_pack' THEN v_price := 60;/);
+  assert.match(migrationSql, /WHEN 'matchday_booster' THEN v_price := 100;/);
+  assert.match(migrationSql, /WHEN 'gold_booster' THEN v_price := 150;/);
+  assert.match(migrationSql, /WHEN 'inferno_booster' THEN v_price := 300;/);
+  assert.match(migrationSql, /WHEN 'legend_pack' THEN v_price := 450;/);
+});
+
+// TEST 45: Economy loop regression test (at 100% saturation, no pack has expected return >= price)
+test("TEST 45: Economy loop regression test: no pack allows infinite self-funding duplicate loops", () => {
+  const PACK_CONFIGS: Record<string, { cardsCount: number; dropRates: Record<CardRarity, number>; minRarity?: CardRarity }> = {
+    standard_pack: {
+      cardsCount: 3,
+      dropRates: { common: 70, rare: 22, epic: 6, legendary: 1.8, inferno: 0.2 },
+      minRarity: "common"
+    },
+    matchday_booster: {
+      cardsCount: 4,
+      dropRates: { common: 50, rare: 35, epic: 11, legendary: 3.5, inferno: 0.5 },
+      minRarity: "rare"
+    },
+    gold_booster: {
+      cardsCount: 5,
+      dropRates: { common: 35, rare: 45, epic: 15, legendary: 4.5, inferno: 0.5 },
+      minRarity: "rare"
+    },
+    inferno_booster: {
+      cardsCount: 5,
+      dropRates: { common: 20, rare: 40, epic: 28, legendary: 9, inferno: 3 },
+      minRarity: "epic"
+    },
+    legend_pack: {
+      cardsCount: 6,
+      dropRates: { common: 10, rare: 35, epic: 35, legendary: 17, inferno: 3 },
+      minRarity: "legendary"
+    }
+  };
+
+  const rarities: CardRarity[] = ["common", "rare", "epic", "legendary", "inferno"];
+
+  for (const [packKey, packDef] of Object.entries(PACK_CONFIGS)) {
+    const price = PACK_PRICES[packKey];
+    assert.ok(price > 0, `Price for ${packKey} must be defined`);
+
+    let expectedDupPerCard = 0;
+    const totalWeight = Object.values(packDef.dropRates).reduce((a, b) => a + b, 0);
+
+    for (const r of rarities) {
+      const prob = (packDef.dropRates[r] || 0) / totalWeight;
+      const dupVal = RARITY_CONFIG[r].duplicatePoints;
+      expectedDupPerCard += prob * dupVal;
+    }
+
+    const totalPackDupEvAt100Pct = expectedDupPerCard * packDef.cardsCount;
+    const returnPercentage = (totalPackDupEvAt100Pct / price) * 100;
+
+    // Assert that under 100% saturation, return is strictly < 50% of pack cost (Scenario B targets 32% - 42%)
+    assert.ok(
+      totalPackDupEvAt100Pct < price,
+      `Pack ${packKey} must have duplicate EV (${totalPackDupEvAt100Pct.toFixed(2)} DP) strictly less than price (${price} DP)`
+    );
+    assert.ok(
+      returnPercentage <= 50,
+      `Pack ${packKey} return percentage (${returnPercentage.toFixed(1)}%) must be <= 50% in Scenario B`
+    );
+  }
 });

@@ -126,35 +126,35 @@ export const RARITY_CONFIG: Record<CardRarity, {
     color: "#9ca3af",
     bgGradient: "linear-gradient(135deg, #1e293b, #0f172a)",
     borderGlow: "rgba(156, 163, 175, 0.4)",
-    duplicatePoints: 10
+    duplicatePoints: 4
   },
   rare: {
     label: "RARE",
     color: "#38bdf8",
     bgGradient: "linear-gradient(135deg, #0369a1, #0c4a6e)",
     borderGlow: "rgba(56, 189, 248, 0.6)",
-    duplicatePoints: 20
+    duplicatePoints: 10
   },
   epic: {
     label: "EPIC",
     color: "#c084fc",
     bgGradient: "linear-gradient(135deg, #6b21a8, #3b0764)",
     borderGlow: "rgba(192, 132, 252, 0.75)",
-    duplicatePoints: 50
+    duplicatePoints: 25
   },
   legendary: {
     label: "LEGENDARY",
     color: "#f1c95c",
     bgGradient: "linear-gradient(135deg, #ca8a04, #713f12)",
     borderGlow: "rgba(241, 201, 92, 0.85)",
-    duplicatePoints: 100
+    duplicatePoints: 60
   },
   inferno: {
     label: "INFERNO",
     color: "#ff4d5a",
     bgGradient: "linear-gradient(135deg, #b91c1c, #450a0a)",
     borderGlow: "rgba(255, 77, 90, 0.95)",
-    duplicatePoints: 250
+    duplicatePoints: 120
   }
 };
 
