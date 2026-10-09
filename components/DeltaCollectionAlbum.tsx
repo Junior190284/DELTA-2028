@@ -462,6 +462,16 @@ export default function DeltaCollectionAlbum({
         }
       })
       .catch(() => {});
+
+    const handlePackSync = () => {
+      fetchCollection();
+    };
+    window.addEventListener("delta:pack-opened", handlePackSync);
+    window.addEventListener("delta:collection-updated", handlePackSync);
+    return () => {
+      window.removeEventListener("delta:pack-opened", handlePackSync);
+      window.removeEventListener("delta:collection-updated", handlePackSync);
+    };
   }, []);
 
   // Sync automated activity rewards

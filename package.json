@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test:delta-sync": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/delta-sync-parser.test.ts"
+    "test:delta-sync": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/delta-sync-parser.test.ts",
+    "test:cards": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/card-state-sync.test.ts"
   },
   "dependencies": {
     "next": "^16.3.8",
