@@ -1786,6 +1786,11 @@ export default function DeltaCollectionAlbum({
         <PackOpeningExperience
           pack={activePackToOpen}
           unopenedCount={Math.max(0, unopenedPacks.length - 1)}
+          collectionProgress={{
+            currentOwned: uniqueOwnedCount,
+            totalCards: totalCardsCount
+          }}
+          getLayoutForCard={getLayoutForCard}
           onPackConsumed={(remaining) => {
             if (typeof remaining === "number") {
               setUnopenedPacks(prev => prev.slice(0, remaining));

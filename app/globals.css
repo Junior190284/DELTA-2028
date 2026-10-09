@@ -37950,3 +37950,787 @@ body > main,
     gap: 8px;
   }
 }
+
+
+/* =========================================================
+   DELTA ETAP 3 — CINEMATIC PACK OPENING & CARD REVEAL STYLES
+   ========================================================= */
+
+.delta-cinematic-pack-modal-backdrop {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ================= PRE-OPEN STAGE ================= */
+.delta-cinematic-preopen-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, #101626 0%, #03060a 80%);
+}
+
+.delta-cinematic-bg-elements {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.delta-cinematic-smoke-layer {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 50% 60%, rgba(227, 29, 47, 0.12) 0%, transparent 60%);
+  filter: blur(60px);
+  animation: deltaSmokeFloat 8s ease-in-out infinite alternate;
+}
+
+@keyframes deltaSmokeFloat {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.6; }
+  100% { transform: scale(1.15) translate(-10px, -20px); opacity: 0.9; }
+}
+
+.delta-cinematic-stadium-lights {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(180deg, rgba(241, 201, 92, 0.08) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.delta-preopen-topbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.delta-preopen-pack-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.delta-preopen-pack-tag b {
+  color: #f1c95c;
+}
+
+.delta-preopen-close-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delta-preopen-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.06);
+}
+
+.delta-preopen-center-wrap {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.delta-preopen-pack-3d-box {
+  position: relative;
+  width: min(260px, 68vw);
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  animation: deltaPackBreathe 4s ease-in-out infinite alternate;
+}
+
+@keyframes deltaPackBreathe {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-8px) scale(1.02); }
+}
+
+.delta-preopen-pack-3d-box.hovered,
+.delta-preopen-pack-3d-box:hover {
+  transform: translateY(-12px) scale(1.04);
+}
+
+.delta-preopen-pack-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(227, 29, 47, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.delta-preopen-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, transparent 45%, rgba(255, 255, 255, 0.08) 100%);
+  pointer-events: none;
+}
+
+.delta-preopen-cards-pill {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(241, 201, 92, 0.5);
+  color: #f1c95c;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.delta-preopen-info {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.delta-preopen-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #f1c95c;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.delta-preopen-title {
+  font-size: 26px;
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0 0 6px;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+}
+
+.delta-preopen-description {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin: 0 0 20px;
+  max-width: 420px;
+  line-height: 1.4;
+}
+
+.delta-preopen-cta-btn {
+  width: 100%;
+  max-width: 380px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e31d2f 0%, #a1111e 100%);
+  border: 1px solid rgba(227, 29, 47, 0.8);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(227, 29, 47, 0.45), 0 0 20px rgba(227, 29, 47, 0.3);
+  transition: all 0.2s ease;
+}
+
+.delta-preopen-cta-btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+}
+
+.delta-preopen-tap-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* ================= TEARING & BURST STAGE ================= */
+.delta-cinematic-tear-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, #1e0b10 0%, #030509 80%);
+}
+
+.delta-tear-energy-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(227, 29, 47, 0.3) 0%, transparent 60%);
+  animation: deltaEnergySurge 1.4s ease-out infinite;
+}
+
+@keyframes deltaEnergySurge {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.delta-tear-pack-container {
+  position: relative;
+  width: min(280px, 70vw);
+  aspect-ratio: 3 / 4;
+}
+
+.delta-tear-pack-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+}
+
+.delta-tear-pack-half.top {
+  top: 0;
+  height: 50%;
+  border-radius: 18px 18px 0 0;
+}
+
+.delta-tear-pack-half.top.tear,
+.delta-tear-pack-half.top.flash {
+  transform: translateY(-50px) rotate(-4deg) scale(0.95);
+  opacity: 0.7;
+}
+
+.delta-tear-pack-half.bottom {
+  bottom: 0;
+  height: 50%;
+  border-radius: 0 0 18px 18px;
+}
+
+.delta-tear-pack-half.bottom.tear,
+.delta-tear-pack-half.bottom.flash {
+  transform: translateY(50px) rotate(4deg) scale(0.95);
+  opacity: 0.7;
+}
+
+.delta-tear-img {
+  width: 100%;
+  height: 200%;
+  object-fit: cover;
+  position: absolute;
+  left: 0;
+}
+
+.delta-tear-img.top-img { top: 0; }
+.delta-tear-img.bottom-img { bottom: 0; }
+
+.delta-tear-seam-glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #f1c95c;
+  box-shadow: 0 0 18px #f1c95c, 0 0 30px #e31d2f;
+}
+
+.delta-tear-seam-glow.top-seam { bottom: 0; }
+.delta-tear-seam-glow.bottom-seam { top: 0; }
+
+.delta-tear-burst-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+}
+
+.delta-tear-shockwave {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid #f1c95c;
+  animation: deltaShockwave 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes deltaShockwave {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+.delta-tear-screen-flash {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.delta-tear-screen-flash.active {
+  opacity: 0.85;
+}
+
+/* ================= SEQUENTIAL CARD REVEAL STAGE ================= */
+.delta-cinematic-reveal-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 16px 30px;
+  background: #04070c;
+  overflow: hidden;
+}
+
+.delta-reveal-ambient-aura {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  filter: blur(50px);
+  transition: background 0.5s ease;
+}
+
+.delta-reveal-top-progress {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.delta-reveal-counter-badge {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1c95c;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.delta-reveal-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.delta-reveal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.delta-reveal-dot.active {
+  width: 22px;
+  border-radius: 999px;
+  background: #f1c95c;
+  box-shadow: 0 0 10px rgba(241, 201, 92, 0.7);
+}
+
+.delta-reveal-dot.passed {
+  background: #10b981;
+}
+
+.delta-reveal-card-presentation {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  width: 100%;
+  max-width: 440px;
+}
+
+.delta-reveal-card-box {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+}
+
+.delta-reveal-card-box.card-unveiled {
+  transform: scale(1);
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.8));
+}
+
+.delta-reveal-card-box.card-veiled {
+  transform: scale(0.85);
+  filter: brightness(0.2) blur(8px);
+}
+
+/* Suspense Teaser Effect */
+.delta-reveal-suspense-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.delta-suspense-label {
+  font-size: 14px;
+  font-weight: 1000;
+  letter-spacing: 0.05em;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+.delta-reveal-status-pills-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.delta-reveal-badge {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.delta-reveal-badge.rarity {
+  color: #ffffff;
+}
+
+.delta-reveal-badge.new {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.6);
+}
+
+.delta-reveal-badge.duplicate {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(241, 201, 92, 0.5);
+  color: #f1c95c;
+}
+
+.delta-reveal-bottom-actions {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.delta-reveal-next-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f1c95c 0%, #ca8a04 100%);
+  border: 1px solid rgba(241, 201, 92, 0.7);
+  color: #1a1003;
+  font-size: 13.5px;
+  font-weight: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(241, 201, 92, 0.35);
+  transition: all 0.2s ease;
+}
+
+.delta-reveal-next-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.delta-reveal-bottom-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* ================= SUMMARY STAGE ================= */
+.delta-cinematic-summary-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+
+.delta-summary-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.delta-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #4ade80;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.delta-summary-title {
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.delta-summary-subtitle {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.delta-summary-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.delta-summary-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.delta-stat-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.delta-stat-icon-box.progress { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+.delta-stat-icon-box.new { background: rgba(16, 185, 129, 0.15); color: #4ade80; }
+.delta-stat-icon-box.dup { background: rgba(241, 201, 92, 0.15); color: #f1c95c; }
+.delta-stat-icon-box.best { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+.delta-stat-label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.delta-stat-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.delta-stat-old { color: #64748b; }
+.delta-stat-arrow { color: #f1c95c; font-size: 11px; }
+.delta-stat-new { color: #ffffff; font-weight: 900; }
+
+.delta-stat-highlight {
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.delta-summary-cards-gallery {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 10px 4px 16px;
+  justify-content: flex-start;
+}
+
+.delta-summary-card-cell {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.delta-summary-card-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2.5 / 3.5;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.delta-summary-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.delta-summary-pname {
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delta-summary-tag {
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.delta-summary-tag.new {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #4ade80;
+}
+
+.delta-summary-tag.dup {
+  background: rgba(241, 201, 92, 0.15);
+  border: 1px solid rgba(241, 201, 92, 0.4);
+  color: #f1c95c;
+}
+
+.delta-summary-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.delta-summary-action-btn {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 950;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delta-summary-action-btn.primary {
+  background: linear-gradient(135deg, #e31d2f 0%, #a1111e 100%);
+  border: 1px solid rgba(227, 29, 47, 0.8);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(227, 29, 47, 0.4);
+}
+
+.delta-summary-action-btn.primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.delta-summary-action-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.delta-summary-action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ================= PREFERS-REDUCED-MOTION ================= */
+@media (prefers-reduced-motion: reduce) {
+  .delta-cinematic-smoke-layer,
+  .delta-preopen-pack-3d-box,
+  .delta-tear-energy-bg,
+  .delta-tear-shockwave {
+    animation: none !important;
+  }
+
+  .delta-tear-screen-flash {
+    display: none !important;
+  }
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .delta-summary-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .delta-summary-actions-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .delta-summary-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
