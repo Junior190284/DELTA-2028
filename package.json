@@ -12,7 +12,8 @@
     "test:economy": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/economy-security.test.ts",
     "test:gamification": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/gamification-ui.test.ts",
     "test:push": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/push-delivery.test.ts",
-    "test:mobile-admin": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/mobile-admin-access.test.ts"
+    "test:mobile-admin": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/mobile-admin-access.test.ts",
+    "test:notifications": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/notifications-center.test.ts"
   },
   "dependencies": {
     "next": "^16.3.8",

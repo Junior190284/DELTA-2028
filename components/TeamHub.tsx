@@ -1373,7 +1373,7 @@ export default function TeamHub(props:{
   const unifiedNewsItems = useMemo(() => {
     const list: Array<{
       id: string;
-      category: "matches" | "trainings" | "club" | "sync" | "fantasy" | "achievements" | "gallery" | "multimedia" | "general";
+      category: "matches" | "trainings" | "club" | "sync" | "fantasy" | "achievements" | "gallery" | "multimedia" | "system" | "general";
       title: string;
       body: string;
       published_at: string;
@@ -1440,26 +1440,26 @@ export default function TeamHub(props:{
       let category: any = "general";
       let deepLinkTab = "news";
 
-      if (e.type.startsWith("MATCH")) {
+      if (e.type.startsWith("MATCH") || e.type === "LINEUP_PUBLISHED") {
         category = "matches";
         deepLinkTab = "matches";
       } else if (e.type.startsWith("TRAINING")) {
         category = "trainings";
         deepLinkTab = "training";
       } else if (e.type === "PLAYER_CARD_UNLOCKED") {
-        category = "fantasy";
+        category = "achievements";
         deepLinkTab = "collection";
       } else if (e.type === "PLAYER_ACHIEVEMENT") {
         category = "achievements";
         deepLinkTab = "achievements";
-      } else if (e.type === "GALLERY_CREATED") {
-        category = "gallery";
+      } else if (e.type === "GALLERY_CREATED" || e.type === "GALLERY_UPDATED") {
+        category = "multimedia";
         deepLinkTab = "gallery";
       } else if (e.type === "VIDEO_PUBLISHED") {
         category = "multimedia";
         deepLinkTab = "tv";
-      } else if (e.type === "SYNC_ERROR") {
-        category = "sync";
+      } else if (e.type === "SYNC_ERROR" || e.type === "SYSTEM_MESSAGE") {
+        category = "system";
       }
 
       list.push({
@@ -1485,8 +1485,9 @@ export default function TeamHub(props:{
 
   const filteredNewsItems = useMemo(() => {
     if (newsFilter === "all") return unifiedNewsItems;
+    if (newsFilter === "unread") return unifiedNewsItems.filter(item => !readNewsMap[item.id]);
     return unifiedNewsItems.filter(item => item.category === newsFilter);
-  }, [unifiedNewsItems, newsFilter]);
+  }, [unifiedNewsItems, newsFilter, readNewsMap]);
 
   const navCategories = useMemo(() => [
     {
@@ -1823,12 +1824,12 @@ export default function TeamHub(props:{
         className="icon-btn v8-bell relative" 
         onClick={() => setNotificationsModalOpen(true)} 
         aria-label="Centrum powiadomień"
-        title="Centrum powiadomień i nagród"
+        title="Centrum powiadomień i aktualności"
       >
         <Bell size={18}/>
-        {gameProfile && gameProfile.unreadNotifications > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-black text-[9px] flex items-center justify-center border border-slate-900 shadow-sm">
-            {gameProfile.unreadNotifications}
+        {unreadNewsCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white font-black text-[9px] flex items-center justify-center border border-slate-900 shadow-sm" aria-live="polite">
+            {unreadNewsCount > 99 ? "99+" : unreadNewsCount}
           </span>
         )}
       </button>
@@ -3591,18 +3592,44 @@ export default function TeamHub(props:{
           </div>
         </div>
 
-        {/* 9 FILTER CHIPS */}
+        {/* WHAT'S NEW SINCE LAST VISIT */}
+        {unreadNewsCount > 0 && (
+          <div className="mb-3 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-red-950/40 via-slate-900/80 to-amber-950/30 border border-red-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-400 border border-red-500/40 flex items-center justify-center shrink-0">
+                <Bell size={20} />
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm m-0">
+                  {unreadNewsCount === 1 ? "1 nowa informacja od ostatniej wizyty" : `${unreadNewsCount} nowe informacje od ostatniej wizyty`}
+                </h4>
+                <p className="text-xs text-slate-400 m-0 mt-0.5">
+                  Sprawdź najnowsze powiadomienia, aktualności klubowe i zmiany w harmonogramie.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black self-start sm:self-auto transition-all shadow-md flex items-center gap-1"
+              onClick={() => setNewsFilter("unread")}
+            >
+              <span>Pokaż nieprzeczytane</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* 8 FILTER CHIPS */}
         <div className="v200-news-filter-chips flex items-center gap-2 overflow-x-auto py-3 no-scrollbar">
           {[
             { id: "all", label: "Wszystkie", count: unifiedNewsItems.length },
+            { id: "unread", label: "Nieprzeczytane", count: unreadNewsCount },
             { id: "matches", label: "Mecze", count: unifiedNewsItems.filter(i => i.category === "matches").length },
             { id: "trainings", label: "Treningi", count: unifiedNewsItems.filter(i => i.category === "trainings").length },
             { id: "club", label: "Klub", count: unifiedNewsItems.filter(i => i.category === "club").length },
-            { id: "sync", label: "DELTA Sync", count: unifiedNewsItems.filter(i => i.category === "sync").length },
-            { id: "fantasy", label: "Fantasy", count: unifiedNewsItems.filter(i => i.category === "fantasy").length },
-            { id: "achievements", label: "Osiągnięcia", count: unifiedNewsItems.filter(i => i.category === "achievements").length },
-            { id: "gallery", label: "Galeria", count: unifiedNewsItems.filter(i => i.category === "gallery").length },
-            { id: "multimedia", label: "Multimedia", count: unifiedNewsItems.filter(i => i.category === "multimedia").length },
+            { id: "achievements", label: "Osiągnięcia", count: unifiedNewsItems.filter(i => i.category === "achievements" || i.category === "fantasy").length },
+            { id: "multimedia", label: "Multimedia", count: unifiedNewsItems.filter(i => i.category === "multimedia" || i.category === "gallery").length },
+            ...(staff ? [{ id: "system", label: "System / Sync", count: unifiedNewsItems.filter(i => i.category === "system" || i.category === "sync").length }] : []),
           ].map(chip => (
             <button
               key={chip.id}
@@ -3617,7 +3644,7 @@ export default function TeamHub(props:{
               <span>{chip.label}</span>
               {chip.count > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${newsFilter === chip.id ? "bg-black/40 text-white" : "bg-white/10 text-slate-400"}`}>
-                  {chip.count}
+                  {chip.count > 99 ? "99+" : chip.count}
                 </span>
               )}
             </button>
@@ -3810,8 +3837,8 @@ export default function TeamHub(props:{
         <div className="v200-nav-icon-wrap">
           <Newspaper size={20} />
           {unreadNewsCount > 0 && (
-            <span className="v200-nav-badge">
-              {unreadNewsCount > 9 ? "9+" : unreadNewsCount}
+            <span className="v200-nav-badge" aria-live="polite">
+              {unreadNewsCount > 99 ? "99+" : unreadNewsCount}
             </span>
           )}
         </div>
@@ -4257,7 +4284,16 @@ export default function TeamHub(props:{
         isOpen={notificationsModalOpen}
         onClose={() => setNotificationsModalOpen(false)}
         userId={props.profile.id}
-        onNotificationRead={() => fetchGameProfile()}
+        userRole={props.profile.role}
+        parentPlayerIds={props.parentPlayerIds}
+        onNavigate={(targetTab) => {
+          setNotificationsModalOpen(false);
+          setTab(targetTab as any);
+        }}
+        onNotificationRead={() => {
+          fetchSystemEvents();
+          fetchGameProfile();
+        }}
       />
     )}
 

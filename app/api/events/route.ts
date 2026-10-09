@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/current-profile";
 import { emitSystemEvent } from "@/lib/events/emitter";
+import { isEventVisibleForUser } from "@/lib/events/notifications";
+import type { DeltaSystemEvent } from "@/lib/events/types";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,7 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get("userId") || "guest_user";
     const importance = searchParams.get("importance");
     const type = searchParams.get("type");
-    const limit = parseInt(searchParams.get("limit") || "40", 10);
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
 
     const admin = createAdminClient();
 
@@ -32,8 +34,33 @@ export async function GET(req: NextRequest) {
     const { data: events, error: eventsError } = await query;
     if (eventsError) throw eventsError;
 
+    // Resolve user context (role and assigned player IDs for audience filtering)
+    let userRole = "parent";
+    let userPlayerIds: string[] = [];
+
+    if (userId && userId !== "guest_user") {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id,role")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profile?.role) {
+        userRole = profile.role;
+      }
+
+      const { data: parentPlayers } = await admin
+        .from("parent_players")
+        .select("player_id")
+        .eq("parent_id", userId);
+
+      if (parentPlayers) {
+        userPlayerIds = parentPlayers.map((p) => p.player_id);
+      }
+    }
+
     // Fetch user read states
-    let readMap: Record<string, boolean> = {};
+    const readMap: Record<string, boolean> = {};
     if (userId) {
       const { data: reads } = await admin
         .from("user_event_reads")
@@ -41,22 +68,31 @@ export async function GET(req: NextRequest) {
         .eq("user_id", userId);
 
       if (reads) {
-        reads.forEach(r => {
+        reads.forEach((r) => {
           if (r.read_at) readMap[r.event_id] = true;
         });
       }
     }
 
-    const merged = (events || []).map(e => ({
+    // Filter events by audience visibility
+    const visibleEvents = ((events || []) as DeltaSystemEvent[]).filter((e) =>
+      isEventVisibleForUser(e, {
+        userId,
+        role: userRole,
+        playerIds: userPlayerIds,
+      })
+    );
+
+    const merged = visibleEvents.map((e) => ({
       ...e,
       is_read: !!readMap[e.id],
-      is_seen: true
+      is_seen: true,
     }));
 
     return NextResponse.json({
       success: true,
       events: merged,
-      unreadCount: merged.filter(e => !e.is_read).length
+      unreadCount: merged.filter((e) => !e.is_read).length,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
