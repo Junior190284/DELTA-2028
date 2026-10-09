@@ -98,7 +98,7 @@ export default function DeltaMoreMenuSheet({
           </button>
         </div>
 
-        {/* 11 Głównych Kafelków Premium */}
+        {/* 11 Głównych Kafelków Treści i Funkcji */}
         <div className="delta-more-content">
           <div className="delta-more-grid">
             {/* 1. WIADOMOŚCI I POWIADOMIENIA */}
@@ -143,21 +143,21 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 3. POWIADOMIENIA WEB PUSH */}
+            {/* 3. KĄCIK WIEDZY */}
             <button
               type="button"
-              className={`delta-more-tile ${activeTab === "settings" ? "active" : ""}`}
-              onClick={() => handleTileClick("settings")}
+              className={`delta-more-tile ${activeTab === "knowledge" ? "active" : ""}`}
+              onClick={() => handleTileClick("knowledge")}
             >
-              <div className="delta-tile-icon-box icon-settings">
-                <Settings size={22} />
+              <div className="delta-tile-icon-box icon-knowledge">
+                <BookOpen size={22} />
               </div>
               <div className="delta-tile-text">
-                <strong className="delta-tile-title">POWIADOMIENIA WEB PUSH</strong>
-                <small className="delta-tile-subtitle">Włącz powiadomienia na telefonie</small>
+                <strong className="delta-tile-title">KĄCIK WIEDZY</strong>
+                <small className="delta-tile-subtitle">Porady, dieta i rozwój</small>
               </div>
               <span className="delta-tile-status-chip gold">
-                PUSH
+                DIETA & EDU
               </span>
             </button>
 
@@ -303,59 +303,58 @@ export default function DeltaMoreMenuSheet({
                 TOP GM
               </span>
             </button>
-
-            {/* 12. PANEL ADMINISTRATORA (tylko dla admin / coach / pomocnik) */}
-            {canOpenAdmin && (
-              <button
-                type="button"
-                className="delta-more-tile delta-more-admin-tile"
-                onClick={() => handleTileClick("admin")}
-                aria-label="Panel administratora"
-              >
-                <div className="delta-tile-icon-box icon-admin">
-                  <Shield size={22} />
-                </div>
-                <div className="delta-tile-text">
-                  <strong className="delta-tile-title">PANEL ADMINA</strong>
-                  <small className="delta-tile-subtitle">Zarządzanie kadrą & meczami</small>
-                </div>
-                <span className="delta-tile-status-chip gold">
-                  {adminRoleLabel}
-                </span>
-              </button>
-            )}
           </div>
 
-          {/* Szybkie linki pomocnicze */}
+          {/* Dolna Sekcja Pozioma (Ustawienia / System / Admin) */}
           <div className="delta-more-footer-links">
+            {/* 1. POWIADOMIENIA WEB PUSH */}
             <button 
               type="button" 
               onClick={() => handleTileClick("settings")} 
-              className="delta-more-sublink"
+              className={`delta-more-sublink ${activeTab === "settings" ? "active" : ""}`}
             >
-              <Settings size={15} />
-              <span>Powiadomienia Web Push (Włącz / Wyłącz)</span>
+              <div className="delta-sublink-icon-box">
+                <Settings size={18} />
+              </div>
+              <div className="delta-sublink-text">
+                <strong className="delta-sublink-title">POWIADOMIENIA WEB PUSH</strong>
+                <small className="delta-sublink-subtitle">Włącz / wyłącz na tym urządzeniu</small>
+              </div>
+              <ChevronRight size={16} className="delta-sublink-arrow" />
             </button>
 
+            {/* 2. PANEL ADMINA (jeśli uprawniony) */}
             {canOpenAdmin && (
-              <a href="/admin" className="delta-more-sublink admin-sublink" aria-label="Panel administratora">
-                <Shield size={15} />
-                <span>Panel Administratora ({adminRoleLabel})</span>
-              </a>
+              <button
+                type="button"
+                onClick={() => handleTileClick("admin")}
+                className="delta-more-sublink admin-sublink"
+                aria-label="Panel administratora"
+              >
+                <div className="delta-sublink-icon-box admin-icon">
+                  <Shield size={18} />
+                </div>
+                <div className="delta-sublink-text">
+                  <strong className="delta-sublink-title">PANEL ADMINA</strong>
+                  <small className="delta-sublink-subtitle">Zarządzanie aplikacją</small>
+                </div>
+                <span className="delta-sublink-badge gold">
+                  {adminRoleLabel}
+                </span>
+                <ChevronRight size={16} className="delta-sublink-arrow" />
+              </button>
             )}
 
-            <button 
-              type="button" 
-              onClick={() => handleTileClick("knowledge")} 
-              className="delta-more-sublink"
-            >
-              <BookOpen size={15} />
-              <span>Kącik Wiedzy & Dieta</span>
-            </button>
-
+            {/* 3. STRONA PUBLICZNA KLUBU */}
             <a href="/" className="delta-more-sublink external">
-              <ExternalLink size={15} />
-              <span>Strona Publiczna Klubu</span>
+              <div className="delta-sublink-icon-box">
+                <ExternalLink size={18} />
+              </div>
+              <div className="delta-sublink-text">
+                <strong className="delta-sublink-title">STRONA PUBLICZNA KLUBU</strong>
+                <small className="delta-sublink-subtitle">Oficjalny serwis K.S. Delta Warszawa</small>
+              </div>
+              <ChevronRight size={16} className="delta-sublink-arrow" />
             </a>
           </div>
         </div>

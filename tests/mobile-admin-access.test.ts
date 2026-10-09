@@ -34,11 +34,11 @@ function getMobileMoreMenuItems(
   canOpenAdmin: boolean,
   adminRoleLabel: string = "ADMIN"
 ) {
-  // Canonical 11 base tiles
+  // Canonical 11 base content tiles in Main Grid
   const tiles = [
     { id: "news", title: "WIADOMOŚCI I POWIADOMIENIA" },
     { id: "players", title: "DRUŻYNA" },
-    { id: "settings", title: "POWIADOMIENIA WEB PUSH" },
+    { id: "knowledge", title: "KĄCIK WIEDZY" },
     { id: "typer", title: "FANTASY & TYPER" },
     { id: "game", title: "DELTA GAME" },
     { id: "collection", title: "DELTA COLLECTION" },
@@ -49,25 +49,24 @@ function getMobileMoreMenuItems(
     { id: "hall", title: "HALL OF FAME" }
   ];
 
-  if (canOpenAdmin) {
-    tiles.push({
-      id: "admin",
-      title: "PANEL ADMINA"
-    });
-  }
-
+  // Bottom Horizontal System Section
   const footerLinks = [
-    { id: "knowledge", title: "Kącik Wiedzy & Dieta", href: "#" },
-    { id: "public_site", title: "Strona Publiczna Klubu", href: "/" }
+    { id: "settings", title: "POWIADOMIENIA WEB PUSH", subtitle: "Włącz / wyłącz na tym urządzeniu" }
   ];
 
   if (canOpenAdmin) {
-    footerLinks.unshift({
-      id: "admin_link",
-      title: `Panel Administratora (${adminRoleLabel})`,
-      href: "/admin"
+    footerLinks.push({
+      id: "admin",
+      title: "PANEL ADMINA",
+      subtitle: `Zarządzanie aplikacją (${adminRoleLabel})`
     });
   }
+
+  footerLinks.push({
+    id: "public_site",
+    title: "STRONA PUBLICZNA KLUBU",
+    subtitle: "Oficjalny serwis K.S. Delta Warszawa"
+  });
 
   return { tiles, footerLinks };
 }
@@ -96,20 +95,21 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
     assert.equal(coachNav.label, "ADMIN");
   });
 
-  // TEST 2: admin sees mobile admin entry
-  it("TEST 2: admin sees mobile admin entry in WIĘCEJ drawer", () => {
+  // TEST 2: admin sees mobile admin entry in bottom horizontal section
+  it("TEST 2: admin sees mobile admin entry in WIĘCEJ drawer bottom section", () => {
     const adminProfile: UserProfile = { id: "u_admin", role: "admin", display_name: "Admin" };
     const canOpenAdmin = computeCanOpenAdmin(adminProfile, EMPTY_PERMISSIONS);
     assert.equal(canOpenAdmin, true);
 
     const { tiles, footerLinks } = getMobileMoreMenuItems(canOpenAdmin, "ADMIN");
+    // Admin is NOT in main grid
     const adminTile = tiles.find(t => t.id === "admin");
-    assert.ok(adminTile, "Admin tile must be present in mobile WIĘCEJ grid");
-    assert.equal(adminTile.title, "PANEL ADMINA");
+    assert.equal(adminTile, undefined, "Admin must NOT be in main square grid");
 
-    const adminFooter = footerLinks.find(f => f.id === "admin_link");
-    assert.ok(adminFooter, "Admin footer link must be present in mobile WIĘCEJ footer");
-    assert.equal(adminFooter.href, "/admin");
+    // Admin IS in bottom horizontal section
+    const adminFooter = footerLinks.find(f => f.id === "admin");
+    assert.ok(adminFooter, "Admin link must be present in mobile WIĘCEJ bottom section");
+    assert.equal(adminFooter.title, "PANEL ADMINA");
   });
 
   // TEST 3: ordinary user does not see mobile admin entry
@@ -120,13 +120,15 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
 
     const { tiles, footerLinks } = getMobileMoreMenuItems(canOpenAdmin);
     const adminTile = tiles.find(t => t.id === "admin");
-    assert.equal(adminTile, undefined, "Ordinary user must NOT have admin tile");
+    assert.equal(adminTile, undefined, "Ordinary user must NOT have admin tile in grid");
 
-    const adminFooter = footerLinks.find(f => f.id === "admin_link");
+    const adminFooter = footerLinks.find(f => f.id === "admin");
     assert.equal(adminFooter, undefined, "Ordinary user must NOT have admin footer link");
 
-    // Total base tiles for ordinary user is exactly 11 (including news)
+    // Total base tiles for ordinary user is exactly 11
     assert.equal(tiles.length, 11);
+    // Total footer links for ordinary user is exactly 2 (settings + public_site)
+    assert.equal(footerLinks.length, 2);
   });
 
   // TEST 4: mobile bottom nav contains exactly 4 items
@@ -138,8 +140,8 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
     assert.equal((labels as string[]).includes("WIADOMOŚCI"), false, "WIADOMOŚCI moved to WIĘCEJ");
   });
 
-  // TEST 5: Admin Panel accessible from WIĘCEJ
-  it("TEST 5: Admin Panel accessible from WIĘCEJ with valid navigation target", () => {
+  // TEST 5: Admin Panel accessible from WIĘCEJ bottom section
+  it("TEST 5: Admin Panel accessible from WIĘCEJ bottom section with valid navigation target", () => {
     let targetRoute = "";
     const mockNavigate = (tab: string) => {
       if (tab === "admin") {
@@ -151,12 +153,12 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
 
     const adminProfile: UserProfile = { id: "u_admin", role: "admin", display_name: "Admin" };
     const canOpenAdmin = computeCanOpenAdmin(adminProfile, EMPTY_PERMISSIONS);
-    const { tiles } = getMobileMoreMenuItems(canOpenAdmin, "ADMIN");
-    const adminTile = tiles.find(t => t.id === "admin");
-    assert.ok(adminTile);
+    const { footerLinks } = getMobileMoreMenuItems(canOpenAdmin, "ADMIN");
+    const adminItem = footerLinks.find(f => f.id === "admin");
+    assert.ok(adminItem);
 
-    mockNavigate(adminTile.id);
-    assert.equal(targetRoute, "/admin", "Clicking admin tile must trigger navigation to /admin");
+    mockNavigate(adminItem.id);
+    assert.equal(targetRoute, "/admin", "Clicking admin link must trigger navigation to /admin");
   });
 
   // TEST 6: direct admin route rejects ordinary user
@@ -254,12 +256,30 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
     }
   });
 
-  // TEST 10: Tile ordering has News at #1, Team at #2, Web Push at #3
-  it("TEST 10: Tile ordering places News at #1, Team at #2, Web Push at #3", () => {
-    const { tiles } = getMobileMoreMenuItems(false);
-    assert.equal(tiles[0].id, "news", "Position 1 must be WIADOMOŚCI I POWIADOMIENIA");
-    assert.equal(tiles[1].id, "players", "Position 2 must be DRUŻYNA");
-    assert.equal(tiles[2].id, "settings", "Position 3 must be POWIADOMIENIA WEB PUSH");
+  // TEST 10: Target Main Grid Order and zero Admin/Push in grid
+  it("TEST 10: Target Main Grid Order (11 items) and zero Admin/Push in grid", () => {
+    const { tiles, footerLinks } = getMobileMoreMenuItems(true, "ADMIN");
+    const gridIds = tiles.map(t => t.id);
+    const expectedGridIds = [
+      "news",
+      "players",
+      "knowledge",
+      "typer",
+      "game",
+      "collection",
+      "achievements",
+      "gallery",
+      "tv",
+      "chronicle",
+      "hall"
+    ];
+    assert.deepEqual(gridIds, expectedGridIds, "Main grid order must match target 11 items");
+    assert.equal(gridIds.includes("settings"), false, "settings (Web Push) must NOT be in main grid");
+    assert.equal(gridIds.includes("admin"), false, "admin must NOT be in main grid");
+
+    // Bottom section verification
+    const footerIds = footerLinks.map(f => f.id);
+    assert.deepEqual(footerIds, ["settings", "admin", "public_site"], "Bottom section order must be settings -> admin -> public_site");
   });
 
 });
