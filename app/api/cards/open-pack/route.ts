@@ -12,7 +12,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { userUnopenedPackId, packTypeId = "matchday" } = body;
+    const packTypeId = body.pack_type_id || body.packTypeId || "standard_pack";
+    const userUnopenedPackId = body.user_unopened_pack_id || body.userUnopenedPackId;
 
     const result = await openPackServerSide(
       supabase,
