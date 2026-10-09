@@ -22,13 +22,7 @@ function validSecret(expected: string, sent: string | null) {
 async function authorize(request: NextRequest): Promise<boolean> {
   const headerSecret = request.headers.get("x-delta-sync-secret");
 
-  // 1. Check secret header against environment variable if configured
-  const envSecret = process.env.DELTA_SYNC_SECRET;
-  if (envSecret && headerSecret && validSecret(envSecret, headerSecret)) {
-    return true;
-  }
-
-  // 2. Check secret header dynamically against Supabase Vault
+  // 1. Check secret header securely against Supabase Vault (Single Source of Truth)
   if (headerSecret) {
     try {
       const admin = createAdminClient();
@@ -36,10 +30,12 @@ async function authorize(request: NextRequest): Promise<boolean> {
       if (!error && isValid === true) {
         return true;
       }
-    } catch {}
+    } catch (err) {
+      console.error("Vault secret verification error:", err);
+    }
   }
 
-  // 3. Check current logged in user session
+  // 2. Check current logged in user session (admin / coach role)
   try {
     const { profile } = await getCurrentProfile();
     return profile?.role === "admin" || profile?.role === "coach";
