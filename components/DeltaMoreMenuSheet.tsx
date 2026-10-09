@@ -33,6 +33,8 @@ interface DeltaMoreMenuSheetProps {
   hasNewGalleryPhoto?: boolean;
   tvTransmissionsCount?: number;
   playersCount?: number;
+  canOpenAdmin?: boolean;
+  adminRoleLabel?: string;
 }
 
 export default function DeltaMoreMenuSheet({
@@ -44,7 +46,9 @@ export default function DeltaMoreMenuSheet({
   achievementsCount = { unlocked: 14, total: 22 },
   hasNewGalleryPhoto = true,
   tvTransmissionsCount = 2,
-  playersCount = 16
+  playersCount = 16,
+  canOpenAdmin = false,
+  adminRoleLabel = "ADMIN"
 }: DeltaMoreMenuSheetProps) {
   if (!isOpen) return null;
 
@@ -268,10 +272,38 @@ export default function DeltaMoreMenuSheet({
                 <small className="delta-tile-subtitle">Powiadomienia & konto</small>
               </div>
             </button>
+
+            {/* 11. PANEL ADMINISTRATORA (tylko dla admin / coach / pomocnik) */}
+            {canOpenAdmin && (
+              <button
+                type="button"
+                className="delta-more-tile delta-more-admin-tile"
+                onClick={() => handleTileClick("admin")}
+                aria-label="Panel administratora"
+              >
+                <div className="delta-tile-icon-box icon-admin">
+                  <Shield size={22} />
+                </div>
+                <div className="delta-tile-text">
+                  <strong className="delta-tile-title">PANEL ADMINA</strong>
+                  <small className="delta-tile-subtitle">Zarządzanie kadrą & meczami</small>
+                </div>
+                <span className="delta-tile-status-chip gold">
+                  {adminRoleLabel}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Szybkie linki pomocnicze */}
           <div className="delta-more-footer-links">
+            {canOpenAdmin && (
+              <a href="/admin" className="delta-more-sublink admin-sublink" aria-label="Panel administratora">
+                <Shield size={15} />
+                <span>Panel Administratora ({adminRoleLabel})</span>
+              </a>
+            )}
+
             <button 
               type="button" 
               onClick={() => handleTileClick("knowledge")} 

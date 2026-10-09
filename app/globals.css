@@ -39525,14 +39525,34 @@ body > main,
 .delta-tile-icon-box.icon-history { color: #10b981; }
 .delta-tile-icon-box.icon-hall { color: #eab308; }
 .delta-tile-icon-box.icon-settings { color: #94a3b8; }
-
-.delta-tile-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.delta-tile-icon-box.icon-admin { 
+  color: #f1c95c; 
+  background: rgba(241, 201, 92, 0.12);
+  border-color: rgba(241, 201, 92, 0.35);
 }
 
-.delta-tile-title {
+.delta-more-tile.delta-more-admin-tile {
+  border-color: rgba(241, 201, 92, 0.28);
+  background: linear-gradient(145deg, rgba(28, 20, 12, 0.95), rgba(15, 20, 28, 0.9));
+}
+
+.delta-more-tile.delta-more-admin-tile:hover {
+  border-color: rgba(241, 201, 92, 0.6);
+  box-shadow: 0 6px 20px rgba(241, 201, 92, 0.15);
+}
+
+.delta-more-sublink.admin-sublink {
+  border-color: rgba(241, 201, 92, 0.35);
+  background: rgba(241, 201, 92, 0.08);
+  color: #f1c95c;
+}
+
+.delta-more-sublink.admin-sublink:hover {
+  background: rgba(241, 201, 92, 0.18);
+  border-color: rgba(241, 201, 92, 0.6);
+}
+
+.delta-tile-text {
   font-size: 11.5px;
   font-weight: 1000;
   color: #ffffff;

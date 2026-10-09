@@ -1842,6 +1842,14 @@ export default function TeamHub(props:{
             <span>{props.profile.role}</span>
           </div>
           <div className="border-t border-white/10 pt-2 space-y-1">
+            {canOpenAdmin && (
+              <a
+                href="/admin"
+                className="w-full text-left text-xs font-bold text-amber-400 hover:text-amber-300 py-1 flex items-center gap-1.5 transition-colors"
+              >
+                <Shield size={13} /> Panel administratora ({staff ? "ADMIN" : "POMOCNIK"})
+              </a>
+            )}
             <button
               onClick={() => { setAccountOpen(false); setNotifPrefsModalOpen(true); }}
               className="w-full text-left text-xs font-bold text-slate-300 hover:text-amber-400 py-1 transition-colors"
@@ -3706,7 +3714,7 @@ export default function TeamHub(props:{
       </section>}
     </main>
 
-    {/* NAVIGATION 2.0: KAFELKOWY HUB "WIĘCEJ" (10 KAFELKÓW PREMIUM) */}
+    {/* NAVIGATION 2.0: KAFELKOWY HUB "WIĘCEJ" (KAFELKI PREMIUM + ADMIN ACCESS) */}
     <DeltaMoreMenuSheet
       isOpen={mobileMoreOpen}
       onClose={() => setMobileMoreOpen(false)}
@@ -3716,8 +3724,12 @@ export default function TeamHub(props:{
       hasNewGalleryPhoto={true}
       tvTransmissionsCount={2}
       playersCount={players.length}
+      canOpenAdmin={canOpenAdmin}
+      adminRoleLabel={staff ? "ADMIN" : "POMOCNIK"}
       onNavigate={(targetTab, extra) => {
-        if (targetTab === "players") {
+        if (targetTab === "admin") {
+          window.location.href = "/admin";
+        } else if (targetTab === "players") {
           setTab("players");
         } else if (targetTab === "typer") {
           setTyperModalOpen(true);
