@@ -119,8 +119,13 @@ export async function recordChangeHistory(record: DeltaChangeRecord): Promise<vo
  * Dispatches web push notifications to eligible subscribers based on category preferences.
  */
 export async function dispatchPushForEvent(event: DeltaSystemEvent): Promise<{ sent: number; failed: number }> {
-  const { dispatchPushBatch } = await import("@/lib/push/dispatcher");
-  const res = await dispatchPushBatch([event]);
-  return { sent: res.sent, failed: res.failed };
+  try {
+    const { dispatchPushBatch } = await import("../push/dispatcher.ts");
+    const res = await dispatchPushBatch([event]);
+    return { sent: res.sent, failed: res.failed };
+  } catch (pushErr) {
+    console.warn("[Push] Auto dispatch background error (isolated):", pushErr);
+    return { sent: 0, failed: 0 };
+  }
 }
 

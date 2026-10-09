@@ -1,17 +1,18 @@
 import webpush from "web-push";
-import { createAdminClient } from "@/lib/supabase/admin";
-import type { DeltaSystemEvent } from "@/lib/events/types";
+import { createAdminClient } from "../supabase/admin.ts";
+import type { DeltaSystemEvent } from "../events/types.ts";
 import {
   isEventEligibleForPush,
   getDeepLinkForEvent,
   type PushSubscriptionRecord,
   type PushEligibilityContext
-} from "@/lib/events/push-eligibility";
+} from "../events/push-eligibility.ts";
 
 export interface DispatchResult {
   sent: number;
   failed: number;
   skipped: number;
+  would_send?: number;
   deliveries: Array<{
     subscriptionId: string;
     status: "SENT" | "FAILED" | "GONE" | "SKIPPED";
@@ -22,14 +23,16 @@ export interface DispatchResult {
 /**
  * Reads server configuration for push notifications.
  */
-export function getPushServerConfig(): PushEligibilityContext & {
+export function getPushServerConfig(override?: Partial<PushEligibilityContext & { dryRun?: boolean }>): PushEligibilityContext & {
   hasVapid: boolean;
+  dryRun: boolean;
   subject?: string;
   publicKey?: string;
   privateKey?: string;
 } {
-  const pushEnabled = process.env.PUSH_ENABLED === "true";
-  const activationCutoffIso = process.env.PUSH_ACTIVATION_CUTOFF_ISO || "2026-10-09T18:00:00.000Z";
+  const pushEnabled = override?.pushEnabled ?? (process.env.PUSH_ENABLED === "true");
+  const dryRun = override?.dryRun ?? (process.env.PUSH_DRY_RUN === "true");
+  const activationCutoffIso = override?.activationCutoffIso ?? (process.env.PUSH_ACTIVATION_CUTOFF_ISO || "2026-10-09T14:30:00.000Z");
 
   const subject = process.env.VAPID_SUBJECT;
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -39,6 +42,7 @@ export function getPushServerConfig(): PushEligibilityContext & {
   return {
     pushEnabled,
     activationCutoffIso,
+    dryRun,
     hasVapid,
     subject,
     publicKey,
@@ -51,19 +55,25 @@ export function getPushServerConfig(): PushEligibilityContext & {
  */
 export async function dispatchPushBatch(
   events: DeltaSystemEvent[],
-  options?: { adminClient?: any }
+  options?: { adminClient?: any; dryRun?: boolean; pushEnabled?: boolean; configOverride?: Partial<PushEligibilityContext> }
 ): Promise<DispatchResult> {
-  const config = getPushServerConfig();
-  const result: DispatchResult = { sent: 0, failed: 0, skipped: 0, deliveries: [] };
+  const config = getPushServerConfig({
+    dryRun: options?.dryRun,
+    pushEnabled: options?.pushEnabled,
+    ...options?.configOverride
+  });
+
+  const result: DispatchResult = { sent: 0, failed: 0, skipped: 0, would_send: 0, deliveries: [] };
 
   if (events.length === 0) return result;
 
-  // 1. Feature Flag Guard
-  if (!config.pushEnabled || !config.hasVapid) {
+  // 1. Feature Flag Guard (unless dry-run)
+  if (!config.dryRun && (!config.pushEnabled || !config.hasVapid)) {
     return {
       sent: 0,
       failed: 0,
       skipped: events.length,
+      would_send: 0,
       deliveries: events.map(() => ({
         subscriptionId: "all",
         status: "SKIPPED",
@@ -72,15 +82,18 @@ export async function dispatchPushBatch(
     };
   }
 
-  try {
-    webpush.setVapidDetails(config.subject!, config.publicKey!, config.privateKey!);
-  } catch (err: any) {
-    return {
-      sent: 0,
-      failed: events.length,
-      skipped: 0,
-      deliveries: [{ subscriptionId: "all", status: "FAILED", reason: `VAPID_INIT_ERROR: ${err?.message}` }]
-    };
+  if (!config.dryRun && config.hasVapid) {
+    try {
+      webpush.setVapidDetails(config.subject!, config.publicKey!, config.privateKey!);
+    } catch (err: any) {
+      return {
+        sent: 0,
+        failed: events.length,
+        skipped: 0,
+        would_send: 0,
+        deliveries: [{ subscriptionId: "all", status: "FAILED", reason: `VAPID_INIT_ERROR: ${err?.message}` }]
+      };
+    }
   }
 
   const admin = options?.adminClient || createAdminClient();
@@ -128,6 +141,16 @@ export async function dispatchPushBatch(
         continue;
       }
 
+      if (config.dryRun) {
+        result.would_send = (result.would_send || 0) + 1;
+        result.deliveries.push({
+          subscriptionId: sub.id,
+          status: "SKIPPED",
+          reason: "DRY_RUN_ELIGIBLE"
+        });
+        continue;
+      }
+
       const digestPayload = JSON.stringify({
         title: "K.S. Delta Warszawa",
         body: `Opublikowano ${clubNewsEvents.length} nowe komunikaty na stronie klubu.`,
@@ -138,9 +161,19 @@ export async function dispatchPushBatch(
       });
 
       const outcome = await sendSinglePush(sub, digestPayload, sampleEvent.id, admin);
-      if (outcome.status === "SENT") result.sent++;
-      else if (outcome.status === "FAILED") result.failed++;
-      else if (outcome.status === "GONE") result.failed++;
+      if (outcome.status === "SENT") {
+        result.sent++;
+        // DIGEST LEDGER: Record delivery row for ALL club news events in the batch to prevent retroactive single sends
+        for (const extraEvent of clubNewsEvents) {
+          if (extraEvent.id !== sampleEvent.id) {
+            await recordDeliveryLedger(extraEvent.id, sub, "SENT", 201, admin);
+          }
+        }
+      } else if (outcome.status === "FAILED") {
+        result.failed++;
+      } else if (outcome.status === "GONE") {
+        result.failed++;
+      }
       result.deliveries.push(outcome);
 
     } else {
@@ -154,6 +187,16 @@ export async function dispatchPushBatch(
             subscriptionId: sub.id,
             status: "SKIPPED",
             reason: eligibility.reason
+          });
+          continue;
+        }
+
+        if (config.dryRun) {
+          result.would_send = (result.would_send || 0) + 1;
+          result.deliveries.push({
+            subscriptionId: sub.id,
+            status: "SKIPPED",
+            reason: "DRY_RUN_ELIGIBLE"
           });
           continue;
         }
@@ -179,6 +222,34 @@ export async function dispatchPushBatch(
   }
 
   return result;
+}
+
+/**
+ * Helper to record or update delivery status in the ledger
+ */
+async function recordDeliveryLedger(
+  eventId: string,
+  subscription: PushSubscriptionRecord,
+  status: "SENT" | "FAILED" | "GONE",
+  providerStatus: number | null,
+  admin: any
+): Promise<void> {
+  try {
+    await admin
+      .from("push_deliveries")
+      .upsert({
+        event_id: eventId,
+        user_id: subscription.user_id,
+        subscription_id: subscription.id,
+        status,
+        provider_status: providerStatus,
+        delivered_at: status === "SENT" ? new Date().toISOString() : null,
+        attempt_count: 1,
+        attempted_at: new Date().toISOString()
+      }, { onConflict: "event_id,subscription_id" });
+  } catch {
+    // Ignore ledger write failure if table not found
+  }
 }
 
 /**
