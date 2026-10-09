@@ -3,6 +3,8 @@ import { getCurrentProfile } from "@/lib/current-profile";
 import { runDeltaSync } from "@/lib/delta-sync/engine";
 import crypto from "node:crypto";
 
+import { createAdminClient } from "@/lib/supabase/admin";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -18,14 +20,26 @@ function validSecret(expected: string, sent: string | null) {
 }
 
 async function authorize(request: NextRequest): Promise<boolean> {
-  // Check secret header (cron jobs)
-  const secret = process.env.DELTA_SYNC_SECRET;
   const headerSecret = request.headers.get("x-delta-sync-secret");
-  if (secret && validSecret(secret, headerSecret)) {
+
+  // 1. Check secret header against environment variable if configured
+  const envSecret = process.env.DELTA_SYNC_SECRET;
+  if (envSecret && headerSecret && validSecret(envSecret, headerSecret)) {
     return true;
   }
 
-  // Check current logged in user session
+  // 2. Check secret header dynamically against Supabase Vault
+  if (headerSecret) {
+    try {
+      const admin = createAdminClient();
+      const { data: isValid, error } = await admin.rpc("verify_cron_secret", { p_secret: headerSecret });
+      if (!error && isValid === true) {
+        return true;
+      }
+    } catch {}
+  }
+
+  // 3. Check current logged in user session
   try {
     const { profile } = await getCurrentProfile();
     return profile?.role === "admin" || profile?.role === "coach";
