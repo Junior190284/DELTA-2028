@@ -13,6 +13,16 @@ export async function GET(){
       private:Boolean(process.env.VAPID_PRIVATE_KEY),
       subject:Boolean(process.env.VAPID_SUBJECT)
     },
+    runtime:{
+      push_enabled: process.env.PUSH_ENABLED === "true",
+      push_dry_run: process.env.PUSH_DRY_RUN === "true",
+      cutoff_iso: process.env.PUSH_ACTIVATION_CUTOFF_ISO || "2026-10-09T14:30:00.000Z",
+      env_present: {
+        PUSH_ENABLED: process.env.PUSH_ENABLED !== undefined,
+        PUSH_DRY_RUN: process.env.PUSH_DRY_RUN !== undefined,
+        PUSH_ACTIVATION_CUTOFF_ISO: process.env.PUSH_ACTIVATION_CUTOFF_ISO !== undefined
+      }
+    },
     table:false,
     subscriptions:0
   };
