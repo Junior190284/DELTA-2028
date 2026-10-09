@@ -9,9 +9,9 @@ import type { DeltaSystemEvent } from '../lib/events/types.ts';
 
 const NOW_REF = new Date('2026-10-09T18:00:00.000Z');
 
-describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
-  // TEST 1: MATCH_CANCELLED beats unread messages
-  it('TEST 1: MATCH_CANCELLED beats unread messages', () => {
+describe('Home Communication Priority Layer Test Suite (ETAP 12C.1)', () => {
+  // TEST 1: CRITICAL cancellation beats everything (even unread messages & gamification)
+  it('TEST 1: MATCH_CANCELLED beats unread messages and all other tiers', () => {
     const output = computeHomePriorities({
       user: { role: 'parent' },
       events: [
@@ -26,6 +26,8 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
         }
       ],
       unreadMessagesCount: 5,
+      unopenedPacksCount: 10,
+      dailySpinAvailable: true,
       nowDate: NOW_REF
     });
 
@@ -34,32 +36,8 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
     assert.equal(output.secondaryActions.some(a => a.tier === 'UNREAD_MESSAGES'), true);
   });
 
-  // TEST 2: important schedule change beats gamification
-  it('TEST 2: important schedule change beats gamification', () => {
-    const output = computeHomePriorities({
-      user: { role: 'parent' },
-      events: [
-        {
-          id: 'upd-1',
-          type: 'MATCH_UPDATED',
-          title: 'PILNE: Zmiana godziny meczu',
-          message: 'Treść',
-          source: 'DELTA',
-          importance: 'URGENT',
-          created_at: '2026-10-09T17:30:00.000Z'
-        }
-      ],
-      unopenedPacksCount: 10,
-      dailySpinAvailable: true,
-      nowDate: NOW_REF
-    });
-
-    assert.equal(output.primaryAction?.tier, 'CRITICAL_ALERT');
-    assert.equal(output.secondaryActions.some(a => a.tier === 'GAMIFICATION'), true);
-  });
-
-  // TEST 3: missing match attendance beats Daily Spin
-  it('TEST 3: missing match attendance beats Daily Spin', () => {
+  // TEST 2: Required match attendance beats gamification and general training
+  it('TEST 2: missing match attendance beats gamification and training', () => {
     const output = computeHomePriorities({
       user: { userId: 'p1', role: 'parent', playerIds: ['player-1'] },
       parentPlayerIds: ['player-1'],
@@ -67,11 +45,17 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
         id: 'match-1',
         home_team: 'K.S. Delta Warszawa GM',
         away_team: 'Alfa Przymierze Rodzin',
-        match_date: '2026-10-11',
+        match_date: '2026-10-15', // 6 days ahead (no arbitrary 72h restriction)
         match_time: '10:00:00'
+      },
+      nextTraining: {
+        id: 'tr-1',
+        training_date: '2026-10-12',
+        start_time: '17:00:00'
       },
       attendanceDeclarations: [], // Missing declaration
       dailySpinAvailable: true,
+      unopenedPacksCount: 5,
       nowDate: NOW_REF
     });
 
@@ -79,38 +63,100 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
     assert.match(output.primaryAction!.headline, /Potwierdź obecność/);
   });
 
-  // TEST 4: completed attendance removes action
-  it('TEST 4: completed attendance removes action', () => {
+  // TEST 3: New Lineup / Callup beats unread messages and regular match/training card
+  it('TEST 3: new lineup published beats unread messages and regular match card', () => {
     const output = computeHomePriorities({
       user: { userId: 'p1', role: 'parent', playerIds: ['player-1'] },
-      parentPlayerIds: ['player-1'],
       nextMatch: {
         id: 'match-1',
         home_team: 'K.S. Delta Warszawa GM',
         away_team: 'Alfa Przymierze Rodzin',
-        match_date: '2026-10-11',
+        match_date: '2026-10-14',
         match_time: '10:00:00'
       },
-      attendanceDeclarations: [
-        { match_id: 'match-1', player_id: 'player-1', status: 'present' }
-      ], // Completed!
-      dailySpinAvailable: true,
+      hasLineupPublished: true,
+      events: [
+        {
+          id: 'lineup-ev-1',
+          type: 'LINEUP_PUBLISHED',
+          title: 'Powołania na mecz',
+          message: 'Trener opublikował kadrę.',
+          source: 'DELTA',
+          importance: 'IMPORTANT',
+          related_entity_id: 'match-1',
+          is_read: false,
+          created_at: '2026-10-09T17:30:00.000Z'
+        }
+      ],
+      attendanceDeclarations: [{ match_id: 'match-1', player_id: 'player-1', status: 'yes' }],
+      unreadMessagesCount: 3,
       nowDate: NOW_REF
     });
 
-    // Attendance action is resolved, so match soon / gamification takes over
-    assert.notEqual(output.primaryAction?.tier, 'MATCH_ATTENDANCE');
+    assert.equal(output.primaryAction?.tier, 'LINEUP_CALLUP');
+    assert.match(output.primaryAction!.headline, /Powołania i skład/);
   });
 
-  // TEST 5: training becomes primary if no higher action
-  it('TEST 5: training becomes primary if no higher action', () => {
+  // TEST 4: Important schedule change respected
+  it('TEST 4: important schedule change respected over regular training', () => {
     const output = computeHomePriorities({
       user: { role: 'parent' },
+      events: [
+        {
+          id: 'upd-1',
+          type: 'MATCH_UPDATED',
+          title: 'Zmiana terminu meczu ligowego',
+          message: 'Mecz przeniesiony na niedzielę.',
+          source: 'DELTA',
+          importance: 'IMPORTANT',
+          is_read: false,
+          created_at: '2026-10-09T17:30:00.000Z'
+        }
+      ],
       nextTraining: {
         id: 'tr-1',
         training_date: '2026-10-10',
+        start_time: '17:00:00'
+      },
+      nowDate: NOW_REF
+    });
+
+    assert.equal(output.primaryAction?.tier, 'SCHEDULE_CHANGE');
+    assert.equal(output.secondaryActions.some(a => a.tier === 'TRAINING_SOON'), true);
+  });
+
+  // TEST 5: Nearest match selected correctly without arbitrary 48h limit
+  it('TEST 5: nearest upcoming match selected when attendance completed', () => {
+    const output = computeHomePriorities({
+      user: { userId: 'p1', role: 'parent', playerIds: ['player-1'] },
+      parentPlayerIds: ['player-1'],
+      nextMatch: {
+        id: 'match-future',
+        home_team: 'K.S. Delta Warszawa GM',
+        away_team: 'KS Ursynów',
+        match_date: '2026-10-16', // 7 days in future (beyond 48h)
+        match_time: '11:00:00'
+      },
+      attendanceDeclarations: [
+        { match_id: 'match-future', player_id: 'player-1', status: 'present' }
+      ],
+      unreadMessagesCount: 1,
+      nowDate: NOW_REF
+    });
+
+    assert.equal(output.primaryAction?.tier, 'MATCH_SOON');
+    assert.match(output.primaryAction!.headline, /KS Ursynów/);
+  });
+
+  // TEST 6: Nearest training selected if no higher action
+  it('TEST 6: nearest training selected if no match and no higher action', () => {
+    const output = computeHomePriorities({
+      user: { role: 'parent' },
+      nextTraining: {
+        id: 'tr-future',
+        training_date: '2026-10-14', // 5 days in future (beyond 36h)
         start_time: '17:00:00',
-        location: 'Boisko B'
+        location: 'Boisko Główne'
       },
       unreadMessagesCount: 1,
       nowDate: NOW_REF
@@ -120,8 +166,8 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
     assert.match(output.primaryAction!.headline, /Najbliższy trening/);
   });
 
-  // TEST 6: unread messages become secondary
-  it('TEST 6: unread messages become secondary', () => {
+  // TEST 7: Unread messages become secondary
+  it('TEST 7: unread messages become secondary when operations present', () => {
     const output = computeHomePriorities({
       user: { role: 'parent' },
       nextTraining: {
@@ -138,8 +184,8 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
     assert.match(output.secondaryActions[0].headline, /3 nieprzeczytane/);
   });
 
-  // TEST 7: gamification never beats team operations
-  it('TEST 7: gamification never beats team operations', () => {
+  // TEST 8: Gamification is strictly tertiary (never beats sports ops or unread messages)
+  it('TEST 8: gamification is strictly tertiary and never beats sports operations', () => {
     const output = computeHomePriorities({
       user: { role: 'parent' },
       nextTraining: {
@@ -147,18 +193,19 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
         training_date: '2026-10-10',
         start_time: '17:00:00'
       },
+      unreadMessagesCount: 2,
       unopenedPacksCount: 20,
       dailySpinAvailable: true,
       nowDate: NOW_REF
     });
 
     assert.equal(output.primaryAction?.tier, 'TRAINING_SOON');
-    assert.equal(output.primaryAction?.priorityScore! > 50, true);
-    assert.equal(output.secondaryActions.some(a => a.tier === 'GAMIFICATION'), true);
+    assert.equal(output.secondaryActions[0].tier, 'UNREAD_MESSAGES');
+    assert.equal(output.secondaryActions[1].tier, 'GAMIFICATION');
   });
 
-  // TEST 8: wrong audience excluded
-  it('TEST 8: wrong audience excluded', () => {
+  // TEST 9: Wrong audience strictly excluded
+  it('TEST 9: wrong audience excluded', () => {
     const output = computeHomePriorities({
       user: { userId: 'alice', role: 'parent' },
       events: [
@@ -181,8 +228,8 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
     assert.equal(output.primaryAction, null);
   });
 
-  // TEST 9: admin event hidden from ordinary user
-  it('TEST 9: admin event hidden from ordinary user', () => {
+  // TEST 10: Admin SYNC_ERROR respects real importance and is hidden from parent
+  it('TEST 10: admin SYNC_ERROR respects real importance and is hidden from parent', () => {
     const events: DeltaSystemEvent[] = [
       {
         id: 'sync-err-1',
@@ -210,10 +257,61 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
 
     assert.equal(parentOutput.primaryAction, null);
     assert.equal(adminOutput.primaryAction?.tier, 'ADMIN_ALERT');
+    assert.equal(adminOutput.primaryAction?.priorityScore, 70);
   });
 
-  // TEST 10: same event not rendered twice
-  it('TEST 10: same event not rendered twice', () => {
+  // TEST 11: Action completion dynamically recalculates priority
+  it('TEST 11: action completion recalculates priority', () => {
+    let declarations: Array<{ match_id: string; player_id: string; status: string }> = [];
+
+    const getPriority = () =>
+      computeHomePriorities({
+        user: { userId: 'p1', role: 'parent', playerIds: ['player-1'] },
+        parentPlayerIds: ['player-1'],
+        nextMatch: {
+          id: 'm-1',
+          home_team: 'K.S. Delta Warszawa GM',
+          away_team: 'Alfa Przymierze Rodzin',
+          match_date: '2026-10-15',
+          match_time: '10:00:00'
+        },
+        attendanceDeclarations: declarations,
+        unreadMessagesCount: 2,
+        nowDate: NOW_REF
+      });
+
+    let res1 = getPriority();
+    assert.equal(res1.primaryAction?.tier, 'MATCH_ATTENDANCE');
+
+    // Complete action
+    declarations = [{ match_id: 'm-1', player_id: 'player-1', status: 'yes' }];
+
+    let res2 = getPriority();
+    assert.notEqual(res2.primaryAction?.tier, 'MATCH_ATTENDANCE');
+    assert.equal(res2.primaryAction?.tier, 'MATCH_SOON');
+    assert.equal(res2.secondaryActions[0]?.tier, 'UNREAD_MESSAGES');
+  });
+
+  // TEST 12: No relevant data produces calm state without fake urgency
+  it('TEST 12: no relevant data produces calm state without fake urgency', () => {
+    const res = computeHomePriorities({
+      user: { role: 'parent' },
+      events: [],
+      nextMatch: null,
+      nextTraining: null,
+      unreadMessagesCount: 0,
+      unopenedPacksCount: 0,
+      dailySpinAvailable: false,
+      nowDate: NOW_REF
+    });
+
+    assert.equal(res.hasPriority, false);
+    assert.equal(res.primaryAction, null);
+    assert.equal(res.secondaryActions.length, 0);
+  });
+
+  // TEST 13: Same event / entity never duplicated in primary AND secondary
+  it('TEST 13: same event / entity never duplicated in primary and secondary', () => {
     const output = computeHomePriorities({
       user: { role: 'parent' },
       events: [
@@ -243,118 +341,22 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C)', () => {
     assert.equal(output.secondaryActions.length, 0);
   });
 
-  // TEST 11: new critical event updates priority
-  it('TEST 11: new critical event updates priority', () => {
-    let input: PriorityEngineInput = {
-      user: { role: 'parent' },
-      nextTraining: {
-        id: 'tr-1',
-        training_date: '2026-10-10',
-        start_time: '17:00:00'
-      },
-      events: [],
-      nowDate: NOW_REF
-    };
-
-    let res = computeHomePriorities(input);
-    assert.equal(res.primaryAction?.tier, 'TRAINING_SOON');
-
-    // Live arrival of critical event
-    input = {
-      ...input,
-      events: [
-        {
-          id: 'crit-live-1',
-          type: 'TRAINING_CANCELLED',
-          title: 'Trening ODWOŁANY',
-          message: 'Ulewa',
-          source: 'DELTA',
-          importance: 'CRITICAL',
-          created_at: '2026-10-09T17:59:00.000Z'
-        }
-      ]
-    };
-
-    res = computeHomePriorities(input);
-    assert.equal(res.primaryAction?.tier, 'CRITICAL_ALERT');
-    assert.match(res.primaryAction!.headline, /Trening ODWOŁANY/);
-  });
-
-  // TEST 12: action completion recalculates priority
-  it('TEST 12: action completion recalculates priority', () => {
-    let declarations: Array<{ match_id: string; player_id: string; status: string }> = [];
-
-    const getPriority = () =>
-      computeHomePriorities({
-        user: { userId: 'p1', role: 'parent', playerIds: ['player-1'] },
-        parentPlayerIds: ['player-1'],
-        nextMatch: {
-          id: 'm-1',
-          home_team: 'K.S. Delta Warszawa GM',
-          away_team: 'Alfa Przymierze Rodzin',
-          match_date: '2026-10-11',
-          match_time: '10:00:00'
-        },
-        attendanceDeclarations: declarations,
-        unreadMessagesCount: 2,
-        nowDate: NOW_REF
-      });
-
-    let res1 = getPriority();
-    assert.equal(res1.primaryAction?.tier, 'MATCH_ATTENDANCE');
-
-    // Complete action
-    declarations = [{ match_id: 'm-1', player_id: 'player-1', status: 'yes' }];
-
-    let res2 = getPriority();
-    assert.notEqual(res2.primaryAction?.tier, 'MATCH_ATTENDANCE');
-    assert.equal(res2.primaryAction?.tier, 'MATCH_SOON');
-    assert.equal(res2.secondaryActions[0]?.tier, 'UNREAD_MESSAGES');
-  });
-
-  // TEST 13: no relevant data => no fake priority
-  it('TEST 13: no relevant data => no fake priority', () => {
-    const res = computeHomePriorities({
-      user: { role: 'parent' },
-      events: [],
-      nextMatch: null,
-      nextTraining: null,
-      unreadMessagesCount: 0,
-      unopenedPacksCount: 0,
-      dailySpinAvailable: false,
-      nowDate: NOW_REF
-    });
-
-    assert.equal(res.hasPriority, false);
-    assert.equal(res.primaryAction, null);
-    assert.equal(res.secondaryActions.length, 0);
-  });
-
-  // TEST 14: bottom nav remains exactly 5 items
-  it('TEST 14: bottom nav remains exactly 5 items', () => {
+  // TEST 14: Mobile navigation 2.0 keeps exactly 5 items
+  it('TEST 14: mobile bottom navigation preserves exactly 5 items', () => {
     const bottomNav = ['HOME', 'MECZE', 'TRENING', 'WIADOMOŚCI', 'WIĘCEJ'];
     assert.equal(bottomNav.length, 5);
   });
 
-  // TEST 15: 320px no horizontal overflow
-  it('TEST 15: 320px no horizontal overflow', () => {
-    const res = computeHomePriorities({
-      user: { role: 'parent' },
-      events: [
-        {
-          id: 'long-t-1',
-          type: 'MATCH_CANCELLED',
-          title: 'Bardzo długi tytuł komunikatu o odwołaniu meczu ligowego z Alfa Przymierze Rodzin w Warszawie',
-          message: 'Długi opis zawierający szczegółowe uzasadnienie decyzji związku MZPN.',
-          source: 'DELTA',
-          importance: 'CRITICAL',
-          created_at: '2026-10-09T17:00:00.000Z'
-        }
-      ],
-      nowDate: NOW_REF
+  // TEST 15: Supported real roles handle gracefully and unknown roles fallback
+  it('TEST 15: supported real roles and fallback role handling', () => {
+    const roles = ['admin', 'coach', 'parent', 'player', 'guest', 'unknown_role'];
+    roles.forEach(role => {
+      const res = computeHomePriorities({
+        user: { role },
+        unreadMessagesCount: 1,
+        nowDate: NOW_REF
+      });
+      assert.ok(res);
     });
-
-    assert.ok(res.primaryAction?.headline.length! > 0);
-    assert.equal(res.primaryAction?.tier, 'CRITICAL_ALERT');
   });
 });

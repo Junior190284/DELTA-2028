@@ -43,6 +43,8 @@ export default function DeltaHomePrioritySection({
         return <CalendarDays className="w-5 h-5 text-emerald-400" />;
       case 'TRAINING_SOON':
         return <Zap className="w-5 h-5 text-amber-400" />;
+      case 'SCHEDULE_CHANGE':
+        return <CalendarDays className="w-5 h-5 text-amber-400" />;
       case 'ADMIN_ALERT':
         return <ShieldAlert className="w-5 h-5 text-orange-400" />;
       case 'GAMIFICATION':

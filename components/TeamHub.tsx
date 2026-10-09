@@ -1926,6 +1926,7 @@ export default function TeamHub(props:{
         userId={props.profile.id}
         userRole={props.profile.role}
         parentPlayerIds={props.parentPlayerIds}
+        excludeEventIds={tab === "home" && homePriorityData?.primaryAction?.eventId ? [homePriorityData.primaryAction.eventId] : []}
         onNavigate={(targetTab) => {
           setTab(targetTab as any);
         }}

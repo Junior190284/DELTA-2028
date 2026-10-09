@@ -1,13 +1,15 @@
 import type { DeltaSystemEvent, EventImportance } from '../events/types.ts';
 import { isEventVisibleForUser, mapEventToCategory, type UserAudienceContext } from '../events/notifications.ts';
+import type { UserRole } from '../security/roles.ts';
 
 export type PriorityActionTier =
-  | 'CRITICAL_ALERT' // 1: Cancelled match/training, urgent notice
-  | 'MATCH_ATTENDANCE' // 2: Missing match attendance declaration
+  | 'CRITICAL_ALERT' // 1: Cancelled match/training, critical notice, urgent operational emergency
+  | 'MATCH_ATTENDANCE' // 2: Missing required match attendance declaration
   | 'LINEUP_CALLUP' // 3: Published lineup / callups
-  | 'MATCH_SOON' // 4: Upcoming match within 48h
-  | 'TRAINING_SOON' // 5: Upcoming training session
-  | 'ADMIN_ALERT' // 6: Sync error or staff action (admin only)
+  | 'SCHEDULE_CHANGE' // 4: Schedule / match / training update with high importance
+  | 'ADMIN_ALERT' // 4b: Staff / admin operational alert (SYNC_ERROR)
+  | 'MATCH_SOON' // 5: Nearest upcoming match
+  | 'TRAINING_SOON' // 6: Nearest upcoming training session
   | 'UNREAD_MESSAGES' // 7: Unread system events
   | 'GAMIFICATION'; // 8: Unopened pack / daily spin / unclaimed reward
 
@@ -50,7 +52,11 @@ export interface TrainingEntity {
 }
 
 export interface PriorityEngineInput {
-  user: UserAudienceContext;
+  user: {
+    userId?: string | null;
+    role?: UserRole | string | null;
+    playerIds?: string[];
+  };
   events?: DeltaSystemEvent[];
   nextMatch?: MatchEntity | null;
   nextTraining?: TrainingEntity | null;
@@ -71,25 +77,31 @@ export interface PriorityEngineOutput {
 }
 
 /**
- * Computes deterministic priority hierarchy for Home/Dashboard.
+ * Computes deterministic priority hierarchy for Home/Dashboard based strictly
+ * on real operational event importance and required actions without arbitrary time thresholds.
  */
 export function computeHomePriorities(input: PriorityEngineInput): PriorityEngineOutput {
   const actions: HomePriorityAction[] = [];
   const now = input.nowDate || new Date();
   const nowTime = now.getTime();
-  const oneDayMs = 24 * 60 * 60 * 1000;
 
-  const user = input.user;
-  const isAdminOrStaff = user.role === 'admin' || user.role === 'coach' || user.role === 'staff';
-  const visibleEvents = (input.events || []).filter((e) => isEventVisibleForUser(e, user));
+  const userRole = (input.user.role || 'parent') as UserRole;
+  const isAdminOrStaff = userRole === 'admin' || userRole === 'coach';
+  const visibleEvents = (input.events || []).filter((e) =>
+    isEventVisibleForUser(e, {
+      userId: input.user.userId,
+      role: input.user.role,
+      playerIds: input.user.playerIds || input.parentPlayerIds,
+    })
+  );
 
-  // 1. TIER 1: CRITICAL / URGENT TEAM EMERGENCIES
+  // 1. TIER 1: CRITICAL OPERATIONAL EMERGENCIES (Match/Training cancellations or CRITICAL/URGENT events)
   const criticalEvent = visibleEvents.find(
     (e) =>
       e.type === 'MATCH_CANCELLED' ||
       e.type === 'TRAINING_CANCELLED' ||
-      e.importance === 'URGENT' ||
-      e.importance === 'CRITICAL'
+      e.importance === 'CRITICAL' ||
+      e.importance === 'URGENT'
   );
 
   if (criticalEvent) {
@@ -103,7 +115,11 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
       headline: criticalEvent.title,
       subtext: criticalEvent.message || 'Ważna zmiana w harmonogramie drużyny.',
       ctaLabel: isCancelled ? 'Sprawdź szczegóły' : 'Zobacz alert',
-      targetTab: criticalEvent.type.startsWith('MATCH') ? 'matches' : criticalEvent.type.startsWith('TRAINING') ? 'training' : 'news',
+      targetTab: criticalEvent.type.startsWith('MATCH')
+        ? 'matches'
+        : criticalEvent.type.startsWith('TRAINING')
+        ? 'training'
+        : 'news',
       targetPayload: criticalEvent.metadata,
       eventId: criticalEvent.id,
       badgeText: isCancelled ? 'ODWOŁANE' : 'PILNE',
@@ -111,30 +127,38 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
     });
   }
 
-  // 2. TIER 2: MATCH ATTENDANCE MISSING (for parents/players with upcoming match)
+  // 2. TIER 2: REQUIRED USER ACTION (Missing match attendance declaration on upcoming match)
   if (input.nextMatch && input.nextMatch.status !== 'cancelled') {
     const matchDateObj = new Date(`${input.nextMatch.match_date}T${input.nextMatch.match_time || '12:00:00'}`);
     const timeToMatch = matchDateObj.getTime() - nowTime;
 
-    // Only relevant if match is upcoming (within next 7 days and in future)
-    if (timeToMatch > -2 * 3600 * 1000 && timeToMatch < 7 * oneDayMs) {
-      const playerIds = input.parentPlayerIds || user.playerIds || [];
+    // Upcoming match (not finished in the past)
+    if (timeToMatch > -2 * 3600 * 1000) {
+      const playerIds = input.parentPlayerIds || input.user.playerIds || [];
       const declarations = input.attendanceDeclarations || [];
 
-      // Check if any assigned player is missing attendance declaration
+      // Check if player/parent has missing declaration
       const hasMissingDeclaration =
         playerIds.length > 0 &&
-        playerIds.some((pId) => !declarations.some((d) => d.match_id === input.nextMatch!.id && d.player_id === pId));
+        playerIds.some(
+          (pId) => !declarations.some((d) => d.match_id === input.nextMatch!.id && d.player_id === pId)
+        );
 
       if (hasMissingDeclaration) {
         actions.push({
           id: `att_match_${input.nextMatch.id}`,
           tier: 'MATCH_ATTENDANCE',
-          priorityScore: 85,
+          priorityScore: 90,
           importance: 'IMPORTANT',
           category: 'matches',
-          headline: `Potwierdź obecność na meczu: vs ${input.nextMatch.away_team === 'K.S. Delta Warszawa GM' ? input.nextMatch.home_team : input.nextMatch.away_team}`,
-          subtext: `Mecz zaplanowany na ${input.nextMatch.match_date}, godz. ${input.nextMatch.match_time?.slice(0, 5) || 'do ustalenia'}.`,
+          headline: `Potwierdź obecność na meczu: vs ${
+            input.nextMatch.away_team === 'K.S. Delta Warszawa GM'
+              ? input.nextMatch.home_team
+              : input.nextMatch.away_team
+          }`,
+          subtext: `Mecz zaplanowany na ${input.nextMatch.match_date}, godz. ${
+            input.nextMatch.match_time?.slice(0, 5) || 'do ustalenia'
+          }.`,
           ctaLabel: 'Zadeklaruj obecność',
           targetTab: 'matches',
           targetPayload: { matchId: input.nextMatch.id, action: 'attendance' },
@@ -145,8 +169,8 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
     }
   }
 
-  // 3. TIER 3: LINEUP / POWOŁANIA PUBLISHED (if unread or newly published)
-  if (input.hasLineupPublished && input.nextMatch) {
+  // 3. TIER 3: NEW LINEUP / CALLUP PUBLISHED (Targeted to user and unread/new)
+  if (input.hasLineupPublished && input.nextMatch && input.nextMatch.status !== 'cancelled') {
     const lineupEvent = visibleEvents.find(
       (e) => e.type === 'LINEUP_PUBLISHED' && (!e.related_entity_id || e.related_entity_id === input.nextMatch!.id)
     );
@@ -155,10 +179,14 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
       actions.push({
         id: `lineup_${input.nextMatch.id}`,
         tier: 'LINEUP_CALLUP',
-        priorityScore: 75,
+        priorityScore: 80,
         importance: 'IMPORTANT',
         category: 'matches',
-        headline: `Powołania i skład na mecz vs ${input.nextMatch.away_team === 'K.S. Delta Warszawa GM' ? input.nextMatch.home_team : input.nextMatch.away_team}`,
+        headline: `Powołania i skład na mecz vs ${
+          input.nextMatch.away_team === 'K.S. Delta Warszawa GM'
+            ? input.nextMatch.home_team
+            : input.nextMatch.away_team
+        }`,
         subtext: 'Trener opublikował oficjalną kadrę meczową na najbliższe spotkanie.',
         ctaLabel: 'Zobacz powołania',
         targetTab: 'matches',
@@ -170,61 +198,42 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
     }
   }
 
-  // 4. TIER 4: UPCOMING MATCH SOON (within 48 hours)
-  if (input.nextMatch && input.nextMatch.status !== 'cancelled') {
-    const matchDateObj = new Date(`${input.nextMatch.match_date}T${input.nextMatch.match_time || '12:00:00'}`);
-    const timeToMatch = matchDateObj.getTime() - nowTime;
-
-    if (timeToMatch > -2 * 3600 * 1000 && timeToMatch <= 48 * 3600 * 1000) {
-      actions.push({
-        id: `match_soon_${input.nextMatch.id}`,
-        tier: 'MATCH_SOON',
-        priorityScore: 65,
-        importance: 'NORMAL',
-        category: 'matches',
-        headline: `Najbliższy mecz: vs ${input.nextMatch.away_team === 'K.S. Delta Warszawa GM' ? input.nextMatch.home_team : input.nextMatch.away_team}`,
-        subtext: `${input.nextMatch.match_date} o godz. ${input.nextMatch.match_time?.slice(0, 5) || 'do ustalenia'} • ${input.nextMatch.venue || 'Mecz ligowy'}`,
-        ctaLabel: 'Centrum meczu',
-        targetTab: 'matches',
-        targetPayload: { matchId: input.nextMatch.id },
-        entityId: input.nextMatch.id,
-        badgeText: 'MECZ',
-      });
-    }
+  // 4. TIER 4: IMPORTANT OPERATIONAL CHANGES & ADMIN ALERTS
+  // 4a. Schedule Change / Important Match & Training Updates
+  const scheduleUpdate = visibleEvents.find(
+    (e) =>
+      (e.type === 'MATCH_UPDATED' || e.type === 'TRAINING_UPDATED') &&
+      (e.importance === 'IMPORTANT' || e.importance === 'HIGH') &&
+      !e.is_read
+  );
+  if (scheduleUpdate) {
+    actions.push({
+      id: `sched_upd_${scheduleUpdate.id}`,
+      tier: 'SCHEDULE_CHANGE',
+      priorityScore: 75,
+      importance: 'IMPORTANT',
+      category: mapEventToCategory(scheduleUpdate) as any,
+      headline: scheduleUpdate.title,
+      subtext: scheduleUpdate.message || 'Zaktualizowano termin lub szczegóły wydarzenia drużyny.',
+      ctaLabel: 'Sprawdź zmiany',
+      targetTab: scheduleUpdate.type.startsWith('MATCH') ? 'matches' : 'training',
+      targetPayload: scheduleUpdate.metadata,
+      eventId: scheduleUpdate.id,
+      badgeText: 'ZMIANA',
+      timestamp: scheduleUpdate.created_at,
+    });
   }
 
-  // 5. TIER 5: UPCOMING TRAINING (today or tomorrow)
-  if (input.nextTraining) {
-    const trainingDateObj = new Date(`${input.nextTraining.training_date}T${input.nextTraining.start_time || '17:00:00'}`);
-    const timeToTraining = trainingDateObj.getTime() - nowTime;
-
-    if (timeToTraining > -2 * 3600 * 1000 && timeToTraining <= 36 * 3600 * 1000) {
-      actions.push({
-        id: `training_${input.nextTraining.id}`,
-        tier: 'TRAINING_SOON',
-        priorityScore: 55,
-        importance: 'NORMAL',
-        category: 'trainings',
-        headline: `Najbliższy trening: ${input.nextTraining.training_date}`,
-        subtext: `Godz. ${input.nextTraining.start_time?.slice(0, 5) || '17:00'} • ${input.nextTraining.location || 'Boisko klubowe'}`,
-        ctaLabel: 'Centrum treningowe',
-        targetTab: 'training',
-        targetPayload: { trainingId: input.nextTraining.id },
-        entityId: input.nextTraining.id,
-        badgeText: 'TRENING',
-      });
-    }
-  }
-
-  // 6. TIER 6: ADMIN ALERT (SYNC_ERROR for staff)
+  // 4b. Admin Operational Alert (SYNC_ERROR for staff/admin with real importance)
   if (isAdminOrStaff) {
     const syncError = visibleEvents.find((e) => e.type === 'SYNC_ERROR' && !e.is_read);
     if (syncError) {
+      const isUrgentError = syncError.importance === 'CRITICAL' || syncError.importance === 'URGENT';
       actions.push({
         id: `admin_sync_${syncError.id}`,
         tier: 'ADMIN_ALERT',
-        priorityScore: 50,
-        importance: 'IMPORTANT',
+        priorityScore: isUrgentError ? 100 : 70,
+        importance: isUrgentError ? 'CRITICAL' : 'IMPORTANT',
         category: 'system',
         headline: 'Wymaga uwagi: Błąd synchronizacji DELTA Sync',
         subtext: syncError.message || 'Wystąpił problem z pobraniem danych ze strony klubu.',
@@ -237,7 +246,64 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
     }
   }
 
-  // 7. TIER 7: UNREAD MESSAGES
+  // 5. TIER 5: NEAREST UPCOMING TEAM EVENTS (Informational candidates)
+  // 5a. Nearest Upcoming Match
+  if (input.nextMatch && input.nextMatch.status !== 'cancelled') {
+    const matchDateObj = new Date(`${input.nextMatch.match_date}T${input.nextMatch.match_time || '12:00:00'}`);
+    const timeToMatch = matchDateObj.getTime() - nowTime;
+
+    if (timeToMatch > -2 * 3600 * 1000) {
+      actions.push({
+        id: `match_soon_${input.nextMatch.id}`,
+        tier: 'MATCH_SOON',
+        priorityScore: 60,
+        importance: 'NORMAL',
+        category: 'matches',
+        headline: `Najbliższy mecz: vs ${
+          input.nextMatch.away_team === 'K.S. Delta Warszawa GM'
+            ? input.nextMatch.home_team
+            : input.nextMatch.away_team
+        }`,
+        subtext: `${input.nextMatch.match_date} o godz. ${
+          input.nextMatch.match_time?.slice(0, 5) || 'do ustalenia'
+        } • ${input.nextMatch.venue || 'Mecz ligowy'}`,
+        ctaLabel: 'Centrum meczu',
+        targetTab: 'matches',
+        targetPayload: { matchId: input.nextMatch.id },
+        entityId: input.nextMatch.id,
+        badgeText: 'MECZ',
+      });
+    }
+  }
+
+  // 5b. Nearest Upcoming Training
+  if (input.nextTraining) {
+    const trainingDateObj = new Date(
+      `${input.nextTraining.training_date}T${input.nextTraining.start_time || '17:00:00'}`
+    );
+    const timeToTraining = trainingDateObj.getTime() - nowTime;
+
+    if (timeToTraining > -2 * 3600 * 1000) {
+      actions.push({
+        id: `training_${input.nextTraining.id}`,
+        tier: 'TRAINING_SOON',
+        priorityScore: 50,
+        importance: 'NORMAL',
+        category: 'trainings',
+        headline: `Najbliższy trening: ${input.nextTraining.training_date}`,
+        subtext: `Godz. ${input.nextTraining.start_time?.slice(0, 5) || '17:00'} • ${
+          input.nextTraining.location || 'Boisko klubowe'
+        }`,
+        ctaLabel: 'Centrum treningowe',
+        targetTab: 'training',
+        targetPayload: { trainingId: input.nextTraining.id },
+        entityId: input.nextTraining.id,
+        badgeText: 'TRENING',
+      });
+    }
+  }
+
+  // 6. TIER 6: UNREAD COMMUNICATION IN NOTIFICATION CENTER
   const unreadCount = input.unreadMessagesCount || 0;
   if (unreadCount > 0) {
     actions.push({
@@ -246,7 +312,8 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
       priorityScore: 40,
       importance: 'NORMAL',
       category: 'club',
-      headline: unreadCount === 1 ? 'Masz 1 nieprzeczytaną wiadomość' : `Masz ${unreadCount} nieprzeczytane wiadomości`,
+      headline:
+        unreadCount === 1 ? 'Masz 1 nieprzeczytaną wiadomość' : `Masz ${unreadCount} nieprzeczytane wiadomości`,
       subtext: 'Sprawdź najnowsze komunikaty i powiadomienia w Centrum Wiadomości.',
       ctaLabel: 'Otwórz Wiadomości',
       targetTab: 'news',
@@ -254,7 +321,7 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
     });
   }
 
-  // 8. TIER 8: GAMIFICATION / RETENTION (strictly secondary / tertiary)
+  // 7. TIER 7: GAMIFICATION / RETENTION (Strictly secondary / tertiary)
   if ((input.unopenedPacksCount || 0) > 0) {
     actions.push({
       id: 'gamification_packs',
@@ -263,7 +330,9 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
       importance: 'LOW',
       category: 'gamification',
       headline: 'Masz nieotwarte paczki kart!',
-      subtext: `Czeka na Ciebie ${input.unopenedPacksCount} ${input.unopenedPacksCount === 1 ? 'paczka' : 'paczki'} do otwarcia.`,
+      subtext: `Czeka na Ciebie ${input.unopenedPacksCount} ${
+        input.unopenedPacksCount === 1 ? 'paczka' : 'paczki'
+      } do otwarcia.`,
       ctaLabel: 'Otwórz paczki',
       targetTab: 'collection',
       badgeText: 'KARTY',
@@ -308,7 +377,7 @@ export function computeHomePriorities(input: PriorityEngineInput): PriorityEngin
   }
 
   const primaryAction = uniqueActions[0];
-  // Take up to 2 secondary actions
+  // Secondary actions strictly exclude the primary action entity
   const secondaryActions = uniqueActions.slice(1, 3);
 
   return {
