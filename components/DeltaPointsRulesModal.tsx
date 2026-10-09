@@ -148,7 +148,7 @@ export default function DeltaPointsRulesModal({ isOpen, onClose }: DeltaPointsRu
                 <Package size={36} className="reward-icon" />
                 <h5>Paczki Kart Piłkarskich</h5>
                 <p>Otwieraj oficjalne paczki kart kolekcjonerskich DELTA FUT z animacją walkout!</p>
-                <strong>Koszt: od 100 DP</strong>
+                <strong>Koszt: od 60 DP</strong>
               </div>
 
               <div className="v200-dp-reward-card premium">
@@ -156,7 +156,7 @@ export default function DeltaPointsRulesModal({ isOpen, onClose }: DeltaPointsRu
                 <Sparkles size={36} className="reward-icon gold-glow" />
                 <h5>Karty Specjalne & Walkout</h5>
                 <p>Odblokuj epickie karty INFERNO z dynamicznymi efektami wideo i 3D!</p>
-                <strong>Koszt: od 250 DP</strong>
+                <strong>Koszt: od 300 DP</strong>
               </div>
 
               <div className="v200-dp-reward-card pass">

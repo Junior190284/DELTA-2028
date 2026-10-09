@@ -50,6 +50,7 @@ import {
   preloadAllCardThemes, 
   preloadCardAssets 
 } from "@/lib/cards/types";
+import { PACK_PRICES } from "@/lib/economy/security";
 import { cardSound } from "@/lib/cards/audio";
 import CollectibleCard3D from "./CollectibleCard3D";
 import PackOpeningExperience from "./PackOpeningExperience";
@@ -70,7 +71,7 @@ import DigitalSignatureModal from "./DigitalSignatureModal";
 import PlayerCardsCircular3DCarousel from "./PlayerCardsCircular3DCarousel";
 import Panini3DAlbumBinder from "./Panini3DAlbumBinder";
 
-// 5 Standard Booster Packs Configuration
+// 5 Standard Booster Packs Configuration (Authoritative Scenario B Prices)
 const OFFICIAL_BOOSTER_PACKS: {
   id: string;
   name: string;
@@ -86,7 +87,7 @@ const OFFICIAL_BOOSTER_PACKS: {
     id: "standard_pack",
     name: "Paczka Standardowa",
     cardsCount: 3,
-    priceDp: 50,
+    priceDp: PACK_PRICES.standard_pack,
     image: "/assets/packs/pack-standard.jpg",
     theme: "standard",
     guaranteeText: "3 losowe karty zawodników DELTA",
@@ -97,7 +98,7 @@ const OFFICIAL_BOOSTER_PACKS: {
     id: "matchday_booster",
     name: "Matchday Booster",
     cardsCount: 4,
-    priceDp: 80,
+    priceDp: PACK_PRICES.matchday_booster,
     image: "/assets/packs/pack-matchday.jpg",
     theme: "matchday",
     guaranteeText: "Min. 1 karta Matchday Hero",
@@ -108,7 +109,7 @@ const OFFICIAL_BOOSTER_PACKS: {
     id: "gold_booster",
     name: "Gold Booster",
     cardsCount: 5,
-    priceDp: 120,
+    priceDp: PACK_PRICES.gold_booster,
     image: "/assets/packs/pack-gold.jpg",
     theme: "gold",
     guaranteeText: "Min. 1 karta Gold Master (wysoki OVR)",
@@ -119,7 +120,7 @@ const OFFICIAL_BOOSTER_PACKS: {
     id: "inferno_booster",
     name: "Inferno Booster",
     cardsCount: 5,
-    priceDp: 250,
+    priceDp: PACK_PRICES.inferno_booster,
     image: "/assets/packs/pack-inferno.jpg",
     theme: "inferno",
     guaranteeText: "Gwarantowana karta Inferno z płomieniami",
@@ -130,7 +131,7 @@ const OFFICIAL_BOOSTER_PACKS: {
     id: "legend_pack",
     name: "Legend Pack",
     cardsCount: 6,
-    priceDp: 350,
+    priceDp: PACK_PRICES.legend_pack,
     image: "/assets/packs/pack-legend.jpg",
     theme: "legend",
     guaranteeText: "Gwarantowana Karta Legendy & Ikony",

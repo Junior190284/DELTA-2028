@@ -81,7 +81,7 @@ test("TEST 3: duplicate increments duplicates_count exactly once", () => {
   assert.equal(existingCard.duplicates_count, 0);
 
   const serverDrawnCards = [
-    { id: "card_base_1", is_duplicate: true, duplicate_points: 10 }
+    { id: "card_base_1", is_duplicate: true, duplicate_points: 4 }
   ];
 
   for (const drawn of serverDrawnCards) {
