@@ -3932,6 +3932,7 @@ export default function TeamHub(props:{
       isOpen={mobileMoreOpen}
       onClose={() => setMobileMoreOpen(false)}
       activeTab={tab}
+      unreadCount={unreadNewsCount}
       collectionCount={{ owned: 18, total: 66 }}
       achievementsCount={{ unlocked: 14, total: 22 }}
       hasNewGalleryPhoto={true}
@@ -3962,6 +3963,8 @@ export default function TeamHub(props:{
           setTab("hall");
         } else if (targetTab === "settings") {
           setNotifPrefsModalOpen(true);
+        } else if (targetTab === "news" || targetTab === "notifications") {
+          setTab("news");
         } else if (targetTab === "knowledge") {
           setKnowledgeModalOpen(true);
         } else {
@@ -3970,7 +3973,7 @@ export default function TeamHub(props:{
       }}
     />
 
-    {/* NAVIGATION 2.0: DOKŁADNIE 5 GŁÓWNYCH ELEMENTÓW (BOTTOM BAR) */}
+    {/* NAVIGATION 2.0: DOKŁADNIE 4 GŁÓWNE ELEMENTY (BOTTOM BAR: HOME | MECZE | TRENING | WIĘCEJ) */}
     <nav className="bottom-nav v200-bottom-nav" aria-label="Główna nawigacja drużyny">
       {/* 1. HOME */}
       <button 
@@ -4013,28 +4016,10 @@ export default function TeamHub(props:{
         <span>TRENING</span>
       </button>
 
-      {/* 4. WIADOMOŚCI (z licznikiem nieprzeczytanych / nowych) */}
+      {/* 4. WIĘCEJ (Kafelkowy Hub + Badge Nieprzeczytanych Wiadomości) */}
       <button 
         type="button" 
-        className={`v200-nav-btn ${tab === "news" ? "active" : ""}`} 
-        onClick={() => { setMobileMoreOpen(false); setTab("news"); }}
-        aria-label="WIADOMOŚCI"
-      >
-        <div className="v200-nav-icon-wrap">
-          <Newspaper size={20} />
-          {unreadNewsCount > 0 && (
-            <span className="v200-nav-badge" aria-live="polite">
-              {unreadNewsCount > 99 ? "99+" : unreadNewsCount}
-            </span>
-          )}
-        </div>
-        <span>WIADOMOŚCI</span>
-      </button>
-
-      {/* 5. WIĘCEJ (Kafelkowy Hub) */}
-      <button 
-        type="button" 
-        className={`v200-nav-btn ${mobileMoreOpen || !["home", "matches", "calendar", "training", "news"].includes(tab) ? "active" : ""}`} 
+        className={`v200-nav-btn ${mobileMoreOpen || !["home", "matches", "calendar", "training"].includes(tab) ? "active" : ""}`} 
         onClick={() => setMobileMoreOpen(v => !v)}
         aria-label="WIĘCEJ"
         aria-expanded={mobileMoreOpen}
@@ -4042,6 +4027,11 @@ export default function TeamHub(props:{
       >
         <div className="v200-nav-icon-wrap">
           <LayoutGrid size={20} />
+          {unreadNewsCount > 0 && (
+            <span className="v200-nav-badge" aria-live="polite">
+              {unreadNewsCount > 99 ? "99+" : unreadNewsCount}
+            </span>
+          )}
         </div>
         <span>WIĘCEJ</span>
       </button>

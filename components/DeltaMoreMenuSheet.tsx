@@ -20,7 +20,9 @@ import {
   Gamepad2,
   CalendarDays,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  Newspaper,
+  Bell
 } from "lucide-react";
 
 interface DeltaMoreMenuSheetProps {
@@ -28,6 +30,7 @@ interface DeltaMoreMenuSheetProps {
   onClose: () => void;
   activeTab: string;
   onNavigate: (tab: string, extra?: any) => void;
+  unreadCount?: number;
   collectionCount?: { owned: number; total: number };
   achievementsCount?: { unlocked: number; total: number };
   hasNewGalleryPhoto?: boolean;
@@ -42,6 +45,7 @@ export default function DeltaMoreMenuSheet({
   onClose,
   activeTab,
   onNavigate,
+  unreadCount = 0,
   collectionCount = { owned: 18, total: 66 },
   achievementsCount = { unlocked: 14, total: 22 },
   hasNewGalleryPhoto = true,
@@ -94,10 +98,34 @@ export default function DeltaMoreMenuSheet({
           </button>
         </div>
 
-        {/* 10 Głównych Kafelków Premium */}
+        {/* 11 Głównych Kafelków Premium */}
         <div className="delta-more-content">
           <div className="delta-more-grid">
-            {/* 1. DRUŻYNA */}
+            {/* 1. WIADOMOŚCI I POWIADOMIENIA */}
+            <button
+              type="button"
+              className={`delta-more-tile ${activeTab === "news" ? "active" : ""}`}
+              onClick={() => handleTileClick("news")}
+            >
+              <div className="delta-tile-icon-box icon-news" style={{ background: "rgba(185, 28, 28, 0.18)", color: "#ef4444", border: "1px solid rgba(185, 28, 28, 0.35)" }}>
+                <Newspaper size={22} />
+              </div>
+              <div className="delta-tile-text">
+                <strong className="delta-tile-title">WIADOMOŚCI I POWIADOMIENIA</strong>
+                <small className="delta-tile-subtitle">Komunikaty, aktualności i alerty</small>
+              </div>
+              {unreadCount > 0 ? (
+                <span className="delta-tile-status-chip new">
+                  {unreadCount > 99 ? "99+" : `${unreadCount} nowych`}
+                </span>
+              ) : (
+                <span className="delta-tile-status-chip">
+                  CENTRUM
+                </span>
+              )}
+            </button>
+
+            {/* 2. DRUŻYNA */}
             <button
               type="button"
               className={`delta-more-tile ${activeTab === "players" || activeTab === "teamcenter" ? "active" : ""}`}

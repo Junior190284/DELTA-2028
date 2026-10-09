@@ -229,12 +229,13 @@ describe('Live Alert & "Co Nowego Od Ostatniej Wizyty?" Test Suite (ETAP 12B)', 
     assert.equal(isAlertDismissedInSession(alertKey, sessionStore), true);
   });
 
-  // TEST 11: bottom nav remains exactly 5 items
-  it('TEST 11: bottom nav remains exactly 5 items', () => {
-    const mobileBottomNavItems = ['HOME', 'MECZE', 'TRENING', 'WIADOMOŚCI', 'WIĘCEJ'];
-    assert.equal(mobileBottomNavItems.length, 5);
+  // TEST 11: bottom nav contains exactly 4 items with WIĘCEJ holding messages
+  it('TEST 11: bottom nav contains exactly 4 items with WIĘCEJ holding messages', () => {
+    const mobileBottomNavItems = ['HOME', 'MECZE', 'TRENING', 'WIĘCEJ'];
+    assert.equal(mobileBottomNavItems.length, 4);
     assert.equal(mobileBottomNavItems[0], 'HOME');
-    assert.equal(mobileBottomNavItems[3], 'WIADOMOŚCI');
+    assert.equal(mobileBottomNavItems.includes('WIADOMOŚCI'), false);
+    assert.equal(mobileBottomNavItems[3], 'WIĘCEJ');
   });
 
   // TEST 12: mobile 320 no overflow

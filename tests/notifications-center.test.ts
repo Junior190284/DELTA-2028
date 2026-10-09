@@ -193,11 +193,12 @@ describe('Notifications Center 2.0 Test Suite (ETAP 12A)', () => {
     assert.deepEqual(formatNotificationBadge(250), { count: 250, display: '99+', hasUnread: true });
   });
 
-  // TEST 13: mobile bottom nav remains 5 items
-  it('TEST 13: mobile bottom nav remains 5 items', () => {
-    const mobileBottomNavItems = ['HOME', 'MECZE', 'TRENING', 'WIADOMOŚCI', 'WIĘCEJ'];
-    assert.equal(mobileBottomNavItems.length, 5);
-    assert.equal(mobileBottomNavItems[3], 'WIADOMOŚCI');
+  // TEST 13: mobile bottom nav contains exactly 4 items with WIĘCEJ holding notifications
+  it('TEST 13: mobile bottom nav contains exactly 4 items with WIĘCEJ holding notifications', () => {
+    const mobileBottomNavItems = ['HOME', 'MECZE', 'TRENING', 'WIĘCEJ'];
+    assert.equal(mobileBottomNavItems.length, 4);
+    assert.equal(mobileBottomNavItems.includes('WIADOMOŚCI'), false);
+    assert.equal(mobileBottomNavItems[3], 'WIĘCEJ');
   });
 
   // TEST 14: ordinary user does not see admin-only SYNC_ERROR

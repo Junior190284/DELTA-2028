@@ -341,10 +341,10 @@ describe('Home Communication Priority Layer Test Suite (ETAP 12C.1)', () => {
     assert.equal(output.secondaryActions.length, 0);
   });
 
-  // TEST 14: Mobile navigation 2.0 keeps exactly 5 items
-  it('TEST 14: mobile bottom navigation preserves exactly 5 items', () => {
-    const bottomNav = ['HOME', 'MECZE', 'TRENING', 'WIADOMOŚCI', 'WIĘCEJ'];
-    assert.equal(bottomNav.length, 5);
+  // TEST 14: Mobile navigation 2.0 keeps exactly 4 items
+  it('TEST 14: mobile bottom navigation preserves exactly 4 items', () => {
+    const bottomNav = ['HOME', 'MECZE', 'TRENING', 'WIĘCEJ'];
+    assert.equal(bottomNav.length, 4);
   });
 
   // TEST 15: Supported real roles handle gracefully and unknown roles fallback

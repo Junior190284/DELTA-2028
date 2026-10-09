@@ -102,7 +102,8 @@ test("TEST 5: Category preference OFF produces no push", () => {
   const fresh = createMockEvent({ created_at: "2026-10-09T18:05:00.000Z" });
   const res = isEventEligibleForPush(fresh, optOutSub, { id: "user-1" }, {
     pushEnabled: true,
-    activationCutoffIso: CUTOFF
+    activationCutoffIso: CUTOFF,
+    nowIso: "2026-10-09T18:10:00.000Z"
   });
   assert.equal(res.eligible, false);
   assert.equal(res.reason, "PREFERENCE_CLUB_NEWS_DISABLED");
@@ -116,7 +117,8 @@ test("TEST 6: Wrong audience produces no push", () => {
   });
   const res = isEventEligibleForPush(privateEvent, SUB_1, { id: "user-1" }, {
     pushEnabled: true,
-    activationCutoffIso: CUTOFF
+    activationCutoffIso: CUTOFF,
+    nowIso: "2026-10-09T18:10:00.000Z"
   });
   assert.equal(res.eligible, false);
   assert.equal(res.reason, "AUDIENCE_MISMATCH_USER_ID");
@@ -199,7 +201,8 @@ test("TEST 12: Multi-device sends once per active device for same user", () => {
   const dispatchedDevices = devices.filter(sub =>
     isEventEligibleForPush(event, sub, { id: "user-1" }, {
       pushEnabled: true,
-      activationCutoffIso: CUTOFF
+      activationCutoffIso: CUTOFF,
+      nowIso: "2026-10-09T18:10:00.000Z"
     }).eligible
   );
 
@@ -390,7 +393,8 @@ test("TEST 24: preference OFF produces zero delivery", () => {
 
   const check = isEventEligibleForPush(matchEvent, optOutSub, { id: "user-1" }, {
     pushEnabled: true,
-    activationCutoffIso: CUTOFF
+    activationCutoffIso: CUTOFF,
+    nowIso: "2026-10-09T18:10:00.000Z"
   });
 
   assert.equal(check.eligible, false);
@@ -406,7 +410,8 @@ test("TEST 25: wrong audience produces zero delivery", () => {
   const parentProfile = { id: "user-1", role: "parent" };
   const check = isEventEligibleForPush(adminOnlyEvent, SUB_1, parentProfile, {
     pushEnabled: true,
-    activationCutoffIso: CUTOFF
+    activationCutoffIso: CUTOFF,
+    nowIso: "2026-10-09T18:10:00.000Z"
   });
 
   assert.equal(check.eligible, false);

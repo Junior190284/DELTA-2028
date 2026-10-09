@@ -34,8 +34,9 @@ function getMobileMoreMenuItems(
   canOpenAdmin: boolean,
   adminRoleLabel: string = "ADMIN"
 ) {
-  // Canonical 10 base tiles
+  // Canonical 11 base tiles
   const tiles = [
+    { id: "news", title: "WIADOMOŚCI I POWIADOMIENIA" },
     { id: "players", title: "DRUŻYNA" },
     { id: "typer", title: "FANTASY & TYPER" },
     { id: "game", title: "DELTA GAME" },
@@ -75,7 +76,6 @@ const CANONICAL_BOTTOM_NAV_ITEMS = [
   { id: "home", label: "HOME" },
   { id: "matches", label: "MECZE" },
   { id: "training", label: "TRENING" },
-  { id: "news", label: "WIADOMOŚCI" },
   { id: "more", label: "WIĘCEJ" }
 ] as const;
 
@@ -125,16 +125,17 @@ describe("DELTA 2018 GM — Mobile Admin Access Test Suite", () => {
     const adminFooter = footerLinks.find(f => f.id === "admin_link");
     assert.equal(adminFooter, undefined, "Ordinary user must NOT have admin footer link");
 
-    // Total tiles for ordinary user is exactly 10
-    assert.equal(tiles.length, 10);
+    // Total base tiles for ordinary user is exactly 11 (including news)
+    assert.equal(tiles.length, 11);
   });
 
-  // TEST 4: mobile bottom nav contains exactly 5 items
-  it("TEST 4: mobile bottom nav contains exactly 5 items (no 6th admin button)", () => {
-    assert.equal(CANONICAL_BOTTOM_NAV_ITEMS.length, 5);
+  // TEST 4: mobile bottom nav contains exactly 4 items
+  it("TEST 4: mobile bottom nav contains exactly 4 items (no 5th news button or 6th admin button)", () => {
+    assert.equal(CANONICAL_BOTTOM_NAV_ITEMS.length, 4);
     const labels = CANONICAL_BOTTOM_NAV_ITEMS.map(i => i.label);
-    assert.deepEqual(labels, ["HOME", "MECZE", "TRENING", "WIADOMOŚCI", "WIĘCEJ"]);
-    assert.equal((labels as string[]).includes("ADMIN"), false, "ADMIN must NEVER be a 6th bottom nav bar element");
+    assert.deepEqual(labels, ["HOME", "MECZE", "TRENING", "WIĘCEJ"]);
+    assert.equal((labels as string[]).includes("ADMIN"), false, "ADMIN must NEVER be a bottom nav bar element");
+    assert.equal((labels as string[]).includes("WIADOMOŚCI"), false, "WIADOMOŚCI moved to WIĘCEJ");
   });
 
   // TEST 5: Admin Panel accessible from WIĘCEJ
