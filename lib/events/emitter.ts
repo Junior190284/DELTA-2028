@@ -8,7 +8,8 @@ import webpush from "web-push";
  */
 export function generateEventDedupeKey(type: SystemEventType, entityId: string, discriminator?: string): string {
   const raw = `${type}:${entityId}:${discriminator || ""}`;
-  return crypto.createHash("sha256").update(raw).digest("hex").slice(0, 32);
+  const h = crypto.createHash("sha256").update(raw).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
 
 /**
