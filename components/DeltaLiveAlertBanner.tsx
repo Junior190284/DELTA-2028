@@ -31,6 +31,7 @@ interface DeltaLiveAlertBannerProps {
   userId?: string;
   userRole?: string;
   parentPlayerIds?: string[];
+  excludeEventIds?: string[];
   onDismiss?: (alertKey: string) => void;
   onNavigate: (tab: string, extra?: any) => void;
   onOpenNotifications?: () => void;
@@ -41,6 +42,7 @@ export default function DeltaLiveAlertBanner({
   userId = "guest_user",
   userRole = "parent",
   parentPlayerIds = [],
+  excludeEventIds = [],
   onDismiss,
   onNavigate,
   onOpenNotifications
@@ -58,12 +60,16 @@ export default function DeltaLiveAlertBanner({
 
   const newEvents = useMemo(() => {
     if (!previousVisitIso) return [];
-    return getEventsNewSinceVisit(events, previousVisitIso, {
+    const filtered = getEventsNewSinceVisit(events, previousVisitIso, {
       userId,
       role: userRole,
       playerIds: parentPlayerIds
     });
-  }, [events, previousVisitIso, userId, userRole, parentPlayerIds]);
+    if (excludeEventIds && excludeEventIds.length > 0) {
+      return filtered.filter(e => !excludeEventIds.includes(e.id));
+    }
+    return filtered;
+  }, [events, previousVisitIso, userId, userRole, parentPlayerIds, excludeEventIds]);
 
   const summary = useMemo<LiveAlertSummary>(() => {
     return aggregateNewEventsSummary(newEvents);
