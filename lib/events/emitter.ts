@@ -21,6 +21,9 @@ export async function emitSystemEvent(eventData: {
   message: string;
   source?: string;
   importance?: EventImportance;
+  audience_type?: "TEAM" | "USER" | "PLAYER" | "ADMIN";
+  target_user_id?: string | null;
+  target_player_id?: string | null;
   related_entity_type?: string;
   related_entity_id?: string;
   metadata?: Record<string, any>;
@@ -28,6 +31,24 @@ export async function emitSystemEvent(eventData: {
   const admin = createAdminClient();
   const source = eventData.source || "DELTA_SYSTEM";
   const importance = eventData.importance || "NORMAL";
+
+  // Determine audience type & targets
+  let audienceType: "TEAM" | "USER" | "PLAYER" | "ADMIN" = eventData.audience_type || "TEAM";
+  let targetUserId = eventData.target_user_id || null;
+  let targetPlayerId = eventData.target_player_id || null;
+
+  if (!eventData.audience_type) {
+    if (eventData.type === "SYNC_ERROR") {
+      audienceType = "ADMIN";
+      targetUserId = null;
+      targetPlayerId = null;
+    } else if (eventData.type === "PLAYER_ACHIEVEMENT" || eventData.type === "PLAYER_CARD_UNLOCKED") {
+      audienceType = "PLAYER";
+      targetPlayerId = targetPlayerId || eventData.related_entity_id || null;
+    } else if (targetUserId) {
+      audienceType = "USER";
+    }
+  }
   
   // Use provided ID or generate a deterministic dedupe ID
   const eventId = eventData.id || generateEventDedupeKey(
@@ -43,6 +64,9 @@ export async function emitSystemEvent(eventData: {
     message: eventData.message,
     source,
     importance,
+    audience_type: audienceType,
+    target_user_id: targetUserId,
+    target_player_id: targetPlayerId,
     related_entity_type: eventData.related_entity_type,
     related_entity_id: eventData.related_entity_id,
     metadata: eventData.metadata || {},

@@ -16,7 +16,7 @@ export type SystemEventType =
   | 'SYSTEM_MESSAGE'
   | 'SYNC_ERROR';
 
-export type EventImportance = 'INFO' | 'NORMAL' | 'IMPORTANT' | 'URGENT';
+export type EventAudienceType = 'TEAM' | 'USER' | 'PLAYER' | 'ADMIN';
 
 export interface DeltaSystemEvent {
   id: string; // Deterministic dedupe key or UUID
@@ -25,9 +25,13 @@ export interface DeltaSystemEvent {
   message: string;
   source: string;
   importance: EventImportance;
+  audience_type?: EventAudienceType;
+  target_user_id?: string | null;
+  target_player_id?: string | null;
   related_entity_type?: 'match' | 'training' | 'lineup' | 'player' | 'achievement' | 'card' | 'club_update' | 'sync' | string;
   related_entity_id?: string;
   metadata?: Record<string, any>;
+  dedupe_key?: string;
   created_at: string;
   is_read?: boolean;
   is_seen?: boolean;
