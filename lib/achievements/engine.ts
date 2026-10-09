@@ -1,6 +1,6 @@
 /**
- * ACHIEVEMENTS 2.0 & PLAYER RECORDS ENGINE
- * Rzeczywisty system osiągnięć i rekordów zawodnika DELTA 2018 GM.
+ * ACHIEVEMENTS 2.0 & CARD UNLOCK SYSTEM ENGINE
+ * Rzeczywisty system osiągnięć i odblokowywania kart zawodnika DELTA 2018 GM.
  */
 
 export type AchievementCategory = 
@@ -13,9 +13,10 @@ export type AchievementCategory =
 export type AchievementRarity = 
   | "common" 
   | "rare" 
-  | "epic" 
-  | "legendary" 
-  | "inferno";
+  | "gold" 
+  | "matchday" 
+  | "inferno" 
+  | "legend";
 
 export interface AchievementDefinition {
   id: string;
@@ -26,8 +27,10 @@ export interface AchievementDefinition {
   target: number;
   iconName: string;
   rewardLabel?: string;
-  unlocksCardId?: string;
+  rewardDp?: number;
+  rewardCardType?: "base" | "training_warrior" | "goal_hunter" | "captain" | "matchday" | "mvp" | "inferno" | "legend";
   isSecret?: boolean;
+  isManual?: boolean;
 }
 
 export interface PlayerAchievementStatus {
@@ -35,8 +38,10 @@ export interface PlayerAchievementStatus {
   current: number;
   target: number;
   percent: number;
+  status: "LOCKED" | "IN_PROGRESS" | "UNLOCKED";
   isUnlocked: boolean;
   unlockedAt?: string;
+  unlockedCardName?: string;
 }
 
 export interface PlayerRecordItem {
@@ -51,93 +56,82 @@ export interface PlayerRecordItem {
 }
 
 export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
+  // =========================================================
   // 🏃 1. FREKWENCJA
+  // =========================================================
   {
     id: "att_1",
-    name: "Pierwszy Krok",
+    name: "Pierwszy Trening",
     description: "Weź udział w pierwszym oficjalnym treningu DELTA 2018 GM.",
     category: "attendance",
     rarity: "common",
     target: 1,
     iconName: "Zap",
-    rewardLabel: "Odznaka Debiutant"
+    rewardLabel: "+50 DP",
+    rewardDp: 50
   },
   {
     id: "att_5",
-    name: "Rozgrzewka",
-    description: "Zalicz 5 jednostek treningowych w klubie.",
+    name: "5 Treningów",
+    description: "Zalicz 5 potwierdzonych jednostek treningowych w klubie.",
     category: "attendance",
     rarity: "common",
     target: 5,
     iconName: "Zap",
-    rewardLabel: "+100 DELTA Coins"
+    rewardLabel: "+100 DP",
+    rewardDp: 100
   },
   {
     id: "att_10",
-    name: "Żelazna Dyscyplina",
-    description: "Zalicz 10 oficjalnych treningów DELTA.",
+    name: "10 Treningów (Training Hero)",
+    description: "Zalicz 10 oficjalnych treningów DELTA z potwierdzoną obecnością.",
     category: "attendance",
     rarity: "rare",
     target: 10,
-    iconName: "Zap",
-    rewardLabel: "Karta: TRAINING 10",
-    unlocksCardId: "card_training_10"
+    iconName: "Shield",
+    rewardLabel: "Karta: TRAINING HERO",
+    rewardCardType: "training_warrior",
+    rewardDp: 150
   },
   {
     id: "att_25",
-    name: "Forma Mistrza",
-    description: "Zalicz 25 jednostek treningowych w sezonie.",
+    name: "25 Treningów",
+    description: "Zalicz 25 jednostek treningowych w sezonie rocznika 2018.",
     category: "attendance",
-    rarity: "epic",
+    rarity: "gold",
     target: 25,
     iconName: "Zap",
-    rewardLabel: "Karta: TRAINING 25",
-    unlocksCardId: "card_training_25"
+    rewardLabel: "Karta: TRAINING WARRIOR (Gold)",
+    rewardCardType: "training_warrior",
+    rewardDp: 250
   },
   {
     id: "att_50",
-    name: "Legenda Frekwencji",
-    description: "Zalicz aż 50 treningów w barwach Górnego Mokotowa.",
+    name: "50 Treningów (Tytan Frekwencji)",
+    description: "Osiągnij imponujący kamień milowy 50 treningów w barwach DELTA GM.",
     category: "attendance",
-    rarity: "legendary",
+    rarity: "legend",
     target: 50,
     iconName: "Flame",
-    rewardLabel: "Karta: TRAINING MASTER",
-    unlocksCardId: "card_training_master"
-  },
-  {
-    id: "att_streak_3",
-    name: "Żelazna Seria 3",
-    description: "Bądź obecny na minimum 3 treningach z rzędu.",
-    category: "attendance",
-    rarity: "rare",
-    target: 3,
-    iconName: "Flame",
-    rewardLabel: "Badge Żelazna Seria"
-  },
-  {
-    id: "att_streak_7",
-    name: "Niezłomny",
-    description: "Osiągnij imponującą serię 7 obecności treningowych z rzędu.",
-    category: "attendance",
-    rarity: "epic",
-    target: 7,
-    iconName: "Flame",
-    rewardLabel: "Tytuł: Niezłomny GM"
+    rewardLabel: "Karta: TRAINING TITAN (Legend)",
+    rewardCardType: "training_warrior",
+    rewardDp: 500
   },
   {
     id: "att_perfect_month",
     name: "Perfect Month",
-    description: "100% obecności na wszystkich treningach w danym miesiącu.",
+    description: "100% potwierdzonej obecności na wszystkich treningach w danym miesiącu.",
     category: "attendance",
-    rarity: "epic",
+    rarity: "gold",
     target: 1,
     iconName: "Trophy",
-    rewardLabel: "Karta: PERFECT MONTH",
-    unlocksCardId: "card_perfect_month"
+    rewardLabel: "Odznaka: Perfect Month",
+    rewardDp: 200
   },
 
+  // =========================================================
   // ⚽ 2. MECZE
+  // =========================================================
   {
     id: "match_debut",
     name: "Oficjalny Debiut",
@@ -147,72 +141,49 @@ export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
     target: 1,
     iconName: "CalendarDays",
     rewardLabel: "Karta: STANDARD",
-    unlocksCardId: "card_standard"
-  },
-  {
-    id: "match_5",
-    name: "Stadionowy Wyjadacz",
-    description: "Rozegraj 5 oficjalnych meczów w barwach klubu.",
-    category: "matches",
-    rarity: "common",
-    target: 5,
-    iconName: "CalendarDays",
-    rewardLabel: "+150 DELTA Coins"
+    rewardCardType: "base",
+    rewardDp: 50
   },
   {
     id: "match_10",
-    name: "Filar Zespołu",
-    description: "Zanotuj 10 oficjalnych występów meczowych.",
+    name: "10 Meczów (Matchday Hero)",
+    description: "Zanotuj 10 oficjalnych występów meczowych w klubie.",
     category: "matches",
-    rarity: "rare",
+    rarity: "matchday",
     target: 10,
     iconName: "CalendarDays",
-    rewardLabel: "Odznaka Doświadczony Gracz"
+    rewardLabel: "Karta: MATCHDAY HERO",
+    rewardCardType: "matchday",
+    rewardDp: 150
   },
   {
     id: "match_25",
-    name: "Wojownik Meczu",
-    description: "Zagraj w 25 meczach ligowych i turniejowych.",
+    name: "25 Meczów (Filar Zespołu)",
+    description: "Rozegraj 25 meczów ligowych i turniejowych w barwach DELTY.",
     category: "matches",
-    rarity: "epic",
+    rarity: "gold",
     target: 25,
     iconName: "Trophy",
-    rewardLabel: "Karta: MATCHDAY WARRIOR",
-    unlocksCardId: "card_matchday_warrior"
+    rewardLabel: "Karta: MATCHDAY MASTER",
+    rewardCardType: "matchday",
+    rewardDp: 250
   },
   {
     id: "match_50",
-    name: "Klubowy Weteran",
-    description: "Zanotuj 50 rozegranych spotkań w DELTA Górny Mokotów.",
+    name: "50 Meczów (Klubowy Weteran)",
+    description: "Zanotuj aż 50 rozegranych spotkań w DELTA Górny Mokotów.",
     category: "matches",
-    rarity: "legendary",
+    rarity: "legend",
     target: 50,
     iconName: "Trophy",
-    rewardLabel: "Karta: CLUB VETERAN",
-    unlocksCardId: "card_club_veteran"
-  },
-  {
-    id: "match_starter_1",
-    name: "Pierwsza Szóstka",
-    description: "Wyjdź w podstawowym składzie meczu ligowego.",
-    category: "matches",
-    rarity: "common",
-    target: 1,
-    iconName: "Users",
-    rewardLabel: "Badge Starter"
-  },
-  {
-    id: "match_starter_10",
-    name: "Niezastąpiony",
-    description: "Wyjdź w pierwszym składzie minimum 10 razy.",
-    category: "matches",
-    rarity: "rare",
-    target: 10,
-    iconName: "Users",
-    rewardLabel: "Badge Niezastąpiony"
+    rewardLabel: "Karta: CLUB VETERAN (Legend)",
+    rewardCardType: "mvp",
+    rewardDp: 500
   },
 
-  // 🎯 3. BRAMKI & ATAK
+  // =========================================================
+  // 🎯 3. BRAMKI
+  // =========================================================
   {
     id: "goal_first",
     name: "Pierwszy Gol",
@@ -221,7 +192,8 @@ export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
     rarity: "common",
     target: 1,
     iconName: "Goal",
-    rewardLabel: "Odznaka Snajper"
+    rewardLabel: "Odznaka Snajper",
+    rewardDp: 50
   },
   {
     id: "goal_dublet",
@@ -231,64 +203,49 @@ export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
     rarity: "rare",
     target: 2,
     iconName: "Goal",
-    rewardLabel: "Karta: DOUBLE STRIKE",
-    unlocksCardId: "card_double_strike"
+    rewardLabel: "Odznaka Podwójne Uderzenie",
+    rewardDp: 100
   },
   {
     id: "goal_hattrick",
-    name: "Hat-trick!",
-    description: "Strzel minimum 3 bramki w jednym meczu!",
+    name: "Hat-trick! (Goal Machine)",
+    description: "Strzel minimum 3 bramki w jednym meczu ligowym!",
     category: "goals",
-    rarity: "epic",
+    rarity: "gold",
     target: 3,
     iconName: "Flame",
     rewardLabel: "Karta: GOAL MACHINE",
-    unlocksCardId: "card_goal_machine"
+    rewardCardType: "goal_hunter",
+    rewardDp: 250
   },
   {
     id: "goal_10",
-    name: "Super Strzelec",
-    description: "Zdobądź łącznie 10 bramek w meczach DELTA.",
+    name: "10 Goli w Karierze",
+    description: "Zdobądź łącznie 10 bramek w oficjalnych meczach DELTA.",
     category: "goals",
-    rarity: "epic",
+    rarity: "gold",
     target: 10,
     iconName: "Target",
-    rewardLabel: "Puchar Strzelca"
+    rewardLabel: "Karta: GOAL HUNTER MASTER",
+    rewardCardType: "goal_hunter",
+    rewardDp: 250
   },
   {
     id: "goal_25",
-    name: "Złoty But DELTY",
-    description: "Zdobądź aż 25 bramek w karierze klubowej.",
+    name: "25 Goli (Złoty But DELTY)",
+    description: "Zdobądź 25 bramek w karierze klubowej.",
     category: "goals",
-    rarity: "legendary",
+    rarity: "legend",
     target: 25,
     iconName: "Trophy",
     rewardLabel: "Karta: LEGENDARY FINISHER",
-    unlocksCardId: "card_legendary_finisher"
-  },
-  {
-    id: "assist_1",
-    name: "Pierwsza Asysta",
-    description: "Zanotuj asystę przy golu kolegi z drużyny.",
-    category: "goals",
-    rarity: "common",
-    target: 1,
-    iconName: "Sparkles",
-    rewardLabel: "Badge Kreator"
-  },
-  {
-    id: "assist_5",
-    name: "Reżyser Gry",
-    description: "Zanotuj 5 kluczowych asyst w meczach ligowych.",
-    category: "goals",
-    rarity: "rare",
-    target: 5,
-    iconName: "Sparkles",
-    rewardLabel: "Karta: PLAYMAKER",
-    unlocksCardId: "card_playmaker"
+    rewardCardType: "mvp",
+    rewardDp: 500
   },
 
-  // 🛡️ 4. DRUŻYNA & LIDER
+  // =========================================================
+  // 🛡️ 4. DRUŻYNA
+  // =========================================================
   {
     id: "team_captain_1",
     name: "Kapitan Zespołu",
@@ -298,95 +255,98 @@ export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
     target: 1,
     iconName: "Crown",
     rewardLabel: "Karta: CAPTAIN",
-    unlocksCardId: "card_captain"
+    rewardCardType: "captain",
+    rewardDp: 150
   },
   {
     id: "team_captain_5",
-    name: "Wielki Lider",
-    description: "Rozegraj 5 meczów w roli kapitana DELTA 2018 GM.",
+    name: "5 Meczów Jako Kapitan",
+    description: "Rozegraj 5 meczów w roli oficjalnego kapitana DELTA 2018 GM.",
     category: "team",
-    rarity: "epic",
+    rarity: "gold",
     target: 5,
     iconName: "Crown",
-    rewardLabel: "Karta: CAPTAIN LEADER",
-    unlocksCardId: "card_captain_leader"
+    rewardLabel: "Karta: CAPTAIN LEADER (Gold)",
+    rewardCardType: "captain",
+    rewardDp: 250
   },
   {
     id: "team_tournament",
-    name: "Turniejowy Wojownik",
-    description: "Weź udział w prestiżowym turnieju w barwach klubu.",
+    name: "Turniej DELTY",
+    description: "Weź udział w oficjalnym turnieju w barwach klubu.",
     category: "team",
-    rarity: "rare",
+    rarity: "matchday",
     target: 1,
     iconName: "Medal",
     rewardLabel: "Karta: TOURNAMENT HERO",
-    unlocksCardId: "card_tournament_hero"
+    rewardCardType: "matchday",
+    rewardDp: 150
   },
   {
-    id: "team_mvp_1",
-    name: "Gwiazda Meczu (MVP)",
-    description: "Zdobądź oficjalne wyróżnienie MVP meczu od sztabu trenerskiego.",
+    id: "admin_special_honor",
+    name: "Wyróżnienie Administratora",
+    description: "Specjalne wyróżnienie sztabu szkoleniowego za postawę fair play i zaangażowanie.",
     category: "team",
-    rarity: "epic",
+    rarity: "gold",
     target: 1,
-    iconName: "Medal",
-    rewardLabel: "Badge MVP Meczu"
-  },
-  {
-    id: "team_mvp_4",
-    name: "Poczwórne MVP",
-    description: "Zdobądź tytuł MVP w 4 różnych meczach.",
-    category: "team",
-    rarity: "legendary",
-    target: 4,
-    iconName: "Trophy",
-    rewardLabel: "Puchar MVP Sezonu"
+    iconName: "Award",
+    rewardLabel: "Odznaka Specjalna DELTA",
+    rewardDp: 300,
+    isManual: true
   },
 
+  // =========================================================
   // 🔥 5. INFERNO PREMIUM
+  // =========================================================
   {
     id: "inferno_strike",
     name: "Inferno Strike",
-    description: "Strzel Hat-tricka oraz zalicz asystę w jednym meczu ligowym.",
+    description: "Zanotuj Hat-trick oraz asystę w jednym oficjalnym meczu ligowym.",
     category: "inferno",
     rarity: "inferno",
     target: 1,
     iconName: "Flame",
     rewardLabel: "Karta: INFERNO STRIKER",
-    unlocksCardId: "card_inferno_striker"
+    rewardCardType: "inferno",
+    rewardDp: 400
   },
   {
     id: "inferno_master",
-    name: "Inferno Master",
-    description: "Osiągnij 25 treningów, 10 meczów oraz 10 goli.",
+    name: "Inferno Master (Milestone Sezonowy)",
+    description: "Osiągnij 25 treningów, 10 meczów oraz 10 goli w sezonie!",
     category: "inferno",
     rarity: "inferno",
     target: 1,
     iconName: "Flame",
-    rewardLabel: "Karta: INFERNO SPECIAL",
-    unlocksCardId: "card_inferno_special"
+    rewardLabel: "Karta: INFERNO MASTER",
+    rewardCardType: "inferno",
+    rewardDp: 600,
+    isSecret: true
   },
   {
     id: "inferno_legend",
     name: "Legenda Górnego Mokotowa",
-    description: "Osiągnij 50 meczów, 25 goli i 5 spotkań w roli kapitana!",
+    description: "Rozegraj 50 meczów, strzel 25 goli i wystąp 5 razy jako kapitan!",
     category: "inferno",
     rarity: "inferno",
     target: 1,
     iconName: "Flame",
     rewardLabel: "Karta: INFERNO ULTIMATE",
-    unlocksCardId: "card_inferno_ultimate"
+    rewardCardType: "inferno",
+    rewardDp: 1000,
+    isSecret: true
   }
 ];
 
 /**
- * Wylicza postępy we wszystkich osiągnięciach dla danego zawodnika na podstawie danych
+ * Wylicza postępy w osiągnięciach dla danego zawodnika na podstawie rzeczywistych danych
  */
 export function calculatePlayerAchievements(
   playerId: string,
   stats: Record<string, any>,
   trainingStats: Record<string, any>,
-  maxGoalsInSingleMatch: number = 0
+  maxGoalsInSingleMatch: number = 0,
+  adminManualGrants: string[] = []
 ): PlayerAchievementStatus[] {
   const s = stats[playerId] || { m: 0, starts: 0, captain: 0, g: 0, a: 0, mvp: 0 };
   const t = trainingStats[playerId] || { sessions: 0, goals: 0, assists: 0, attendanceStreak: 0 };
@@ -403,25 +363,16 @@ export function calculatePlayerAchievements(
       case "att_50":
         current = t.sessions || 0;
         break;
-      case "att_streak_3":
-      case "att_streak_7":
-        current = t.attendanceStreak || 0;
-        break;
       case "att_perfect_month":
         current = (t.sessions >= 8 && t.attendanceStreak >= 8) ? 1 : 0;
         break;
 
       // Mecze
       case "match_debut":
-      case "match_5":
       case "match_10":
       case "match_25":
       case "match_50":
         current = s.m || 0;
-        break;
-      case "match_starter_1":
-      case "match_starter_10":
-        current = s.starts || 0;
         break;
 
       // Bramki
@@ -436,10 +387,6 @@ export function calculatePlayerAchievements(
       case "goal_hattrick":
         current = Math.min(3, maxGoalsInSingleMatch);
         break;
-      case "assist_1":
-      case "assist_5":
-        current = s.a || 0;
-        break;
 
       // Drużyna
       case "team_captain_1":
@@ -449,9 +396,8 @@ export function calculatePlayerAchievements(
       case "team_tournament":
         current = s.m >= 1 ? 1 : 0;
         break;
-      case "team_mvp_1":
-      case "team_mvp_4":
-        current = s.mvp || 0;
+      case "admin_special_honor":
+        current = adminManualGrants.includes(def.id) || adminManualGrants.includes("admin_special_honor") ? 1 : 0;
         break;
 
       // Inferno
@@ -471,14 +417,21 @@ export function calculatePlayerAchievements(
 
     const isUnlocked = current >= def.target;
     const percent = Math.min(100, Math.round((current / def.target) * 100));
+    const status: "LOCKED" | "IN_PROGRESS" | "UNLOCKED" = isUnlocked 
+      ? "UNLOCKED" 
+      : current > 0 
+      ? "IN_PROGRESS" 
+      : "LOCKED";
 
     return {
       definition: def,
       current,
       target: def.target,
       percent,
+      status,
       isUnlocked,
-      unlockedAt: isUnlocked ? "Zdobyte" : undefined
+      unlockedAt: isUnlocked ? "Zdobyte" : undefined,
+      unlockedCardName: def.rewardCardType ? def.rewardLabel : undefined
     };
   });
 }
@@ -505,7 +458,7 @@ export function calculatePlayerRecords(
       unit: "z rzędu",
       category: "attendance",
       isNewRecord: (t.attendanceStreak || 0) >= 5,
-      details: "Frekwencja na zajęciach DELTA"
+      details: "Potwierdzona frekwencja DELTA"
     },
     {
       id: "rec_max_goals",
@@ -514,7 +467,7 @@ export function calculatePlayerRecords(
       unit: maxGoalsInSingleMatch === 1 ? "bramka" : "bramki",
       category: "goals",
       isNewRecord: maxGoalsInSingleMatch >= 3,
-      details: maxGoalsInSingleMatch >= 3 ? "Hat-trick!" : "Rekord ligowy"
+      details: maxGoalsInSingleMatch >= 3 ? "Hat-trick meczowy!" : "Oficjalny mecz ligowy"
     },
     {
       id: "rec_hattricks",
@@ -525,11 +478,11 @@ export function calculatePlayerRecords(
     },
     {
       id: "rec_captain",
-      label: "Mecze z opaską kapitana",
+      label: "Mecze jako kapitan",
       value: s.captain || 0,
       unit: "meczów",
       category: "leadership",
-      details: "Lider na boisku"
+      details: "Opaska kapitańska na murawie"
     },
     {
       id: "rec_achievements",
@@ -540,8 +493,8 @@ export function calculatePlayerRecords(
     },
     {
       id: "rec_cards",
-      label: "Odblokowane Karty 3D",
-      value: `${unlockedCardsCount} / 15`,
+      label: "Odblokowane Karty Specjalne",
+      value: `${unlockedCardsCount} / 8`,
       category: "collection",
       details: "Warianty kolekcjonerskie"
     }

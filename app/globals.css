@@ -38734,3 +38734,455 @@ body > main,
     justify-content: center;
   }
 }
+
+
+/* =========================================================
+   DELTA ETAP 4 — ACHIEVEMENTS 2.0 & CARD UNLOCK SYSTEM STYLES
+   ========================================================= */
+
+.v200-achievements-hub {
+  position: relative;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+/* Banner */
+.v200-ach-banner {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(8, 12, 18, 0.98) 100%);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.v200-ach-banner-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.v200-ach-pill-brand {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #e31d2f;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 900;
+  margin-right: 6px;
+}
+
+.v200-ach-pill-sub {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f1c95c;
+  letter-spacing: 0.05em;
+}
+
+.v200-ach-banner-season {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #cbd5e1;
+}
+
+.v200-ach-banner-main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: center;
+}
+
+.v200-ach-banner-info h2 {
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 4px 0 8px;
+  line-height: 1.15;
+}
+
+.v200-ach-banner-info p {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 620px;
+}
+
+.v200-ach-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #f1c95c;
+  letter-spacing: 0.08em;
+}
+
+.v200-ach-rarity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.v200-ach-stat-card {
+  border-radius: 14px;
+  border: 1px solid;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2px;
+}
+
+/* Category & Status Filter Tabs */
+.v200-ach-filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.v200-ach-category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.v200-ach-tab-btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 850;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v200-ach-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.v200-ach-tab-btn.active {
+  background: linear-gradient(135deg, rgba(227, 29, 47, 0.25) 0%, rgba(241, 201, 92, 0.2) 100%);
+  border-color: rgba(241, 201, 92, 0.6);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.v200-ach-status-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.v200-ach-status-btn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v200-ach-status-btn.active {
+  background: rgba(241, 201, 92, 0.15);
+  border-color: #f1c95c;
+  color: #f1c95c;
+}
+
+/* Achievements Grid & Card */
+.v200-ach-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.v200-ach-card {
+  border-radius: 16px;
+  background: linear-gradient(180deg, #111827 0%, #090d15 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+.v200-ach-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(241, 201, 92, 0.4);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+
+.v200-ach-card.is-unlocked {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, #090d15 100%);
+}
+
+.v200-ach-card.is-locked {
+  opacity: 0.72;
+}
+
+.v200-ach-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.v200-ach-cat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+}
+
+.v200-ach-rarity-badge {
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid;
+  font-size: 9.5px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+}
+
+.v200-ach-status-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.v200-ach-status-badge.unlocked {
+  color: #4ade80;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.v200-ach-status-badge.locked {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.v200-ach-card-title {
+  font-size: 14.5px;
+  font-weight: 950;
+  color: #ffffff;
+  margin: 0 0 4px;
+  line-height: 1.25;
+}
+
+.v200-ach-card-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.v200-ach-progress-box {
+  margin-top: auto;
+}
+
+.v200-ach-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.v200-ach-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.v200-ach-reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(241, 201, 92, 0.08);
+  border: 1px solid rgba(241, 201, 92, 0.25);
+}
+
+.v200-ach-view-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #f1c95c;
+  color: #1a1003;
+  font-size: 10px;
+  font-weight: 950;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v200-ach-view-card-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ================= CARD UNLOCK REVEAL MODAL ================= */
+.delta-card-unlock-reveal-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 9999999;
+  background: rgba(4, 7, 12, 0.92);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.delta-card-unlock-reveal-modal {
+  position: relative;
+  width: min(540px, 94vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #131929 0%, #07090e 100%);
+  border: 1px solid rgba(241, 201, 92, 0.4);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(227, 29, 47, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px;
+}
+
+.delta-unlock-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.delta-unlock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(241, 201, 92, 0.15);
+  border: 1px solid rgba(241, 201, 92, 0.4);
+  color: #f1c95c;
+  font-size: 10.5px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.delta-unlock-title {
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 1000;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.delta-unlock-subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 16px;
+  max-width: 400px;
+}
+
+.delta-unlock-card-container {
+  margin: 10px 0;
+}
+
+.delta-unlock-flip-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.delta-unlock-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.delta-unlock-btn {
+  height: 46px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delta-unlock-btn.primary {
+  background: linear-gradient(135deg, #f1c95c 0%, #ca8a04 100%);
+  border: 1px solid rgba(241, 201, 92, 0.8);
+  color: #1a1003;
+  box-shadow: 0 6px 20px rgba(241, 201, 92, 0.35);
+}
+
+.delta-unlock-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .v200-ach-banner-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .v200-ach-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
