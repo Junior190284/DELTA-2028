@@ -140,77 +140,73 @@ export default function DailyInfernoSpin({
   const numSegments = WHEEL_SEGMENTS.length;
   const arcSize = 360 / numSegments;
 
-  // Spin wheel action
-  const handleSpin = () => {
+  // Spin wheel action (Server-controlled)
+  const handleSpin = async () => {
     if (spinning || !canSpin || secondsRemaining > 0) return;
 
     setSpinning(true);
     setWinningSegment(null);
     setShowWinCelebration(false);
 
-    // Weighted random selection
-    const totalWeight = WHEEL_SEGMENTS.reduce((sum, s) => sum + s.weight, 0);
-    let randomVal = Math.random() * totalWeight;
-    let selectedIndex = 0;
+    try {
+      // 1. Call server to get the authoritative result and commit the reward
+      const res = await fetch("/api/cards/daily-spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
 
-    for (let i = 0; i < WHEEL_SEGMENTS.length; i++) {
-      if (randomVal <= WHEEL_SEGMENTS[i].weight) {
-        selectedIndex = i;
-        break;
-      }
-      randomVal -= WHEEL_SEGMENTS[i].weight;
-    }
-
-    const prize = WHEEL_SEGMENTS[selectedIndex];
-
-    // Calculate rotation: 5 full spins (1800 deg) + offset to land on selectedIndex
-    const extraTurns = 5 * 360;
-    const segmentCenterAngle = selectedIndex * arcSize + arcSize / 2;
-    const targetAngle = extraTurns + (360 - segmentCenterAngle);
-
-    const finalRotation = rotation + targetAngle + (Math.random() * (arcSize * 0.6) - arcSize * 0.3);
-    setRotation(finalRotation);
-
-    // Tick sounds during spin
-    let tickCount = 0;
-    const tickInterval = setInterval(() => {
-      tickCount++;
-      cardSound.playHover();
-      if (tickCount > 28) clearInterval(tickInterval);
-    }, 130);
-
-    // Landing on prize
-    setTimeout(async () => {
-      setSpinning(false);
-      setWinningSegment(prize);
-      setShowWinCelebration(true);
-      setCanSpin(false);
-      cardSound.playWalkoutFanfare();
-
-      // Persist reward to server
-      try {
-        const res = await fetch("/api/cards/daily-spin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reward: prize })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.streak !== undefined) setStreakCount(data.streak);
-          if (data.secondsRemaining !== undefined) setSecondsRemaining(data.secondsRemaining);
-          if (onRewardClaimed && data.newPointsBalance !== undefined) {
-            onRewardClaimed(data.newPointsBalance);
-          }
-        } else {
-          const errData = await res.json();
-          if (errData.secondsRemaining) {
-            setSecondsRemaining(errData.secondsRemaining);
-          }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setSpinning(false);
+        if (errData.secondsRemaining !== undefined) {
+          setSecondsRemaining(errData.secondsRemaining);
+          setCanSpin(false);
         }
-      } catch (e) {
-        console.error("Błąd zapisu nagrody:", e);
+        return;
       }
-    }, 4600);
+
+      const data = await res.json();
+      const serverSegmentId = data.segmentId || data.reward?.id;
+      let selectedIndex = WHEEL_SEGMENTS.findIndex(s => s.id === serverSegmentId);
+      if (selectedIndex === -1) {
+        selectedIndex = 0;
+      }
+      const prize = WHEEL_SEGMENTS[selectedIndex];
+
+      // 2. Calculate rotation: 5 full spins (1800 deg) + offset to land on selectedIndex
+      const extraTurns = 5 * 360;
+      const segmentCenterAngle = selectedIndex * arcSize + arcSize / 2;
+      const targetAngle = extraTurns + (360 - segmentCenterAngle);
+
+      const finalRotation = rotation + targetAngle + (Math.random() * (arcSize * 0.5) - arcSize * 0.25);
+      setRotation(finalRotation);
+
+      // Tick sounds during spin
+      let tickCount = 0;
+      const tickInterval = setInterval(() => {
+        tickCount++;
+        cardSound.playHover();
+        if (tickCount > 28) clearInterval(tickInterval);
+      }, 130);
+
+      // Landing on prize after animation completes (4.5s)
+      setTimeout(() => {
+        setSpinning(false);
+        setWinningSegment(prize);
+        setShowWinCelebration(true);
+        setCanSpin(false);
+        cardSound.playWalkoutFanfare();
+
+        if (data.streak !== undefined) setStreakCount(data.streak);
+        if (data.secondsRemaining !== undefined) setSecondsRemaining(data.secondsRemaining);
+        if (onRewardClaimed && data.newPointsBalance !== undefined) {
+          onRewardClaimed(data.newPointsBalance);
+        }
+      }, 4600);
+    } catch (e) {
+      console.error("Błąd podczas kręcenia kołem:", e);
+      setSpinning(false);
+    }
   };
 
   const handleOpenWonPack = () => {

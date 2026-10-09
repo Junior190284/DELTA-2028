@@ -8,10 +8,18 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const body = await req.json();
-    const { userId, gameId, score } = body;
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!userId || !gameId || typeof score !== 'number') {
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Wymagane logowanie' }, { status: 401 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { gameId, score } = body;
+    // AUTHORIZATION HARDENING: Never trust client-provided userId. Use session user.id.
+    const userId = user.id;
+
+    if (!gameId || typeof score !== 'number') {
       return NextResponse.json({ success: false, error: 'Nieprawidłowe dane minigry' }, { status: 400 });
     }
 
@@ -40,7 +48,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Anti-farming XP calculation
+    // Anti-farming XP calculation (Server authoritative)
     const xpResult = calculateMinigameXPAward(score, dailyPlays, 0);
 
     // Update minigame scores

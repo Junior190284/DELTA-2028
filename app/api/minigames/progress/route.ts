@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { game_id, level_completed, score = 0, streak = 0, points_earned = 0 } = body;
+    const { game_id, level_completed, score = 0, streak = 0 } = body;
 
     if (!game_id) {
       return NextResponse.json({ error: "Brak game_id" }, { status: 400 });
@@ -69,9 +69,9 @@ export async function POST(req: Request) {
     const currentBestStreak = existing?.best_streak || 0;
     const currentGamesCount = existing?.games_played || 0;
 
-    const newMaxLvl = level_completed ? Math.max(currentMaxLvl, level_completed + 1) : currentMaxLvl;
-    const newHighScore = Math.max(currentHighScore, score);
-    const newBestStreak = Math.max(currentBestStreak, streak);
+    const newMaxLvl = level_completed ? Math.max(currentMaxLvl, Number(level_completed) + 1) : currentMaxLvl;
+    const newHighScore = Math.max(currentHighScore, Number(score) || 0);
+    const newBestStreak = Math.max(currentBestStreak, Number(streak) || 0);
 
     await supabase
       .from("user_minigame_progress")
@@ -86,28 +86,16 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id,game_id" });
 
-    // 2. Jeśli zdobyto punkty DP, dopisujemy do konta
-    let updatedPoints = 0;
-    if (points_earned > 0) {
-      const { data: pointsRecord } = await supabase
-        .from("user_delta_points")
-        .select("points_balance, total_earned")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    // 2. SECURITY RULE: CLIENT NEVER DECIDES REWARD VALUE.
+    // Ignorujemy wszelkie body.points_earned lub body.points przesłane z klienta.
+    // Pobieramy aktualne, niezmienione saldo punktów użytkownika.
+    const { data: pointsRecord } = await supabase
+      .from("user_delta_points")
+      .select("points_balance")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      const curBalance = pointsRecord?.points_balance || 0;
-      const curTotal = pointsRecord?.total_earned ?? curBalance;
-      updatedPoints = curBalance + points_earned;
-
-      await supabase
-        .from("user_delta_points")
-        .upsert({
-          user_id: user.id,
-          points_balance: updatedPoints,
-          total_earned: curTotal + points_earned,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-    }
+    const currentPoints = pointsRecord?.points_balance || 0;
 
     return NextResponse.json({
       success: true,
@@ -115,7 +103,7 @@ export async function POST(req: Request) {
       max_level_reached: newMaxLvl,
       high_score: newHighScore,
       best_streak: newBestStreak,
-      newPointsBalance: updatedPoints
+      newPointsBalance: currentPoints
     });
   } catch (error: any) {
     console.error("Błąd zapisu postępu minigier:", error);

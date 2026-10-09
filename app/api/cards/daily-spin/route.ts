@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { DAILY_SPIN_SEGMENTS, selectRandomSpinSegment, type SpinSegment } from "@/lib/economy/security";
 
-interface SpinReward {
-  type: "points" | "pack";
-  amount?: number;
-  packTypeId?: string;
-  name: string;
-}
+export { DAILY_SPIN_SEGMENTS, selectRandomSpinSegment, type SpinSegment };
 
 function getTodayDateStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -103,14 +99,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Wymagane logowanie" }, { status: 401 });
     }
 
-    // 1. Sprawdzamy stan koła w bazie przed przyznaniem nagrody
+    const todayStr = getTodayDateStr();
+
+    // 1. Sprawdzamy limit w bazie danych
     const { data: spinRecord } = await supabase
       .from("user_daily_spins")
       .select("last_spin_at, streak_count, total_spins")
       .eq("user_id", user.id)
       .maybeSingle();
-
-    const todayStr = getTodayDateStr();
 
     if (spinRecord?.last_spin_at) {
       const lastSpinStr = new Date(spinRecord.last_spin_at).toISOString().slice(0, 10);
@@ -126,13 +122,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const { reward }: { reward: SpinReward } = await req.json();
+    // 2. SERVER-SIDE ROLL: Klient NIE decyduje o nagrodzie. Losujemy bezpiecznie po stronie serwera.
+    const winningSegment = selectRandomSpinSegment();
 
-    if (!reward || !reward.type) {
-      return NextResponse.json({ error: "Nieprawidłowa nagroda" }, { status: 400 });
-    }
-
-    // 2. Wyliczamy nowy streak
+    // 3. Wyliczamy nowy streak
     let newStreak = 1;
     if (spinRecord?.last_spin_at) {
       const lastSpinStr = new Date(spinRecord.last_spin_at).toISOString().slice(0, 10);
@@ -150,7 +143,7 @@ export async function POST(req: Request) {
     let updatedPoints = 0;
     let grantedPackId: string | null = null;
 
-    if (reward.type === "points" && reward.amount) {
+    if (winningSegment.type === "points" && winningSegment.amount) {
       const { data: pointsRecord } = await supabase
         .from("user_delta_points")
         .select("points_balance, total_earned")
@@ -159,23 +152,40 @@ export async function POST(req: Request) {
 
       const currentPoints = pointsRecord?.points_balance || 0;
       const currentTotal = pointsRecord?.total_earned ?? currentPoints;
-      updatedPoints = currentPoints + reward.amount;
+      updatedPoints = currentPoints + winningSegment.amount;
 
       await supabase
         .from("user_delta_points")
         .upsert({
           user_id: user.id,
           points_balance: updatedPoints,
-          total_earned: currentTotal + reward.amount,
+          total_earned: currentTotal + winningSegment.amount,
           updated_at: new Date().toISOString()
         }, { onConflict: "user_id" });
-    } else if (reward.type === "pack" && reward.packTypeId) {
+
+      try {
+        await supabase
+          .from("delta_points_transactions")
+          .insert({
+            user_id: user.id,
+            amount: winningSegment.amount,
+            balance_after: updatedPoints,
+            transaction_type: "EARN",
+            source_type: "DAILY_SPIN",
+            source_id: winningSegment.id,
+            idempotency_key: `spin_${user.id}_${todayStr}`,
+            metadata: { segmentId: winningSegment.id, segmentName: winningSegment.name, streak: newStreak }
+          });
+      } catch {
+        // Ignorujemy jeśli ledger nie istnieje jeszcze na danym środowisku
+      }
+    } else if (winningSegment.type === "pack" && winningSegment.packTypeId) {
       const { data: newPack, error: packErr } = await supabase
         .from("user_unopened_packs")
         .insert({
           user_id: user.id,
-          pack_type_id: reward.packTypeId,
-          source_reason: `Nagroda z Koła Fortuny DELTA: ${reward.name} (Dzień ${newStreak}/7)`,
+          pack_type_id: winningSegment.packTypeId,
+          source_reason: `Nagroda z Koła Fortuny DELTA: ${winningSegment.name} (Dzień ${newStreak}/7)`,
           is_opened: false
         })
         .select()
@@ -196,7 +206,7 @@ export async function POST(req: Request) {
       updatedPoints = pointsRecord?.points_balance || 0;
     }
 
-    // 3. Zapisujemy obrót w user_daily_spins
+    // 4. Zapisujemy obrót w user_daily_spins
     const totalSpinsCount = (spinRecord?.total_spins || 0) + 1;
     await supabase
       .from("user_daily_spins")
@@ -214,7 +224,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      reward,
+      reward: winningSegment,
+      segmentId: winningSegment.id,
       newPointsBalance: updatedPoints,
       grantedPackId,
       streak: newStreak,
