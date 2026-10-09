@@ -117,6 +117,46 @@ export async function subscribeToPush() {
 }
 
 
+export async function unsubscribePush(): Promise<boolean> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return false;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+
+    if (sub) {
+      try {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint })
+        });
+      } catch {}
+
+      return await sub.unsubscribe();
+    }
+  } catch (err) {
+    console.error("Unsubscribe error:", err);
+  }
+
+  return false;
+}
+
+export async function getCurrentPushSubscription(): Promise<PushSubscription | null> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return null;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    return await reg.pushManager.getSubscription();
+  } catch {
+    return null;
+  }
+}
+
 export async function resetPushSubscription(){
   if(!("serviceWorker" in navigator) || !("PushManager" in window)){
     throw new PushSetupError("support","Ta przeglądarka nie obsługuje Web Push.");

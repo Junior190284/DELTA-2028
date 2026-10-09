@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Bell, Check, Shield, AlertCircle, Smartphone, CheckCircle2 } from 'lucide-react';
-import { subscribeToPush } from '@/lib/push';
+import { X, Bell, BellOff, Check, Shield, AlertCircle, Smartphone, CheckCircle2 } from 'lucide-react';
+import { subscribeToPush, unsubscribePush, getCurrentPushSubscription } from '@/lib/push';
 import { DEFAULT_PUSH_PREFERENCES, type PushNotificationPreferences } from '@/lib/events/types';
 
 interface DeltaNotificationPreferencesModalProps {
@@ -19,6 +19,7 @@ export const DeltaNotificationPreferencesModal: React.FC<DeltaNotificationPrefer
   const [prefs, setPrefs] = useState<PushNotificationPreferences>(DEFAULT_PUSH_PREFERENCES);
   const [pushStatus, setPushStatus] = useState<'supported' | 'unsupported' | 'denied' | 'granted' | 'default'>('default');
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isUnsubscribing, setIsUnsubscribing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -26,17 +27,32 @@ export const DeltaNotificationPreferencesModal: React.FC<DeltaNotificationPrefer
     if (!isOpen) return;
 
     // Check browser push support & permission
-    if (typeof window !== 'undefined') {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    const checkStatus = async () => {
+      if (typeof window === 'undefined') return;
+
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
         setPushStatus('unsupported');
-      } else if (Notification.permission === 'denied') {
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
         setPushStatus('denied');
-      } else if (Notification.permission === 'granted') {
-        setPushStatus('granted');
-      } else {
+        return;
+      }
+
+      try {
+        const sub = await getCurrentPushSubscription();
+        if (sub && Notification.permission === 'granted') {
+          setPushStatus('granted');
+        } else {
+          setPushStatus('default');
+        }
+      } catch {
         setPushStatus('default');
       }
-    }
+    };
+
+    checkStatus();
 
     // Fetch existing preferences from server if logged in
     fetch('/api/push/subscribe')
@@ -72,7 +88,7 @@ export const DeltaNotificationPreferencesModal: React.FC<DeltaNotificationPrefer
       setFeedback(null);
       await subscribeToPush();
       setPushStatus('granted');
-      setFeedback('Powiadomienia na tym urządzeniu zostały włączone!');
+      setFeedback('Powiadomienia na tym urządzeniu zostały pomyślnie włączone!');
     } catch (err: any) {
       if (err?.stage === 'permission') {
         setPushStatus('denied');
@@ -82,6 +98,20 @@ export const DeltaNotificationPreferencesModal: React.FC<DeltaNotificationPrefer
       }
     } finally {
       setIsSubscribing(false);
+    }
+  };
+
+  const handleDisablePush = async () => {
+    try {
+      setIsUnsubscribing(true);
+      setFeedback(null);
+      await unsubscribePush();
+      setPushStatus('default');
+      setFeedback('Powiadomienia na tym urządzeniu zostały wyłączone.');
+    } catch (err: any) {
+      setFeedback(err?.message || 'Wystąpił problem podczas wyłączania powiadomień.');
+    } finally {
+      setIsUnsubscribing(false);
     }
   };
 
@@ -113,7 +143,7 @@ export const DeltaNotificationPreferencesModal: React.FC<DeltaNotificationPrefer
   ];
 
   return (
-    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="v200-modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Ustawienia Powiadomień">
       <div className="v200-modal-container max-w-lg animate-fadeIn" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="v200-modal-head">
@@ -140,40 +170,76 @@ export const DeltaNotificationPreferencesModal: React.FC<DeltaNotificationPrefer
 
         {/* Content */}
         <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-          {/* Device Push Status Banner */}
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col gap-2">
+          {/* Web Push Section */}
+          <div className="p-4 rounded-xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-white/10 flex flex-col gap-3 shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-200">
                 <Smartphone size={16} className="text-amber-400" />
-                <span>Status na tym urządzeniu:</span>
+                <span>Powiadomienia Web Push</span>
               </div>
-              <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-md ${
+              <span className={`text-[11px] font-black uppercase px-2.5 py-0.5 rounded-md ${
                 pushStatus === 'granted' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                 pushStatus === 'denied' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                pushStatus === 'unsupported' ? 'bg-slate-800 text-slate-400' :
+                pushStatus === 'unsupported' ? 'bg-slate-800 text-slate-400 border border-white/10' :
                 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
               }`}>
                 {pushStatus === 'granted' ? 'Włączone' :
-                 pushStatus === 'denied' ? 'Zablokowane w przeglądarce' :
-                 pushStatus === 'unsupported' ? 'Brak wsparcia' :
+                 pushStatus === 'denied' ? 'Zablokowane przez przeglądarkę' :
+                 pushStatus === 'unsupported' ? 'Niedostępne' :
                  'Wyłączone'}
               </span>
             </div>
 
-            {pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
-              <button
-                type="button"
-                onClick={handleEnablePush}
-                disabled={isSubscribing}
-                className="mt-1 w-full py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <Bell size={14} />
-                {isSubscribing ? 'Włączanie...' : 'Włącz powiadomienia na tym urządzeniu'}
-              </button>
+            {/* Explanatory text & controls according to state */}
+            {pushStatus === 'granted' ? (
+              <div className="space-y-2">
+                <p className="text-xs text-emerald-300 m-0 flex items-center gap-1.5">
+                  <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                  Powiadomienia są włączone na tym urządzeniu. Otrzymasz alerty o meczach i powołaniach.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDisablePush}
+                  disabled={isUnsubscribing}
+                  className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 border border-white/10 hover:border-red-500/30 font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <BellOff size={14} />
+                  {isUnsubscribing ? 'Wyłączanie...' : 'Wyłącz powiadomienia na tym urządzeniu'}
+                </button>
+              </div>
+            ) : pushStatus === 'denied' ? (
+              <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/30 text-xs text-red-200 space-y-1">
+                <p className="font-bold m-0 flex items-center gap-1">
+                  <AlertCircle size={14} className="text-red-400 shrink-0" />
+                  Powiadomienia są zablokowane w ustawieniach przeglądarki.
+                </p>
+                <p className="text-[11px] text-red-300/80 m-0">
+                  Aby je włączyć, kliknij ikonę kłódki / uprawnień przy pasku adresu strony i zezwól na powiadomienia.
+                </p>
+              </div>
+            ) : pushStatus === 'unsupported' ? (
+              <p className="text-xs text-slate-400 m-0">
+                To urządzenie lub przeglądarka nie obsługuje Web Push.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-slate-300 m-0">
+                  Włącz natywne powiadomienia, aby natychmiast otrzymywać informacje o zbiórkach, meczach i powołaniach.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleEnablePush}
+                  disabled={isSubscribing}
+                  className="w-full py-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <Bell size={15} />
+                  {isSubscribing ? 'Włączanie powiadomień...' : 'Włącz powiadomienia na tym urządzeniu'}
+                </button>
+              </div>
             )}
 
             {feedback && (
-              <p className="text-[11px] text-amber-300 m-0 flex items-center gap-1.5 mt-1">
+              <p className="text-[11px] text-amber-300 m-0 flex items-center gap-1.5 pt-1 border-t border-white/5">
                 <AlertCircle size={13} /> {feedback}
               </p>
             )}

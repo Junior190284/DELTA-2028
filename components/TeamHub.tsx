@@ -4364,6 +4364,7 @@ export default function TeamHub(props:{
         userId={props.profile.id}
         userRole={props.profile.role}
         parentPlayerIds={props.parentPlayerIds}
+        onOpenSettings={() => setNotifPrefsModalOpen(true)}
         onNavigate={(targetTab) => {
           setNotificationsModalOpen(false);
           setTab(targetTab as any);

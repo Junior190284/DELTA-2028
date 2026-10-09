@@ -258,7 +258,7 @@ export default function DeltaMoreMenuSheet({
               </span>
             </button>
 
-            {/* 10. USTAWIENIA & PROFIL */}
+            {/* 10. POWIADOMIENIA WEB PUSH */}
             <button
               type="button"
               className="delta-more-tile"
@@ -268,9 +268,12 @@ export default function DeltaMoreMenuSheet({
                 <Settings size={22} />
               </div>
               <div className="delta-tile-text">
-                <strong className="delta-tile-title">USTAWIENIA</strong>
-                <small className="delta-tile-subtitle">Powiadomienia & konto</small>
+                <strong className="delta-tile-title">POWIADOMIENIA WEB PUSH</strong>
+                <small className="delta-tile-subtitle">Włącz powiadomienia na telefonie</small>
               </div>
+              <span className="delta-tile-status-chip gold">
+                PUSH
+              </span>
             </button>
 
             {/* 11. PANEL ADMINISTRATORA (tylko dla admin / coach / pomocnik) */}
@@ -297,6 +300,15 @@ export default function DeltaMoreMenuSheet({
 
           {/* Szybkie linki pomocnicze */}
           <div className="delta-more-footer-links">
+            <button 
+              type="button" 
+              onClick={() => handleTileClick("settings")} 
+              className="delta-more-sublink"
+            >
+              <Settings size={15} />
+              <span>Powiadomienia Web Push (Włącz / Wyłącz)</span>
+            </button>
+
             {canOpenAdmin && (
               <a href="/admin" className="delta-more-sublink admin-sublink" aria-label="Panel administratora">
                 <Shield size={15} />

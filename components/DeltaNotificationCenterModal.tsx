@@ -17,7 +17,8 @@ import {
   Info,
   Layers,
   Flame,
-  Check
+  Check,
+  Settings
 } from 'lucide-react';
 import type { DeltaSystemEvent, EventImportance } from '@/lib/events/types';
 import {
@@ -37,6 +38,7 @@ interface DeltaNotificationCenterModalProps {
   parentPlayerIds?: string[];
   onNotificationRead?: () => void;
   onNavigate?: (tab: string, payload?: any) => void;
+  onOpenSettings?: () => void;
 }
 
 export const DeltaNotificationCenterModal: React.FC<DeltaNotificationCenterModalProps> = ({
@@ -47,6 +49,7 @@ export const DeltaNotificationCenterModal: React.FC<DeltaNotificationCenterModal
   parentPlayerIds = [],
   onNotificationRead,
   onNavigate,
+  onOpenSettings,
 }) => {
   const [events, setEvents] = useState<DeltaSystemEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -390,14 +393,30 @@ export const DeltaNotificationCenterModal: React.FC<DeltaNotificationCenterModal
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-            aria-label="Zamknij"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {onOpenSettings && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenSettings();
+                }}
+                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                aria-label="Ustawienia powiadomień Web Push"
+                title="Ustawienia powiadomień Web Push"
+              >
+                <Settings size={17} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+              aria-label="Zamknij"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Filter Chips Bar */}
