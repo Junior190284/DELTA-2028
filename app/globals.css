@@ -36602,13 +36602,15 @@ body > main,
   border: 1px solid rgba(16, 185, 129, 0.4);
 }
 
-.delta-att-status-pill.status-no {
+.delta-att-status-pill.status-no,
+.delta-att-status-pill.status-absent {
   background: rgba(227, 29, 47, 0.16);
   color: #ff5722;
   border: 1px solid rgba(227, 29, 47, 0.4);
 }
 
-.delta-att-status-pill.status-maybe {
+.delta-att-status-pill.status-maybe,
+.delta-att-status-pill.status-undecided {
   background: rgba(148, 163, 184, 0.12);
   color: #94a3b8;
   border: 1px solid rgba(148, 163, 184, 0.25);

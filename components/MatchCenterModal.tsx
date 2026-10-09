@@ -93,9 +93,9 @@ export default function MatchCenterModal(props:{
   const matchLineup=props.lineup.filter(l=>l.match_id===match.id);
   const matchEvents=props.events.filter(e=>e.match_id===match.id);
   const parentPlayers=players.filter(p=>props.parentPlayerIds.includes(p.id));
-  const responseRows=matchAttendance.filter(a=>["yes","no","maybe","present"].includes(a.status));
+  const responseRows=matchAttendance.filter(a=>["yes","no","maybe","present","absent"].includes(a.status));
   const responseCount=new Set(responseRows.map(a=>a.player_id)).size;
-  const presentCount=matchAttendance.filter(a=>a.status==="present"||a.status==="yes").length;
+  const presentCount=matchAttendance.filter(a=>a.status==="present").length;
   const deltaIsHome=match.home_team.toLocaleLowerCase("pl-PL").includes("delta");
   const deltaGoals=matchEvents.filter(e=>e.event_type==="goal");
   const matchStarted=match.status==="scheduled"&&(match.home_score!==null||match.away_score!==null);
@@ -103,18 +103,34 @@ export default function MatchCenterModal(props:{
   const deltaScore=deltaIsHome?match.home_score:match.away_score;
   const opponentScore=deltaIsHome?match.away_score:match.home_score;
 
-  // Obliczenia podsumowania obecności (Obecni, Nieobecni, Niezdecydowani, Razem)
+  // Finalny status obecności ("present" = Obecny, "absent" = Nieobecny, "undecided" = Brak decyzji)
+  function actualAttendance(playerId: string): "present" | "absent" | "undecided" {
+    const row = matchAttendance.find(a => a.player_id === playerId);
+    if (row?.status === "present") return "present";
+    if (row?.status === "absent") return "absent";
+    return "undecided";
+  }
+
+  // RSVP deklaracja rodzica przed meczem ("yes" = Będzie, "no" = Nie będzie, "maybe" = Nie wie)
+  function responseStatus(playerId: string) {
+    const row = matchAttendance.find(a => a.player_id === playerId);
+    if (row?.status === "yes") return "yes";
+    if (row?.status === "no") return "no";
+    if (row?.status === "maybe") return "maybe";
+    return "";
+  }
+
+  // Obliczenia podsumowania obecności — ściśle na podstawie finalnego statusu organizatora
   const attendanceStats = useMemo(() => {
     let present = 0;
     let absent = 0;
     let undecided = 0;
 
     players.forEach(p => {
-      const row = matchAttendance.find(a => a.player_id === p.id);
-      const s = row?.status;
-      if (s === "present" || s === "yes") {
+      const actual = actualAttendance(p.id);
+      if (actual === "present") {
         present++;
-      } else if (s === "no") {
+      } else if (actual === "absent") {
         absent++;
       } else {
         undecided++;
@@ -132,11 +148,10 @@ export default function MatchCenterModal(props:{
   const filteredAttendancePlayers = useMemo(() => {
     if (attendanceFilter === "all") return players;
     return players.filter(p => {
-      const row = matchAttendance.find(a => a.player_id === p.id);
-      const s = row?.status;
-      if (attendanceFilter === "present") return s === "present" || s === "yes";
-      if (attendanceFilter === "absent") return s === "no";
-      if (attendanceFilter === "undecided") return s !== "present" && s !== "yes" && s !== "no";
+      const actual = actualAttendance(p.id);
+      if (attendanceFilter === "present") return actual === "present";
+      if (attendanceFilter === "absent") return actual === "absent";
+      if (attendanceFilter === "undecided") return actual === "undecided";
       return true;
     });
   }, [players, matchAttendance, attendanceFilter]);
@@ -179,14 +194,7 @@ export default function MatchCenterModal(props:{
     window.setTimeout(()=>setCelebration(null),1500);
   }
 
-  function responseStatus(playerId:string){
-    return responseRows.find(a=>a.player_id===playerId)?.status||"";
-  }
 
-  function actualAttendance(playerId:string){
-    const row=matchAttendance.find(a=>a.player_id===playerId);
-    return row?.status==="present"||row?.status==="yes"?"present":row?.status==="no"?"no":"maybe";
-  }
 
   async function saveMatchBasics(){
     if(saving||!canManageMatch)return;
@@ -624,7 +632,7 @@ export default function MatchCenterModal(props:{
                   const response = responseStatus(p.id);
 
                   return (
-                    <article key={p.id} className={`delta-att-row ${actual === "present" ? "row-present" : actual === "no" ? "row-absent" : "row-undecided"}`}>
+                    <article key={p.id} className={`delta-att-row ${actual === "present" ? "row-present" : actual === "absent" ? "row-absent" : "row-undecided"}`}>
                       {/* Lewa strona: Numer koszulki + Imię i Nazwisko + Pozycja + RSVP */}
                       <div className="delta-att-row-left">
                         <span className="delta-att-shirt-badge">#{p.shirt_number || "—"}</span>
@@ -634,7 +642,7 @@ export default function MatchCenterModal(props:{
                             <span className="delta-att-pos">{p.position || "Zawodnik"}</span>
                             {response && (
                               <span className={`delta-att-rsvp-mini rsvp-${response}`}>
-                                RSVP: {response === "yes" ? "Będzie" : response === "no" ? "Nie będzie" : "Nie wie"}
+                                Deklaracja: {response === "yes" ? "Będzie" : response === "no" ? "Nie będzie" : "Nie wie"}
                               </span>
                             )}
                           </div>
@@ -646,7 +654,7 @@ export default function MatchCenterModal(props:{
                         <span className={`delta-att-status-pill status-${actual}`}>
                           {actual === "present" ? (
                             <><Check size={12} /> OBECNY</>
-                          ) : actual === "no" ? (
+                          ) : actual === "absent" ? (
                             <><X size={12} /> NIEOBECNY</>
                           ) : (
                             <><HelpCircle size={12} /> BRAK DECYZJI</>
@@ -660,16 +668,16 @@ export default function MatchCenterModal(props:{
                           type="button"
                           onClick={() => setAttendance(p.id, "present")}
                           className={`delta-att-btn btn-present ${actual === "present" ? "active" : ""}`}
-                          title="Oznacz jako obecny"
+                          title="Zatwierdź obecność na meczu"
                         >
                           <Check size={14} />
                           <span>Obecny</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setAttendance(p.id, "no")}
-                          className={`delta-att-btn btn-absent ${actual === "no" ? "active" : ""}`}
-                          title="Oznacz jako nieobecny"
+                          onClick={() => setAttendance(p.id, "absent")}
+                          className={`delta-att-btn btn-absent ${actual === "absent" ? "active" : ""}`}
+                          title="Zatwierdź nieobecność na meczu"
                         >
                           <X size={14} />
                           <span>Nieobecny</span>
@@ -677,11 +685,11 @@ export default function MatchCenterModal(props:{
                         <button
                           type="button"
                           onClick={() => setAttendance(p.id, "maybe")}
-                          className={`delta-att-btn btn-undecided ${actual === "maybe" ? "active" : ""}`}
-                          title="Resetuj status do braku decyzji"
+                          className={`delta-att-btn btn-undecided ${actual === "undecided" ? "active" : ""}`}
+                          title="Zmień na: brak decyzji"
                         >
                           <HelpCircle size={14} />
-                          <span>Reset</span>
+                          <span>Brak decyzji</span>
                         </button>
                       </div>
                     </article>
