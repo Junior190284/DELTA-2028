@@ -49,6 +49,8 @@ import { DeltaCompetitionHubModal } from "./social/DeltaCompetitionHubModal";
 import { DeltaSocialFeedModal } from "./social/DeltaSocialFeedModal";
 import { DeltaTrophyCabinetModal } from "./social/DeltaTrophyCabinetModal";
 import { DeltaSafeTradingModal } from "./social/DeltaSafeTradingModal";
+import DeltaHomePrioritySection from "./DeltaHomePrioritySection";
+import { computeHomePriorities } from "@/lib/home/priority-engine";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
 import { hasDelegatedAccess } from "@/lib/permissions";
@@ -1489,6 +1491,53 @@ export default function TeamHub(props:{
     return unifiedNewsItems.filter(item => item.category === newsFilter);
   }, [unifiedNewsItems, newsFilter, readNewsMap]);
 
+  const homePriorityData = useMemo(() => {
+    return computeHomePriorities({
+      user: {
+        userId: props.profile.id,
+        role: props.profile.role,
+        playerIds: props.parentPlayerIds,
+      },
+      events: systemEvents,
+      nextMatch: nextMatch ? {
+        id: nextMatch.id,
+        home_team: nextMatch.home_team,
+        away_team: nextMatch.away_team,
+        match_date: nextMatch.match_date,
+        match_time: nextMatch.match_time,
+        venue: nextMatch.venue,
+        round_no: nextMatch.round_no,
+        status: nextMatch.status,
+      } : null,
+      nextTraining: nextTraining?.session ? {
+        id: nextTraining.session.id,
+        training_date: nextTraining.session.training_date,
+        start_time: nextTraining.session.start_time,
+        end_time: nextTraining.session.end_time,
+        location: nextTraining.session.location,
+        title: nextTraining.session.title,
+      } : null,
+      parentPlayerIds: props.parentPlayerIds,
+      attendanceDeclarations: attendance,
+      hasLineupPublished: lineup.some(l => l.match_id === nextMatch?.id),
+      unreadMessagesCount: unreadNewsCount,
+      unopenedPacksCount: gameProfile?.unopenedPacks || 0,
+      dailySpinAvailable: !gameProfile?.dailySpinUsedToday,
+    });
+  }, [
+    props.profile.id,
+    props.profile.role,
+    props.parentPlayerIds,
+    systemEvents,
+    nextMatch,
+    nextTraining,
+    attendance,
+    lineup,
+    unreadNewsCount,
+    gameProfile?.unopenedPacks,
+    gameProfile?.dailySpinUsedToday
+  ]);
+
   const navCategories = useMemo(() => [
     {
       id: "main",
@@ -2257,6 +2306,31 @@ export default function TeamHub(props:{
             </div>
           </div>
         </section>
+
+        {/* COMMUNICATION PRIORITY LAYER (ETAP 12C: "NAJWAŻNIEJSZE TERAZ") */}
+        <DeltaHomePrioritySection
+          priorityData={homePriorityData}
+          onNavigate={(targetTab, payload) => {
+            if (targetTab === "matches" && payload?.matchId) {
+              const m = matches.find(item => item.id === payload.matchId);
+              if (m) {
+                setSelectedMatch(m);
+                setMatchPlacement("overlay");
+              }
+              setTab("matches");
+            } else if (targetTab === "training") {
+              setTab("training");
+            } else if (targetTab === "news") {
+              setTab("news");
+            } else if (targetTab === "collection") {
+              setTab("collection");
+            } else if (targetTab === "achievements") {
+              setTab("achievements");
+            } else {
+              setTab(targetTab as any);
+            }
+          }}
+        />
 
         {nextMatch&&<><section className="v105-home-command-grid">
           <SpotlightCard className="v8-match-card devil-card v101-logged-match v200-match-hero" glowColor="gold" enableTilt={true}>
