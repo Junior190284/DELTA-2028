@@ -18,6 +18,8 @@ export type SystemEventType =
 
 export type EventAudienceType = 'TEAM' | 'USER' | 'PLAYER' | 'ADMIN';
 
+export type EventImportance = 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL' | 'IMPORTANT' | 'URGENT' | 'INFO';
+
 export interface DeltaSystemEvent {
   id: string; // Deterministic dedupe key or UUID
   type: SystemEventType;

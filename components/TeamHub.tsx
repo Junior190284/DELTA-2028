@@ -18,7 +18,7 @@ import DeltaMoreMenuSheet from "./DeltaMoreMenuSheet";
 import DeltaLiveAlertBanner from "./DeltaLiveAlertBanner";
 import DeltaUrgentEventModal from "./DeltaUrgentEventModal";
 import DeltaSyncControlCenter from "./admin/DeltaSyncControlCenter";
-import type { DeltaSystemEvent } from "@/lib/events/types";
+import type { DeltaSystemEvent, EventImportance } from "@/lib/events/types";
 import AchievementsHub from "./AchievementsHub";
 import AchievementsModal from "./AchievementsModal";
 import AchievementUnlock from "./AchievementUnlock";
@@ -1379,7 +1379,7 @@ export default function TeamHub(props:{
       published_at: string;
       source_name: string;
       source_url?: string;
-      importance: "INFO" | "NORMAL" | "IMPORTANT" | "URGENT";
+      importance: EventImportance;
       typeLabel: string;
       deepLinkTab?: string;
       deepLinkPayload?: any;
