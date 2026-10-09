@@ -46,14 +46,14 @@ const WHEEL_SEGMENTS: WheelSegment[] = [
   { id: "s8", name: "🌟 LEGEND PACK", shortName: "LEGEND PACK", type: "pack", packTypeId: "legend_pack", gradientId: "grad-legend", textColor: "#ffffff", icon: "🌟", weight: 2 }
 ];
 
-const STREAK_REWARDS_CONFIG = [
-  { day: 1, reward: "+25 DP" },
-  { day: 2, reward: "+50 DP" },
-  { day: 3, reward: "Paczka Std" },
-  { day: 4, reward: "+75 DP" },
-  { day: 5, reward: "Matchday" },
-  { day: 6, reward: "+150 DP" },
-  { day: 7, reward: "👑 Gold Pack", big: true }
+const STREAK_DAYS_CONFIG = [
+  { day: 1, label: "Dzień 1" },
+  { day: 2, label: "Dzień 2" },
+  { day: 3, label: "Dzień 3" },
+  { day: 4, label: "Dzień 4" },
+  { day: 5, label: "Dzień 5" },
+  { day: 6, label: "Dzień 6" },
+  { day: 7, label: "Dzień 7", big: true }
 ];
 
 interface DailyInfernoSpinProps {
@@ -248,7 +248,7 @@ export default function DailyInfernoSpin({
   });
 
   const streakDaysList = useMemo(() => {
-    return STREAK_REWARDS_CONFIG.map(s => {
+    return STREAK_DAYS_CONFIG.map(s => {
       const isClaimed = s.day < streakCount || (s.day === streakCount && !canSpin);
       const isCurrent = s.day === streakCount && canSpin;
       return {
@@ -323,7 +323,7 @@ export default function DailyInfernoSpin({
               SERIA LOGOWANIA (DZIEŃ {streakCount} Z 7)
             </span>
             <span className="v200-streak-boost">
-              Dzień 7: 👑 <strong>Gwarantowany Gold Booster!</strong>
+              Dzień 7: 👑 <strong>Finał pełnej serii tygodniowej!</strong>
             </span>
           </div>
 
@@ -342,14 +342,14 @@ export default function DailyInfernoSpin({
                     <span>{s.day}</span>
                   )}
                 </div>
-                <span className="v200-streak-reward-label">{s.reward}</span>
+                <span className="v200-streak-reward-label">{s.label}</span>
               </div>
             ))}
           </div>
 
           {streakCount === 1 && !canSpin && (
             <p className="text-[11px] text-slate-400 text-center mt-2 font-medium">
-              ✨ Dzień 1/7 zaliczony! Wracaj codziennie, by utrzymać serię aż do Gold Boostera!
+              ✨ Dzień 1/7 zaliczony! Wracaj codziennie, by utrzymać serię aż do 7. dnia!
             </p>
           )}
         </div>

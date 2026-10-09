@@ -85,11 +85,11 @@ export function determineNextBestAction(state: UserGamificationState): NextBestA
   // Fallback / All caught up
   return {
     id: "completed_all",
-    title: "Wszystko na bieżąco!",
-    description: `Świetna robota! Wykonałeś wszystkie dzisiejsze zadania. Twój album jest wypełniony w ${state.collectionProgressPercent}%.`,
-    ctaText: "Przeglądaj album",
+    title: "Wszystko na dziś gotowe!",
+    description: `Świetna robota! Sprawdziłeś wszystkie dzisiejsze zadania. Twój album jest wypełniony w ${state.collectionProgressPercent}%.`,
+    ctaText: "Przeglądaj kolekcję",
     iconName: "CheckCircle2",
-    badgeText: "100% NA DZIŚ",
+    badgeText: "GOTOWE NA DZIŚ",
     badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
     priority: 5,
     actionType: "VIEW_ALBUM"

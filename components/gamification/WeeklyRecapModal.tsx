@@ -173,7 +173,7 @@ export default function WeeklyRecapModal({
               Cel na kolejny tydzień:
             </h4>
             <p className="text-xs text-slate-300 mt-0.5">
-              Utrzymaj serię 7 dni i zdobądź gwarantowany <strong>Gold Booster</strong>!
+              Utrzymaj serię 7 dni i skompletuj pełny tydzień aktywności w klubie DELTA!
             </p>
           </div>
         </div>

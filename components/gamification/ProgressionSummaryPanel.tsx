@@ -111,7 +111,7 @@ export default function ProgressionSummaryPanel({
             {data.streakCount} <span className="text-xs text-slate-400 font-sans">/ 7 dni</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1 truncate">
-            {data.streakCount >= 7 ? "Gwarantowany Gold Pack!" : `Jeszcze ${7 - data.streakCount} dni do Gold`}
+            {data.streakCount >= 7 ? "Zwieńczenie serii 7/7!" : `Dzień ${data.streakCount} z 7 serii`}
           </p>
         </button>
 
