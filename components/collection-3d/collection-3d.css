@@ -1,0 +1,158 @@
+/* ==========================================================================
+   DELTA COLLECTION 3D ENGINE — UNIVERSAL CARD STYLES
+   Generic theme variables, 3D viewport, slab layers, and theme customizations.
+   ========================================================================== */
+
+@import "../inferno-3d/inferno-card.css";
+
+/* --- Base Theme CSS Variables (Overridden per theme class) --- */
+.collection-card-theme {
+  --card-primary: #ef4444;
+  --card-secondary: #450a0a;
+  --card-glow: rgba(255, 42, 42, 0.45);
+  --card-accent: #ffca58;
+  --card-font-accent: #ffca58;
+  --card-border-gradient: linear-gradient(135deg, #ff4d5a, #dc2626, #7f1d1d);
+  --card-depth: 15px;
+}
+
+/* 1. INFERNO ULTRA */
+.collection-card-theme.theme-inferno {
+  --card-primary: #ef4444;
+  --card-secondary: #450a0a;
+  --card-glow: rgba(255, 42, 42, 0.45);
+  --card-accent: #ffca58;
+  --card-font-accent: #ffca58;
+  --card-border-gradient: linear-gradient(135deg, #ff4d5a, #dc2626, #7f1d1d);
+  --card-depth: 15px;
+}
+
+/* 2. GOLD MASTER */
+.collection-card-theme.theme-gold {
+  --card-primary: #eab308;
+  --card-secondary: #713f12;
+  --card-glow: rgba(234, 179, 8, 0.45);
+  --card-accent: #fef08a;
+  --card-font-accent: #fef9c3;
+  --card-border-gradient: linear-gradient(135deg, #fde047, #ca8a04, #713f12);
+  --card-depth: 14px;
+}
+.collection-card-theme.theme-gold .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(234, 179, 8, 0.22) 0, rgba(161, 98, 7, 0.14) 36%, transparent 74%);
+}
+.collection-card-theme.theme-gold .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(250, 204, 21, 0.42) 0, rgba(161, 98, 7, 0.16) 42%, transparent 75%);
+}
+.collection-card-theme.theme-gold .inferno-edge-glow {
+  box-shadow: 0 0 25px rgba(234, 179, 8, 0.4), 0 0 55px rgba(202, 138, 4, 0.25), inset 0 0 16px rgba(250, 204, 21, 0.2);
+}
+.collection-card-theme.theme-gold .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #eab308, 0 0 28px rgba(202, 138, 4, 0.6);
+}
+
+/* 3. MATCHDAY HERO */
+.collection-card-theme.theme-matchday {
+  --card-primary: #0ea5e9;
+  --card-secondary: #075985;
+  --card-glow: rgba(14, 165, 233, 0.45);
+  --card-accent: #38bdf8;
+  --card-font-accent: #e0f2fe;
+  --card-border-gradient: linear-gradient(135deg, #38bdf8, #0369a1, #0c4a6e);
+  --card-depth: 13px;
+}
+.collection-card-theme.theme-matchday .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(14, 165, 233, 0.22) 0, rgba(3, 105, 161, 0.14) 36%, transparent 74%);
+}
+.collection-card-theme.theme-matchday .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.42) 0, rgba(7, 89, 133, 0.16) 42%, transparent 75%);
+}
+.collection-card-theme.theme-matchday .inferno-edge-glow {
+  box-shadow: 0 0 25px rgba(14, 165, 233, 0.4), 0 0 55px rgba(3, 105, 161, 0.25), inset 0 0 16px rgba(56, 189, 248, 0.2);
+}
+.collection-card-theme.theme-matchday .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #0ea5e9, 0 0 28px rgba(3, 105, 161, 0.6);
+}
+
+/* 4. DELTA ICON (LEGEND) */
+.collection-card-theme.theme-legend {
+  --card-primary: #f59e0b;
+  --card-secondary: #78350f;
+  --card-glow: rgba(245, 158, 11, 0.50);
+  --card-accent: #fef08a;
+  --card-font-accent: #fef08a;
+  --card-border-gradient: linear-gradient(135deg, #fef08a, #d97706, #78350f);
+  --card-depth: 15px;
+}
+.collection-card-theme.theme-legend .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.26) 0, rgba(180, 83, 9, 0.14) 36%, transparent 74%);
+}
+.collection-card-theme.theme-legend .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(254, 240, 138, 0.45) 0, rgba(120, 53, 15, 0.18) 42%, transparent 75%);
+}
+.collection-card-theme.theme-legend .inferno-edge-glow {
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.45), 0 0 60px rgba(217, 119, 6, 0.3), inset 0 0 18px rgba(254, 240, 138, 0.25);
+}
+.collection-card-theme.theme-legend .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #f59e0b, 0 0 28px rgba(217, 119, 6, 0.6);
+}
+
+/* 5. TRAINING HERO (RARE) */
+.collection-card-theme.theme-rare {
+  --card-primary: #10b981;
+  --card-secondary: #064e3b;
+  --card-glow: rgba(16, 185, 129, 0.40);
+  --card-accent: #34d399;
+  --card-font-accent: #a7f3d0;
+  --card-border-gradient: linear-gradient(135deg, #34d399, #059669, #064e3b);
+  --card-depth: 12px;
+}
+.collection-card-theme.theme-rare .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.20) 0, rgba(5, 150, 105, 0.12) 36%, transparent 74%);
+}
+.collection-card-theme.theme-rare .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(52, 211, 153, 0.38) 0, rgba(6, 78, 59, 0.14) 42%, transparent 75%);
+}
+.collection-card-theme.theme-rare .inferno-edge-glow {
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.35), 0 0 50px rgba(5, 150, 105, 0.2), inset 0 0 14px rgba(52, 211, 153, 0.18);
+}
+.collection-card-theme.theme-rare .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #10b981, 0 0 28px rgba(5, 150, 105, 0.6);
+}
+
+/* 6. BASE (COMMON) */
+.collection-card-theme.theme-common {
+  --card-primary: #94a3b8;
+  --card-secondary: #1e293b;
+  --card-glow: rgba(148, 163, 184, 0.35);
+  --card-accent: #cbd5e1;
+  --card-font-accent: #ffffff;
+  --card-border-gradient: linear-gradient(135deg, #cbd5e1, #475569);
+  --card-depth: 12px;
+}
+.collection-card-theme.theme-common .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(148, 163, 184, 0.16) 0, rgba(71, 85, 105, 0.10) 36%, transparent 74%);
+}
+.collection-card-theme.theme-common .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(203, 213, 225, 0.30) 0, rgba(30, 41, 59, 0.12) 42%, transparent 75%);
+}
+.collection-card-theme.theme-common .inferno-edge-glow {
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.3), 0 0 45px rgba(71, 85, 105, 0.18), inset 0 0 12px rgba(203, 213, 225, 0.15);
+}
+.collection-card-theme.theme-common .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 14px #94a3b8, 0 0 24px rgba(71, 85, 105, 0.5);
+}
+
+/* Series Badge Dynamic Color */
+.collection-card-theme .inferno-brand-badge em {
+  color: var(--card-font-accent);
+}
+
+/* Submeta OVR Tag Dynamic Highlight */
+.collection-card-theme .inferno-front-ovr-tag b {
+  color: var(--card-font-accent);
+}
+
+/* Ensure no transitions when timeline is active or in walkout mode */
+.walkout-container .inferno-card-object {
+  transition: none !important;
+}

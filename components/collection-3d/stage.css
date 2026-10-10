@@ -1,0 +1,403 @@
+/* ==========================================================================
+   DELTA COLLECTION 3D ENGINE — UNIVERSAL STAGE & WALKOUT STYLES
+   Theme-driven cinematic environment with full CSS variable customization
+   ========================================================================== */
+
+:root {
+  --stage-bg: #020307;
+  --stage-core-glow: rgba(255, 45, 35, 0.24);
+  --stage-reflector-l: linear-gradient(180deg, rgba(255, 60, 40, 0.65) 0%, rgba(220, 20, 30, 0.20) 60%, transparent 100%);
+  --stage-reflector-r: linear-gradient(180deg, rgba(255, 75, 40, 0.65) 0%, rgba(200, 15, 25, 0.20) 60%, transparent 100%);
+  --stage-pulse-color: rgba(255, 120, 80, 0.42);
+  --stage-primary-color: #ff3b1e;
+  --stage-ribbon-text: #ffffff;
+}
+
+/* ==========================================================================
+   1. UNIVERSAL STAGE CONTAINER
+   ========================================================================== */
+.universal-stage-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background-color: var(--stage-bg);
+  color: #fff;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Screen Shake effect during high-energy reveal */
+.universal-stage-scene.is-screen-shaking {
+  animation: stageScreenShake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes stageScreenShake {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  15% { transform: translate(-3px, 2px) scale(1.002); }
+  30% { transform: translate(3px, -2px) scale(0.999); }
+  45% { transform: translate(-2px, -1px) scale(1.001); }
+  60% { transform: translate(2px, 1px) scale(1); }
+  80% { transform: translate(-1px, 0) scale(1); }
+}
+
+/* ==========================================================================
+   2. PARALLAX STADIUM VIEWPORT
+   ========================================================================== */
+.universal-stage-parallax {
+  position: absolute;
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Nocturnal stadium stands */
+.universal-stage-stands {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.universal-stage-stadium-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  filter: brightness(0.44) contrast(1.28) saturate(1.02);
+  opacity: 0.90;
+  transition: transform 12s cubic-bezier(0.1, 0.8, 0.3, 1), filter 0.5s ease;
+}
+
+.universal-stage-scene.is-zooming .universal-stage-stadium-photo {
+  transform: scale(1.08);
+}
+
+/* Stadium dark vignette */
+.universal-stage-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 45%, transparent 28%, rgba(2, 3, 7, 0.65) 65%, #020307 98%),
+    linear-gradient(180deg, rgba(2, 3, 7, 0.88) 0%, transparent 35%, rgba(2, 3, 7, 0.82) 75%, #020307 100%);
+  pointer-events: none;
+}
+
+/* LED Arena Ribbon */
+.universal-stage-ribbon {
+  position: absolute;
+  top: 16.5%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.32em;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 0 0 10px var(--stage-primary-color);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 2;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   3. VOLUMETRIC SPOTLIGHTS & FLOODLIGHTS
+   ========================================================================== */
+.universal-stage-lights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* Floodlight towers */
+.universal-stage-floodlights {
+  position: absolute;
+  top: 6%;
+  left: 4%;
+  right: 4%;
+  height: 140px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.universal-stage-tower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.universal-stage-lamp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 7px);
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.universal-stage-lamp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 18px var(--stage-primary-color);
+}
+
+/* Volumetric angled light beams */
+.universal-stage-beam-l {
+  position: absolute;
+  top: 8%;
+  left: 3%;
+  width: 520px;
+  height: 850px;
+  background: var(--stage-reflector-l);
+  transform-origin: top left;
+  transform: rotate(-32deg);
+  filter: blur(28px);
+  opacity: 0.68;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.universal-stage-beam-r {
+  position: absolute;
+  top: 8%;
+  right: 3%;
+  width: 520px;
+  height: 850px;
+  background: var(--stage-reflector-r);
+  transform-origin: top right;
+  transform: rotate(32deg);
+  filter: blur(28px);
+  opacity: 0.68;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+/* Central Stage Core Aura */
+.universal-stage-core-glow {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 680px;
+  height: 680px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--stage-core-glow) 0%, transparent 68%);
+  filter: blur(48px);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Floor Pedestal & Radiance Ring */
+.universal-stage-pedestal {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%) rotateX(72deg);
+  width: 540px;
+  height: 220px;
+  border-radius: 50%;
+  border: 2px solid var(--stage-primary-color);
+  box-shadow:
+    0 0 24px var(--stage-primary-color),
+    inset 0 0 32px var(--stage-core-glow);
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.universal-stage-pedestal-inner {
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--stage-core-glow) 0%, transparent 70%);
+  filter: blur(8px);
+}
+
+/* Atmospheric smoke layers */
+.universal-stage-smoke-a,
+.universal-stage-smoke-b {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(ellipse at 50% 85%, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
+  mix-blend-mode: multiply;
+}
+
+/* ==========================================================================
+   4. REVEAL MOMENT FX (SHOCKWAVE & FLASH BURST)
+   ========================================================================== */
+.universal-stage-shockwave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 0 35px var(--stage-primary-color);
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.universal-stage-scene.is-shockwaving .universal-stage-shockwave {
+  animation: stageShockwaveAnim 0.75s cubic-bezier(0.12, 0.9, 0.28, 1) forwards;
+}
+
+@keyframes stageShockwaveAnim {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-width: 6px; }
+  60% { opacity: 0.85; border-width: 3px; }
+  100% { transform: translate(-50%, -50%) scale(9.5); opacity: 0; border-width: 1px; }
+}
+
+/* Stadium-wide Light Flash */
+.universal-stage-flash {
+  position: absolute;
+  inset: 0;
+  background-color: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.universal-stage-scene.is-flashing .universal-stage-flash {
+  animation: stageFlashAnim 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes stageFlashAnim {
+  0% { opacity: 0; }
+  25% { opacity: 0.45; }
+  100% { opacity: 0; }
+}
+
+/* Stadium Pulse (wave passing across stands) */
+.universal-stage-pulse {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, var(--stage-pulse-color) 0%, transparent 75%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.universal-stage-scene.is-pulsing .universal-stage-pulse {
+  animation: stagePulseAnim 0.8s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes stagePulseAnim {
+  0% { opacity: 0; transform: scale(0.85); }
+  35% { opacity: 0.65; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+/* ==========================================================================
+   5. LIGHTING MODES
+   ========================================================================== */
+/* Mode A: Dynamic (default - uses theme colors) */
+.universal-stage-scene.mode-dynamic {
+  /* variables stay as assigned by theme */
+}
+
+/* Mode B: Stadium Floodlight (neutral 5600K white floodlight) */
+.universal-stage-scene.mode-stadium {
+  --stage-reflector-l: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(200, 220, 255, 0.18) 60%, transparent 100%);
+  --stage-reflector-r: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(200, 220, 255, 0.18) 60%, transparent 100%);
+  --stage-core-glow: rgba(220, 235, 255, 0.22);
+  --stage-pedestal-ring: rgba(255, 255, 255, 0.7);
+}
+
+/* Mode C: Stealth (minimal nocturnal darkness) */
+.universal-stage-scene.mode-stealth {
+  --stage-core-glow: rgba(255, 255, 255, 0.05);
+  --stage-reflector-l: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+  --stage-reflector-r: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+}
+
+.universal-stage-scene.mode-stealth .universal-stage-stadium-photo {
+  filter: brightness(0.22) contrast(1.4) saturate(0.6);
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   6. RESPONSIVENESS & ACCESSIBILITY
+   ========================================================================== */
+@media (max-width: 768px) {
+  .universal-stage-beam-l,
+  .universal-stage-beam-r {
+    width: 320px;
+    height: 550px;
+    filter: blur(20px);
+  }
+
+  .universal-stage-core-glow {
+    width: 420px;
+    height: 420px;
+  }
+
+  .universal-stage-pedestal {
+    width: 380px;
+    height: 160px;
+    bottom: 6%;
+  }
+
+  .universal-stage-ribbon {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    top: 10%;
+  }
+}
+
+/* Reduced Motion Mode */
+@media (prefers-reduced-motion: reduce) {
+  .universal-stage-scene.is-screen-shaking {
+    animation: none !important;
+  }
+  .universal-stage-scene.is-shockwaving .universal-stage-shockwave {
+    animation: none !important;
+    display: none;
+  }
+  .universal-stage-scene.is-flashing .universal-stage-flash {
+    animation: none !important;
+    display: none;
+  }
+  .universal-stage-scene.is-pulsing .universal-stage-pulse {
+    animation: none !important;
+    display: none;
+  }
+  .universal-stage-stands,
+  .universal-stage-stadium-photo {
+    transition: none !important;
+    transform: none !important;
+  }
+}
