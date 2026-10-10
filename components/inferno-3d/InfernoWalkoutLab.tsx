@@ -313,7 +313,7 @@ export function InfernoWalkoutLab() {
         hasShockwaveFiredRef.current = true;
         setIsShockwaving(true);
         setIsFlashing(true);
-        flashTimeoutRef.current = setTimeout(() => setIsFlashing(false), 600);
+        flashTimeoutRef.current = setTimeout(() => setIsFlashing(false), 380);
         shockwaveTimeoutRef.current = setTimeout(() => setIsShockwaving(false), 1200);
       }
 
