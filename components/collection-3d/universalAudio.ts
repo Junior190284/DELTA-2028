@@ -14,7 +14,7 @@
  * Guarantees zero audio asset dependency failures via 100% synthetic procedural generation.
  */
 
-import { CardVisualType, CollectionCategory } from "./types";
+import type { CardVisualType, CollectionCategory } from "./types.ts";
 
 interface ThemeSoundProfile {
   droneFreq: number; // Hz

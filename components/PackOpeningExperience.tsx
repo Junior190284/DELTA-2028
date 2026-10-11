@@ -27,11 +27,21 @@ import {
 } from "@/lib/cards/types";
 import { DeltaCard } from "@/components/cards";
 import { DeltaCardModel, adaptLegacyToDeltaCardModel, DELTA_THEME_CONFIGS } from "@/lib/cards/deltaCardModel";
+import dynamic from "next/dynamic";
 import { CardDetailModal } from "@/components/collection";
 import { cardSound } from "@/lib/cards/audio";
 import { dispatchPackOpened, dispatchCollectionUpdated } from "@/lib/cards/cardSync";
 import InfernoWalkoutReveal from "@/components/InfernoWalkoutReveal";
 import { cardToWalkoutData, normalizeCardTheme, WALKOUT_PRESENTATION_PRIORITY } from "@/lib/cards/walkout-config";
+
+// Feature Flag: 3D Walkout Engine (Default: false / disabled for zero bundle weight)
+const is3DWalkoutEnabled = process.env.NEXT_PUBLIC_COLLECTION_3D_WALKOUT_ENABLED === "true";
+
+// Dynamic import: Only loaded when feature flag is active and walkout phase is triggered
+const UniversalWalkoutModal = dynamic(
+  () => import("@/components/collection-3d/UniversalWalkoutModal"),
+  { ssr: false }
+);
 
 export type PackFlowPhase = 
   | "PACK_READY"
@@ -205,7 +215,10 @@ export default function DeltaPackOpeningExperience({
     return {
       data: cardToWalkoutData(best.item.card),
       cardIndex: best.index,
-      theme: best.theme
+      theme: best.theme,
+      rawCard: best.item.card,
+      isDuplicate: best.item.is_duplicate,
+      duplicatePoints: best.item.duplicate_points
     };
   }, [openingResult]);
 
@@ -375,13 +388,24 @@ export default function DeltaPackOpeningExperience({
       {/* PHASE 3: WALKOUT CINEMATIC SEQUENCE                                       */}
       {/* ========================================================================= */}
       {phase === "WALKOUT" && walkoutCardData && (
-        <InfernoWalkoutReveal
-          data={walkoutCardData.data}
-          isEmbedded={false}
-          onCollect={handleWalkoutComplete}
-          onSkip={handleRevealAll}
-          onClose={handleWalkoutComplete}
-        />
+        is3DWalkoutEnabled ? (
+          <UniversalWalkoutModal
+            card={walkoutCardData.rawCard}
+            isDuplicate={walkoutCardData.isDuplicate}
+            duplicatePoints={walkoutCardData.duplicatePoints}
+            onComplete={handleWalkoutComplete}
+            onSkip={handleRevealAll}
+            onClose={handleWalkoutComplete}
+          />
+        ) : (
+          <InfernoWalkoutReveal
+            data={walkoutCardData.data}
+            isEmbedded={false}
+            onCollect={handleWalkoutComplete}
+            onSkip={handleRevealAll}
+            onClose={handleWalkoutComplete}
+          />
+        )
       )}
 
       {/* ========================================================================= */}

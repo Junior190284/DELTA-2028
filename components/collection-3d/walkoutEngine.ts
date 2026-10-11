@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { universalAudio } from "./universalAudio";
-import { CardVisualType, CollectionCategory } from "./types";
+import { universalAudio } from "./universalAudio.ts";
+import { infernoAudio } from "../inferno-3d/infernoAudio.ts";
+import type { CardVisualType, CollectionCategory } from "./types.ts";
 
 export type WalkoutPhase = "intro" | "activation" | "reveal" | "hero" | "completed";
 
@@ -120,8 +121,14 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
   const hasHeartbeat1Ref = useRef<boolean>(false);
   const hasHeartbeat2Ref = useRef<boolean>(false);
   const hasHeartbeat3Ref = useRef<boolean>(false);
+  const hasHeartbeat4Ref = useRef<boolean>(false);
+  const hasHeartbeat5Ref = useRef<boolean>(false);
+  const hasHeartbeat6Ref = useRef<boolean>(false);
+  const hasTensionPadRef = useRef<boolean>(false);
+  const hasChantRef = useRef<boolean>(false);
   const hasRiserRef = useRef<boolean>(false);
   const hasWhooshRef = useRef<boolean>(false);
+  const hasPreDropRef = useRef<boolean>(false);
   const hasGrandImpactRef = useRef<boolean>(false);
   const hasFanfareRef = useRef<boolean>(false);
   const hasFadeOutRef = useRef<boolean>(false);
@@ -138,18 +145,38 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
     hasHeartbeat1Ref.current = false;
     hasHeartbeat2Ref.current = false;
     hasHeartbeat3Ref.current = false;
+    hasHeartbeat4Ref.current = false;
+    hasHeartbeat5Ref.current = false;
+    hasHeartbeat6Ref.current = false;
+    hasTensionPadRef.current = false;
+    hasChantRef.current = false;
     hasRiserRef.current = false;
     hasWhooshRef.current = false;
+    hasPreDropRef.current = false;
     hasGrandImpactRef.current = false;
     hasFanfareRef.current = false;
     hasFadeOutRef.current = false;
+    universalAudio.stopAll();
+    infernoAudio.stopAll();
   }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+      if (autoRotateAnimIdRef.current) cancelAnimationFrame(autoRotateAnimIdRef.current);
+      clearFxTimeouts();
+      universalAudio.stopAll();
+      infernoAudio.stopAll();
+    };
+  }, [clearFxTimeouts]);
 
   // Sync mute with audio engine
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
       universalAudio.setMuted(next);
+      infernoAudio.setMuted(next);
       return next;
     });
   }, []);
@@ -178,66 +205,150 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
       setIsFlaring(pose.isFlaring);
 
       // 2. Synchronized Audio Events
-      // 0.0s: Awakening Drone
-      if (t >= 0.1 && !hasAwakeningRef.current) {
-        hasAwakeningRef.current = true;
-        universalAudio.playAwakening(themeId);
-      }
+      if (themeId === "INFERNO_ULTRA") {
+        // --- PROVEN INFERNO V3.1 AUDIO MASTERING ---
+        // 0–3s THE AWAKENING: Low ambient, distant stadium murmur, rising sub-bass drone
+        if (t >= 0.05 && !hasAwakeningRef.current) {
+          hasAwakeningRef.current = true;
+          infernoAudio.playAwakening();
+        }
 
-      // 3.0s, 4.5s, 6.0s: Heartbeat pulses
-      if (t >= 3.0 && !hasHeartbeat1Ref.current) {
-        hasHeartbeat1Ref.current = true;
-        universalAudio.playHeartbeatPulse(0.7, themeId);
-      }
-      if (t >= 4.5 && !hasHeartbeat2Ref.current) {
-        hasHeartbeat2Ref.current = true;
-        universalAudio.playHeartbeatPulse(0.9, themeId);
-      }
-      if (t >= 6.0 && !hasHeartbeat3Ref.current) {
-        hasHeartbeat3Ref.current = true;
-        universalAudio.playHeartbeatPulse(1.0, themeId);
-      }
+        // 3–5s RHYTHMIC ENGAGEMENT: Tension pad & accelerating heartbeat rhythm
+        if (t >= 3.0 && !hasTensionPadRef.current) {
+          hasTensionPadRef.current = true;
+          hasHeartbeat1Ref.current = true;
+          infernoAudio.startTensionPad();
+          infernoAudio.playHeartbeat(0.46, 68, 28);
+        }
+        if (t >= 3.8 && !hasHeartbeat2Ref.current) {
+          hasHeartbeat2Ref.current = true;
+          infernoAudio.playHeartbeat(0.52, 72, 30);
+        }
+        if (t >= 4.6 && !hasHeartbeat3Ref.current) {
+          hasHeartbeat3Ref.current = true;
+          infernoAudio.playHeartbeat(0.58, 76, 30);
+        }
 
-      // 7.0s: Tension Riser
-      if (t >= 7.0 && !hasRiserRef.current) {
-        hasRiserRef.current = true;
-        universalAudio.playTensionRiser(themeId);
-      }
+        // 5–7s ESCALATING CHANT & DOPING: DELTA fans chant, building crowd energy
+        if (t >= 5.0 && !hasChantRef.current) {
+          hasChantRef.current = true;
+          infernoAudio.startStadiumChant();
+        }
+        if (t >= 5.3 && !hasHeartbeat4Ref.current) {
+          hasHeartbeat4Ref.current = true;
+          infernoAudio.playHeartbeat(0.64, 80, 32);
+        }
+        if (t >= 5.9 && !hasHeartbeat5Ref.current) {
+          hasHeartbeat5Ref.current = true;
+          infernoAudio.playHeartbeat(0.70, 84, 34);
+        }
+        if (t >= 6.5 && !hasHeartbeat6Ref.current) {
+          hasHeartbeat6Ref.current = true;
+          infernoAudio.playHeartbeat(0.76, 88, 36);
+        }
 
-      // 8.5s: Whoosh sweep
-      if (t >= 8.5 && !hasWhooshRef.current) {
-        hasWhooshRef.current = true;
-        universalAudio.playWhoosh();
-      }
+        // 7–9s THE REVEAL RISER & WHOOSH: Card rotation begins, rising frequency sweep
+        if (t >= 7.0 && !hasRiserRef.current) {
+          hasRiserRef.current = true;
+          infernoAudio.playEnergyRiser();
+        }
+        if (t >= 7.6 && !hasWhooshRef.current) {
+          hasWhooshRef.current = true;
+          infernoAudio.playSpinWhoosh();
+        }
 
-      // 9.0s: HERO GRAND IMPACT (The defining moment)
-      if (t >= 9.0 && !hasGrandImpactRef.current) {
-        hasGrandImpactRef.current = true;
-        universalAudio.playGrandImpact(themeId, rarity);
+        // 8.85s: Pre-drop tension breath (subtle mid-range ducking creates psychoacoustic punch)
+        if (t >= 8.85 && !hasPreDropRef.current) {
+          hasPreDropRef.current = true;
+          infernoAudio.playPreDropBreath();
+        }
 
-        // Fire synchronized visual FX
-        setIsShockwaving(true);
-        setIsFlashing(true);
-        setIsPulsing(true);
-        setIsScreenShaking(true);
+        // 9.0s: Grand Reveal Climax (Sub-Drop impact, studio hit, fanfare, crowd eruption, screen shake)
+        if (t >= 9.0 && !hasGrandImpactRef.current) {
+          hasGrandImpactRef.current = true;
+          infernoAudio.playGrandImpact();
 
-        const tFlash = setTimeout(() => setIsFlashing(false), 380);
-        const tShake = setTimeout(() => setIsScreenShaking(false), 420);
-        const tPulse = setTimeout(() => setIsPulsing(false), 800);
-        const tShock = setTimeout(() => setIsShockwaving(false), 750);
-        fxTimeoutsRef.current.push(tFlash, tShake, tPulse, tShock);
-      }
+          // Fire synchronized visual FX
+          setIsShockwaving(true);
+          setIsFlashing(true);
+          setIsPulsing(true);
+          setIsScreenShaking(true);
 
-      // 9.5s: Victory Fanfare
-      if (t >= 9.5 && !hasFanfareRef.current) {
-        hasFanfareRef.current = true;
-        universalAudio.playVictoryFanfare(themeId, rarity);
-      }
+          const tFlash = setTimeout(() => setIsFlashing(false), 380);
+          const tShake = setTimeout(() => setIsScreenShaking(false), 420);
+          const tPulse = setTimeout(() => setIsPulsing(false), 800);
+          const tShock = setTimeout(() => setIsShockwaving(false), 750);
+          fxTimeoutsRef.current.push(tFlash, tShake, tPulse, tShock);
+        }
 
-      // 11.5s: Fade Out Finale
-      if (t >= 11.5 && !hasFadeOutRef.current) {
-        hasFadeOutRef.current = true;
-        universalAudio.fadeOutFinale();
+        // 11.2s: Controlled graceful finale fade-out
+        if (t >= 11.2 && !hasFadeOutRef.current) {
+          hasFadeOutRef.current = true;
+          infernoAudio.fadeOutFinale();
+        }
+      } else {
+        // --- UNIVERSAL PROCEDURAL SYNTHESIS (GOLD, MATCHDAY, LEGEND, RARE, COMMON) ---
+        // 0.0s: Awakening Drone
+        if (t >= 0.1 && !hasAwakeningRef.current) {
+          hasAwakeningRef.current = true;
+          universalAudio.playAwakening(themeId);
+        }
+
+        // 3.0s, 4.5s, 6.0s: Heartbeat pulses
+        if (t >= 3.0 && !hasHeartbeat1Ref.current) {
+          hasHeartbeat1Ref.current = true;
+          universalAudio.playHeartbeatPulse(0.7, themeId);
+        }
+        if (t >= 4.5 && !hasHeartbeat2Ref.current) {
+          hasHeartbeat2Ref.current = true;
+          universalAudio.playHeartbeatPulse(0.9, themeId);
+        }
+        if (t >= 6.0 && !hasHeartbeat3Ref.current) {
+          hasHeartbeat3Ref.current = true;
+          universalAudio.playHeartbeatPulse(1.0, themeId);
+        }
+
+        // 7.0s: Tension Riser
+        if (t >= 7.0 && !hasRiserRef.current) {
+          hasRiserRef.current = true;
+          universalAudio.playTensionRiser(themeId);
+        }
+
+        // 8.5s: Whoosh sweep
+        if (t >= 8.5 && !hasWhooshRef.current) {
+          hasWhooshRef.current = true;
+          universalAudio.playWhoosh();
+        }
+
+        // 9.0s: HERO GRAND IMPACT (The defining moment)
+        if (t >= 9.0 && !hasGrandImpactRef.current) {
+          hasGrandImpactRef.current = true;
+          universalAudio.playGrandImpact(themeId, rarity);
+
+          // Fire synchronized visual FX
+          setIsShockwaving(true);
+          setIsFlashing(true);
+          setIsPulsing(true);
+          setIsScreenShaking(true);
+
+          const tFlash = setTimeout(() => setIsFlashing(false), 380);
+          const tShake = setTimeout(() => setIsScreenShaking(false), 420);
+          const tPulse = setTimeout(() => setIsPulsing(false), 800);
+          const tShock = setTimeout(() => setIsShockwaving(false), 750);
+          fxTimeoutsRef.current.push(tFlash, tShake, tPulse, tShock);
+        }
+
+        // 9.5s: Victory Fanfare
+        if (t >= 9.5 && !hasFanfareRef.current) {
+          hasFanfareRef.current = true;
+          universalAudio.playVictoryFanfare(themeId, rarity);
+        }
+
+        // 11.5s: Fade Out Finale
+        if (t >= 11.5 && !hasFadeOutRef.current) {
+          hasFadeOutRef.current = true;
+          universalAudio.fadeOutFinale();
+        }
       }
 
       // 12.0s: Sequence Completed — Lock at Hero Shot
@@ -303,6 +414,7 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
     if (autoRotateAnimIdRef.current) cancelAnimationFrame(autoRotateAnimIdRef.current);
     clearFxTimeouts();
     universalAudio.stopAll();
+    infernoAudio.stopAll();
     resetAudioTriggers();
 
     currentTimeRef.current = 0;
@@ -341,8 +453,13 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
     setIsScreenShaking(false);
 
     // Play triumphant victory fanfare
-    universalAudio.stopAll();
-    universalAudio.playVictoryFanfare(themeId, rarity);
+    if (themeId === "INFERNO_ULTRA") {
+      infernoAudio.stopAll();
+      infernoAudio.playGrandImpact();
+    } else {
+      universalAudio.stopAll();
+      universalAudio.playVictoryFanfare(themeId, rarity);
+    }
     hasFanfareRef.current = true;
     hasGrandImpactRef.current = true;
 

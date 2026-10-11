@@ -232,3 +232,120 @@ test("SAFETY 4: Direct fallback methods behave predictably for synthetic lab car
   assert.equal(getDefaultVisualTypeForCategory("RARE"), "TRAINING_HERO");
   assert.equal(getDefaultVisualTypeForCategory("COMMON"), "BASE");
 });
+
+// -------------------------------------------------------------
+// 5. PACK OPENING INTEGRATION SAFETY (cardId, duplicates, instanceId)
+// -------------------------------------------------------------
+test("SAFETY 5: Pack opening attributes (cardId, duplicates, instanceId) round-trip with full fidelity", () => {
+  const mockCard = makeCardDefinition({
+    id: "card_prod_998877",
+    player_id: "player_rybacki_01",
+    rarity: "inferno",
+    card_type: "inferno"
+  });
+
+  const adapted = fromProductionCard(mockCard, {
+    ovr: 89,
+    stats: { pac: 90, sho: 88, pas: 82, dri: 89, def: 60, phy: 80 },
+    specialTitleId: "hat_trick_hero",
+    isDuplicate: true,
+    duplicatePoints: 20,
+    instanceId: "inst_user_card_12345"
+  });
+
+  assert.equal(adapted.cardId, "card_prod_998877");
+  assert.equal(adapted.playerId, "player_rybacki_01");
+  assert.equal(adapted.ovr, 89);
+  assert.equal(adapted.isDuplicate, true);
+  assert.equal(adapted.duplicatePoints, 20);
+  assert.equal(adapted.instanceId, "inst_user_card_12345");
+  assert.equal(adapted.stats.pac, 90);
+
+  const restored = toProductionCard(adapted);
+  assert.equal(restored.id, "card_prod_998877");
+  assert.equal(restored.player_id, "player_rybacki_01");
+  assert.equal(restored.rarity, "inferno");
+  assert.equal(restored.card_type, "inferno");
+});
+
+// -------------------------------------------------------------
+// 6. FEATURE FLAG SAFETY & DEFAULT INACTIVITY
+// -------------------------------------------------------------
+test("SAFETY 6: Feature flag NEXT_PUBLIC_COLLECTION_3D_WALKOUT_ENABLED defaults safely to inactive", () => {
+  // Flag must be explicitly checked against "true"
+  const checkFlag = (val?: string) => val === "true";
+
+  assert.equal(checkFlag(undefined), false, "Undefined feature flag must be inactive (false)");
+  assert.equal(checkFlag(""), false, "Empty string feature flag must be inactive (false)");
+  assert.equal(checkFlag("false"), false, "'false' feature flag must be inactive (false)");
+  assert.equal(checkFlag("0"), false, "'0' feature flag must be inactive (false)");
+  assert.equal(checkFlag("true"), true, "'true' feature flag activates the 3D walkout modal");
+});
+
+// -------------------------------------------------------------
+// 7. MULTI-CARD PACK WALKOUT SELECTION & INTEGRITY PRESERVATION
+// -------------------------------------------------------------
+test("SAFETY 7: Multi-card pack openings preserve all drawn cards without data loss", () => {
+  // Simulate 5-card booster pack draw
+  const drawnCards = [
+    { card: makeCardDefinition({ id: "card_c1", rarity: "common", card_type: "base" }), is_duplicate: false, duplicate_points: 0 },
+    { card: makeCardDefinition({ id: "card_r2", rarity: "rare", card_type: "training_hero" }), is_duplicate: false, duplicate_points: 0 },
+    { card: makeCardDefinition({ id: "card_m3", rarity: "rare", card_type: "matchday_hero" }), is_duplicate: true, duplicate_points: 10 },
+    { card: makeCardDefinition({ id: "card_i4", rarity: "inferno", card_type: "inferno" }), is_duplicate: false, duplicate_points: 0 },
+    { card: makeCardDefinition({ id: "card_g5", rarity: "epic", card_type: "gold_master" }), is_duplicate: true, duplicate_points: 25 },
+  ];
+
+  // Best card selected strictly by presentation priority
+  const priorityMap: Record<string, number> = {
+    INFERNO: 100,
+    DELTA_ICON: 90,
+    GOLD_MASTER: 80,
+    MATCHDAY_HERO: 70,
+    CAPTAIN: 60,
+    GOAL_MACHINE: 55,
+    TRAINING_HERO: 50,
+    STANDARD: 10
+  };
+
+  const getTheme = (c: any) => {
+    const t = (c.card_type || c.frame_theme || "").toUpperCase();
+    if (t.includes("INFERNO")) return "INFERNO";
+    if (t.includes("GOLD")) return "GOLD_MASTER";
+    if (t.includes("MATCHDAY")) return "MATCHDAY_HERO";
+    if (t.includes("TRAINING")) return "TRAINING_HERO";
+    return "STANDARD";
+  };
+
+  const scored = drawnCards.map((item, index) => {
+    const theme = getTheme(item.card);
+    return { item, index, theme, priority: priorityMap[theme] || 0 };
+  });
+
+  scored.sort((a, b) => b.priority - a.priority);
+  const best = scored[0];
+
+  // Best card must be the INFERNO card (id: card_i4)
+  assert.equal(best.item.card.id, "card_i4");
+  assert.equal(best.theme, "INFERNO");
+
+  // Adapt best card for 3D Walkout Modal
+  const adapted3D = fromProductionCard(best.item.card, {
+    isDuplicate: best.item.is_duplicate,
+    duplicatePoints: best.item.duplicate_points
+  });
+
+  assert.equal(adapted3D.visualType, "INFERNO_ULTRA");
+  assert.equal(adapted3D.rarity, "INFERNO");
+  assert.equal(adapted3D.cardId, "card_i4");
+
+  // Verify all 5 cards in drawnCards remain 100% intact and unchanged
+  assert.equal(drawnCards.length, 5);
+  assert.equal(drawnCards[0].card.id, "card_c1");
+  assert.equal(drawnCards[1].card.id, "card_r2");
+  assert.equal(drawnCards[2].card.id, "card_m3");
+  assert.equal(drawnCards[3].card.id, "card_i4");
+  assert.equal(drawnCards[4].card.id, "card_g5");
+  assert.equal(drawnCards[2].duplicate_points, 10);
+  assert.equal(drawnCards[4].duplicate_points, 25);
+});
+

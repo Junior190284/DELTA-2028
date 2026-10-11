@@ -5,8 +5,8 @@
  * Configures frames, backgrounds, colors, holographics, slab depths, and stage lighting.
  */
 
-import { CardVisualType, CardVisualTheme, CollectionCategory } from "./types";
-import { getDefaultVisualTypeForCategory } from "./adapter";
+import type { CardVisualType, CardVisualTheme, CollectionCategory } from "./types.ts";
+import { getDefaultVisualTypeForCategory } from "./adapter.ts";
 
 export const CARD_VISUAL_THEMES: Record<CardVisualType, CardVisualTheme> = {
   // 1. INFERNO ULTRA (Kategoria: INFERNO) — Oryginalne zatwierdzone grafiki z prototypu V5.1

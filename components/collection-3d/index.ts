@@ -14,3 +14,6 @@ export { Card3DEngine } from "./Card3DEngine";
 export { Stage3DEngine } from "./Stage3DEngine";
 export { Collection3DEngineLab } from "./Collection3DEngineLab";
 export { CollectionWalkoutLab } from "./CollectionWalkoutLab";
+export { CollectionIntegrationLab } from "./CollectionIntegrationLab";
+export { default as UniversalWalkoutModal } from "./UniversalWalkoutModal";
+

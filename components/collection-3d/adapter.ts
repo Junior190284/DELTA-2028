@@ -220,7 +220,17 @@ export function getDefaultVisualTypeForCategory(category: CollectionCategory): C
  * Konwertuje encję bazy danych produkcyjnej na obiekt PlayerCardData silnika 3D.
  * Gwarantuje bezstratne zachowanie wszystkich oryginalnych danych ekonomicznych.
  */
-export function fromProductionCard(card: CardDefinition): PlayerCardData {
+export function fromProductionCard(
+  card: CardDefinition,
+  options?: {
+    stats?: PlayerStats;
+    ovr?: number;
+    specialTitleId?: string | null;
+    isDuplicate?: boolean;
+    duplicatePoints?: number;
+    instanceId?: string | null;
+  }
+): PlayerCardData {
   const visualType = resolveCardVisualType({
     frameTheme: card.frame_theme,
     cardType: card.card_type,
@@ -230,7 +240,7 @@ export function fromProductionCard(card: CardDefinition): PlayerCardData {
   const category = toCollectionCategory(card.rarity, card.card_type);
 
   // Bazowe statystyki lub wyliczone
-  const stats: PlayerStats = {
+  const stats: PlayerStats = options?.stats || {
     pac: 75,
     sho: 70,
     pas: 72,
@@ -246,16 +256,21 @@ export function fromProductionCard(card: CardDefinition): PlayerCardData {
 
   return {
     playerId: card.player_id,
+    cardId: card.id,
     imageUrl: card.player?.photo_path || card.artwork_url || "/assets/cards/inferno-3d/player-default.png",
     surname,
     shirtNumber: card.player?.shirt_number || card.card_number || 10,
     position: card.player?.position || "FWD",
-    ovr: 80,
+    ovr: options?.ovr ?? 80,
     stats,
     visualType,
     rarity: category,
-    specialTitleId: null,
+    specialTitleId: options?.specialTitleId ?? null,
     season: card.season || "2026/2027",
+
+    isDuplicate: options?.isDuplicate ?? false,
+    duplicatePoints: options?.duplicatePoints ?? 0,
+    instanceId: options?.instanceId ?? null,
 
     // ZACHOWANIE ORYGINALNEJ TOŻSAMOŚCI EKONOMICZNEJ
     economicRarity: card.rarity,
@@ -277,7 +292,7 @@ export function toProductionCard(data: PlayerCardData): Partial<CardDefinition> 
 
   return {
     ...base,
-    id: base.id || `card_${data.playerId}`,
+    id: data.cardId || base.id || `card_${data.playerId}`,
     player_id: data.playerId,
     season: data.season || base.season || "2026/2027",
     card_type: exactType,

@@ -72,6 +72,11 @@ export interface PlayerCardData {
   specialTitleId?: string | null;
   season?: string;
 
+  cardId?: string;
+  isDuplicate?: boolean;
+  duplicatePoints?: number;
+  instanceId?: string | null;
+
   /**
    * Jawne rozdzielenie danych ekonomicznych i prezentacyjnych:
    * Oryginalne dane produkcyjne zachowywane bezstratnie dla round-trip i bezpieczeństwa ekonomii gry.
