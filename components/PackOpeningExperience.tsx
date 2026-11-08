@@ -563,10 +563,13 @@ export default function DeltaPackOpeningExperience({
           ) : (
             /* Canonical Interactive CSS Pack Tearing Animation */
             <>
-              {/* Full-screen Volumetric Climax Glow */}
+              {/* Full-screen Volumetric Climax Glow (Radial halo centered behind pack) */}
               <div
-                className="absolute inset-0 filter blur-3xl opacity-40 animate-pulse pointer-events-none"
-                style={{ backgroundColor: highestThemeConfig.primaryColor }}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(circle at 50% 50%, ${highestThemeConfig.primaryColor}33 0%, ${highestThemeConfig.primaryColor}15 45%, transparent 75%)`,
+                  filter: "blur(32px)"
+                }}
               />
 
               <div 
@@ -705,30 +708,52 @@ export default function DeltaPackOpeningExperience({
       {/* PHASE 5: SUMMARY STAGE                                                   */}
       {/* ========================================================================= */}
       {phase === "SUMMARY" && openingResult && (
-        <div className="relative flex-1 flex flex-col justify-between p-4 md:p-6 max-w-5xl mx-auto w-full overflow-y-auto space-y-6">
+        <div 
+          className="relative flex-1 flex flex-col items-center p-4 md:p-6 max-w-5xl mx-auto w-full overflow-y-auto min-h-0"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            flex: "1 1 0%",
+            minHeight: 0,
+            width: "100%",
+            maxWidth: "1040px",
+            margin: "0 auto",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            padding: "clamp(12px, 2vw, 24px)",
+            paddingBottom: "max(36px, env(safe-area-inset-bottom))"
+          }}
+        >
           {/* Summary Banner */}
-          <div className="text-center space-y-1">
+          <div className="text-center space-y-1 mb-4 md:mb-6 shrink-0" style={{ textAlign: "center", marginBottom: "20px", flexShrink: 0 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black uppercase tracking-wider">
               <CheckCircle2 className="w-4 h-4" />
               <span>Paczka Otwarta Pomyślnie</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-[1000] uppercase text-white">
+            <h2 className="text-2xl md:text-3xl font-[1000] uppercase text-white mt-2">
               Trafione Karty ({drawnCardModels.length})
             </h2>
             {openingResult.total_delta_points_earned > 0 && (
-              <p className="text-xs text-amber-400 font-bold">
+              <p className="text-xs text-amber-400 font-bold mt-1">
                 Zdobyto +{openingResult.total_delta_points_earned} Delta Points za duplikaty!
               </p>
             )}
           </div>
 
-          {/* Cards Grid */}
+          {/* Cards Group - Centered Flex Container for 3, 5, 6 cards */}
           <div 
-            className="grid gap-3 md:gap-4 pb-4"
+            className="flex flex-wrap items-start justify-center gap-3 md:gap-5 pb-6 w-full mx-auto"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-              gap: "16px"
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              gap: "16px",
+              width: "100%",
+              maxWidth: "1000px",
+              margin: "0 auto",
+              paddingBottom: "16px"
             }}
           >
             {drawnCardModels.map(({ model, isDuplicate, duplicatePoints }, idx) => (
@@ -739,7 +764,10 @@ export default function DeltaPackOpeningExperience({
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center"
+                  alignItems: "center",
+                  width: "clamp(135px, calc(50% - 12px), 165px)",
+                  maxWidth: "175px",
+                  flex: "0 0 auto"
                 }}
               >
                 {/* Status Badge */}
@@ -807,8 +835,22 @@ export default function DeltaPackOpeningExperience({
             ))}
           </div>
 
-          {/* Bottom Action Tray */}
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-white/10">
+          {/* Bottom Action Tray - Pinned at bottom of content with generous clearance */}
+          <div 
+            className="flex flex-wrap items-center justify-center gap-4 pt-6 pb-6 border-t border-white/10 w-full shrink-0"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "16px",
+              width: "100%",
+              paddingTop: "24px",
+              paddingBottom: "24px",
+              marginTop: "auto",
+              flexShrink: 0
+            }}
+          >
             <button
               onClick={onClose}
               className="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs md:text-sm uppercase tracking-wider transition-colors cursor-pointer"
