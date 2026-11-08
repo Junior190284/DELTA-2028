@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { openPackServerSide } from "@/lib/cards/engine";
+import { determine3DWalkoutAccess } from "@/lib/cards/pilot-access";
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +23,19 @@ export async function POST(req: Request) {
       packTypeId
     );
 
-    return NextResponse.json(result);
+    // Presentation field only (evaluated server-side, 0 impact on economy or pack draw)
+    let enable_3d_walkout = false;
+    try {
+      enable_3d_walkout = await determine3DWalkoutAccess(supabase, user.id);
+    } catch (pilotErr) {
+      console.warn("[OpenPack] Non-blocking pilot access evaluation error:", pilotErr);
+      enable_3d_walkout = false;
+    }
+
+    return NextResponse.json({
+      ...result,
+      enable_3d_walkout
+    });
   } catch (error: any) {
     console.error("Błąd otwierania paczki:", error);
     return NextResponse.json({ error: error?.message || "Nie udało się otworzyć paczki" }, { status: 400 });
