@@ -8038,13 +8038,17 @@ body > main,
 .v101-pack-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, #151c28 0%, #06090e 70%, #020305 100%);
-  z-index: 1000000;
+  width: 100vw;
+  height: 100dvh;
+  background: #020408;
+  z-index: 9999999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   overflow: hidden;
+  isolation: isolate;
+  user-select: none;
 }
 
 .v101-pack-close-btn {
@@ -8072,10 +8076,20 @@ body > main,
 
 .v101-pack-bg-rays {
   position: absolute;
-  inset: -50%;
+  top: 50%;
+  left: 50%;
+  width: 250vmax;
+  height: 250vmax;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
   background: conic-gradient(from 0deg, transparent 0deg, rgba(241, 201, 92, 0.08) 20deg, transparent 40deg, rgba(241, 201, 92, 0.08) 60deg, transparent 80deg, rgba(241, 201, 92, 0.08) 100deg, transparent 120deg, rgba(241, 201, 92, 0.08) 140deg, transparent 160deg, rgba(241, 201, 92, 0.08) 180deg, transparent 200deg, rgba(241, 201, 92, 0.08) 220deg, transparent 240deg, rgba(241, 201, 92, 0.08) 260deg, transparent 280deg, rgba(241, 201, 92, 0.08) 300deg, transparent 320deg, rgba(241, 201, 92, 0.08) 340deg, transparent 360deg);
-  animation: v101-spin-rays 35s linear infinite;
+  animation: v101-spin-rays-centered 35s linear infinite;
   pointer-events: none;
+}
+
+@keyframes v101-spin-rays-centered {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .v101-pack-bg-rays.theme-inferno {
@@ -8367,12 +8381,27 @@ body > main,
   text-shadow: 0 0 25px rgba(241, 201, 92, 0.8);
 }
 
+.pack-experience-header-crest,
+div[role="dialog"] img[src*="/teamlogos/gm.png"],
+.pack-header-logo {
+  max-width: 90px !important;
+  max-height: 90px !important;
+  width: clamp(34px, 7vw, 42px) !important;
+  height: clamp(34px, 7vw, 42px) !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+}
+
 .v101-walkout-crest {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  margin: 0 auto 6px;
+  width: 84px !important;
+  height: 84px !important;
+  max-width: min(84px, 24vw) !important;
+  max-height: min(84px, 24vw) !important;
+  object-fit: contain !important;
+  margin: 0 auto 8px;
   filter: drop-shadow(0 0 20px rgba(255, 60, 0, 0.7));
+  flex-shrink: 0 !important;
 }
 
 .v101-walkout-ovr {

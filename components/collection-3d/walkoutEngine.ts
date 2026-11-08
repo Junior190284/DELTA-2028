@@ -116,6 +116,12 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
   const animFrameIdRef = useRef<number | null>(null);
   const autoRotateAnimIdRef = useRef<number | null>(null);
 
+  // Real Browser Rendering Telemetry
+  const lastFrameTimeRef = useRef<number>(0);
+  const frameCountRef = useRef<number>(0);
+  const frameDropsRef = useRef<number>(0);
+  const [fps, setFps] = useState<number>(60);
+
   // Audio sequence trigger tracking (fire once per cycle)
   const hasAwakeningRef = useRef<boolean>(false);
   const hasHeartbeat1Ref = useRef<boolean>(false);
@@ -191,6 +197,19 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
     startTimeRef.current = performance.now() - pausedTimeRef.current * 1000;
 
     const tick = (now: number) => {
+      // Telemetry: measure real frame delta
+      if (lastFrameTimeRef.current > 0) {
+        const delta = now - lastFrameTimeRef.current;
+        if (delta > 33.4) {
+          frameDropsRef.current++;
+        }
+        frameCountRef.current++;
+        if (frameCountRef.current % 15 === 0 && delta > 0) {
+          setFps(Math.min(120, Math.max(1, Math.round(1000 / delta))));
+        }
+      }
+      lastFrameTimeRef.current = now;
+
       const elapsed = (now - startTimeRef.current) / 1000;
       const t = Math.min(12.0, Math.max(0, elapsed));
       currentTimeRef.current = t;
@@ -429,7 +448,10 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
     setIsShockwaving(false);
     setIsFlashing(false);
     setIsPulsing(false);
-    setIsScreenShaking(false);
+    lastFrameTimeRef.current = 0;
+    frameCountRef.current = 0;
+    frameDropsRef.current = 0;
+    setFps(60);
 
     setIsPlaying(true);
   }, [clearFxTimeouts, resetAudioTriggers]);
@@ -519,6 +541,8 @@ export function useWalkoutEngine(options: UseWalkoutEngineOptions = {}) {
     toggleAutoRotate,
     resetPose,
     setYaw,
-    setPitch
+    setPitch,
+    fps,
+    frameDrops: frameDropsRef.current
   };
 }

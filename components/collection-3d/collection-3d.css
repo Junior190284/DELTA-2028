@@ -156,3 +156,194 @@
 .walkout-container .inferno-card-object {
   transition: none !important;
 }
+
+/* ==========================================================================
+   REVERSE (REWERS) — ENHANCED COMPOSITION & CREST CONSTRAINTS
+   Guarantees 100% bounded crest sizing (no blowout) across all viewports.
+   ========================================================================== */
+.inferno-back-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.09;
+  transform: translateZ(24px) scale(1.35);
+  filter: blur(1.5px) grayscale(20%);
+  z-index: 4;
+  overflow: hidden;
+}
+
+.inferno-back-watermark img {
+  width: 72% !important;
+  height: 72% !important;
+  max-width: 72% !important;
+  max-height: 72% !important;
+  object-fit: contain !important;
+  pointer-events: none;
+}
+
+.inferno-back-content {
+  position: absolute;
+  inset: 12% 11% 8% 11%;
+  transform: translateZ(70px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  z-index: 6;
+  text-shadow: 0 4px 16px #000;
+  pointer-events: none;
+}
+
+/* Authentic Crest Medallion */
+.inferno-back-crest-medallion {
+  width: clamp(66px, 16vw, 80px) !important;
+  height: clamp(66px, 16vw, 80px) !important;
+  max-width: 80px !important;
+  max-height: 80px !important;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border: 2px solid var(--card-accent, #ff7250);
+  background: radial-gradient(circle at 35% 25%, rgba(255, 126, 102, 0.22) 0, #130a12 65%);
+  box-shadow:
+    0 0 32px var(--card-glow, rgba(255, 75, 40, 0.45)),
+    inset 0 0 20px rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 215, 170, 0.35);
+  transform: translateZ(16px);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.inferno-back-crest-medallion img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 8px rgba(255, 90, 50, 0.4));
+  pointer-events: none;
+}
+
+/* Compact, Prestigious Titles */
+.inferno-back-titles-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 4px 0;
+}
+
+.inferno-back-titles-wrap h2 {
+  margin: 0;
+  font-size: clamp(17px, 4.2vw, 24px);
+  letter-spacing: 0.16em;
+  font-weight: 1000;
+  color: #fff;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95), 0 0 12px rgba(255, 75, 40, 0.35);
+}
+
+.inferno-back-series-tag {
+  color: var(--card-font-accent, #ffb8a2);
+  font-size: clamp(8px, 1.9vw, 9.5px);
+  letter-spacing: 0.32em;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.inferno-back-gold-divider {
+  height: 1px;
+  width: 82%;
+  background: linear-gradient(90deg, transparent, var(--card-primary, rgba(255, 120, 80, 0.8)) 25%, var(--card-accent, rgba(255, 225, 160, 0.95)) 50%, var(--card-primary, rgba(255, 120, 80, 0.8)) 75%, transparent);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.inferno-back-gold-divider::after {
+  content: "♦";
+  position: absolute;
+  color: var(--card-accent, #f59e0b);
+  font-size: 7px;
+  text-shadow: 0 0 6px var(--card-accent, #f59e0b);
+}
+
+/* Credentials Grid: High Contrast for Number, Position & OVR */
+.inferno-back-creds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 100%;
+  background: rgba(14, 8, 14, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 6px;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.65);
+}
+
+.inferno-back-cred-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.inferno-back-cred-cell span {
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.inferno-back-cred-cell b {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+/* Security Barcode & Certificate Plate */
+.inferno-back-security-barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.inferno-barcode-pattern {
+  width: 80%;
+  height: 14px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ffffff,
+    #ffffff 2px,
+    transparent 2px,
+    transparent 4px,
+    #ffffff 4px,
+    #ffffff 7px,
+    transparent 7px,
+    transparent 9px
+  );
+  opacity: 0.55;
+  border-radius: 2px;
+}
+
+.inferno-back-security-barcode span {
+  font-family: monospace;
+  font-size: 7px;
+  letter-spacing: 0.22em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+

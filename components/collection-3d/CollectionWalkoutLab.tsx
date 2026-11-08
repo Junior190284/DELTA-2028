@@ -262,6 +262,30 @@ export function CollectionWalkoutLab() {
             {walkout.isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
             <span>{walkout.isMuted ? "DŹWIĘK WYŁ." : "DŹWIĘK WŁ."}</span>
           </button>
+
+          {/* Real Browser Telemetry Pill */}
+          <div
+            title="Rzeczywisty pomiar klatek na sekundę w przeglądarce"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "4px 8px",
+              fontSize: 10,
+              fontFamily: "monospace",
+              fontWeight: 700,
+              borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.15)",
+              backgroundColor: "rgba(0,0,0,0.6)",
+              color: walkout.fps >= 50 ? "#4ade80" : walkout.fps >= 30 ? "#facc15" : "#f87171",
+              marginLeft: 4
+            }}
+          >
+            <span>{walkout.fps} FPS</span>
+            {walkout.frameDrops > 0 && (
+              <span style={{ color: "#f87171" }}>({walkout.frameDrops} drop)</span>
+            )}
+          </div>
         </div>
       </header>
 

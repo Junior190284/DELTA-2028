@@ -569,8 +569,8 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
                 src={data.playerImage || "/demo/player-cutout.png"} 
                 alt={data.playerName}
                 style={{
-                  maxHeight: "clamp(340px, 55vh, 480px)",
-                  maxWidth: "420px",
+                  maxHeight: data.playerImage?.includes("gm.png") ? "min(160px, 28vh)" : "clamp(320px, 52vh, 460px)",
+                  maxWidth: data.playerImage?.includes("gm.png") ? "min(160px, 45vw)" : "min(420px, 85vw)",
                   objectFit: "contain"
                 }}
               />

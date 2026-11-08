@@ -42,6 +42,11 @@ export default function UniversalWalkoutModal({
 
   useEffect(() => {
     setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
   }, []);
 
   // Safe adapter bridge: converts CardDefinition -> PlayerCardData with fallbacks
@@ -116,7 +121,8 @@ export default function UniversalWalkoutModal({
       role="dialog"
       aria-modal="true"
       aria-label={`Walkout karty 3D: ${displayName}`}
-      className="fixed inset-0 z-[999999] bg-[#020408] text-white flex flex-col justify-between overflow-hidden select-none"
+      className="fixed inset-0 z-[9999999] bg-[#020408] text-white flex flex-col justify-between overflow-hidden select-none isolate"
+      style={{ isolation: "isolate", background: "#020408" }}
     >
       {/* ========================================================================= */}
       {/* 1. UNIVERSAL STAGE & 3D CARD ENGINE                                       */}

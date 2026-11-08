@@ -34,10 +34,7 @@ import { dispatchPackOpened, dispatchCollectionUpdated } from "@/lib/cards/cardS
 import InfernoWalkoutReveal from "@/components/InfernoWalkoutReveal";
 import { cardToWalkoutData, normalizeCardTheme, WALKOUT_PRESENTATION_PRIORITY } from "@/lib/cards/walkout-config";
 
-// Feature Flag: 3D Walkout Engine (Default: false / disabled for zero bundle weight)
-const is3DWalkoutEnabled = process.env.NEXT_PUBLIC_COLLECTION_3D_WALKOUT_ENABLED === "true";
-
-// Dynamic import: Only loaded when feature flag is active and walkout phase is triggered
+// Dynamic import: Only loaded when 3D Walkout is activated and walkout phase is triggered
 const UniversalWalkoutModal = dynamic(
   () => import("@/components/collection-3d/UniversalWalkoutModal"),
   { ssr: false }
@@ -64,6 +61,10 @@ export interface DeltaPackOpeningProps {
   onPackConsumed?: (remainingCount?: number) => void;
   // Mock mode for Dev Preview
   mockResult?: PackOpeningResult;
+  // Architecture hook: future "DELTA INFERNO PACK OPENING" video support
+  videoOpeningUrl?: string;
+  enableVideoPackOpening?: boolean;
+  autoStart?: boolean;
 }
 
 export default function DeltaPackOpeningExperience({
@@ -74,7 +75,10 @@ export default function DeltaPackOpeningExperience({
   collectionProgress,
   getLayoutForCard,
   onPackConsumed,
-  mockResult
+  mockResult,
+  videoOpeningUrl,
+  enableVideoPackOpening = false,
+  autoStart = false
 }: DeltaPackOpeningProps) {
   const [phase, setPhase] = useState<PackFlowPhase>("PACK_READY");
   const [openingResult, setOpeningResult] = useState<PackOpeningResult | null>(mockResult || null);
@@ -82,6 +86,7 @@ export default function DeltaPackOpeningExperience({
   const [inspectedCard, setInspectedCard] = useState<DeltaCardModel | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [videoTearError, setVideoTearError] = useState(false);
 
   // Check prefers-reduced-motion
   useEffect(() => {
@@ -194,6 +199,16 @@ export default function DeltaPackOpeningExperience({
     }
   };
 
+  // Auto-start pack opening if requested (e.g. dev test launcher)
+  useEffect(() => {
+    if (autoStart && phase === "PACK_READY") {
+      const timer = setTimeout(() => {
+        handleOpenPack();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoStart, phase]);
+
   // 6. Best card selection using purely canonical theme presentation priority (no OVR, no fake rarity)
   const walkoutCardData = useMemo(() => {
     if (!openingResult || !openingResult.cards || openingResult.cards.length === 0) return null;
@@ -271,81 +286,199 @@ export default function DeltaPackOpeningExperience({
       role="dialog"
       aria-modal="true"
       aria-labelledby="pack-opening-title"
-      className="fixed inset-0 z-[999999] bg-[#020408] text-white flex flex-col justify-between overflow-hidden select-none"
+      className="fixed inset-0 z-[9999999] bg-[#020408] text-white flex flex-col justify-between overflow-hidden select-none isolate"
+      style={{ isolation: "isolate", background: "#020408", width: "100vw", height: "100dvh" }}
     >
-      {/* Top Header Bar */}
-      <div className="relative z-30 flex items-center justify-between p-4 md:p-6 border-b border-white/10 bg-black/40 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <img
-            src="/teamlogos/gm.png"
-            alt="DELTA"
-            className="w-8 h-8 object-contain filter drop-shadow(0 0 10px rgba(255,255,255,0.4))"
-          />
-          <div>
-            <span className="text-[10px] font-black tracking-widest text-amber-400 uppercase block">
-              OTWIERANIE PACZKI DELTA
-            </span>
-            <h2 id="pack-opening-title" className="text-sm md:text-base font-black text-white uppercase truncate">
-              {pack.name}
-            </h2>
+      {/* Top Header Bar (Hidden during WALKOUT as walkout modals manage their own header) */}
+      {phase !== "WALKOUT" && (
+        <div 
+          className="relative z-30 flex items-center justify-between p-4 md:p-6 border-b border-white/10 bg-black/40 backdrop-blur-md"
+          style={{
+            minHeight: "56px",
+            maxHeight: "74px",
+            padding: "10px 18px",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}
+        >
+          <div className="flex items-center gap-3" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+            <img
+              src="/teamlogos/gm.png"
+              alt="DELTA"
+              className="w-8 h-8 object-contain filter drop-shadow(0 0 10px rgba(255,255,255,0.4)) pack-experience-header-crest"
+              style={{
+                width: "clamp(34px, 7vw, 42px)",
+                height: "clamp(34px, 7vw, 42px)",
+                maxWidth: "90px",
+                maxHeight: "90px",
+                objectFit: "contain",
+                flexShrink: 0
+              }}
+            />
+            <div style={{ minWidth: 0 }}>
+              <span 
+                className="text-[10px] font-black tracking-widest text-amber-400 uppercase block"
+                style={{ fontSize: "10px", fontWeight: 900, color: "#fbbf24", letterSpacing: "1px", textTransform: "uppercase", display: "block" }}
+              >
+                OTWIERANIE PACZKI DELTA
+              </span>
+              <h2 
+                id="pack-opening-title" 
+                className="text-sm md:text-base font-black text-white uppercase truncate"
+                style={{ margin: 0, fontSize: "15px", fontWeight: 900, color: "#ffffff", textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
+                {pack.name}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            {/* Skip / Reveal All Button (Always available during animations) */}
+            {phase !== "PACK_READY" && phase !== "SUMMARY" && (
+              <button
+                onClick={handleRevealAll}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 hover:text-amber-200 border border-amber-400/40 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 14px",
+                  borderRadius: "10px",
+                  background: "rgba(15, 23, 42, 0.9)",
+                  color: "#fcd34d",
+                  border: "1px solid rgba(251, 191, 36, 0.4)",
+                  fontSize: "11px",
+                  fontWeight: 900,
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                  cursor: "pointer"
+                }}
+              >
+                <FastForward className="w-3.5 h-3.5" style={{ width: "14px", height: "14px" }} />
+                <span>Pomiń Animację</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10"
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                background: "rgba(15, 23, 42, 0.8)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                color: "#cbd5e1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer"
+              }}
+              aria-label="Zamknij"
+            >
+              <X className="w-5 h-5" style={{ width: "18px", height: "18px" }} />
+            </button>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          {/* Skip / Reveal All Button (Always available during animations) */}
-          {phase !== "PACK_READY" && phase !== "SUMMARY" && (
-            <button
-              onClick={handleRevealAll}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 hover:text-amber-200 border border-amber-400/40 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
-            >
-              <FastForward className="w-3.5 h-3.5" />
-              <span>Pomiń Animację</span>
-            </button>
-          )}
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10"
-            aria-label="Zamknij"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* ========================================================================= */}
       {/* PHASE 0 & 1: PACK READY / SERVER OPENING                                 */}
       {/* ========================================================================= */}
       {(phase === "PACK_READY" || phase === "PACK_OPENING_SERVER") && (
-        <div className="relative flex-1 flex flex-col items-center justify-center p-4 text-center space-y-6">
+        <div 
+          className="relative flex-1 flex flex-col items-center justify-center p-4 text-center space-y-6"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: "1 1 auto",
+            padding: "16px",
+            gap: "18px",
+            position: "relative"
+          }}
+        >
           {/* Atmospheric Lights */}
-          <div className="absolute inset-0 bg-radial-gradient from-amber-500/10 via-transparent to-transparent pointer-events-none" />
+          <div 
+            className="absolute inset-0 bg-radial-gradient from-amber-500/10 via-transparent to-transparent pointer-events-none" 
+            style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+          />
 
           {/* Booster Pack 3D Card Visual */}
-          <div className="relative group max-w-[260px] aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-white/20 transition-transform duration-300 hover:scale-105">
+          <div 
+            className="relative group max-w-[260px] aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-white/20 transition-transform duration-300 hover:scale-105"
+            style={{
+              width: "min(240px, 62vw)",
+              height: "min(360px, 46vh)",
+              maxWidth: "260px",
+              maxHeight: "390px",
+              aspectRatio: "2 / 3",
+              borderRadius: "16px",
+              overflow: "hidden",
+              position: "relative",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.8)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              flexShrink: 0
+            }}
+          >
             <img
               src={packImage}
               alt={pack.name}
               className="w-full h-full object-cover"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block"
+              }}
               loading="eager"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-left">
-              <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">
+            <div 
+              className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4 text-left"
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
+                padding: "16px",
+                textAlign: "left"
+              }}
+            >
+              <span 
+                className="text-[10px] font-black uppercase text-amber-400 tracking-wider"
+                style={{ fontSize: "10px", fontWeight: 900, color: "#fbbf24", letterSpacing: "1px", textTransform: "uppercase" }}
+              >
                 {pack.cards_count} Kart w Paczce
               </span>
-              <h3 className="text-base font-black text-white">{pack.name}</h3>
+              <h3 
+                className="text-base font-black text-white"
+                style={{ margin: "4px 0 0 0", fontSize: "16px", fontWeight: 900, color: "#ffffff" }}
+              >
+                {pack.name}
+              </h3>
             </div>
           </div>
 
           {/* Description */}
-          <p className="text-xs md:text-sm text-slate-400 max-w-sm">
+          <p 
+            className="text-xs md:text-sm text-slate-400 max-w-sm"
+            style={{ fontSize: "13px", color: "#94a3b8", maxWidth: "380px", margin: 0, lineHeight: 1.5 }}
+          >
             {pack.description || "Gwarantowane karty zawodników rocznika 2018."}
           </p>
 
           {/* Error Banner if any */}
           {errorMessage && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-xs max-w-md">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <div 
+              className="flex items-center gap-2 p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-xs max-w-md"
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", borderRadius: "10px", background: "rgba(69, 10, 10, 0.8)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#fecaca", fontSize: "12px", maxWidth: "380px" }}
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" style={{ width: "16px", height: "16px", flexShrink: 0, color: "#f87171" }} />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -355,6 +488,20 @@ export default function DeltaPackOpeningExperience({
             onClick={handleOpenPack}
             disabled={phase === "PACK_OPENING_SERVER"}
             className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 text-slate-950 font-[1000] text-sm md:text-base uppercase tracking-wider shadow-2xl shadow-orange-500/40 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            style={{
+              padding: "14px 32px",
+              borderRadius: "14px",
+              background: "linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #dc2626 100%)",
+              color: "#020617",
+              fontWeight: 900,
+              fontSize: "14px",
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 10px 25px rgba(234, 88, 12, 0.4)",
+              transition: "transform 0.15s ease"
+            }}
           >
             {phase === "PACK_OPENING_SERVER" ? "Otwieranie..." : "Otwórz Paczkę 📦"}
           </button>
@@ -362,25 +509,113 @@ export default function DeltaPackOpeningExperience({
       )}
 
       {/* ========================================================================= */}
-      {/* PHASE 2: PACK TEARING ANIMATION                                           */}
+      {/* PHASE 2: PACK TEARING / CINEMATIC VIDEO PACK OPENING                       */}
       {/* ========================================================================= */}
       {phase === "PACK_TEAR" && (
-        <div className="relative flex-1 flex flex-col items-center justify-center p-4 text-center">
-          {/* Full-screen Volumetric Climax Glow */}
-          <div
-            className="absolute inset-0 filter blur-3xl opacity-40 animate-pulse pointer-events-none"
-            style={{ backgroundColor: highestThemeConfig.primaryColor }}
-          />
-
-          <div className="space-y-4 animate-bounce">
-            <div className="relative w-48 h-72 rounded-2xl border-2 border-white/40 shadow-2xl overflow-hidden animate-pulse">
-              <img src={packImage} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-x-0 top-1/3 h-1 bg-white shadow-[0_0_20px_#fff]" />
+        <div 
+          className="relative flex-1 flex flex-col items-center justify-center p-4 text-center overflow-hidden"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            flex: "1 1 auto",
+            position: "relative",
+            overflow: "hidden",
+            padding: "20px"
+          }}
+        >
+          {/* Architecture Hook: Future "DELTA INFERNO PACK OPENING" video player */}
+          {(enableVideoPackOpening || videoOpeningUrl) && !videoTearError ? (
+            <div className="absolute inset-0 z-20 bg-black flex items-center justify-center overflow-hidden">
+              <video
+                src={videoOpeningUrl || (pack.theme === "inferno" ? "/media/walkouts/inferno-pack-opening.mp4" : undefined)}
+                autoPlay
+                playsInline
+                muted={false}
+                onEnded={() => {
+                  if (walkoutCardData) setPhase("WALKOUT");
+                  else setPhase("CARD_REVEAL");
+                }}
+                onError={() => {
+                  console.warn("Video pack opening failed or not found, falling back to animated tear");
+                  setVideoTearError(true);
+                }}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (walkoutCardData) setPhase("WALKOUT");
+                    else setPhase("CARD_REVEAL");
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-400/40 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <FastForward className="w-3.5 h-3.5" />
+                  <span>Pomiń Wideo</span>
+                </button>
+              </div>
             </div>
-            <span className="text-xs font-black uppercase tracking-widest text-amber-400">
-              Rozdzieranie folii...
-            </span>
-          </div>
+          ) : (
+            /* Canonical Interactive CSS Pack Tearing Animation */
+            <>
+              {/* Full-screen Volumetric Climax Glow */}
+              <div
+                className="absolute inset-0 filter blur-3xl opacity-40 animate-pulse pointer-events-none"
+                style={{ backgroundColor: highestThemeConfig.primaryColor }}
+              />
+
+              <div 
+                className="space-y-4 animate-bounce"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "16px"
+                }}
+              >
+                <div 
+                  className="relative rounded-2xl border-2 border-white/40 shadow-2xl overflow-hidden animate-pulse mx-auto"
+                  style={{
+                    width: "min(200px, 60vw)",
+                    height: "min(300px, 45vh)",
+                    aspectRatio: "2 / 3",
+                    borderRadius: "16px",
+                    position: "relative",
+                    overflow: "hidden",
+                    border: "2px solid rgba(255,255,255,0.4)",
+                    boxShadow: "0 0 40px rgba(251, 191, 36, 0.5)",
+                    flexShrink: 0
+                  }}
+                >
+                  <img 
+                    src={packImage} 
+                    alt="" 
+                    className="w-full h-full object-cover" 
+                    style={{ width: "100%", height: "100%", maxWidth: "100%", maxHeight: "100%", objectFit: "cover", display: "block" }}
+                  />
+                  <div 
+                    className="absolute inset-x-0 top-1/3 h-1 bg-white shadow-[0_0_20px_#fff]"
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: "33%",
+                      height: "4px",
+                      backgroundColor: "#ffffff",
+                      boxShadow: "0 0 20px #ffffff"
+                    }}
+                  />
+                </div>
+                <span 
+                  className="text-xs font-black uppercase tracking-widest text-amber-400"
+                  style={{ fontSize: "12px", fontWeight: 900, color: "#fbbf24", letterSpacing: "2px", textTransform: "uppercase" }}
+                >
+                  Rozdzieranie folii...
+                </span>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -388,7 +623,7 @@ export default function DeltaPackOpeningExperience({
       {/* PHASE 3: WALKOUT CINEMATIC SEQUENCE                                       */}
       {/* ========================================================================= */}
       {phase === "WALKOUT" && walkoutCardData && (
-        is3DWalkoutEnabled ? (
+        openingResult?.enable_3d_walkout === true ? (
           <UniversalWalkoutModal
             card={walkoutCardData.rawCard}
             isDuplicate={walkoutCardData.isDuplicate}

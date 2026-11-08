@@ -386,13 +386,35 @@ export function Card3DEngine({
 
           {/* DELTA Crest Watermark */}
           <div className="inferno-back-watermark">
-            <img src={crestSrc} alt="" />
+            <img 
+              src={crestSrc} 
+              alt="" 
+              style={{
+                width: "72%",
+                height: "72%",
+                maxWidth: "72%",
+                maxHeight: "72%",
+                objectFit: "contain",
+                pointerEvents: "none"
+              }}
+            />
           </div>
 
           {/* Back Content UI */}
           <div className="inferno-back-content">
             <div className="inferno-back-crest-medallion">
-              <img src={crestSrc} alt="Herb K.S. Delta Warszawa 2018 GM" />
+              <img 
+                src={crestSrc} 
+                alt="Herb K.S. Delta Warszawa 2018 GM" 
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  pointerEvents: "none"
+                }}
+              />
             </div>
 
             <div className="inferno-back-titles-wrap">
