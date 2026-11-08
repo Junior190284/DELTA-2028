@@ -27,7 +27,7 @@ export default function CardBadgeHeader({
 }: CardBadgeHeaderProps) {
   return (
     <div 
-      className="card-layer-header absolute inset-x-[7%] top-[8%] flex justify-between items-start pointer-events-none z-25"
+      className="card-layer-header absolute inset-x-[7%] top-[8%] flex justify-between items-start pointer-events-none z-35"
       style={{
         position: "absolute",
         left: "7%",
@@ -37,7 +37,7 @@ export default function CardBadgeHeader({
         justifyContent: "space-between",
         alignItems: "flex-start",
         pointerEvents: "none",
-        zIndex: 25
+        zIndex: 35
       }}
     >
       {/* Top-Left: Club Crest & Shirt Number (Real data only, NO fake OVR/Flag/Position) */}
@@ -117,7 +117,8 @@ export default function CardBadgeHeader({
             <button
               type="button"
               onClick={onFlip}
-              className="p-[0.8cqw] rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white/90 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center cursor-pointer"
+              className="p-[0.8cqw] rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white/90 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center cursor-pointer pointer-events-auto"
+              style={{ pointerEvents: "auto" }}
               title="Obróć kartę (Rewers)"
               aria-label="Obróć kartę"
             >

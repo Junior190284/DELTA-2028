@@ -677,8 +677,9 @@ export default function DeltaPackOpeningExperience({
 
           {/* Central Hero DeltaCard */}
           <div 
+            key={`reveal-${currentCardIndex}-${currentDrawnCard.model.id}`}
             style={{
-              width: "min(75vw, 260px)",
+              width: "clamp(220px, min(76vw, calc((100dvh - 220px) * 2 / 3)), 340px)",
               aspectRatio: "2 / 3"
             }}
             className="animate-fadeIn"

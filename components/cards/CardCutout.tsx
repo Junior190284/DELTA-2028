@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Lock } from "lucide-react";
 import { DeltaCardTheme, DeltaThemeConfig } from "@/lib/cards/deltaCardModel";
 import { CardLayoutConfig } from "@/lib/cards/types";
@@ -27,6 +27,21 @@ export default function CardCutout({
   layoutOverride
 }: CardCutoutProps) {
   const [imageError, setImageError] = useState(false);
+  const currentPhotoUrlRef = useRef<string | null | undefined>(photoUrl);
+
+  // Synchronize and reset imageError whenever photoUrl changes
+  useEffect(() => {
+    currentPhotoUrlRef.current = photoUrl;
+    setImageError(false);
+  }, [photoUrl]);
+
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Guard against stale error events from previously discarded image URLs
+    const targetSrc = e.currentTarget.currentSrc || e.currentTarget.src;
+    if (photoUrl && targetSrc && currentPhotoUrlRef.current === photoUrl) {
+      setImageError(true);
+    }
+  }, [photoUrl]);
 
   // Determine pose scale & position adjustments
   const poseScale = artworkPose === "action" ? 1.15 : artworkPose === "celebration" ? 1.2 : 1.05;
@@ -91,7 +106,7 @@ export default function CardCutout({
             className="max-w-full max-h-full object-contain object-bottom pointer-events-none"
             loading="eager"
             decoding="sync"
-            onError={() => setImageError(true)}
+            onError={handleImageError}
           />
         </div>
       ) : (
