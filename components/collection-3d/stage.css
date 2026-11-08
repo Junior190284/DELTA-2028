@@ -96,7 +96,7 @@
 /* LED Arena Ribbon */
 .universal-stage-ribbon {
   position: absolute;
-  top: 16.5%;
+  top: clamp(140px, 18vh, 180px);
   left: 0;
   right: 0;
   display: flex;
@@ -112,6 +112,8 @@
   pointer-events: none;
   z-index: 2;
   text-transform: uppercase;
+  max-width: 90vw;
+  margin: 0 auto;
 }
 
 /* ==========================================================================
@@ -374,7 +376,7 @@
   .universal-stage-ribbon {
     font-size: 9px;
     letter-spacing: 0.2em;
-    top: 10%;
+    top: clamp(100px, 15vh, 130px);
   }
 }
 

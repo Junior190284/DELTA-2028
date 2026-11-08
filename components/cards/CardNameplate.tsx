@@ -24,7 +24,22 @@ export default function CardNameplate({
   const fontSize = isVeryLong ? "3.2cqw" : isLong ? "3.8cqw" : "4.4cqw";
 
   return (
-    <div className="card-layer-nameplate absolute inset-x-[7%] top-[67%] h-[7%] flex items-center justify-center text-center pointer-events-none z-25 px-[2cqw]">
+    <div 
+      className="card-layer-nameplate absolute inset-x-[7%] top-[67%] h-[7%] flex items-center justify-center text-center pointer-events-none z-25 px-[2cqw]"
+      style={{
+        position: "absolute",
+        left: "7%",
+        right: "7%",
+        top: "67%",
+        height: "7%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        pointerEvents: "none",
+        zIndex: 25
+      }}
+    >
       <div className="flex items-center justify-center gap-[1cqw] max-w-full overflow-hidden">
         <span
           className="font-[1000] tracking-wider uppercase truncate whitespace-nowrap"

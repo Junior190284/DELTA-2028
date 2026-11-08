@@ -339,12 +339,12 @@ export default function DeltaPackOpeningExperience({
             {phase !== "PACK_READY" && phase !== "SUMMARY" && (
               <button
                 onClick={handleRevealAll}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 hover:text-amber-200 border border-amber-400/40 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 hover:text-amber-200 border border-amber-400/40 text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer shrink-0"
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
-                  padding: "8px 14px",
+                  gap: "5px",
+                  padding: "6px clamp(8px, 1.8vw, 14px)",
                   borderRadius: "10px",
                   background: "rgba(15, 23, 42, 0.9)",
                   color: "#fcd34d",
@@ -353,11 +353,15 @@ export default function DeltaPackOpeningExperience({
                   fontWeight: 900,
                   letterSpacing: "0.5px",
                   textTransform: "uppercase",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  flexShrink: 0
                 }}
+                aria-label="Pomiń animację otwierania"
+                title="Pomiń animację i przejdź do kart"
               >
-                <FastForward className="w-3.5 h-3.5" style={{ width: "14px", height: "14px" }} />
-                <span>Pomiń Animację</span>
+                <FastForward className="w-3.5 h-3.5 shrink-0" style={{ width: "13px", height: "13px", flexShrink: 0 }} />
+                <span className="hidden sm:inline">Pomiń Animację</span>
+                <span className="inline sm:hidden">Pomiń</span>
               </button>
             )}
 
@@ -719,12 +723,24 @@ export default function DeltaPackOpeningExperience({
           </div>
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+          <div 
+            className="grid gap-3 md:gap-4 pb-4"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+              gap: "16px"
+            }}
+          >
             {drawnCardModels.map(({ model, isDuplicate, duplicatePoints }, idx) => (
               <div
                 key={`${model.id}_${idx}`}
                 onClick={() => setInspectedCard(model)}
                 className="group relative flex flex-col items-center cursor-pointer transition-transform duration-200 hover:scale-105"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center"
+                }}
               >
                 {/* Status Badge */}
                 <div className="absolute -top-2 z-30">
@@ -746,6 +762,46 @@ export default function DeltaPackOpeningExperience({
                     interactive={false}
                     showFlip={false}
                   />
+                </div>
+
+                {/* Player Name & Number Plate under card in normal document flow */}
+                <div 
+                  className="mt-2 text-center w-full px-1 space-y-0.5 pointer-events-none"
+                  style={{
+                    marginTop: "8px",
+                    textAlign: "center",
+                    width: "100%",
+                    pointerEvents: "none"
+                  }}
+                >
+                  <div 
+                    className="text-xs font-black uppercase text-white truncate tracking-wider"
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 900,
+                      color: "#ffffff",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {model.playerName}
+                  </div>
+                  <div 
+                    className="text-[10px] font-bold text-amber-400/90 truncate"
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "rgba(251, 191, 36, 0.9)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    #{model.shirtNumber || "GM"} • {model.position || model.cardType}
+                  </div>
                 </div>
               </div>
             ))}

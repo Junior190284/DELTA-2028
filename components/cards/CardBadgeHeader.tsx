@@ -26,7 +26,20 @@ export default function CardBadgeHeader({
   onFlip
 }: CardBadgeHeaderProps) {
   return (
-    <div className="card-layer-header absolute inset-x-[7%] top-[8%] flex justify-between items-start pointer-events-none z-25">
+    <div 
+      className="card-layer-header absolute inset-x-[7%] top-[8%] flex justify-between items-start pointer-events-none z-25"
+      style={{
+        position: "absolute",
+        left: "7%",
+        right: "7%",
+        top: "8%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        pointerEvents: "none",
+        zIndex: 25
+      }}
+    >
       {/* Top-Left: Club Crest & Shirt Number (Real data only, NO fake OVR/Flag/Position) */}
       <div className="flex items-center gap-[1cqw] pointer-events-none">
         <img

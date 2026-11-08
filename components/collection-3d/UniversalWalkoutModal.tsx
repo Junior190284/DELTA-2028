@@ -27,6 +27,7 @@ export interface UniversalWalkoutModalProps {
   onSkip?: () => void;
   onClose?: () => void;
   autoStart?: boolean;
+  showTechnicalBadge?: boolean;
 }
 
 export default function UniversalWalkoutModal({
@@ -36,7 +37,8 @@ export default function UniversalWalkoutModal({
   onComplete,
   onSkip,
   onClose,
-  autoStart = true
+  autoStart = true,
+  showTechnicalBadge = false
 }: UniversalWalkoutModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -174,26 +176,28 @@ export default function UniversalWalkoutModal({
             alt="DELTA"
             className="w-8 h-8 object-contain filter drop-shadow(0 0 10px rgba(255,255,255,0.4))"
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black tracking-widest text-amber-400 uppercase">
-                DELTA COLLECTION 3D
-              </span>
-              <span 
-                className="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase border"
-                style={{
-                  backgroundColor: `${primaryColor}22`,
-                  borderColor: primaryColor,
-                  color: primaryColor
-                }}
-              >
-                {currentTheme.displayName}
-              </span>
+          {showTechnicalBadge && (
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black tracking-widest text-amber-400 uppercase">
+                  DELTA COLLECTION 3D
+                </span>
+                <span 
+                  className="px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase border"
+                  style={{
+                    backgroundColor: `${primaryColor}22`,
+                    borderColor: primaryColor,
+                    color: primaryColor
+                  }}
+                >
+                  {currentTheme.displayName}
+                </span>
+              </div>
+              <h2 className="text-sm md:text-base font-black text-white uppercase truncate">
+                {displayName}
+              </h2>
             </div>
-            <h2 className="text-sm md:text-base font-black text-white uppercase truncate">
-              {displayName}
-            </h2>
-          </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">

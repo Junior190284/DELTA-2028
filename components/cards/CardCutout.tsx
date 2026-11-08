@@ -32,9 +32,15 @@ export default function CardCutout({
   const poseScale = artworkPose === "action" ? 1.15 : artworkPose === "celebration" ? 1.2 : 1.05;
   const poseTranslateY = artworkPose === "action" ? -4 : artworkPose === "celebration" ? -6 : -2;
 
-  const finalScale = (layoutOverride?.scale || poseScale);
+  // Specific positioning for INFERNO to prevent top flame ornament from obscuring face
+  const isInferno = String(cardType || "").toUpperCase() === "INFERNO";
+  const cutoutTop = isInferno ? "16%" : "10%";
+
+  const finalScale = layoutOverride?.scale || (isInferno ? 0.98 : poseScale);
   const finalTranslateX = layoutOverride?.translateX || 0;
-  const finalTranslateY = (layoutOverride?.translateY || poseTranslateY);
+  const finalTranslateY = layoutOverride?.translateY !== undefined 
+    ? layoutOverride.translateY 
+    : (poseTranslateY + (isInferno ? 5 : 0));
   const finalRotate = layoutOverride?.rotate || 0;
   const finalBrightness = layoutOverride?.brightness || 1;
   const finalContrast = layoutOverride?.contrast || 1;
@@ -55,7 +61,22 @@ export default function CardCutout({
   const hasValidPhoto = photoUrl && !imageError;
 
   return (
-    <div className="card-layer-cutout absolute top-[10%] left-[8%] right-[8%] bottom-[28%] flex items-end justify-center pointer-events-none z-10 overflow-hidden">
+    <div 
+      className="card-layer-cutout absolute left-[8%] right-[8%] bottom-[28%] flex items-end justify-center pointer-events-none z-10 overflow-hidden"
+      style={{
+        position: "absolute",
+        top: cutoutTop,
+        left: "8%",
+        right: "8%",
+        bottom: "28%",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        pointerEvents: "none",
+        zIndex: 10,
+        overflow: "hidden"
+      }}
+    >
       {hasValidPhoto ? (
         <div
           className="w-full h-full flex items-end justify-center transition-transform duration-300"
