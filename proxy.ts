@@ -2,6 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  // Gracefully normalize accidental trailing markdown asterisks or spaces (e.g. /lab/inferno-stage**)
+  if (request.nextUrl.pathname.endsWith("*") || request.nextUrl.pathname.endsWith("%2A")) {
+    const cleanPath = request.nextUrl.pathname.replace(/(\*|%2A)+$/i, "");
+    const cleanUrl = new URL(cleanPath, request.url);
+    cleanUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(cleanUrl, 308);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
