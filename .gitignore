@@ -6,3 +6,10 @@ node_modules/
 backup_*/
 *.tsbuildinfo
 .temp/
+
+# Diagnostic artifacts and root screenshots
+.artifacts/
+/checkpoint_*.png
+/screenshot_*.png
+/screenshot.png
+
