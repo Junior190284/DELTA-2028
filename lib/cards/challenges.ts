@@ -3,7 +3,7 @@
  * Unified challenge definition, condition evaluator and rewards.
  */
 
-import { UserCard } from "./types";
+import { type UserCard } from "./types.ts";
 
 export interface PaniniChallengeDef {
   id: string;

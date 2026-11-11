@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureStarterCardsForPlayers } from "@/lib/cards/engine";
 import { CARD_TYPES_CONFIG, CardDefinition, PackDefinition } from "@/lib/cards/types";
 
@@ -177,7 +178,12 @@ export async function GET() {
 
     try {
       if (activePlayers.length > 0) {
-        await ensureStarterCardsForPlayers(supabase, activePlayers, "2026/27");
+        try {
+          const adminClient = createAdminClient();
+          await ensureStarterCardsForPlayers(adminClient, activePlayers, "2026/27");
+        } catch {
+          // Brak konfiguracji admina nie blokuje odczytu istniejących kart
+        }
       }
 
       // Pobieramy wszystkie definicje kart z bazy
@@ -214,31 +220,7 @@ export async function GET() {
           .eq("is_opened", false)
           .order("created_at", { ascending: false });
 
-        if (up && up.length > 0) {
-          unopenedPacks = up;
-        } else {
-          // Jeśli użytkownik nie ma jeszcze paczek, dajemy mu 2 darmowe paczki startowe!
-          unopenedPacks = [
-            {
-              id: "starter_pack_1",
-              user_id: user.id,
-              pack_type_id: "standard_pack",
-              source_reason: "Pakiet powitalny DELTA GM",
-              is_opened: false,
-              created_at: new Date().toISOString(),
-              pack_definition: defaultPacks[0]
-            },
-            {
-              id: "starter_pack_2",
-              user_id: user.id,
-              pack_type_id: "gold_booster",
-              source_reason: "Pakiet startowy kolekcjonera",
-              is_opened: false,
-              created_at: new Date().toISOString(),
-              pack_definition: defaultPacks[1]
-            }
-          ];
-        }
+        unopenedPacks = up || [];
 
         // Saldo DP
         const { data: pointsRow } = await supabase
@@ -262,26 +244,7 @@ export async function GET() {
     } catch (dbErr) {
       console.warn("Supabase cards table not ready, using virtual catalog:", dbErr);
       allCards = generateVirtualCards();
-      unopenedPacks = [
-        {
-          id: "starter_pack_1",
-          user_id: user?.id || "anon",
-          pack_type_id: "standard_pack",
-          source_reason: "Pakiet powitalny DELTA GM",
-          is_opened: false,
-          created_at: new Date().toISOString(),
-          pack_definition: defaultPacks[0]
-        },
-        {
-          id: "starter_pack_2",
-          user_id: user?.id || "anon",
-          pack_type_id: "gold_booster",
-          source_reason: "Pakiet startowy kolekcjonera",
-          is_opened: false,
-          created_at: new Date().toISOString(),
-          pack_definition: defaultPacks[1]
-        }
-      ];
+      unopenedPacks = [];
     }
 
     if (allCards.length === 0) {

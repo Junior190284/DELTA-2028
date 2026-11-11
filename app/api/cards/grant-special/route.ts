@@ -1,95 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { grantSpecialCardServerSide, serializeEconomyError } from "@/lib/economy/server-rpc";
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: (c) => c.forEach((cookie) => cookieStore.set(cookie.name, cookie.value, cookie.options))
-        }
-      }
-    );
+    const supabase = await createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check staff role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || (profile.role !== "admin" && profile.role !== "coach")) {
-      return NextResponse.json({ error: "Wymagane uprawnienia administratora lub trenera." }, { status: 403 });
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return NextResponse.json(
+        { error: "Brak konfiguracji serwisowej.", code: "RPC_UNAVAILABLE" },
+        { status: 503 }
+      );
     }
 
-    const { targetUserId, cardId, reason = "Wyróżnienie Administratora" } = await req.json();
-    if (!targetUserId || !cardId) {
-      return NextResponse.json({ error: "Brak targetUserId lub cardId" }, { status: 400 });
-    }
-
-    // Check existing card definition
-    const { data: cardDef, error: cErr } = await supabase
-      .from("card_definitions")
-      .select("*")
-      .eq("id", cardId)
-      .single();
-
-    if (cErr || !cardDef) {
-      return NextResponse.json({ error: "Karta nie istnieje" }, { status: 404 });
-    }
-
-    // Check if user already owns card
-    const { data: existingUserCard } = await supabase
-      .from("user_cards")
-      .select("id, duplicates_count")
-      .eq("user_id", targetUserId)
-      .eq("card_id", cardId)
-      .maybeSingle();
-
-    if (existingUserCard) {
-      await supabase
-        .from("user_cards")
-        .update({
-          duplicates_count: existingUserCard.duplicates_count + 1,
-          acquisition_source: "admin"
-        })
-        .eq("id", existingUserCard.id);
-    } else {
-      await supabase
-        .from("user_cards")
-        .insert({
-          user_id: targetUserId,
-          card_id: cardId,
-          duplicates_count: 0,
-          acquisition_source: "admin"
-        });
-    }
-
-    // Audit log
-    await supabase
-      .from("admin_card_grants")
-      .insert({
-        admin_id: user.id,
-        user_id: targetUserId,
-        card_id: cardId,
-        reason
-      });
-
-    return NextResponse.json({
-      success: true,
-      message: `Przyznano kartę "${cardDef.card_name}" użytkownikowi.`
+    const body = await req.json().catch(() => ({}));
+    const result = await grantSpecialCardServerSide({
+      adminClient,
+      adminUserId: user.id,
+      targetUserId: body.targetUserId,
+      cardId: body.cardId,
+      reason: body.reason
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+
+    return NextResponse.json(result);
+  } catch (err: unknown) {
+    const serialized = serializeEconomyError(err);
+    return NextResponse.json(serialized.body, { status: serialized.status });
   }
 }

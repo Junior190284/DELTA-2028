@@ -1,46 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { setUserCardFlagServerSide, serializeEconomyError } from "@/lib/economy/server-rpc";
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: (c) => c.forEach((cookie) => cookieStore.set(cookie.name, cookie.value, cookie.options))
-        }
-      }
-    );
+    const supabase = await createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userCardId, cardId, isFavorite } = await req.json();
-    if (!userCardId && !cardId) {
-      return NextResponse.json({ error: "Missing userCardId or cardId" }, { status: 400 });
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return NextResponse.json(
+        { error: "Brak konfiguracji serwisowej.", code: "RPC_UNAVAILABLE" },
+        { status: 503 }
+      );
     }
 
-    let query = supabase.from("user_cards").update({ is_favorite: !!isFavorite }).eq("user_id", user.id);
-    if (userCardId) {
-      query = query.eq("id", userCardId);
-    } else if (cardId) {
-      query = query.eq("card_id", cardId);
-    }
+    const { userCardId, cardId, isFavorite } = await req.json().catch(() => ({}));
+    const result = await setUserCardFlagServerSide({
+      adminClient,
+      userId: user.id,
+      userCardId,
+      cardId,
+      field: "is_favorite",
+      value: Boolean(isFavorite)
+    });
 
-    const { data, error } = await query.select().single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, card: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(result);
+  } catch (err: unknown) {
+    const serialized = serializeEconomyError(err);
+    return NextResponse.json(serialized.body, { status: serialized.status });
   }
 }

@@ -94,8 +94,8 @@ export async function GET(req: Request) {
 
         if (scorerHit) pts += 50;
 
-        // Zaktualizuj rekord
-        await admin
+        // Zaktualizuj rekord atomowo wyłącznie jeśli nie był jeszcze rozliczony (ochrona przed wyścigiem GET)
+        const { data: claimedPred } = await admin
           .from("match_predictions")
           .update({
             points_awarded: pts,
@@ -106,24 +106,30 @@ export async function GET(req: Request) {
             evaluated_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
-          .eq("id", pred.id);
+          .eq("id", pred.id)
+          .eq("is_evaluated", false)
+          .select("id")
+          .maybeSingle();
 
-        // Dodaj punkty Delta Points użytkownikowi jeśli zdobył > 0
-        if (pts > 0) {
-          const { data: curDp } = await admin
-            .from("user_delta_points")
-            .select("points_balance, total_earned")
-            .eq("user_id", pred.user_id)
-            .maybeSingle();
-
-          await admin
-            .from("user_delta_points")
-            .upsert({
-              user_id: pred.user_id,
-              points_balance: (curDp?.points_balance || 0) + pts,
-              total_earned: (curDp?.total_earned || 0) + pts,
-              updated_at: new Date().toISOString()
-            }, { onConflict: "user_id" });
+        // Dodaj punkty Delta Points atomowo przez RPC jeśli to żądanie rozliczyło rekord i pts > 0
+        if (claimedPred?.id && pts > 0) {
+          const { error: dpRpcErr } = await admin.rpc("apply_delta_points_transaction", {
+            p_user_id: pred.user_id,
+            p_amount: pts,
+            p_transaction_type: "EARN",
+            p_source_type: "TYPER",
+            p_source_id: String(pred.match_id),
+            p_idempotency_key: `typer_pred_${pred.id}`,
+            p_metadata: {
+              prediction_id: pred.id,
+              exact_score_hit: exactHit,
+              outcome_hit: outcomeHit,
+              scorer_hit: scorerHit
+            }
+          });
+          if (dpRpcErr) {
+            console.error("[Typer] Błąd atomowego naliczania DP przez RPC:", dpRpcErr.message);
+          }
         }
 
         pred.points_awarded = pts;

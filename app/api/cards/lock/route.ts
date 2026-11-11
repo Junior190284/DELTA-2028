@@ -1,45 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { setUserCardFlagServerSide, serializeEconomyError } from "@/lib/economy/server-rpc";
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: (c) => c.forEach((cookie) => cookieStore.set(cookie.name, cookie.value, cookie.options))
-        }
-      }
-    );
+    const supabase = await createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userCardId, isLocked } = await req.json();
-    if (!userCardId) {
-      return NextResponse.json({ error: "Missing userCardId" }, { status: 400 });
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return NextResponse.json(
+        { error: "Brak konfiguracji serwisowej.", code: "RPC_UNAVAILABLE" },
+        { status: 503 }
+      );
     }
 
-    const { data, error } = await supabase
-      .from("user_cards")
-      .update({ is_locked: !!isLocked })
-      .eq("id", userCardId)
-      .eq("user_id", user.id)
-      .select()
-      .single();
+    const { userCardId, isLocked } = await req.json().catch(() => ({}));
+    const result = await setUserCardFlagServerSide({
+      adminClient,
+      userId: user.id,
+      userCardId,
+      field: "is_locked",
+      value: Boolean(isLocked)
+    });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, card: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(result);
+  } catch (err: unknown) {
+    const serialized = serializeEconomyError(err);
+    return NextResponse.json(serialized.body, { status: serialized.status });
   }
 }

@@ -987,35 +987,27 @@ export default function AdminPanel(props:{
     if (grantingPack) return;
     setGrantingPack(true);
     try {
-      let targetUserIds: string[] = [];
-      if (grantUserTarget === "all") {
-        targetUserIds = props.allProfiles.map(p => p.id);
-      } else {
-        targetUserIds = [grantUserTarget];
+      if (grantUserTarget !== "all" && !grantUserTarget) {
+        return alert("Brak wybranego użytkownika.");
       }
 
-      if (targetUserIds.length === 0) {
-        return alert("Brak wybranych użytkowników.");
-      }
-
-      const rows: any[] = [];
-      targetUserIds.forEach(uid => {
-        for (let i = 0; i < grantQuantity; i++) {
-          rows.push({
-            user_id: uid,
-            pack_type_id: grantPackType,
-            source_reason: grantReason,
-            is_opened: false
-          });
-        }
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "grant_packs",
+          target_user_id: grantUserTarget,
+          pack_type_id: grantPackType,
+          quantity: grantQuantity,
+          reason: grantReason
+        })
       });
-
-      const { error } = await supabase.from("user_unopened_packs").insert(rows);
-      if (error) {
-        return alert("Błąd przyznawania paczek: " + error.message);
+      const data = await res.json();
+      if (!res.ok) {
+        return alert("Błąd przyznawania paczek: " + (data.error || "Błąd serwera"));
       }
 
-      alert(`🎉 Pomyślnie przyznano ${rows.length} paczek dla ${targetUserIds.length} użytkowników!`);
+      alert(`🎉 ${data.message || "Pomyślnie przyznano paczki!"}`);
     } catch (e: any) {
       alert(e.message || "Wystąpił błąd");
     } finally {
@@ -1029,20 +1021,23 @@ export default function AdminPanel(props:{
     }
     setSavingCardDef(true);
     try {
-      const { error } = await supabase.from("card_definitions").insert({
-        player_id: newCardPlayerId,
-        season: "2026/27",
-        card_name: newCardTitle.trim(),
-        title: newCardTitle.trim(),
-        card_type: newCardType,
-        rarity: newCardRarity,
-        description: newCardLore.trim() || null,
-        lore: newCardLore.trim() || null,
-        is_active: true
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_card_definition",
+          player_id: newCardPlayerId,
+          card_name: newCardTitle.trim(),
+          title: newCardTitle.trim(),
+          card_type: newCardType,
+          rarity: newCardRarity,
+          description: newCardLore.trim() || null,
+          lore: newCardLore.trim() || null
+        })
       });
-
-      if (error) {
-        return alert("Błąd tworzenia karty: " + error.message);
+      const data = await res.json();
+      if (!res.ok) {
+        return alert("Błąd tworzenia karty: " + (data.error || "Błąd serwera"));
       }
 
       alert("✦ Karta została pomyślnie dodana do oficjalnego katalogu kolekcji DELTA!");
@@ -1059,27 +1054,21 @@ export default function AdminPanel(props:{
     if (!grantPointsUserId || grantPointsAmount <= 0) return;
     setGrantingPoints(true);
     try {
-      const { data: existing } = await supabase
-        .from("user_delta_points")
-        .select("points_balance, total_earned")
-        .eq("user_id", grantPointsUserId)
-        .maybeSingle();
-
-      const newBalance = (existing?.points_balance || 0) + grantPointsAmount;
-      const newTotal = (existing?.total_earned || 0) + grantPointsAmount;
-
-      const { error } = await supabase.from("user_delta_points").upsert({
-        user_id: grantPointsUserId,
-        points_balance: newBalance,
-        total_earned: newTotal,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-
-      if (error) {
-        return alert("Błąd przyznawania punktów: " + error.message);
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "grant_points",
+          target_user_id: grantPointsUserId,
+          amount: grantPointsAmount
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return alert("Błąd przyznawania punktów: " + (data.error || "Błąd serwera"));
       }
 
-      alert(`🪙 Przyznano +${grantPointsAmount} Delta Points! Nowy stan konta: ${newBalance} DP`);
+      alert(`🪙 Przyznano +${grantPointsAmount} Delta Points! Nowy stan konta: ${data.newBalance ?? "?"} DP`);
     } catch (e: any) {
       alert(e.message || "Wystąpił błąd");
     } finally {
@@ -1093,13 +1082,16 @@ export default function AdminPanel(props:{
     if (!confirm(`Czy na pewno chcesz zresetować punkty DP do 0 dla ${target}?`)) return;
     setGrantingPoints(true);
     try {
-      const { error } = await supabase.from("user_delta_points").upsert({
-        user_id: userId,
-        points_balance: 0,
-        total_earned: 0,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-      if (error) throw error;
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reset_points",
+          target_user_id: userId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd podczas resetowania punktów.");
       alert(`✓ Zresetowano punkty DP do 0 dla ${target}.`);
     } catch (e: any) {
       alert(e.message || "Błąd podczas resetowania punktów.");
@@ -1118,13 +1110,17 @@ export default function AdminPanel(props:{
 
     setGrantingPoints(true);
     try {
-      const { error } = await supabase.from("user_delta_points").upsert({
-        user_id: userId,
-        points_balance: amount,
-        total_earned: amount,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-      if (error) throw error;
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set_points",
+          target_user_id: userId,
+          balance: amount
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd podczas ustawiania punktów.");
       alert(`✓ Ustawiono stan konta: ${amount} DP dla ${target}.`);
     } catch (e: any) {
       alert(e.message || "Błąd podczas ustawiania punktów.");
@@ -1138,31 +1134,17 @@ export default function AdminPanel(props:{
     const target = allProfiles.find(p => p.id === userId)?.display_name || "użytkownika";
     setGrantingPoints(true);
     try {
-      // Find linked player
-      const linkedPlayerIds = parentLinks.filter(x => x.parent_id === userId).map(x => x.player_id);
-      
-      let calcPoints = 100; // startowy bonus powitalny
-      if (linkedPlayerIds.length > 0) {
-        linkedPlayerIds.forEach(pid => {
-          const tSessions = trainingAttendance.filter(a => a.player_id === pid && a.status === "present").length;
-          const mPlayed = attendance.filter(a => a.player_id === pid && (a.status === "present" || a.status === "yes")).length;
-          const goals = events.filter(e => e.player_id === pid && e.event_type === "goal").length;
-          const assists = events.filter(e => e.assist_player_id === pid && e.event_type === "goal").length;
-          const mvps = events.filter(e => e.player_id === pid && e.event_type === "mvp").length;
-
-          calcPoints += (tSessions * 50) + (mPlayed * 70) + (goals * 30) + (assists * 20) + (mvps * 100);
-        });
-      }
-
-      const { error } = await supabase.from("user_delta_points").upsert({
-        user_id: userId,
-        points_balance: calcPoints,
-        total_earned: calcPoints,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-
-      if (error) throw error;
-      alert(`✓ Przeliczono punkty DP dla ${target}! Nowy stan: ${calcPoints} DP (na podstawie statystyk i obecności).`);
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "recalculate_user_points",
+          target_user_id: userId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd przeliczania punktów.");
+      alert(`✓ Przeliczono punkty DP dla ${target}! Nowy stan: ${data.newBalance ?? "?"} DP (na podstawie statystyk i obecności).`);
     } catch (e: any) {
       alert(e.message || "Błąd przeliczania punktów.");
     } finally {
@@ -1174,30 +1156,16 @@ export default function AdminPanel(props:{
     if (!confirm("Czy na pewno chcesz automatycznie przeliczyć punkty DP WSZYSTKIM użytkownikom na podstawie ich statystyk i obecności?")) return;
     setGrantingPoints(true);
     try {
-      let count = 0;
-      for (const acc of allProfiles) {
-        const linkedPlayerIds = parentLinks.filter(x => x.parent_id === acc.id).map(x => x.player_id);
-        let calcPoints = 100;
-        if (linkedPlayerIds.length > 0) {
-          linkedPlayerIds.forEach(pid => {
-            const tSessions = trainingAttendance.filter(a => a.player_id === pid && a.status === "present").length;
-            const mPlayed = attendance.filter(a => a.player_id === pid && (a.status === "present" || a.status === "yes")).length;
-            const goals = events.filter(e => e.player_id === pid && e.event_type === "goal").length;
-            const assists = events.filter(e => e.assist_player_id === pid && e.event_type === "goal").length;
-            const mvps = events.filter(e => e.player_id === pid && e.event_type === "mvp").length;
-
-            calcPoints += (tSessions * 50) + (mPlayed * 70) + (goals * 30) + (assists * 20) + (mvps * 100);
-          });
-        }
-        await supabase.from("user_delta_points").upsert({
-          user_id: acc.id,
-          points_balance: calcPoints,
-          total_earned: calcPoints,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-        count++;
-      }
-      alert(`✓ Pomyślnie przeliczono i zsynchronizowano punkty DP dla ${count} kont!`);
+      const res = await fetch("/api/cards/admin-manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "recalculate_all_points"
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd podczas masowego przeliczania.");
+      alert(`✓ ${data.message || "Pomyślnie przeliczono punkty DP!"}`);
     } catch (e: any) {
       alert(e.message || "Błąd podczas masowego przeliczania.");
     } finally {
