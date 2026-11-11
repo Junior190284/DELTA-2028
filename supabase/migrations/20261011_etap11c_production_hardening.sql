@@ -68,6 +68,8 @@ GRANT ALL ON public.app_settings TO service_role;
 
 DROP POLICY IF EXISTS "Public read app_settings" ON public.app_settings;
 DROP POLICY IF EXISTS "Public read safe app_settings" ON public.app_settings;
+DROP POLICY IF EXISTS "Anon read safe app_settings" ON public.app_settings;
+DROP POLICY IF EXISTS "Authenticated read safe app_settings" ON public.app_settings;
 DROP POLICY IF EXISTS "Admin write app_settings" ON public.app_settings;
 DROP POLICY IF EXISTS "Service role manage app_settings" ON public.app_settings;
 DROP POLICY IF EXISTS "Anyone can update app_settings" ON public.app_settings;
@@ -80,39 +82,37 @@ DROP POLICY IF EXISTS "Allow all" ON public.app_settings;
 -- 4. POLITYKI RLS DLA APP_SETTINGS
 -- ------------------------------------------------------------------------------
 
--- POLISA 1: Zwykli użytkownicy (anon / authenticated) widzą wyłącznie bezpieczne flagi publiczne.
--- Wrażliwy klucz 'collection_3d_pilot' (zawierający whitelistę testerów) widzą WYŁĄCZNIE administratorzy.
-CREATE POLICY "Public read safe app_settings" 
-ON public.app_settings 
-FOR SELECT 
-TO public 
+-- POLISA 1A (anon): Odczyt wyłącznie bezpiecznych flag publicznych — bez żadnego odwołania do public.profiles.
+CREATE POLICY "Public read safe app_settings"
+ON public.app_settings
+FOR SELECT
+TO anon
 USING (
     key IN ('maintenance_mode', 'feature_flags')
-    OR EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE public.profiles.id = auth.uid() 
-        AND public.profiles.role = 'admin'
-    )
 );
 
--- POLISA 2: Wyłącznie zweryfikowany administrator (profiles.role = 'admin') może modyfikować wpisy.
-CREATE POLICY "Admin write app_settings" 
-ON public.app_settings 
-FOR ALL 
-TO authenticated 
+-- POLISA 1B (authenticated): Zwykli użytkownicy (parent/coach) widzą wyłącznie bezpieczne flagi.
+-- Wrażliwy klucz 'collection_3d_pilot' widzi wyłącznie administrator (wykorzystanie istniejącego helpera public.current_role()).
+CREATE POLICY "Authenticated read safe app_settings"
+ON public.app_settings
+FOR SELECT
+TO authenticated
 USING (
-    EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE public.profiles.id = auth.uid() 
-        AND public.profiles.role = 'admin'
-    )
+    key IN ('maintenance_mode', 'feature_flags')
+    OR public.current_role() = 'admin'
+);
+
+-- POLISA 2: Wyłącznie zweryfikowany administrator (public.current_role() = 'admin') może modyfikować wpisy.
+-- Helpery is_staff() (dopuszcza coach) oraz has_permission() (dopuszcza delegowanych) są celowo pominięte.
+CREATE POLICY "Admin write app_settings"
+ON public.app_settings
+FOR ALL
+TO authenticated
+USING (
+    public.current_role() = 'admin'
 )
 WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE public.profiles.id = auth.uid() 
-        AND public.profiles.role = 'admin'
-    )
+    public.current_role() = 'admin'
 );
 
 -- POLISA 3: Pełny dostęp dla wewnętrznych zapytań serwerowych service_role.
@@ -198,9 +198,9 @@ BEGIN
 END;
 $$;
 
--- Ochrona funkcji przed wywołaniem bezpośrednim przez rolę anon
-REVOKE ALL ON FUNCTION public.prevent_role_self_escalation() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.prevent_role_self_escalation() TO authenticated, service_role;
+-- Trigger działa po stronie silnika Postgres na INSERT/UPDATE — nie wymaga bezpośredniego EXECUTE dla PUBLIC, anon ani authenticated
+REVOKE ALL ON FUNCTION public.prevent_role_self_escalation() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.prevent_role_self_escalation() TO service_role;
 
 -- Podpięcie triggera dla INSERT oraz UPDATE
 DROP TRIGGER IF EXISTS trg_prevent_role_self_escalation ON public.profiles;

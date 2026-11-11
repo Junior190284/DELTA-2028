@@ -327,4 +327,95 @@ test("ETAP 11 - 5.5: Trigger prevent_role_self_escalation blocks non-admins from
   );
 });
 
+// ============================================================================
+// 6. UI.7A.1 HARDENING REGRESSION: ANON ISOLATION, COACH DENY, EXECUTE REVOKE
+// ============================================================================
+
+test("ETAP 11 - 6.1: UI.7A.1 splits anon/authenticated policies without referencing public.profiles for anon and revokes EXECUTE from authenticated", () => {
+  const migrationPath = path.resolve(
+    process.cwd(),
+    "supabase/migrations/20261011_etap11c_production_hardening.sql"
+  );
+  const sql = fs.readFileSync(migrationPath, "utf-8");
+
+  const anonPolicyMatch = sql.match(
+    /CREATE POLICY "Public read safe app_settings"[\s\S]*?;\s*\n/
+  );
+  assert.ok(anonPolicyMatch, "Must define 'Public read safe app_settings' policy");
+  assert.match(anonPolicyMatch[0], /\bTO\s+anon\b/i, "Public read safe app_settings must target anon only");
+  assert.doesNotMatch(
+    anonPolicyMatch[0],
+    /public\.profiles|profiles\.|current_role|is_staff|has_permission/i,
+    "Anon policy must NOT depend on public.profiles or role helper functions"
+  );
+
+  assert.match(
+    sql,
+    /CREATE POLICY "Authenticated read safe app_settings"\s+ON public\.app_settings\s+FOR SELECT\s+TO authenticated[\s\S]*public\.current_role\(\)\s*=\s*'admin'/i,
+    "Authenticated read policy must use public.current_role() = 'admin'"
+  );
+  assert.match(
+    sql,
+    /CREATE POLICY "Admin write app_settings"\s+ON public\.app_settings\s+FOR ALL\s+TO authenticated[\s\S]*public\.current_role\(\)\s*=\s*'admin'/i,
+    "Admin write policy must restrict mutations to public.current_role() = 'admin'"
+  );
+  const policySectionRaw = sql.slice(sql.indexOf("-- 4. POLITYKI RLS DLA APP_SETTINGS"), sql.indexOf("-- 5. UPRAWNIENIA KOLUMNOWE"));
+  const policySectionExecutable = policySectionRaw.replace(/--[^\r\n]*/g, "");
+  assert.doesNotMatch(
+    policySectionExecutable,
+    /\b(is_staff|has_permission)\s*\(/i,
+    "app_settings policies must NOT use is_staff() or has_permission() (coach/delegated users cannot access pilot)"
+  );
+
+  assert.match(
+    sql,
+    /REVOKE ALL ON FUNCTION public\.prevent_role_self_escalation\(\) FROM PUBLIC,\s*anon,\s*authenticated;/i,
+    "prevent_role_self_escalation() must revoke EXECUTE from PUBLIC, anon, and authenticated"
+  );
+  assert.match(
+    sql,
+    /GRANT EXECUTE ON FUNCTION public\.prevent_role_self_escalation\(\) TO service_role;/i,
+    "prevent_role_self_escalation() grants EXECUTE strictly to service_role"
+  );
+});
+
+test("ETAP 11 - 6.2: RLS Role Matrix covers anon, parent, coach, admin, and service_role across app_settings & UI.6C handle_new_user", () => {
+  const matrix: Array<{
+    name: string;
+    session: SimulatedDbSession;
+    canReadPublicFlags: boolean;
+    canReadPilot: boolean;
+    canMutatePilot: boolean;
+  }> = [
+    { name: "anon", session: { role: "anon", userId: null }, canReadPublicFlags: true, canReadPilot: false, canMutatePilot: false },
+    { name: "parent", session: { role: "authenticated", userId: "u-parent", userSystemRole: "parent" }, canReadPublicFlags: true, canReadPilot: false, canMutatePilot: false },
+    { name: "coach", session: { role: "authenticated", userId: "u-coach", userSystemRole: "coach" }, canReadPublicFlags: true, canReadPilot: false, canMutatePilot: false },
+    { name: "admin", session: { role: "authenticated", userId: "u-admin", userSystemRole: "admin" }, canReadPublicFlags: true, canReadPilot: true, canMutatePilot: true },
+    { name: "service_role", session: { role: "service_role" }, canReadPublicFlags: true, canReadPilot: true, canMutatePilot: true }
+  ];
+
+  for (const row of matrix) {
+    assert.equal(
+      evaluateAppSettingsRlsPolicy({ operation: "SELECT", key: "maintenance_mode", session: row.session }).allowed,
+      row.canReadPublicFlags,
+      `${row.name}: maintenance_mode read mismatch`
+    );
+    assert.equal(
+      evaluateAppSettingsRlsPolicy({ operation: "SELECT", key: "feature_flags", session: row.session }).allowed,
+      row.canReadPublicFlags,
+      `${row.name}: feature_flags read mismatch`
+    );
+    assert.equal(
+      evaluateAppSettingsRlsPolicy({ operation: "SELECT", key: "collection_3d_pilot", session: row.session }).allowed,
+      row.canReadPilot,
+      `${row.name}: collection_3d_pilot read mismatch`
+    );
+    assert.equal(
+      evaluateAppSettingsRlsPolicy({ operation: "UPDATE", key: "collection_3d_pilot", session: row.session }).allowed,
+      row.canMutatePilot,
+      `${row.name}: collection_3d_pilot update mismatch`
+    );
+  }
+});
+
 
