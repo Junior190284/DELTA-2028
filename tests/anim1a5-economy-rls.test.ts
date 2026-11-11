@@ -13,6 +13,7 @@ import {
   completeQuizServerSide,
   grantSpecialCardServerSide,
   purchasePackServerSide,
+  serializeEconomyError,
   setUserCardFlagServerSide,
   syncRewardsServerSide
 } from "../lib/economy/server-rpc.ts";
@@ -1211,15 +1212,29 @@ test("7. REGRESJA KUPOWANIA PACZEK (service_role + p_user_id): kontrakt, niewyst
   ]);
   assert.equal(results.filter(r => r.status === "fulfilled").length, 2);
   assert.equal(results.filter(r => r.status === "rejected").length, 1);
+  const rejectedConcurrency = results.find(
+    (r): r is PromiseRejectedResult => r.status === "rejected"
+  );
+  assert.ok(rejectedConcurrency);
+  assert.ok(rejectedConcurrency.reason instanceof EconomyRpcError);
+  assert.equal(rejectedConcurrency.reason.code, "INSUFFICIENT_BALANCE");
+  assert.equal(rejectedConcurrency.reason.statusCode, 400);
   assert.equal(state.userDeltaPoints[USER_1].points_balance, 20);
   assert.equal(state.userUnopenedPacks.length, 3);
   assert.equal(state.deltaTransactions.length, 3);
 
-  // Niewystarczające saldo (20 DP < 60 DP) -> odrzucenie 400 bez zmian
+  // Niewystarczające saldo (20 DP < 60 DP) -> HTTP 400 z kodem INSUFFICIENT_BALANCE bez zmian
+  let insufficientErr: unknown;
   await assert.rejects(
     () => purchasePackServerSide({ adminClient: client, userId: USER_1, packTypeId: "standard_pack" }),
-    (err: any) => err instanceof EconomyRpcError && err.statusCode === 400
+    (err: any) => {
+      insufficientErr = err;
+      return err instanceof EconomyRpcError && err.code === "INSUFFICIENT_BALANCE" && err.statusCode === 400;
+    }
   );
+  const serializedInsufficient = serializeEconomyError(insufficientErr);
+  assert.equal(serializedInsufficient.status, 400);
+  assert.equal(serializedInsufficient.body.code, "INSUFFICIENT_BALANCE");
   assert.equal(state.userDeltaPoints[USER_1].points_balance, 20);
   assert.equal(state.userUnopenedPacks.length, 3);
 

@@ -27,6 +27,8 @@ import {
   applySsrCookiesToJar,
   assertNoSecretsInCliArgs,
   buildCurlStdinConfig,
+  buildNetscapeCookieJar,
+  buildVercelCurlArgs,
   cleanupIsolatedTestUser,
   redactSecrets,
   runPreviewHttpE2ESuite,
@@ -368,7 +370,7 @@ test("2. Adres produkcyjny (Supabase, custom domain, bare prod vercel alias, VER
   );
 });
 
-test("3. Zakaz przekazywania kluczy API w argumentach CLI oraz przekazywanie cookies przez stdin config", () => {
+test("3. Zakaz przekazywania kluczy API w argumentach CLI oraz przekazywanie cookies/body poza argv vercel curl", () => {
   assert.throws(
     () => assertNoSecretsInCliArgs(["node", "s.ts", `--secret=${SECRET_SERVICE}`]),
     /CRITICAL ABORT/
@@ -381,6 +383,24 @@ test("3. Zakaz przekazywania kluczy API w argumentach CLI oraz przekazywanie coo
     () => assertNoSecretsInCliArgs(["node", "s.ts", "eyJhbGciOiJIUzI1NiJ9.payload12345.sig"]),
     /CRITICAL ABORT/
   );
+
+  const jar = new Map<string, string>([["sb-test", "base64-abc"]]);
+  const netscape = buildNetscapeCookieJar(new URL(VALID_PREVIEW_URL), jar);
+  assert.match(netscape, /^delta-2028-amzu0zdpp-tomaszrybacki-3187s-projects\.vercel\.app\tFALSE\t\/\tTRUE\t0\tsb-test\tbase64-abc/m);
+
+  const args = buildVercelCurlArgs({
+    targetUrl: `${VALID_PREVIEW_URL}/api/cards/open-pack`,
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: "sb-test=base64-abc" },
+    cookieFilePath: "/tmp/e2e-cookie.txt",
+    hasPostBody: true,
+    timeoutMs: 30_000
+  });
+  assert.equal(args.includes("--config"), false);
+  assert.equal(args.includes("-K"), false);
+  assert.equal(args.some(a => a.includes("base64-abc")), false);
+  assert.ok(args.includes("-b") && args.includes("/tmp/e2e-cookie.txt"));
+  assert.ok(args.includes("--data-binary") && args.includes("@-"));
 
   const cfg = buildCurlStdinConfig({
     method: "POST",

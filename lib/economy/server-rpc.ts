@@ -77,6 +77,7 @@ function mapRpcRejectionToError(rpcResult: {
     case "DAILY_LIMIT_REACHED":
       return new EconomyRpcError("DAILY_LIMIT_REACHED", msg, 429);
     case "INSUFFICIENT_BALANCE":
+      return new EconomyRpcError("INSUFFICIENT_BALANCE", msg, 400);
     case "INVALID_PACK_TYPE":
     case "INVALID_AMOUNT":
     case "INVALID_CARD":

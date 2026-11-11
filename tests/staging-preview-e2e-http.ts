@@ -8,7 +8,7 @@
  * 2. Twarda walidacja hosta Supabase (`^tdlsxamxtygojxhmjjvp\.supabase\.co$`, blokada `fctgruvciakhohfxkdzp`).
  * 3. Twarda walidacja `PREVIEW_URL` (HTTPS na preview `delta-2028-*.vercel.app` lub loopback, blokada domeny prod).
  * 4. Zakaz przekazywania kluczy API/tokenów w argumentach CLI; odczyt wyłącznie z `process.env`.
- * 5. Ciasteczka `@supabase/ssr` i JSON body w `--use-vercel-curl` przekazywane przez `stdin` (`curl --config -`).
+ * 5. W `--use-vercel-curl` ciasteczka `@supabase/ssr` trafiają przez tymczasowy plik `-b` (tryb `0600`, usuwany natychmiast w `finally`), a body POST przez `--data-binary @-` (`stdin`).
  * 6. Idempotentne, odporne na przerwania (`finally` + `SIGINT`/`SIGTERM`) czyszczenie WYŁĄCZNIE konta
  *    utworzonego w tym przebiegu (`^e2e-http-\d+-[a-z0-9-]+@staging\.delta\.local$`).
  *
@@ -23,7 +23,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import { resolve as resolvePath } from "node:path";
+import { existsSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join as joinPath, resolve as resolvePath } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
@@ -307,11 +309,72 @@ export function buildCurlStdinConfig(options: {
   return `${lines.join("\n")}\n`;
 }
 
+export function buildNetscapeCookieJar(targetUrl: URL, cookieMap: Map<string, string>): string {
+  const isSecure = targetUrl.protocol === "https:" ? "TRUE" : "FALSE";
+  const sanitize = (v: string) => v.replace(/[\r\n\t]/g, "");
+  return (
+    Array.from(cookieMap.entries())
+      .map(([name, value]) => `${targetUrl.hostname}\tFALSE\t/\t${isSecure}\t0\t${sanitize(name)}\t${sanitize(value)}`)
+      .join("\n") + "\n"
+  );
+}
+
+export function buildVercelCurlArgs(options: {
+  targetUrl: string;
+  method: "GET" | "POST";
+  headers: Record<string, string>;
+  cookieFilePath?: string;
+  hasPostBody: boolean;
+  timeoutMs: number;
+}): string[] {
+  const maxTimeSec = String(Math.max(1, Math.ceil(options.timeoutMs / 1000)));
+  const args: string[] = [
+    "curl",
+    options.targetUrl,
+    "--",
+    "-sS",
+    "--max-time",
+    maxTimeSec,
+    "-X",
+    options.method
+  ];
+  for (const [k, v] of Object.entries(options.headers)) {
+    if (k.toLowerCase() === "cookie") continue;
+    args.push("-H", `${k}: ${v}`);
+  }
+  if (options.cookieFilePath) {
+    args.push("-b", options.cookieFilePath);
+  }
+  if (options.hasPostBody) {
+    args.push("--data-binary", "@-");
+  }
+  args.push("-w", "\n__HTTP_STATUS__:%{http_code}");
+  return args;
+}
+
 function resolveVercelCmd(env: Record<string, string | undefined>): string {
   if (env.VERCEL_BIN && env.VERCEL_BIN.trim()) {
     return env.VERCEL_BIN.trim();
   }
   return process.platform === "win32" ? "vercel.cmd" : "vercel";
+}
+
+function resolveVercelRunner(env: Record<string, string | undefined>): {
+  command: string;
+  prefixArgs: string[];
+  shell: boolean;
+} {
+  const resolved = resolveVercelCmd(env);
+  if (resolved.toLowerCase().endsWith(".cmd")) {
+    const siblingVcJs = resolvePath(dirname(resolved), "../vercel/dist/vc.js");
+    if (existsSync(siblingVcJs)) {
+      return { command: process.execPath, prefixArgs: [siblingVcJs], shell: false };
+    }
+  }
+  if (/\.(m|c)?js$/i.test(resolved)) {
+    return { command: process.execPath, prefixArgs: [resolved], shell: false };
+  }
+  return { command: resolved, prefixArgs: [], shell: process.platform === "win32" };
 }
 
 export function parseHttpStatusAndBody(stdout: string): HttpResponse {
@@ -609,23 +672,51 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       const reqTimeout = options.timeoutMs ?? timeoutMs;
 
       if (options.useVercelCurl) {
-        const curlConfig = buildCurlStdinConfig({
+        const parsedTarget = new URL(targetUrl);
+        const hasCookies = Boolean(options.supabaseCookies && options.supabaseCookies.size > 0);
+        const cookieFilePath = hasCookies
+          ? joinPath(tmpdir(), `e2e-vc-cookies-${process.pid}-${randomUUID()}.txt`)
+          : undefined;
+        const postBodyInput =
+          options.method === "POST"
+            ? JSON.stringify(options.body !== undefined ? options.body : {})
+            : undefined;
+
+        const curlArgs = buildVercelCurlArgs({
+          targetUrl,
           method: options.method,
           headers,
-          body: options.body,
+          cookieFilePath,
+          hasPostBody: options.method === "POST",
           timeoutMs: reqTimeout
         });
+        const runner = resolveVercelRunner(env);
 
-        const res = defaultSpawn(
-          resolveVercelCmd(env),
-          ["curl", targetUrl, "--", "-sS", "--config", "-"],
-          {
-            encoding: "utf8",
-            shell: process.platform === "win32",
-            input: curlConfig,
-            timeout: reqTimeout + 5_000
+        let res;
+        try {
+          if (cookieFilePath && options.supabaseCookies) {
+            writeFileSync(
+              cookieFilePath,
+              buildNetscapeCookieJar(parsedTarget, options.supabaseCookies),
+              { encoding: "utf8", mode: 0o600 }
+            );
           }
-        );
+
+          res = defaultSpawn(runner.command, [...runner.prefixArgs, ...curlArgs], {
+            encoding: "utf8",
+            shell: runner.shell,
+            input: postBodyInput,
+            timeout: reqTimeout + 5_000
+          });
+        } finally {
+          if (cookieFilePath) {
+            try {
+              rmSync(cookieFilePath, { force: true });
+            } catch {
+              // Ignoruj błąd usunięcia tymczasowego pliku ciasteczek
+            }
+          }
+        }
 
         if (res.error) {
           const isTimeout = (res.error as NodeJS.ErrnoException).code === "ETIMEDOUT";
@@ -636,8 +727,9 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
           );
         }
         if (res.status !== 0) {
+          const safeStderr = redactSecrets((res.stderr || "").trim().slice(0, 240), secretBag);
           throw new Error(
-            `vercel curl zakończył się kodem ${res.status} (sprawdź autoryzację vercel login lub ważność sesji Preview).`
+            `vercel curl zakończył się kodem ${res.status}${safeStderr ? ` (${safeStderr})` : ""} (sprawdź autoryzację vercel login lub ważność sesji Preview).`
           );
         }
         return parseHttpStatusAndBody(res.stdout || "");
@@ -1078,6 +1170,7 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.data?.grantedPack?.user_id, testUserId);
       purchasedPackId = res.data?.grantedPack?.id;
       assert.ok(purchasedPackId);
+      console.log(`  [TELEMETRY] buy-pack: status=${res.status}, initialDP=100, remainingDP=${res.data?.remainingPoints}`);
     });
 
     await runCase("AUTH POST /api/cards/buy-pack ponowiony klucz zwraca already_processed bez podwójnego pobrania", async () => {
@@ -1130,6 +1223,9 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.status, 200);
       assert.ok(Array.isArray(res.data?.cards) && res.data.cards.length >= 1);
       firstOpenPayload = res.data;
+      console.log(
+        `  [TELEMETRY] open-pack: status=${res.status}, drawnCards=${res.data?.cards?.length}, dupDPEarned=${res.data?.total_delta_points_earned ?? "n/a"}, newPointsBalance=${res.data?.new_points_balance ?? "n/a"}, remainingPacks=${res.data?.remaining_unopened_packs_count ?? "n/a"}`
+      );
     });
 
     await runCase("AUTH POST /api/cards/open-pack ponowny idempotency_key nie otwiera ponownie przy 0 paczek", async () => {
@@ -1197,6 +1293,12 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.status, 200);
       assert.ok(Array.isArray(res.data?.userCards) && res.data.userCards.length >= 1);
       assert.equal(res.data?.unopenedPacks?.length, 0);
+      if (typeof firstOpenPayload?.new_points_balance === "number") {
+        assert.equal(res.data?.deltaPoints, firstOpenPayload.new_points_balance);
+      }
+      console.log(
+        `  [TELEMETRY] collection post-open: status=${res.status}, userCards=${res.data?.userCards?.length}, unopenedPacks=${res.data?.unopenedPacks?.length}, deltaPoints=${res.data?.deltaPoints}`
+      );
     });
 
     // E. Nagrody i kontrola uprawnień: daily-spin, challenges, quests, quiz, grant-special
@@ -1211,6 +1313,7 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
         extraHeaders
       });
       assert.equal(firstSpin.status, 200);
+      console.log(`  [TELEMETRY] daily-spin #1: status=${firstSpin.status}, rewardType=${firstSpin.data?.reward?.type ?? "n/a"}, newPointsBalance=${firstSpin.data?.newPointsBalance ?? "n/a"}`);
 
       const secondSpin = await sendPreviewRequest({
         previewUrl: previewOrigin,
