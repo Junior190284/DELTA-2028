@@ -32,6 +32,15 @@ export const STAGING_PROJECT_ID = "tdlsxamxtygojxhmjjvp";
 export const PRODUCTION_PROJECT_ID = "fctgruvciakhohfxkdzp";
 export const DEFAULT_HTTP_TIMEOUT_MS = 30_000;
 export const SYNTHETIC_TEST_EMAIL_RE = /^e2e-http-\d+-[a-z0-9-]+@staging\.delta\.local$/i;
+export const E2E_TEST_PLAYER_ID = "e2e57000-0000-4e2e-8000-000000000001";
+export const E2E_TEST_PLAYER_NAME = "E2E TEST PLAYER";
+export const E2E_TEST_CARD_IDS = [
+  "e2e57000-0001-4e2e-8000-000000000001",
+  "e2e57000-0002-4e2e-8000-000000000002",
+  "e2e57000-0003-4e2e-8000-000000000003",
+  "e2e57000-0004-4e2e-8000-000000000004",
+  "e2e57000-0005-4e2e-8000-000000000005"
+] as const;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const DISALLOWED_CLI_SECRET_FLAGS = [
@@ -63,7 +72,11 @@ export interface CreatedSyntheticUser {
 
 export interface CleanupTableSpec {
   table: string;
-  column: "user_id" | "admin_id" | "id";
+  column: "user_id" | "admin_id" | "parent_id" | "id";
+  secondaryFilter?: {
+    column: "player_id";
+    value: string;
+  };
 }
 
 export const USER_CLEANUP_STEPS: readonly CleanupTableSpec[] = [
@@ -78,6 +91,11 @@ export const USER_CLEANUP_STEPS: readonly CleanupTableSpec[] = [
   { table: "user_claimed_rewards", column: "user_id" },
   { table: "admin_card_grants", column: "user_id" },
   { table: "admin_card_grants", column: "admin_id" },
+  {
+    table: "parent_players",
+    column: "parent_id",
+    secondaryFilter: { column: "player_id", value: E2E_TEST_PLAYER_ID }
+  },
   { table: "profiles", column: "id" }
 ];
 
@@ -86,6 +104,8 @@ export interface CleanupResult {
   deletedUserId: string | null;
   stepsExecuted: number;
   authUserDeleted: boolean;
+  residualRowsFound: number;
+  residualTables: string[];
   errors: string[];
 }
 
@@ -324,6 +344,8 @@ export async function cleanupIsolatedTestUser(params: {
     deletedUserId: null,
     stepsExecuted: 0,
     authUserDeleted: false,
+    residualRowsFound: 0,
+    residualTables: [],
     errors: []
   };
 
@@ -347,12 +369,17 @@ export async function cleanupIsolatedTestUser(params: {
   result.executed = true;
   result.deletedUserId = createdUser.id;
 
+  // 1. Usuwanie w kolejności relacji FK (najpierw logi pack_opening_logs z FK bez CASCADE na user_unopened_packs)
   for (const step of USER_CLEANUP_STEPS) {
     try {
-      const res = await admin
+      let delQuery = admin
         .from(step.table)
         .delete()
         .eq(step.column, createdUser.id);
+      if (step.secondaryFilter) {
+        delQuery = delQuery.eq(step.secondaryFilter.column, step.secondaryFilter.value);
+      }
+      const res = await delQuery;
       result.stepsExecuted++;
       if (res?.error) {
         result.errors.push(`${step.table}.${step.column}: ${res.error.message || "delete error"}`);
@@ -362,15 +389,54 @@ export async function cleanupIsolatedTestUser(params: {
     }
   }
 
+  // 2. Usunięcie użytkownika z auth.users oraz opcjonalna weryfikacja jego braku
   try {
     const { error: delAuthErr } = await admin.auth.admin.deleteUser(createdUser.id);
     if (delAuthErr) {
       result.errors.push(`auth.users: ${delAuthErr.message || "deleteUser failed"}`);
+    } else if (typeof admin.auth?.admin?.getUserById === "function") {
+      try {
+        const { data: checkUserData, error: checkUserErr } = await admin.auth.admin.getUserById(createdUser.id);
+        if (!checkUserErr && checkUserData?.user?.id === createdUser.id) {
+          result.errors.push("auth.users: użytkownik testowy nadal istnieje po deleteUser.");
+        } else {
+          result.authUserDeleted = true;
+        }
+      } catch {
+        result.authUserDeleted = true;
+      }
     } else {
       result.authUserDeleted = true;
     }
   } catch (err: any) {
     result.errors.push(`auth.users: ${err?.message || "deleteUser threw"}`);
+  }
+
+  // 3. Weryfikacja powykonawcza braku pozostałych wierszy powiązanych z testUserId
+  for (const step of USER_CLEANUP_STEPS) {
+    try {
+      const tableHandle = admin.from(step.table);
+      if (typeof tableHandle?.select === "function") {
+        let checkQuery = tableHandle
+          .select(step.column, { count: "exact", head: true })
+          .eq(step.column, createdUser.id);
+        if (step.secondaryFilter) {
+          checkQuery = checkQuery.eq(step.secondaryFilter.column, step.secondaryFilter.value);
+        }
+        const checkRes = await checkQuery;
+        if (checkRes?.error) {
+          result.errors.push(`verify ${step.table}.${step.column}: ${checkRes.error.message || "verify error"}`);
+        } else if (typeof checkRes?.count === "number" && checkRes.count > 0) {
+          result.residualRowsFound += checkRes.count;
+          result.residualTables.push(`${step.table}.${step.column}(${checkRes.count})`);
+          result.errors.push(
+            `RESIDUAL_DATA: tabela ${step.table}.${step.column} wciąż zawiera ${checkRes.count} rekordów testera.`
+          );
+        }
+      }
+    } catch (err: any) {
+      result.errors.push(`verify ${step.table}.${step.column}: ${err?.message || "verify threw"}`);
+    }
   }
 
   return result;
@@ -395,6 +461,7 @@ export interface StagingPreviewDeps {
   spawnSyncFn?: typeof spawnSync;
   timeoutMs?: number;
   registerSignalHandlers?: boolean;
+  onBeforeCreateUser?: (triggerSignal: (sig: "SIGINT" | "SIGTERM") => void) => void;
 }
 
 function getArgValue(argv: readonly string[], prefix: string): string {
@@ -431,17 +498,22 @@ export function buildDryRunReport(params: {
     httpRequestsExecuted: 0,
     plannedOperations: [
       "1. Walidacja targetu (Supabase ref === tdlsxamxtygojxhmjjvp, Preview HTTPS delta-2028-*.vercel.app lub localhost).",
-      "2. Utworzenie wyłącznie syntetycznego konta testowego e2e-http-<ts>-<nonce>@staging.delta.local + profilu parent.",
+      "2. Utworzenie wyłącznie syntetycznego konta testowego e2e-http-<ts>-<nonce>@staging.delta.local, profilu parent oraz relacji parent_players (testUserId -> E2E_TEST_PLAYER_ID).",
       "3. Logowanie przez @supabase/ssr signInWithPassword -> zapis ciasteczek wyłącznie w pamięci (cookieJar).",
       "4. Testy POST bez sesji Supabase (oczekiwane 401): open-pack, buy-pack, daily-spin, challenges, quests, quiz.",
       "5. Preflight GET /api/admin/health-check (database=OK, auth=OK, environment=preview) + GET /api/cards/collection (anon=0 kart/paczek).",
-      "6. Testy z sesją: GET /api/auth/status, GET /api/cards/collection (6 packDefinitions), POST buy-pack (400 brak salda, 200 zakup 60 DP, 200 replay, 409 konflikt idempotencji).",
+      "6. Testy z sesją i RLS: GET /api/auth/status, RLS players/card_definitions (widoczny wyłącznie E2E TEST PLAYER i 5 kart), GET /api/cards/collection (6 packDefinitions + allCards z player), POST buy-pack (400 brak salda, 200 zakup 60 DP, 200 replay, 409 konflikt idempotencji).",
       "7. Testy otwierania: POST open-pack (200 otwarcie, 200 replay przy 0 paczek, 409 ALREADY_OPENED z nowym kluczem, 400 NO_UNOPENED_PACK), weryfikacja GET /api/cards/collection.",
       "8. Testy nagród i uprawnień: POST daily-spin (200 -> 429), challenges (400/404), quests (200 30 DP -> 409), quiz (<75% 0 DP, 100% 50 DP, replay alreadyClaimed), grant-special (403).",
-      "9. Idempotentne czyszczenie w finally (oraz przy SIGINT/SIGTERM) powiązane wyłącznie z testUserId."
+      "9. Idempotentne czyszczenie w finally (oraz przy SIGINT/SIGTERM) powiązane wyłącznie z testUserId (w tym parent_players dla pary testUserId + E2E_TEST_PLAYER_ID)."
     ],
     plannedCleanupQueries: [
-      ...USER_CLEANUP_STEPS.map(s => `DELETE FROM public.${s.table} WHERE ${s.column} = <testUserId>`),
+      ...USER_CLEANUP_STEPS.map(
+        s =>
+          `DELETE FROM public.${s.table} WHERE ${s.column} = <testUserId>${
+            s.secondaryFilter ? ` AND ${s.secondaryFilter.column} = ${s.secondaryFilter.value}` : ""
+          }`
+      ),
       "auth.admin.deleteUser(<testUserId>)"
     ]
   };
@@ -622,13 +694,24 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
     });
 
   let createdUser: CreatedSyntheticUser | null = null;
+  let createUserInFlight = false;
+  let createUserPromise: Promise<void> | null = null;
   let cleanupPromise: Promise<CleanupResult> | null = null;
-  let abortedBySignal = false;
+  let abortedBySignal: string | null = null;
   const controller = new AbortController();
 
   const runCleanupOnce = (): Promise<CleanupResult> => {
     if (!cleanupPromise) {
-      cleanupPromise = cleanupIsolatedTestUser({ admin, createdUser }).finally(() => {
+      cleanupPromise = (async () => {
+        if (createUserInFlight && createUserPromise) {
+          try {
+            await createUserPromise;
+          } catch {
+            // Jeśli createUser rzucił błąd lub nie utworzył konta, createdUser pozostaje null
+          }
+        }
+        return cleanupIsolatedTestUser({ admin, createdUser });
+      })().finally(() => {
         cookieJar.clear();
       });
     }
@@ -636,68 +719,103 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
   };
 
   const onSignal = (sig: string) => {
-    abortedBySignal = true;
-    controller.abort(new Error(`Przerwano test sygnałem ${sig}`));
-    void runCleanupOnce();
+    if (!abortedBySignal) {
+      abortedBySignal = sig;
+      controller.abort(new Error(`Przerwano test sygnałem ${sig}`));
+      void runCleanupOnce();
+    }
   };
 
+  const sigintHandler = () => onSignal("SIGINT");
+  const sigtermHandler = () => onSignal("SIGTERM");
+
   if (deps.registerSignalHandlers !== false) {
-    process.once("SIGINT", () => onSignal("SIGINT"));
-    process.once("SIGTERM", () => onSignal("SIGTERM"));
+    process.once("SIGINT", sigintHandler);
+    process.once("SIGTERM", sigtermHandler);
   }
 
   let passed = 0;
   let failed = 0;
   const previewOrigin = parsedPreview.origin;
 
-  const runCase = async (label: string, fn: () => Promise<void>) => {
+  const assertNotAborted = () => {
     if (abortedBySignal || controller.signal.aborted) {
-      throw new Error("Test przerwany sygnałem użytkownika.");
+      throw new Error(`Przerwano test sygnałem ${abortedBySignal || "ABORT"}.`);
     }
+  };
+
+  const runCase = async (label: string, fn: () => Promise<void>): Promise<boolean> => {
+    assertNotAborted();
     try {
       await fn();
       console.log(`PASS: ${label}`);
       passed++;
+      return true;
     } catch (err: any) {
       const safeMsg = redactSecrets(err?.message || String(err), secretBag);
       console.error(`FAIL: ${label} ->`, safeMsg);
       failed++;
+      return false;
+    }
+  };
+
+  const runCriticalCase = async (label: string, fn: () => Promise<void>): Promise<void> => {
+    const ok = await runCase(label, fn);
+    if (!ok) {
+      throw new Error(`FAIL_FAST: Krytyczny błąd w '${label}' przerywa dalsze testy zależne.`);
     }
   };
 
   let finalCleanup: CleanupResult | undefined;
+  let primaryError: unknown = null;
+  let cleanupFailureError: Error | null = null;
 
   try {
-    // 1. Utworzenie wyłącznie izolowanego użytkownika testowego na Stagingu
+    // 1. Utworzenie wyłącznie izolowanego użytkownika testowego na Stagingu (bez race z SIGINT/SIGTERM)
     const testEmail = `e2e-http-${Date.now()}-${randomUUID().slice(0, 8)}@staging.delta.local`;
     const testPassword = `${randomBytes(18).toString("base64url")}!9Aa`;
     secretBag.push(testPassword);
 
-    const { data: createdAuth, error: authErr } = await admin.auth.admin.createUser({
-      email: testEmail,
-      password: testPassword,
-      email_confirm: true
+    createUserInFlight = true;
+    createUserPromise = (async () => {
+      if (deps.onBeforeCreateUser) {
+        deps.onBeforeCreateUser(sig => onSignal(sig));
+      }
+
+      const { data: createdAuth, error: authErr } = await admin.auth.admin.createUser({
+        email: testEmail,
+        password: testPassword,
+        email_confirm: true
+      });
+
+      if (authErr || !createdAuth?.user?.id) {
+        throw new Error(
+          `Nie udało się utworzyć izolowanego konta na stagingu: ${redactSecrets(
+            authErr?.message || "brak user.id",
+            secretBag
+          )}`
+        );
+      }
+
+      if (!isValidUuid(createdAuth.user.id)) {
+        throw new Error("CRITICAL ABORT: Utworzone konto testowe ma nieprawidłowe UUID.");
+      }
+
+      createdUser = {
+        id: createdAuth.user.id,
+        email: createdAuth.user.email || testEmail,
+        createdByThisRun: true
+      };
+    })().finally(() => {
+      createUserInFlight = false;
     });
 
-    if (authErr || !createdAuth?.user?.id) {
-      throw new Error(
-        `Nie udało się utworzyć izolowanego konta na stagingu: ${redactSecrets(
-          authErr?.message || "brak user.id",
-          secretBag
-        )}`
-      );
+    await createUserPromise;
+    assertNotAborted();
+    if (!createdUser) {
+      throw new Error("CRITICAL ABORT: Brak obiektu createdUser po zakończeniu createUser.");
     }
-
-    if (!isValidUuid(createdAuth.user.id)) {
-      throw new Error("CRITICAL ABORT: Utworzone konto testowe ma nieprawidłowe UUID.");
-    }
-
-    createdUser = {
-      id: createdAuth.user.id,
-      email: createdAuth.user.email || testEmail,
-      createdByThisRun: true
-    };
-    const testUserId = createdUser.id;
+    const testUserId: string = (createdUser as CreatedSyntheticUser).id;
 
     const { error: profErr } = await admin.from("profiles").upsert(
       { id: testUserId, display_name: "E2E HTTP TESTER", role: "parent" },
@@ -705,6 +823,39 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
     );
     if (profErr) {
       throw new Error(`Nie udało się utworzyć profilu testowego: ${profErr.message}`);
+    }
+
+    // 1b. Powiązanie syntetycznego testera z fikcyjnym E2E TEST PLAYER w parent_players (dla RLS players -> is_parent_of)
+    const playersHandle = admin.from("players");
+    if (typeof playersHandle?.select === "function") {
+      const playerSel = playersHandle.select("id, display_name, active").eq("id", E2E_TEST_PLAYER_ID);
+      if (typeof playerSel?.maybeSingle === "function") {
+        const { data: synthPlayer, error: synthPlayerErr } = await playerSel.maybeSingle();
+        if (synthPlayerErr) {
+          throw new Error(`Nie udało się zweryfikować fikcyjnego gracza E2E: ${synthPlayerErr.message}`);
+        }
+        if (
+          !synthPlayer ||
+          synthPlayer.id !== E2E_TEST_PLAYER_ID ||
+          synthPlayer.display_name !== E2E_TEST_PLAYER_NAME
+        ) {
+          throw new Error(
+            `SYNTHETIC_PLAYER_MISSING: Brak fikcyjnego gracza ${E2E_TEST_PLAYER_NAME} (${E2E_TEST_PLAYER_ID}) na Stagingu.`
+          );
+        }
+
+        if (!SYNTHETIC_TEST_EMAIL_RE.test(testEmail) || !isValidUuid(testUserId)) {
+          throw new Error("CRITICAL ABORT: Odmowa przypisania parent_players do niesyntetycznego konta.");
+        }
+
+        const { error: linkErr } = await admin.from("parent_players").upsert(
+          { parent_id: testUserId, player_id: E2E_TEST_PLAYER_ID },
+          { onConflict: "parent_id,player_id" }
+        );
+        if (linkErr) {
+          throw new Error(`Nie udało się dodać relacji parent_players dla testera: ${linkErr.message}`);
+        }
+      }
     }
 
     // 2. Rzeczywista sesja Supabase SSR i weryfikacja obecności ciasteczek w cookieJar
@@ -750,8 +901,8 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       });
     }
 
-    // B. Preflight GET /api/admin/health-check, /api/cards/collection (anon vs auth) i /api/auth/status
-    await runCase("PREFLIGHT GET /api/admin/health-check sprawdza środowisko i bazę", async () => {
+    // B. Preflight GET /api/admin/health-check, /api/cards/collection, /api/auth/status oraz card_definitions (FAIL-FAST)
+    await runCriticalCase("PREFLIGHT GET /api/admin/health-check sprawdza środowisko i bazę", async () => {
       const res = await sendPreviewRequest({
         previewUrl: previewOrigin,
         path: "/api/admin/health-check",
@@ -785,7 +936,7 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.data?.deltaPoints, 0);
     });
 
-    await runCase("AUTH GET /api/auth/status potwierdza zalogowaną sesję izolowanego testera", async () => {
+    await runCriticalCase("AUTH GET /api/auth/status potwierdza zalogowaną sesję izolowanego testera", async () => {
       const res = await sendPreviewRequest({
         previewUrl: previewOrigin,
         path: "/api/auth/status",
@@ -799,7 +950,60 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.data?.user_id, testUserId);
     });
 
-    await runCase("AUTH GET /api/cards/collection odczytuje 6 aktywnych pack_definitions i karty ze Stagingu", async () => {
+    const cardDefsHandle = admin.from("card_definitions");
+    if (typeof cardDefsHandle?.select === "function") {
+      await runCriticalCase("PREFLIGHT card_definitions: Staging posiada >= 1 aktywną definicję karty", async () => {
+        const { count, error } = await cardDefsHandle
+          .select("id", { count: "exact", head: true })
+          .eq("is_active", true);
+        assert.ifError(error);
+        assert.ok(
+          typeof count === "number" && count > 0,
+          `NO_AVAILABLE_CARDS: Staging posiada ${count ?? 0} aktywnych definicji w card_definitions (wymagane min. 1 przed open-pack).`
+        );
+      });
+    }
+
+    if (typeof ssrClient?.from === "function") {
+      await runCriticalCase(
+        "AUTH RLS players + card_definitions: zalogowany tester widzi wyłącznie E2E TEST PLAYER i jego karty",
+        async () => {
+          const { data: visiblePlayers, error: visPlayerErr } = await ssrClient
+            .from("players")
+            .select("id, display_name, active");
+          assert.ifError(visPlayerErr);
+          assert.equal(
+            visiblePlayers?.length ?? 0,
+            1,
+            `RLS players musi zwracać dokładnie 1 syntetycznego gracza (otrzymano ${visiblePlayers?.length ?? 0}).`
+          );
+          assert.equal(visiblePlayers?.[0]?.id, E2E_TEST_PLAYER_ID);
+          assert.equal(visiblePlayers?.[0]?.display_name, E2E_TEST_PLAYER_NAME);
+
+          const { data: visibleCards, error: visCardsErr } = await ssrClient
+            .from("card_definitions")
+            .select("id, player_id, rarity, is_active")
+            .eq("is_active", true);
+          assert.ifError(visCardsErr);
+          const synthVisibleCards = (visibleCards || []).filter(
+            (c: any) => c?.player_id === E2E_TEST_PLAYER_ID
+          );
+          assert.ok(
+            synthVisibleCards.length >= 5,
+            `Zalogowany tester musi widzieć >= 5 aktywnych kart E2E TEST PLAYER (otrzymano ${synthVisibleCards.length}).`
+          );
+          const visibleRarities = new Set(synthVisibleCards.map((c: any) => c.rarity));
+          for (const reqRarity of ["common", "rare", "epic", "legendary", "inferno"]) {
+            assert.ok(
+              visibleRarities.has(reqRarity),
+              `Brak widocznej aktywnej karty rzadkości '${reqRarity}' dla E2E TEST PLAYER.`
+            );
+          }
+        }
+      );
+    }
+
+    await runCriticalCase("AUTH GET /api/cards/collection odczytuje 6 aktywnych pack_definitions i karty ze Stagingu", async () => {
       const res = await sendPreviewRequest({
         previewUrl: previewOrigin,
         path: "/api/cards/collection",
@@ -811,9 +1015,23 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.status, 200);
       assert.ok(Array.isArray(res.data?.packDefinitions) && res.data.packDefinitions.length === 6);
       assert.ok(Array.isArray(res.data?.allCards) && res.data.allCards.length > 0);
+      const leakedPlayers = (res.data?.players || []).filter(
+        (p: any) => p?.id && p.id !== E2E_TEST_PLAYER_ID
+      );
+      assert.equal(leakedPlayers.length, 0, "RLS players nie może ujawniać istniejących zawodników.");
+      const synthCardsWithVisiblePlayer = (res.data?.allCards || []).filter(
+        (c: any) =>
+          c?.player_id === E2E_TEST_PLAYER_ID &&
+          c?.player?.id === E2E_TEST_PLAYER_ID &&
+          c?.player?.display_name === E2E_TEST_PLAYER_NAME
+      );
+      assert.ok(
+        synthCardsWithVisiblePlayer.length >= 5,
+        `GET /api/cards/collection musi zwracać >= 5 kart z widocznym graczem ${E2E_TEST_PLAYER_NAME}.`
+      );
     });
 
-    // C. Zakup paczek: brak środków, zakup 60 DP, replay i konflikt 409
+    // C. Zakup paczek: brak środków, zakup 60 DP (FAIL-FAST), replay i konflikt 409
     const { error: dpErr } = await admin.from("user_delta_points").upsert(
       { user_id: testUserId, points_balance: 100, total_earned: 100, total_spent: 0 },
       { onConflict: "user_id" }
@@ -839,7 +1057,7 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.data?.code, "INSUFFICIENT_BALANCE");
     });
 
-    await runCase("AUTH POST /api/cards/buy-pack realizuje zakup standard_pack (60 DP -> saldo 40)", async () => {
+    await runCriticalCase("AUTH POST /api/cards/buy-pack realizuje zakup standard_pack (60 DP -> saldo 40)", async () => {
       const res = await sendPreviewRequest({
         previewUrl: previewOrigin,
         path: "/api/cards/buy-pack",
@@ -891,11 +1109,11 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
       assert.equal(res.data?.code, "IDEMPOTENCY_CONFLICT");
     });
 
-    // D. Otwarcie kupionej paczki + ponowienie idempotentne + blokady powtórnego otwarcia
+    // D. Otwarcie kupionej paczki (FAIL-FAST) + ponowienie idempotentne + blokady powtórnego otwarcia
     const idemOpenKey = `e2e-open-${Date.now()}`;
     let firstOpenPayload: any = null;
 
-    await runCase("AUTH POST /api/cards/open-pack otwiera kupioną paczkę i zwraca wylosowane karty", async () => {
+    await runCriticalCase("AUTH POST /api/cards/open-pack otwiera kupioną paczkę i zwraca wylosowane karty", async () => {
       const res = await sendPreviewRequest({
         previewUrl: previewOrigin,
         path: "/api/cards/open-pack",
@@ -1113,14 +1331,44 @@ export async function runPreviewHttpE2ESuite(deps: StagingPreviewDeps = {}): Pro
     });
 
     console.log(`\n=== PREVIEW HTTP E2E SUMMARY: Passed ${passed}, Failed ${failed} ===`);
-    if (failed > 0 && deps.argv === undefined) {
-      process.exitCode = 1;
-    }
+  } catch (err: unknown) {
+    primaryError = err;
   } finally {
-    finalCleanup = await runCleanupOnce();
-    if (finalCleanup.errors.length > 0) {
-      console.error("CLEANUP WARNINGS:", redactSecrets(finalCleanup.errors.join("; "), secretBag));
+    if (deps.registerSignalHandlers !== false) {
+      process.removeListener("SIGINT", sigintHandler);
+      process.removeListener("SIGTERM", sigtermHandler);
     }
+
+    finalCleanup = await runCleanupOnce();
+    if (createdUser) {
+      const cleanupBroken =
+        finalCleanup.authUserDeleted !== true ||
+        finalCleanup.errors.length > 0 ||
+        finalCleanup.residualRowsFound > 0;
+
+      if (cleanupBroken) {
+        failed++;
+        const safeErrList = redactSecrets(finalCleanup.errors.join("; "), secretBag);
+        console.error(
+          "FAIL: CLEANUP_VERIFICATION ->",
+          `authUserDeleted=${finalCleanup.authUserDeleted}, residualRowsFound=${finalCleanup.residualRowsFound}, errors=[${safeErrList}]`
+        );
+        cleanupFailureError = new Error(
+          `CLEANUP_VERIFICATION_FAILED: authUserDeleted=${finalCleanup.authUserDeleted}, residualRowsFound=${finalCleanup.residualRowsFound}, errors=${safeErrList}`
+        );
+      }
+    }
+  }
+
+  if (primaryError && cleanupFailureError) {
+    const primaryMsg = primaryError instanceof Error ? primaryError.message : String(primaryError);
+    throw new Error(`${redactSecrets(primaryMsg, secretBag)} | ${cleanupFailureError.message}`);
+  }
+  if (cleanupFailureError) {
+    throw cleanupFailureError;
+  }
+  if (primaryError) {
+    throw primaryError;
   }
 
   return {
@@ -1136,14 +1384,26 @@ const isMainModule =
   pathToFileURL(resolvePath(process.argv[1])).href === import.meta.url;
 
 if (isMainModule) {
-  runPreviewHttpE2ESuite().catch(err => {
-    console.error("Preview HTTP E2E Fatal Error:", redactSecrets(err?.message || String(err), [
-      process.env.SUPABASE_SECRET_KEY,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      process.env.VERCEL_PROTECTION_BYPASS
-    ]));
-    process.exit(1);
-  });
+  runPreviewHttpE2ESuite()
+    .then(res => {
+      if (
+        res.failed > 0 ||
+        (res.cleanup?.executed &&
+          (!res.cleanup.authUserDeleted ||
+            res.cleanup.errors.length > 0 ||
+            res.cleanup.residualRowsFound > 0))
+      ) {
+        process.exit(1);
+      }
+    })
+    .catch(err => {
+      console.error("Preview HTTP E2E Fatal Error:", redactSecrets(err?.message || String(err), [
+        process.env.SUPABASE_SECRET_KEY,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        process.env.VERCEL_PROTECTION_BYPASS
+      ]));
+      process.exit(1);
+    });
 }
