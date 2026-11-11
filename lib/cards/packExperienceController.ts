@@ -9,8 +9,7 @@
 import type { CardDefinition, PackOpeningResult } from "./types.ts";
 import {
   type CanonicalCardTheme,
-  normalizeCardTheme,
-  WALKOUT_PRESENTATION_PRIORITY
+  resolveWalkoutPresentation
 } from "./walkout-config.ts";
 
 // =============================================================================
@@ -131,8 +130,7 @@ export class PackExperienceController {
 
     // 1. Map all items with canonical themes and presentation priority
     const allItems: PackDrawnItem[] = (this.result.cards || []).map((item) => {
-      const theme = normalizeCardTheme(item.card.card_type || item.card.frame_theme);
-      const priority = WALKOUT_PRESENTATION_PRIORITY[theme] || 0;
+      const { theme, priority } = resolveWalkoutPresentation(item.card);
       return {
         card: item.card,
         is_duplicate: item.is_duplicate,

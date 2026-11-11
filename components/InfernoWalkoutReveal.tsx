@@ -15,6 +15,8 @@ import {
   Play
 } from "lucide-react";
 import { InfernoWalkoutData, getRarityTheme } from "@/lib/cards/walkout-config";
+import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
+import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
 import { cardSound } from "@/lib/cards/audio";
 import CanvasParticles from "./CanvasParticles";
 
@@ -565,15 +567,28 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
                 opacity: stage === "player" ? 1 : 0.88
               }}
             >
-              <img 
-                src={data.playerImage || "/demo/player-cutout.png"} 
-                alt={data.playerName}
-                style={{
-                  maxHeight: data.playerImage?.includes("gm.png") ? "min(160px, 28vh)" : "clamp(320px, 52vh, 460px)",
-                  maxWidth: data.playerImage?.includes("gm.png") ? "min(160px, 45vw)" : "min(420px, 85vw)",
-                  objectFit: "contain"
-                }}
-              />
+              {(() => {
+                const safeWalkoutImg = sanitizePlayerPhotoCandidate(data.playerImage, data.playerName);
+                return safeWalkoutImg ? (
+                  <img
+                    src={safeWalkoutImg}
+                    alt={data.playerName}
+                    style={{
+                      maxHeight: data.playerImage?.includes("gm.png") ? "min(160px, 28vh)" : "clamp(320px, 52vh, 460px)",
+                      maxWidth: data.playerImage?.includes("gm.png") ? "min(160px, 45vw)" : "min(420px, 85vw)",
+                      objectFit: "contain"
+                    }}
+                  />
+                ) : (
+                  <div style={{ width: "clamp(200px, 34vw, 280px)", height: "clamp(260px, 42vh, 360px)" }}>
+                    <NeutralPlayerSilhouette
+                      accentColor={accentColor}
+                      glowColor={`${accentColor}88`}
+                      crestSrc={data.clubLogo || "/teamlogos/gm.png"}
+                    />
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 3. Card Image (Layered in front) */}
@@ -608,15 +623,28 @@ const InfernoWalkoutReveal = forwardRef<InfernoWalkoutRevealRef, InfernoWalkoutR
                     justifyContent: "center"
                   }}
                 >
-                  <img 
-                    src={data.cardImage || "/demo/inferno-card.png"} 
-                    alt={data.playerName}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover"
-                    }}
-                  />
+                  {(() => {
+                    const safeCardImg = sanitizePlayerPhotoCandidate(data.cardImage, data.playerName);
+                    return safeCardImg ? (
+                      <img
+                        src={safeCardImg}
+                        alt={data.playerName}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover"
+                        }}
+                      />
+                    ) : (
+                      <div style={{ width: "86%", height: "86%" }}>
+                        <NeutralPlayerSilhouette
+                          accentColor={accentColor}
+                          glowColor={`${accentColor}88`}
+                          crestSrc={data.clubLogo || "/teamlogos/gm.png"}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

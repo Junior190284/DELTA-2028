@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Play, Pause, Volume2, VolumeX, Sparkles, Award, Trophy, User } from "lucide-react";
 import { CardDefinition } from "@/lib/cards/types";
+import { resolveSafePlayerImageUrl } from "@/lib/cards/playerVisuals";
 import { MEDIA } from "@/lib/media";
 import { cardSound } from "@/lib/cards/audio";
 
@@ -101,11 +102,22 @@ export default function PlayerVideoHighlightModal({
           {/* Player Photo Callout */}
           <div className="absolute bottom-6 left-6 z-10 flex items-end gap-4 pointer-events-none">
             <div className="w-20 h-28 rounded-xl bg-black/40 border border-amber-400/60 p-1 backdrop-blur-md shadow-2xl flex items-center justify-center overflow-hidden">
-              <img 
-                src={card.player?.photo_path || "/assets/players/ryszard-rybacki.png"} 
-                alt={card.player?.display_name || card.card_name}
-                className="w-full h-full object-contain filter drop-shadow"
-              />
+              {(() => {
+                const safePhoto = resolveSafePlayerImageUrl({
+                  playerName: card.player?.display_name,
+                  cardName: card.card_name,
+                  artworkUrl: card.artwork_url,
+                  photoPath: card.player?.photo_path,
+                  preferArtworkUrl: false
+                });
+                return (
+                  <img
+                    src={safePhoto || "/teamlogos/gm.png"}
+                    alt={card.player?.display_name || card.card_name}
+                    className={safePhoto ? "w-full h-full object-contain filter drop-shadow" : "w-12 h-12 object-contain opacity-90 filter drop-shadow"}
+                  />
+                );
+              })()}
             </div>
             <div>
               <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ensureUserProfileExists } from "@/lib/auth/profile-bootstrap";
 import { cookies } from "next/headers";
 
 export async function getCurrentProfile() {
@@ -59,9 +60,19 @@ export async function getCurrentProfile() {
     .eq("id", user.id)
     .maybeSingle();
 
+  if (elevated.data || elevated.error) {
+    return {
+      user,
+      profile: elevated.data,
+      error: elevated.error?.message || normal.error?.message || null
+    };
+  }
+
+  // Idempotent server-side bootstrap ONLY when authenticated user has no row in public.profiles
+  const bootstrapped = await ensureUserProfileExists(admin, user);
   return {
     user,
-    profile: elevated.data,
-    error: elevated.error?.message || normal.error?.message || null
+    profile: bootstrapped.profile,
+    error: bootstrapped.error || normal.error?.message || null
   };
 }

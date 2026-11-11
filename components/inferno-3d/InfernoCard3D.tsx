@@ -3,6 +3,8 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Crown, Flame, Star, Dumbbell, Shield, Award, Medal } from "lucide-react";
 import { getSpecialTitle, formatPlayerName } from "./specialTitles";
+import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
+import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
 import "./inferno-card.css";
 
 export interface InfernoStats {
@@ -20,7 +22,7 @@ export interface InfernoCardData {
   position?: string;
   overall?: number;
   stats: InfernoStats;
-  playerImage: string;
+  playerImage?: string | null;
   frontBg?: string;
   backBg?: string;
   frameImg?: string;
@@ -174,8 +176,13 @@ export function InfernoCard3D({
   const backBgSrc = data.backBg || "/assets/cards/inferno-3d/back-bg.png";
   const frameSrc = data.frameImg || "/assets/cards/inferno-3d/frame.png";
   const fxSrc = data.fxImg || "/assets/cards/inferno-3d/fx.png";
-  const playerSrc = data.playerImage || "/assets/cards/inferno-3d/player-default.png";
+  const safePlayerSrc = sanitizePlayerPhotoCandidate(data.playerImage, data.name);
   const crestSrc = data.crestImg || "/assets/cards/inferno-3d/delta-crest.png";
+  const [playerImgError, setPlayerImgError] = useState(false);
+
+  useEffect(() => {
+    setPlayerImgError(false);
+  }, [safePlayerSrc]);
 
   // Effective visual yaw including flipped state
   const effectiveYaw = yaw + (isFlipped ? 180 : 0);
@@ -234,11 +241,21 @@ export function InfernoCard3D({
           {/* Hero Athlete Silhouette Stage (Enlarged & Rim-lit) */}
           <div className="inferno-player-stage">
             <div className="inferno-player-slot">
-              <img
-                src={playerSrc}
-                alt={`Zawodnik ${data.name}`}
-                loading="eager"
-              />
+              {safePlayerSrc && !playerImgError ? (
+                <img
+                  src={safePlayerSrc}
+                  alt={`Zawodnik ${data.name}`}
+                  loading="eager"
+                  onError={() => setPlayerImgError(true)}
+                />
+              ) : (
+                <NeutralPlayerSilhouette
+                  shirtNumber={data.number}
+                  accentColor="#ffca58"
+                  glowColor="rgba(255, 60, 20, 0.55)"
+                  crestSrc={crestSrc}
+                />
+              )}
             </div>
           </div>
 

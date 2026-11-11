@@ -1,4 +1,5 @@
 import { MEDIA } from "../media.ts";
+import { isRyszardPlayer, resolveSafePlayerImageUrl, sanitizePlayerPhotoCandidate } from "./playerVisuals.ts";
 
 export type CanonicalCardTheme = 
   | "INFERNO" 
@@ -16,8 +17,8 @@ export type InfernoWalkoutData = {
   playerName: string;
   position?: string;
   teamName?: string;
-  playerImage: string;   // PNG cutout zawodnika bez tła
-  cardImage: string;     // finalna karta PNG / WebP
+  playerImage: string | null;   // PNG cutout zawodnika bez tła lub null (neutralna sylwetka)
+  cardImage: string | null;     // finalna karta PNG / WebP lub null (neutralne tło serii)
   backgroundVideo: string; // mp4 z cinematic stadium/tunnel
   clubLogo?: string;
   accentColor?: string;
@@ -147,6 +148,64 @@ export function isWalkoutEligibleTheme(theme: string): boolean {
   return (WALKOUT_PRESENTATION_PRIORITY[norm] || 0) > 0;
 }
 
+/**
+ * Normalizes walkout theme & priority from `card_type`, `frame_theme`, and `rarity`.
+ * Ensures:
+ * - `rarity="legendary"` / `frame_theme="legend"` qualifies for DELTA_ICON (80) even if `card_type="mvp"`
+ * - `rarity="epic"` / `frame_theme="gold"` qualifies for GOLD_MASTER (60) even if `card_type="goal_hunter"`
+ * - starter `base` (`common`) / `training_warrior` (`rare`) with generic `frame_theme="gold"` do NOT false-escalate
+ */
+export function resolveWalkoutPresentation(card: {
+  card_type?: string | null;
+  frame_theme?: string | null;
+  rarity?: string | null;
+}): { theme: CanonicalCardTheme; priority: number } {
+  const normType = (card.card_type || "").toLowerCase().trim();
+  const normFrame = (card.frame_theme || "").toLowerCase().trim();
+  const normRarity = (card.rarity || "").toLowerCase().trim();
+
+  let rarityTheme: CanonicalCardTheme = "STANDARD";
+  if (normRarity === "inferno") rarityTheme = "INFERNO";
+  else if (normRarity === "legendary") rarityTheme = "DELTA_ICON";
+  else if (normRarity === "epic") rarityTheme = "GOLD_MASTER";
+
+  const typeTheme = normalizeCardTheme(normType);
+  let frameTheme: CanonicalCardTheme = normFrame ? normalizeCardTheme(normFrame) : "STANDARD";
+
+  const isLowTierStarterType =
+    normType === "base" ||
+    normType === "standard" ||
+    normType === "training_warrior" ||
+    normType === "training" ||
+    normType === "matchday" ||
+    normType === "matchday_hero";
+
+  if (
+    frameTheme === "GOLD_MASTER" &&
+    (normRarity === "common" || normRarity === "rare") &&
+    isLowTierStarterType &&
+    !normFrame.includes("gold_master")
+  ) {
+    frameTheme = "STANDARD";
+  }
+
+  const candidates: Array<{ theme: CanonicalCardTheme; priority: number }> = [
+    { theme: rarityTheme, priority: WALKOUT_PRESENTATION_PRIORITY[rarityTheme] || 0 },
+    { theme: typeTheme, priority: WALKOUT_PRESENTATION_PRIORITY[typeTheme] || 0 },
+    { theme: frameTheme, priority: WALKOUT_PRESENTATION_PRIORITY[frameTheme] || 0 }
+  ];
+
+  candidates.sort((a, b) => b.priority - a.priority);
+  if (candidates[0].priority > 0) {
+    return candidates[0];
+  }
+
+  return {
+    theme: typeTheme !== "STANDARD" ? typeTheme : frameTheme,
+    priority: 0
+  };
+}
+
 export function getRarityTheme(theme: string): RarityThemeConfig {
   const norm = normalizeCardTheme(theme);
   return WALKOUT_THEME_CONFIGS[norm] || WALKOUT_THEME_CONFIGS.GOLD_MASTER;
@@ -181,8 +240,8 @@ export const DEMO_GOLD_DATA: InfernoWalkoutData = {
   playerName: "Stefan Zieliński",
   position: "CAM / POMOCNIK",
   teamName: "K.S. DELTA WARSZAWA 2018 GM",
-  playerImage: "/assets/players/ryszard-gold.png",
-  cardImage: "/assets/players/ryszard-card-gold.jpg",
+  playerImage: null,
+  cardImage: null,
   backgroundVideo: MEDIA.packOpening.bgGold,
   clubLogo: "/teamlogos/gm.png",
   accentColor: "#f1c95c",
@@ -201,18 +260,29 @@ export const DEMO_GOLD_DATA: InfernoWalkoutData = {
 };
 
 export function cardToWalkoutData(card: any): InfernoWalkoutData {
-  const themeKey = normalizeCardTheme(card?.card_type || card?.frame_theme);
+  const { theme: themeKey } = resolveWalkoutPresentation(card || {});
   const theme = getRarityTheme(themeKey);
   const pName = card?.player?.display_name || card?.title || card?.card_name || "Zawodnik DELTA GM";
-  const isRyszard = pName.toLowerCase().includes("ryszard") || pName.toLowerCase().includes("rybacki");
+  const isRyszard = isRyszardPlayer(pName, card?.card_name);
 
-  const playerImg = card?.player?.cutout_url || card?.player?.photo_path || (isRyszard
-    ? (themeKey === "INFERNO" ? "/assets/players/ryszard-inferno.png" : "/assets/players/ryszard-gold.png")
-    : "/assets/players/ryszard-inferno.png");
+  const playerImg =
+    resolveSafePlayerImageUrl({
+      playerName: pName,
+      cardName: card?.card_name,
+      cutoutUrl: card?.player?.cutout_url,
+      photoPath: card?.player?.photo_path,
+      artworkUrl: card?.artwork_url,
+      preferArtworkUrl: false
+    }) ||
+    (isRyszard
+      ? (themeKey === "INFERNO" ? "/assets/players/ryszard-inferno.png" : "/assets/players/ryszard-gold.png")
+      : null);
 
-  const cardImg = card?.artwork_url || card?.image_url || (isRyszard
-    ? (themeKey === "INFERNO" ? "/assets/players/ryszard-card-inferno.jpg" : "/assets/players/ryszard-card-gold.jpg")
-    : (themeKey === "INFERNO" ? "/assets/players/ryszard-card-inferno.jpg" : "/assets/players/ryszard-card-gold.jpg"));
+  const cardImg =
+    sanitizePlayerPhotoCandidate(card?.artwork_url || card?.image_url, pName, card?.card_name) ||
+    (isRyszard
+      ? (themeKey === "INFERNO" ? "/assets/players/ryszard-card-inferno.jpg" : "/assets/players/ryszard-card-gold.jpg")
+      : null);
 
   return {
     theme: themeKey,

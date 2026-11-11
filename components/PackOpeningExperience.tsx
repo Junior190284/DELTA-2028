@@ -32,7 +32,7 @@ import { CardDetailModal } from "@/components/collection";
 import { cardSound } from "@/lib/cards/audio";
 import { dispatchPackOpened, dispatchCollectionUpdated } from "@/lib/cards/cardSync";
 import InfernoWalkoutReveal from "@/components/InfernoWalkoutReveal";
-import { cardToWalkoutData, normalizeCardTheme, WALKOUT_PRESENTATION_PRIORITY } from "@/lib/cards/walkout-config";
+import { cardToWalkoutData, resolveWalkoutPresentation } from "@/lib/cards/walkout-config";
 
 // Dynamic import: Only loaded when 3D Walkout is activated and walkout phase is triggered
 const UniversalWalkoutModal = dynamic(
@@ -215,8 +215,7 @@ export default function DeltaPackOpeningExperience({
     
     const eligible = openingResult.cards
       .map((item, index) => {
-        const theme = normalizeCardTheme(item.card.card_type || item.card.frame_theme);
-        const priority = WALKOUT_PRESENTATION_PRIORITY[theme] || 0;
+        const { theme, priority } = resolveWalkoutPresentation(item.card);
         return { item, index, theme, priority };
       })
       .filter(x => x.priority > 0);

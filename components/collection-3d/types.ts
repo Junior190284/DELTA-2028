@@ -61,7 +61,7 @@ export interface SpecialTitleBadge {
  */
 export interface PlayerCardData {
   playerId: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   surname: string;
   fullDisplayName?: string;
   shirtNumber: string | number;

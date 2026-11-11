@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Lock } from "lucide-react";
 import { DeltaCardTheme, DeltaThemeConfig } from "@/lib/cards/deltaCardModel";
+import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
 import { CardLayoutConfig } from "@/lib/cards/types";
 
 export interface CardCutoutProps {
@@ -26,22 +27,23 @@ export default function CardCutout({
   isLocked = false,
   layoutOverride
 }: CardCutoutProps) {
+  const safePhotoUrl = sanitizePlayerPhotoCandidate(photoUrl, playerName);
   const [imageError, setImageError] = useState(false);
-  const currentPhotoUrlRef = useRef<string | null | undefined>(photoUrl);
+  const currentPhotoUrlRef = useRef<string | null | undefined>(safePhotoUrl);
 
   // Synchronize and reset imageError whenever photoUrl changes
   useEffect(() => {
-    currentPhotoUrlRef.current = photoUrl;
+    currentPhotoUrlRef.current = safePhotoUrl;
     setImageError(false);
-  }, [photoUrl]);
+  }, [safePhotoUrl]);
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     // Guard against stale error events from previously discarded image URLs
     const targetSrc = e.currentTarget.currentSrc || e.currentTarget.src;
-    if (photoUrl && targetSrc && currentPhotoUrlRef.current === photoUrl) {
+    if (safePhotoUrl && targetSrc && currentPhotoUrlRef.current === safePhotoUrl) {
       setImageError(true);
     }
-  }, [photoUrl]);
+  }, [safePhotoUrl]);
 
   // Determine pose scale & position adjustments
   const poseScale = artworkPose === "action" ? 1.15 : artworkPose === "celebration" ? 1.2 : 1.05;
@@ -73,7 +75,7 @@ export default function CardCutout({
     );
   }
 
-  const hasValidPhoto = photoUrl && !imageError;
+  const hasValidPhoto = Boolean(safePhotoUrl) && !imageError;
 
   return (
     <div 
@@ -105,7 +107,7 @@ export default function CardCutout({
           }}
         >
           <img
-            src={photoUrl}
+            src={safePhotoUrl!}
             alt={playerName}
             className="w-full h-full max-w-full max-h-full object-contain object-bottom pointer-events-none"
             style={{

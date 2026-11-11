@@ -8,13 +8,27 @@ export default function LoginPage() {
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
   const [msg,setMsg]=useState("");
+  const [hasStuckSession,setHasStuckSession]=useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
     const message = params.get("message");
     if (error) {
-      setMsg(message ? `Błąd logowania: ${message}` : `Błąd logowania: ${error}`);
+      if (error === "profile_missing") {
+        setMsg(
+          "Brak lub błąd ładowania profilu konta (profile_missing). Wyloguj się z bieżącej sesji i spróbuj ponownie lub skontaktuj się z trenerem."
+        );
+      } else {
+        setMsg(message ? `Błąd logowania: ${message}` : `Błąd logowania: ${error}`);
+      }
+      // Prevent redirect loop (/dashboard <-> /login?error=profile_missing) when session exists
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          setHasStuckSession(true);
+        }
+      });
+      return;
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -23,6 +37,15 @@ export default function LoginPage() {
       }
     });
   }, []);
+
+  async function handleSignOutStuckSession() {
+    await supabase.auth.signOut();
+    setHasStuckSession(false);
+    setMsg("Wylogowano bieżącą sesję. Możesz zalogować się ponownie.");
+    if (window.location.search) {
+      window.history.replaceState({}, "", "/login");
+    }
+  }
 
   async function signIn() {
     setMsg("Logowanie…");
@@ -130,6 +153,16 @@ export default function LoginPage() {
         </div>
 
         {msg && <div className="login-msg">{msg}</div>}
+        {hasStuckSession && (
+          <button
+            type="button"
+            className="google-btn"
+            style={{ marginTop: 10 }}
+            onClick={handleSignOutStuckSession}
+          >
+            Wyloguj bieżącą sesję
+          </button>
+        )}
       </div>
     </main>
   );

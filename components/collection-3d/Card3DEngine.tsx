@@ -5,6 +5,8 @@ import { Crown, Flame, Star, Dumbbell, Shield, Award, Medal } from "lucide-react
 import { Card3DEngineProps, CardVisualTheme } from "./types";
 import { getCardVisualTheme } from "./themes";
 import { getSpecialTitle, formatPlayerName } from "./specialTitles";
+import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
+import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
 import "./collection-3d.css";
 
 interface EmberData {
@@ -195,7 +197,15 @@ export function Card3DEngine({
   const frameSrc = theme.assets.frameImg;
   const fxSrc = theme.assets.fxImg || "/assets/cards/inferno-3d/fx.png";
   const crestSrc = theme.assets.crestImg || "/assets/cards/inferno-3d/delta-crest.png";
-  const playerSrc = data.imageUrl || "/assets/cards/inferno-3d/player-default.png";
+  const safePlayerSrc = sanitizePlayerPhotoCandidate(
+    data.imageUrl,
+    data.fullDisplayName || data.surname
+  );
+  const [playerImgError, setPlayerImgError] = useState(false);
+
+  useEffect(() => {
+    setPlayerImgError(false);
+  }, [safePlayerSrc]);
 
   const hasRealOvr = typeof data.ovr === "number" && Number.isFinite(data.ovr) && data.ovr > 0;
   const hasRealStats = Boolean(data.stats);
@@ -259,11 +269,21 @@ export function Card3DEngine({
           {/* Hero Athlete Silhouette Stage */}
           <div className="inferno-player-stage">
             <div className="inferno-player-slot">
-              <img
-                src={playerSrc}
-                alt={`Zawodnik ${data.surname}`}
-                loading="eager"
-              />
+              {safePlayerSrc && !playerImgError ? (
+                <img
+                  src={safePlayerSrc}
+                  alt={`Zawodnik ${data.surname}`}
+                  loading="eager"
+                  onError={() => setPlayerImgError(true)}
+                />
+              ) : (
+                <NeutralPlayerSilhouette
+                  shirtNumber={data.shirtNumber}
+                  accentColor={theme.styling.fontAccentColor}
+                  glowColor={theme.styling.accentGlow}
+                  crestSrc={crestSrc}
+                />
+              )}
             </div>
           </div>
 

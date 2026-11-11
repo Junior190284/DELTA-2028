@@ -31,34 +31,53 @@ export default function DevPackOpeningV2Page() {
     photo_path: "/assets/players/ryszard-rybacki.png"
   };
 
-  const createCard = (id: string, type: string, rarity: string, name: string): CardDefinition => ({
-    id,
-    player_id: mockPlayer.id,
-    season: "2026/27",
-    card_type: type,
-    card_name: name,
-    title: type.toUpperCase(),
-    rarity: rarity as any,
-    artwork_url:
-      type === "inferno"
+  const createCard = (
+    id: string,
+    type: string,
+    rarity: string,
+    name: string,
+    withRyszardPhoto = false,
+    shirtNumber = "1"
+  ): CardDefinition => {
+    const playerObj = withRyszardPhoto
+      ? mockPlayer
+      : {
+          id: `p_${id}`,
+          display_name: name.replace(/\s*\([^)]+\)\s*/g, "").trim(),
+          shirt_number: shirtNumber,
+          position: "POM",
+          photo_path: null
+        };
+    return {
+      id,
+      player_id: playerObj.id,
+      season: "2026/27",
+      card_type: type,
+      card_name: name,
+      title: type.toUpperCase(),
+      rarity: rarity as any,
+      artwork_url: !withRyszardPhoto
+        ? null
+        : type === "inferno"
         ? "/assets/players/ryszard-inferno.png"
         : type === "legend"
         ? "/assets/players/ryszard-legend.png"
         : type === "gold_master" || type === "gold"
         ? "/assets/players/ryszard-gold.png"
         : null,
-    artwork_pose: "standard",
-    frame_theme: type,
-    card_number: 1,
-    is_active: true,
-    is_limited: false,
-    edition_size: null,
-    description: "Karta kolekcjonerska DELTA GM.",
-    lore: null,
-    match_id: null,
-    special_event_id: null,
-    player: mockPlayer
-  });
+      artwork_pose: "standard",
+      frame_theme: type,
+      card_number: Number(shirtNumber) || 1,
+      is_active: true,
+      is_limited: false,
+      edition_size: null,
+      description: "Karta kolekcjonerska DELTA GM.",
+      lore: null,
+      match_id: null,
+      special_event_id: null,
+      player: playerObj
+    };
+  };
 
   const samplePacks: { title: string; pack: PackDefinition; result: PackOpeningResult }[] = [
     {
@@ -75,11 +94,11 @@ export default function DevPackOpeningV2Page() {
       },
       result: {
         cards: [
-          { card: createCard("c_inf", "inferno", "inferno", "RYSZARD RYBACKI (INFERNO)"), is_duplicate: false, duplicate_points: 0 },
-          { card: createCard("c_gold", "gold_master", "epic", "MATEUSZ KOWALCZYK"), is_duplicate: true, duplicate_points: 50 },
-          { card: createCard("c_match", "matchday", "rare", "ALEKSANDER ZIELIŃSKI"), is_duplicate: false, duplicate_points: 0 },
-          { card: createCard("c_base1", "base", "common", "BARTOSZ WIŚNIEWSKI"), is_duplicate: false, duplicate_points: 0 },
-          { card: createCard("c_base2", "base", "common", "JAKUB KAMIŃSKI"), is_duplicate: true, duplicate_points: 10 }
+          { card: createCard("c_inf", "inferno", "inferno", "RYSZARD RYBACKI (INFERNO)", true, "7"), is_duplicate: false, duplicate_points: 0 },
+          { card: createCard("c_gold", "gold_master", "epic", "MATEUSZ KOWALCZYK", false, "10"), is_duplicate: true, duplicate_points: 50 },
+          { card: createCard("c_match", "matchday", "rare", "ALEKSANDER ZIELIŃSKI", false, "4"), is_duplicate: false, duplicate_points: 0 },
+          { card: createCard("c_base1", "base", "common", "BARTOSZ WIŚNIEWSKI", false, "19"), is_duplicate: false, duplicate_points: 0 },
+          { card: createCard("c_base2", "base", "common", "JAKUB KAMIŃSKI", false, "9"), is_duplicate: true, duplicate_points: 10 }
         ],
         total_delta_points_earned: 60,
         new_points_balance: 510,
@@ -102,9 +121,9 @@ export default function DevPackOpeningV2Page() {
       },
       result: {
         cards: [
-          { card: createCard("c_icon", "legend", "legendary", "RYSZARD RYBACKI (IKONA)"), is_duplicate: false, duplicate_points: 0 },
-          { card: createCard("c_rare", "matchday", "rare", "TOMASZ LEWANDOWSKI"), is_duplicate: false, duplicate_points: 0 },
-          { card: createCard("c_base", "base", "common", "FILIP SZYMAŃSKI"), is_duplicate: false, duplicate_points: 0 }
+          { card: createCard("c_icon", "legend", "legendary", "RYSZARD RYBACKI (IKONA)", true, "7"), is_duplicate: false, duplicate_points: 0 },
+          { card: createCard("c_rare", "matchday", "rare", "TOMASZ LEWANDOWSKI", false, "4"), is_duplicate: false, duplicate_points: 0 },
+          { card: createCard("c_base", "base", "common", "FILIP SZYMAŃSKI", false, "14"), is_duplicate: false, duplicate_points: 0 }
         ],
         total_delta_points_earned: 0,
         new_points_balance: 450,
@@ -153,9 +172,9 @@ export default function DevPackOpeningV2Page() {
       },
       result: {
         cards: [
-          { card: createCard("c_b1", "base", "common", "RYSZARD RYBACKI"), is_duplicate: true, duplicate_points: 10 },
-          { card: createCard("c_b2", "base", "common", "MATEUSZ KOWALCZYK"), is_duplicate: true, duplicate_points: 10 },
-          { card: createCard("c_b3", "base", "common", "ALEKSANDER ZIELIŃSKI"), is_duplicate: false, duplicate_points: 0 }
+          { card: createCard("c_b1", "base", "common", "RYSZARD RYBACKI", true, "7"), is_duplicate: true, duplicate_points: 10 },
+          { card: createCard("c_b2", "base", "common", "MATEUSZ KOWALCZYK", false, "10"), is_duplicate: true, duplicate_points: 10 },
+          { card: createCard("c_b3", "base", "common", "ALEKSANDER ZIELIŃSKI", false, "4"), is_duplicate: false, duplicate_points: 0 }
         ],
         total_delta_points_earned: 20,
         new_points_balance: 500,

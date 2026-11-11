@@ -31,7 +31,7 @@ export const TEST_PLAYERS: Record<string, PlayerCardData> = {
   // 2. BRZĘCZYSZCZYKIEWICZ (Ekstremalnie długie polskie nazwisko — test łamania na 2 wiersze i skalowania)
   brzeczyszczykiewicz: {
     playerId: "lab_player_brzeczyszczykiewicz",
-    imageUrl: "/assets/cards/inferno-3d/player-default.png",
+    imageUrl: null,
     surname: "BRZĘCZYSZCZYKIEWICZ",
     shirtNumber: 7,
     position: "MID",
@@ -53,7 +53,7 @@ export const TEST_PLAYERS: Record<string, PlayerCardData> = {
   // 3. KOWALSKI (Defensor, Matchday Hero)
   kowalski: {
     playerId: "lab_player_kowalski",
-    imageUrl: "/assets/cards/inferno-3d/player-default.png",
+    imageUrl: null,
     surname: "KOWALSKI",
     shirtNumber: 4,
     position: "DEF",
@@ -75,7 +75,7 @@ export const TEST_PLAYERS: Record<string, PlayerCardData> = {
   // 4. ZIELIŃSKI (Bramkarz, Training Hero / RARE)
   zielinski: {
     playerId: "lab_player_zielinski",
-    imageUrl: "/assets/cards/inferno-3d/player-default.png",
+    imageUrl: null,
     surname: "ZIELIŃSKI",
     shirtNumber: 1,
     position: "GK",
@@ -97,7 +97,7 @@ export const TEST_PLAYERS: Record<string, PlayerCardData> = {
   // 5. NOWAK (Podstawowy zawodnik akademii, COMMON / BASE)
   nowak: {
     playerId: "lab_player_nowak",
-    imageUrl: "/assets/cards/inferno-3d/player-default.png",
+    imageUrl: null,
     surname: "NOWAK",
     shirtNumber: 19,
     position: "MID",
@@ -119,7 +119,7 @@ export const TEST_PLAYERS: Record<string, PlayerCardData> = {
   // 6. LEWANDOWSKI (Legenda klubu, DELTA ICON / LEGEND)
   lewandowski: {
     playerId: "lab_player_lewandowski",
-    imageUrl: "/assets/cards/inferno-3d/player-default.png",
+    imageUrl: null,
     surname: "LEWANDOWSKI",
     shirtNumber: 9,
     position: "FWD",
@@ -218,7 +218,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
     card_name: string;
     title: string;
     rarity: "common" | "rare" | "epic" | "legendary" | "inferno";
-    artwork_url: string;
+    artwork_url: string | null;
     artwork_pose: string;
     frame_theme: string;
     card_number: number;
@@ -234,7 +234,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
       display_name: string;
       shirt_number: string;
       position: string;
-      photo_path: string;
+      photo_path: string | null;
     };
   };
   ovr: number;
@@ -282,7 +282,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
       card_name: "Janusz Brzęczyszczykiewicz — Gold Master",
       title: "Janusz Brzęczyszczykiewicz",
       rarity: "epic",
-      artwork_url: "/assets/cards/inferno-3d/player-default.png",
+      artwork_url: null,
       artwork_pose: "arms_crossed",
       frame_theme: "gold-master",
       card_number: 7,
@@ -298,7 +298,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
         display_name: "Janusz Brzęczyszczykiewicz",
         shirt_number: "7",
         position: "MID",
-        photo_path: "/assets/cards/inferno-3d/player-default.png"
+        photo_path: null
       }
     },
     ovr: 85,
@@ -314,7 +314,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
       card_name: "Tomasz Kowalski — Matchday Hero",
       title: "Tomasz Kowalski",
       rarity: "rare",
-      artwork_url: "/assets/cards/inferno-3d/player-default.png",
+      artwork_url: null,
       artwork_pose: "defensive_stance",
       frame_theme: "matchday-hero",
       card_number: 4,
@@ -330,7 +330,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
         display_name: "Tomasz Kowalski",
         shirt_number: "4",
         position: "DEF",
-        photo_path: "/assets/cards/inferno-3d/player-default.png"
+        photo_path: null
       }
     },
     ovr: 80,
@@ -346,7 +346,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
       card_name: "Robert Lewandowski — Delta Icon",
       title: "Robert Lewandowski",
       rarity: "legendary",
-      artwork_url: "/assets/cards/inferno-3d/player-default.png",
+      artwork_url: null,
       artwork_pose: "triumphant_celebration",
       frame_theme: "delta-icon",
       card_number: 9,
@@ -362,7 +362,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
         display_name: "Robert Lewandowski",
         shirt_number: "9",
         position: "FWD",
-        photo_path: "/assets/cards/inferno-3d/player-default.png"
+        photo_path: null
       }
     },
     ovr: 91,
@@ -378,7 +378,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
       card_name: "Piotr Zieliński — Training Hero",
       title: "Piotr Zieliński",
       rarity: "rare",
-      artwork_url: "/assets/cards/inferno-3d/player-default.png",
+      artwork_url: null,
       artwork_pose: "diving_save",
       frame_theme: "training-hero",
       card_number: 1,
@@ -394,7 +394,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
         display_name: "Piotr Zieliński",
         shirt_number: "1",
         position: "GK",
-        photo_path: "/assets/cards/inferno-3d/player-default.png"
+        photo_path: null
       }
     },
     ovr: 81,
@@ -410,7 +410,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
       card_name: "Adam Nowak — Akademia Base",
       title: "Adam Nowak",
       rarity: "common",
-      artwork_url: "/assets/cards/inferno-3d/player-default.png",
+      artwork_url: null,
       artwork_pose: "ready_pass",
       frame_theme: "base",
       card_number: 19,
@@ -426,7 +426,7 @@ export const DEMO_PRODUCTION_CARDS: Record<string, {
         display_name: "Adam Nowak",
         shirt_number: "19",
         position: "MID",
-        photo_path: "/assets/cards/inferno-3d/player-default.png"
+        photo_path: null
       }
     },
     ovr: 72,

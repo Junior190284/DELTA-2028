@@ -202,7 +202,7 @@ test("ETAP 7 - RC 3.1: Duplicate card handling (+DP points preserved)", () => {
   assert.equal(restored.rarity, "epic");
 });
 
-test("ETAP 7 - RC 3.2: Missing player photo fallback safely engages", () => {
+test("ETAP 7 - RC 3.2: Missing player photo safely engages neutral silhouette fallback (no shared face asset)", () => {
   const cardNoPhoto = createMockCard({
     id: "card_no_photo",
     player: {
@@ -216,8 +216,7 @@ test("ETAP 7 - RC 3.2: Missing player photo fallback safely engages", () => {
   });
 
   const p3d = fromProductionCard(cardNoPhoto);
-  assert.ok(p3d.imageUrl.length > 0, "Image URL must not be empty");
-  assert.equal(p3d.imageUrl, "/assets/cards/inferno-3d/player-default.png", "Must fallback to default player avatar");
+  assert.equal(p3d.imageUrl, null, "Missing player photo must return null to display neutral DELTA silhouette without another player's face");
 });
 
 test("ETAP 7 - RC 3.3: Missing frame/theme resolves safely by card type", () => {

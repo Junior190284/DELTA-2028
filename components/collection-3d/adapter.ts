@@ -30,6 +30,7 @@ import {
   adaptLegacyToDeltaCardModel,
   type DeltaCardModel
 } from "../../lib/cards/deltaCardModel.ts";
+import { resolveSafePlayerImageUrl } from "../../lib/cards/playerVisuals.ts";
 
 /**
  * 1. RESOLVE CARD VISUAL TYPE (Skórka / Ramka 3D)
@@ -255,12 +256,14 @@ export function resolveCanonicalCardFields(
   const position = card.player?.position || "";
 
   const preferArtwork = options?.preferArtworkUrl !== false;
-  const resolvedImageUrl =
-    options?.imageUrlOverride ||
-    (preferArtwork
-      ? card.artwork_url || card.player?.photo_path
-      : card.player?.photo_path || card.artwork_url) ||
-    "/assets/cards/inferno-3d/player-default.png";
+  const resolvedImageUrl = resolveSafePlayerImageUrl({
+    playerName: card.player?.display_name,
+    cardName: card.card_name || card.title,
+    artworkUrl: card.artwork_url,
+    photoPath: card.player?.photo_path,
+    imageUrlOverride: options?.imageUrlOverride,
+    preferArtworkUrl: preferArtwork
+  });
 
   const realStats: PlayerStats | null = options?.stats
     ? { ...options.stats }
@@ -389,7 +392,7 @@ export function toProductionCard(data: PlayerCardData): Partial<CardDefinition> 
     rarity: exactRarity,
     title: base.title || `${data.surname} (${data.position})`,
     card_name: base.card_name || data.surname,
-    artwork_url: data.imageUrl,
+    artwork_url: data.imageUrl ?? null,
     frame_theme: base.frame_theme || data.visualType.toLowerCase(),
     card_number: typeof data.shirtNumber === "number" ? data.shirtNumber : parseInt(String(data.shirtNumber), 10) || null,
     is_active: base.is_active !== undefined ? base.is_active : true,
@@ -404,7 +407,7 @@ export function toProductionCard(data: PlayerCardData): Partial<CardDefinition> 
       display_name: data.surname,
       shirt_number: String(data.shirtNumber),
       position: String(data.position),
-      photo_path: data.imageUrl
+      photo_path: data.imageUrl ?? null
     }
   };
 }

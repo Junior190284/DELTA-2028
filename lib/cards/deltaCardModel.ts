@@ -1,4 +1,5 @@
 import type { CardDefinition, CardRarity, UserCard, CardLayoutConfig } from "./types.ts";
+import { resolveSafePlayerImageUrl, sanitizePlayerPhotoCandidate } from "./playerVisuals.ts";
 
 export type DeltaCardTheme = 
   | "STANDARD"
@@ -315,7 +316,15 @@ export function adaptLegacyToDeltaCardModel(props: {
     card?.frame_theme
   );
 
-  const resolvedPhoto = props.customPhotoUrl || card?.artwork_url || player?.photo_path || null;
+  const resolvedPhoto =
+    props.customPhotoUrl !== undefined
+      ? sanitizePlayerPhotoCandidate(props.customPhotoUrl, player?.display_name, card?.card_name)
+      : resolveSafePlayerImageUrl({
+          playerName: player?.display_name,
+          cardName: card?.card_name || card?.title,
+          artworkUrl: card?.artwork_url,
+          photoPath: player?.photo_path
+        });
 
   const initials = playerName
     .split(" ")
