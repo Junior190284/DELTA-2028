@@ -1128,6 +1128,20 @@ test("6. AUDYT PODZIELONYCH MIGRACJI SQL (FAZA A -> B -> C) ORAZ PLIKÓW APLIKAC
   assert.match(sqlC, /GRANT SELECT ON TABLE public\.%I TO authenticated/);
   assert.match(sqlC, /FOR SELECT TO authenticated USING \(user_id = \(SELECT auth\.uid\(\)\) OR public\.is_admin\(\)\)/);
 
+  // FAZA C (E2E.10 FIX): twardy preflight przeciążeń, EXECUTE RPC oraz ochrona PII dzieci w card_definitions
+  assert.match(sqlC, /to_regprocedure\('public\.purchase_pack_atomic\(text,text\)'\)\s+IS NOT NULL/);
+  assert.match(sqlC, /has_function_privilege\('anon',\s*v_oid,\s*'EXECUTE'\)/);
+  assert.match(sqlC, /has_function_privilege\('authenticated',\s*v_oid,\s*'EXECUTE'\)/);
+  assert.match(sqlC, /p\.oid <> ALL\(v_expected_oids\)/);
+  assert.match(sqlC, /pg_attribute[\s\S]*?a\.attacl IS NOT NULL/);
+  assert.match(sqlC, /REVOKE ALL ON TABLE public\.card_definitions FROM PUBLIC, anon, authenticated'/);
+  assert.match(sqlC, /GRANT SELECT ON TABLE public\.card_definitions TO authenticated'/);
+  assert.doesNotMatch(sqlC, /GRANT SELECT ON TABLE public\.card_definitions TO anon/);
+  assert.match(sqlC, /CREATE POLICY card_definitions_select_authenticated ON public\.card_definitions FOR SELECT TO authenticated/);
+  assert.match(sqlC, /public\.is_parent_of/);
+  assert.match(sqlC, /FROM public\.user_cards uc/);
+  assert.match(sqlC, /v_pack_tables TEXT\[\] := ARRAY\['pack_definitions', 'pack_types'\]/);
+
   // AdminPanel nie zapisuje już bezpośrednio do user_delta_points ani user_unopened_packs z przeglądarki
   const adminPanelSrc = fs.readFileSync(path.resolve(process.cwd(), "components/AdminPanel.tsx"), "utf-8");
   assert.doesNotMatch(adminPanelSrc, /\.from\("user_delta_points"\)/);
@@ -1374,4 +1388,166 @@ test("9. IDEMPOTENCJA apply_delta_points_transaction: wykrywanie konfliktów prz
   assert.equal(state.userDeltaPoints[USER_1].points_balance, 150);
   assert.equal(state.userDeltaPoints[OTHER_USER].points_balance, 100);
   assert.equal(state.deltaTransactions.length, 1);
+});
+
+test("10. POLITYKA card_definitions RLS: prywatność dzieci, karty historyczne is_active=false, UUID/TEXT oraz role", () => {
+  const phaseCPath = path.resolve(process.cwd(), "supabase/migrations/20261111_anim1a5_c_rls_hardening.sql");
+  const sqlC = fs.readFileSync(phaseCPath, "utf-8");
+
+  // 1. Brak dostępu anon do card_definitions (wyłącznie authenticated + service_role)
+  const cardSecStart = sqlC.indexOf("-- 3. UTWARDZENIE KATALOGU KART");
+  const packSecStart = sqlC.indexOf("-- 4. UTWARDZENIE KATALOGU PACZEK");
+  assert.ok(cardSecStart !== -1 && packSecStart > cardSecStart, "Nie znaleziono rozdzielonych sekcji 3 i 4 w migracji C");
+  const cardSectionSql = sqlC.slice(cardSecStart, packSecStart);
+
+  assert.match(cardSectionSql, /REVOKE ALL ON TABLE public\.card_definitions FROM PUBLIC, anon, authenticated'/);
+  assert.match(cardSectionSql, /GRANT SELECT ON TABLE public\.card_definitions TO authenticated'/);
+  assert.doesNotMatch(cardSectionSql, /\bTO anon\b|TO PUBLIC, anon|TO anon, authenticated/);
+
+  // 2. Ekstrakcja dokładnego szablonu v_select_using oraz wariantów UUID/TEXT z migracji C
+  const formatMatch = sqlC.match(/v_select_using\s*:=\s*format\(\s*'([^']+)'\s*,\s*v_active_prefix\s*,\s*v_parent_expr\s*,\s*v_card_match_expr\s*\)/);
+  assert.ok(formatMatch, "Nie znaleziono szablonu v_select_using w migracji C");
+  const template = formatMatch[1];
+
+  const parentUuidMatch = sqlC.match(/IF v_cd_player_type = 'uuid' THEN\s+v_parent_expr := '([^']+)';\s+ELSE\s+v_parent_expr := '((?:[^']|'')+)';/);
+  assert.ok(parentUuidMatch, "Nie znaleziono gałęzi UUID/TEXT dla v_parent_expr");
+  const parentUuidExpr = parentUuidMatch[1];
+  const parentTextExpr = parentUuidMatch[2].replace(/''/g, "'");
+
+  const cardMatch = sqlC.match(/IF v_cd_id_type IS NOT NULL AND v_uc_card_type IS NOT NULL AND v_cd_id_type = v_uc_card_type THEN\s+v_card_match_expr := '([^']+)';\s+ELSE\s+v_card_match_expr := '([^']+)';/);
+  assert.ok(cardMatch, "Nie znaleziono gałęzi UUID/TEXT dla v_card_match_expr");
+  const cardEqualExpr = cardMatch[1];
+  const cardTextExpr = cardMatch[2];
+
+  // Budowa rzeczywistych wyrażeń SQL dla wariantu UUID oraz mieszanego UUID/TEXT
+  const buildUsingSql = (opts: { hasIsActive: boolean; playerIsUuid: boolean; cardIdsMatchType: boolean }) => {
+    const activePrefix = opts.hasIsActive ? "is_active = true AND " : "";
+    const parentExpr = opts.playerIsUuid ? parentUuidExpr : parentTextExpr;
+    const cardExpr = opts.cardIdsMatchType ? cardEqualExpr : cardTextExpr;
+    let idx = 0;
+    const replacements = [activePrefix, parentExpr, cardExpr];
+    return template.replace(/%s/g, () => replacements[idx++] ?? "");
+  };
+
+  const uuidPolicySql = buildUsingSql({ hasIsActive: true, playerIsUuid: true, cardIdsMatchType: true });
+  const textPolicySql = buildUsingSql({ hasIsActive: true, playerIsUuid: false, cardIdsMatchType: false });
+
+  // Krytyczne sprawdzenie strukturalne: warunek EXISTS (posiadane user_cards) NIE może być wewnątrz is_active = true
+  assert.match(
+    uuidPolicySql,
+    /^public\.is_admin\(\) OR public\.is_staff\(\) OR \(is_active = true AND \(player_id IS NOT NULL AND public\.is_parent_of\(player_id\)\)\) OR EXISTS \(SELECT 1 FROM public\.user_cards uc WHERE uc\.user_id = \(SELECT auth\.uid\(\)\) AND uc\.card_id = card_definitions\.id\)$/
+  );
+  assert.match(
+    textPolicySql,
+    /public\.is_parent_of\(player_id::uuid\)\)[\s\S]*\) OR EXISTS \(SELECT 1 FROM public\.user_cards uc WHERE uc\.user_id = \(SELECT auth\.uid\(\)\) AND uc\.card_id::text = card_definitions\.id::text\)$/
+  );
+
+  // 3. Ewaluator rzeczywistego wyrażenia SQL dla przypadków testowych
+  interface CardRow {
+    id: string;
+    player_id: string | null;
+    is_active: boolean;
+  }
+  interface EvalContext {
+    authUid: string | null;
+    role: "admin" | "coach" | "parent";
+    linkedPlayers: Set<string>;
+    ownedCardIds: Set<string>;
+  }
+
+  const evaluateExtractedCardPolicySql = (policySql: string, card: CardRow, ctx: EvalContext): boolean => {
+    if (!ctx.authUid) return false;
+    const isAdmin = ctx.role === "admin";
+    const isStaff = ctx.role === "admin" || ctx.role === "coach";
+    const isParentOf = (pid: string | null) => Boolean(pid && ctx.linkedPlayers.has(pid));
+
+    // Przetłumaczenie wyekstrahowanej klauzuli WHERE z SQL na ewaluację JS
+    let jsExpr = policySql
+      .replace(/public\.is_admin\(\)/g, "isAdmin")
+      .replace(/public\.is_staff\(\)/g, "isStaff")
+      .replace(/is_active = true/g, "card.is_active === true")
+      .replace(/player_id IS NOT NULL/g, "card.player_id !== null")
+      .replace(
+        /player_id::text ~\* '\^\[0-9a-f\]\{8\}-\[0-9a-f\]\{4\}-\[0-9a-f\]\{4\}-\[0-9a-f\]\{4\}-\[0-9a-f\]\{12\}\$'/g,
+        "/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(card.player_id || ''))"
+      )
+      .replace(/public\.is_parent_of\(player_id(?:::uuid)?\)/g, "isParentOf(card.player_id)")
+      .replace(
+        /EXISTS \(SELECT 1 FROM public\.user_cards uc WHERE uc\.user_id = \(SELECT auth\.uid\(\)\) AND uc\.card_id(?:::text)? = card_definitions\.id(?:::text)?\)/g,
+        "ctx.ownedCardIds.has(String(card.id))"
+      )
+      .replace(/\bAND\b/g, "&&")
+      .replace(/\bOR\b/g, "||");
+
+    assert.doesNotMatch(
+      jsExpr,
+      /public\.|\bEXISTS\b|\bSELECT\b|\bcard_definitions\b|\buser_cards\b|\bauth\.uid\b/,
+      `Nieprzetłumaczony fragment SQL: ${jsExpr}`
+    );
+    const fn = new Function("card", "ctx", "isAdmin", "isStaff", "isParentOf", `return Boolean(${jsExpr});`);
+    return fn(card, ctx, isAdmin, isStaff, isParentOf);
+  };
+
+  const CHILD_A = "e2e57000-0000-4e2e-8000-000000000001";
+  const CHILD_B = "aaaaaaaa-0000-4000-8000-000000000002";
+
+  const cards = {
+    childAActive: { id: "c-a-active", player_id: CHILD_A, is_active: true },
+    childAInactiveOwned: { id: "c-a-inactive-owned", player_id: CHILD_A, is_active: false },
+    childAInactiveUnowned: { id: "c-a-inactive-unowned", player_id: CHILD_A, is_active: false },
+    childBActive: { id: "c-b-active", player_id: CHILD_B, is_active: true },
+    childBInactiveOwned: { id: "c-b-inactive-owned", player_id: CHILD_B, is_active: false },
+    childBInactiveUnowned: { id: "c-b-inactive-unowned", player_id: CHILD_B, is_active: false },
+    invalidTextPlayerInactive: { id: "c-bad-text", player_id: "not-a-uuid", is_active: false }
+  };
+
+  const parentACtx: EvalContext = {
+    authUid: USER_1,
+    role: "parent",
+    linkedPlayers: new Set([CHILD_A]),
+    ownedCardIds: new Set(["c-a-inactive-owned", "c-b-inactive-owned"])
+  };
+  const strangerCtx: EvalContext = {
+    authUid: OTHER_USER,
+    role: "parent",
+    linkedPlayers: new Set(),
+    ownedCardIds: new Set()
+  };
+  const adminCtx: EvalContext = {
+    authUid: "00000000-0000-0000-0000-00000000ad01",
+    role: "admin",
+    linkedPlayers: new Set(),
+    ownedCardIds: new Set()
+  };
+  const coachCtx: EvalContext = {
+    authUid: "00000000-0000-0000-0000-00000000c001",
+    role: "coach",
+    linkedPlayers: new Set(),
+    ownedCardIds: new Set()
+  };
+
+  for (const policySql of [uuidPolicySql, textPolicySql]) {
+    // 1. Rodzic widzi aktywną kartę dziecka (nawet jeśli jeszcze jej nie posiada w user_cards)
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAActive, parentACtx), true);
+
+    // 2. Rodzic nie widzi obcej nieposiadanej karty ani nieposiadanej nieaktywnej karty dziecka
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childBActive, parentACtx), false);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAInactiveUnowned, parentACtx), false);
+
+    // 3. Właściciel widzi własną historyczną kartę również przy is_active = false (zarówno swojego, jak i innego gracza)
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAInactiveOwned, parentACtx), true);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childBInactiveOwned, parentACtx), true);
+
+    // 4. Obcy użytkownik nie widzi nieaktywnej karty (ani karty innego dziecka)
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAInactiveOwned, strangerCtx), false);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childBInactiveUnowned, strangerCtx), false);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAActive, strangerCtx), false);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.invalidTextPlayerInactive, strangerCtx), false);
+
+    // 5. Admin i sztab (coach) mają pełny odczyt aktywnych i nieaktywnych kart
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAActive, adminCtx), true);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childBInactiveUnowned, adminCtx), true);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childAActive, coachCtx), true);
+    assert.equal(evaluateExtractedCardPolicySql(policySql, cards.childBInactiveUnowned, coachCtx), true);
+  }
 });
