@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import {
   PackExperienceController,
   type PackAudioCue,
@@ -374,4 +376,161 @@ test("12. enable_3d_walkout flag and STOP_ALL audio on SKIP", () => {
   resFalse.enable_3d_walkout = false;
   const cFalse = new PackExperienceController({ result: resFalse });
   assert.equal(cFalse.getState().is3DWalkoutEnabled, false);
+});
+
+test("13. Manual NEXT in TRANSITION schedules WALKOUT timer and auto-advances to HERO_REVEAL", async () => {
+  const result = makeTestResult([
+    { id: "c_gold", theme: "gold_master", rarity: "epic", name: "Gold Hero" },
+    { id: "c_base", theme: "base", rarity: "common", name: "Base Card" }
+  ]);
+  result.enable_3d_walkout = true;
+
+  const controller = new PackExperienceController({
+    result,
+    timings: { openingTearMs: 5000, transitionMs: 5000, walkoutStandardMs: 35, walkoutInfernoMs: 50 }
+  });
+
+  controller.dispatch("PLAY");
+  assert.equal(controller.getState().phase, "OPENING");
+
+  controller.dispatch("MEDIA_ENDED");
+  assert.equal(controller.getState().phase, "TRANSITION");
+
+  // Manual NEXT from TRANSITION must still schedule the WALKOUT timer
+  assert.equal(controller.dispatch("NEXT"), true);
+  assert.equal(controller.getState().phase, "WALKOUT");
+
+  await new Promise((resolve) => setTimeout(resolve, 75));
+  assert.equal(controller.getState().phase, "HERO_REVEAL");
+  controller.dispose();
+});
+
+test("14. enable_3d_walkout=false bypasses WALKOUT/HERO_REVEAL and keeps all cards in CARD_REVEAL", () => {
+  const result = makeTestResult([
+    { id: "c_inf", theme: "inferno", rarity: "inferno", name: "Inferno Card" },
+    { id: "c_gold", theme: "gold_master", rarity: "epic", name: "Gold Card" },
+    { id: "c_base", theme: "base", rarity: "common", name: "Base Card" }
+  ]);
+  result.enable_3d_walkout = false;
+
+  const controller = new PackExperienceController({ result });
+  const initState = controller.getState();
+
+  assert.equal(initState.is3DWalkoutEnabled, false);
+  assert.equal(initState.hasWalkout, false);
+  assert.equal(initState.heroCard, null);
+  assert.equal(initState.walkoutDurationMs, 0);
+  assert.deepEqual(
+    initState.revealCards.map((c) => c.card.id),
+    ["c_inf", "c_gold", "c_base"]
+  );
+
+  controller.dispatch("PLAY");
+  controller.dispatch("MEDIA_ENDED");
+  assert.equal(controller.getState().phase, "TRANSITION");
+
+  controller.dispatch("NEXT");
+  assert.equal(controller.getState().phase, "CARD_REVEAL");
+  assert.equal(controller.getState().currentDisplayCard?.card.id, "c_inf");
+
+  controller.dispatch("NEXT");
+  assert.equal(controller.getState().currentDisplayCard?.card.id, "c_gold");
+
+  controller.dispatch("NEXT");
+  assert.equal(controller.getState().currentDisplayCard?.card.id, "c_base");
+
+  controller.dispatch("NEXT");
+  assert.equal(controller.getState().phase, "SUMMARY");
+  assert.equal(controller.getState().summaryCards.length, 3);
+  controller.dispose();
+});
+
+test("15. walkoutDurationMs exposes exact controller timing for RAF synchronization", () => {
+  const resInferno = makeTestResult([{ id: "c_inf", theme: "inferno", rarity: "inferno", name: "Inf" }]);
+  resInferno.enable_3d_walkout = true;
+  const cInferno = new PackExperienceController({
+    result: resInferno,
+    timings: { walkoutInfernoMs: 4800, walkoutStandardMs: 3200 }
+  });
+  assert.equal(cInferno.getState().walkoutDurationMs, 4800);
+  assert.equal(cInferno.getWalkoutDurationMs(), 4800);
+
+  const resMatchday = makeTestResult([{ id: "c_m", theme: "matchday_hero", rarity: "rare", name: "M" }]);
+  resMatchday.enable_3d_walkout = true;
+  const cMatchday = new PackExperienceController({
+    result: resMatchday,
+    timings: { walkoutInfernoMs: 4800, walkoutStandardMs: 3200 }
+  });
+  assert.equal(cMatchday.getState().walkoutDurationMs, 3200);
+
+  const resNoWalkout = makeTestResult([{ id: "c_b", theme: "base", rarity: "common", name: "B" }]);
+  const cBase = new PackExperienceController({ result: resNoWalkout });
+  assert.equal(cBase.getState().walkoutDurationMs, 0);
+});
+
+test("16. dispose() cancels active timers cleanly and blocks stale transitions/audio cues", async () => {
+  const cues: PackAudioCue[] = [];
+  const states: PackExperienceState[] = [];
+  const result = makeTestResult([{ id: "c_inf", theme: "inferno", rarity: "inferno", name: "Inf" }]);
+  result.enable_3d_walkout = true;
+
+  const controller = new PackExperienceController({
+    result,
+    timings: { openingTearMs: 25, transitionMs: 25, walkoutInfernoMs: 25 },
+    onAudioCue: (cue) => cues.push(cue)
+  });
+  controller.subscribe((s) => states.push(s));
+
+  controller.dispatch("PLAY");
+  assert.equal(controller.getState().phase, "OPENING");
+
+  const statesCountBeforeDispose = states.length;
+  controller.dispose();
+  assert.equal(controller.getState().isComplete, true);
+  assert.ok(cues.includes("STOP_ALL"));
+
+  const cuesCountAfterDispose = cues.length;
+  await new Promise((resolve) => setTimeout(resolve, 60));
+
+  assert.equal(states.length, statesCountBeforeDispose, "Disposed controller must not notify subscribers later");
+  assert.equal(cues.length, cuesCountAfterDispose, "Disposed timers must not emit delayed audio cues");
+});
+
+test("17. CinematicPackExperience V2 integrates controller lifecycle cleanup, synced RAF, keyboard controls, and bounded stage geometry", () => {
+  const v2Path = path.resolve(process.cwd(), "components/pack-opening-v2/CinematicPackExperience.tsx");
+  const cssPath = path.resolve(process.cwd(), "components/pack-opening-v2/cinematic-pack.css");
+  const code = fs.readFileSync(v2Path, "utf-8");
+  const css = fs.readFileSync(cssPath, "utf-8");
+
+  assert.match(code, /nextController\.dispose\(\)/, "Cleanup must dispose PackExperienceController");
+  assert.match(code, /state\.walkoutDurationMs/, "RAF walkout animation must synchronize with controller walkoutDurationMs");
+  assert.match(code, /e\.key === "Escape"/, "Escape key handler must exist");
+  assert.match(code, /currentPhase === "READY"/, "Enter/Space must support starting from READY");
+  assert.match(code, /data-testid="cinematic-card-stage-slot"/, "Safe padded stage slot must wrap 3D card");
+  assert.match(code, /size="responsive"/, "SUMMARY cards must use size=responsive inside flex-wrap boxes");
+  assert.match(css, /\.cinematic-v2-arena\s+\.universal-stage-scene/, "Stage height must be scoped inside modal container");
+});
+
+test("18. ETAP UI.3 guarantees continuous Stage3DEngine into CARD_REVEAL, Card3DEngine usage, zero fake OVR 88, and Tailwind-free badges", () => {
+  const v2Path = path.resolve(process.cwd(), "components/pack-opening-v2/CinematicPackExperience.tsx");
+  const card3dPath = path.resolve(process.cwd(), "components/collection-3d/Card3DEngine.tsx");
+  const badgePath = path.resolve(process.cwd(), "components/cards/CardBadgeHeader.tsx");
+  const nameplatePath = path.resolve(process.cwd(), "components/cards/CardNameplate.tsx");
+
+  const v2 = fs.readFileSync(v2Path, "utf-8");
+  const card3d = fs.readFileSync(card3dPath, "utf-8");
+  const badge = fs.readFileSync(badgePath, "utf-8");
+  const nameplate = fs.readFileSync(nameplatePath, "utf-8");
+
+  assert.match(v2, /activeStagePhase === "CARD_REVEAL"/, "Stage3DEngine must stay active across CARD_REVEAL");
+  assert.match(v2, /toUnifiedCardShowcase/, "CinematicPackExperience must use unified card mapping");
+  assert.match(v2, /v2-card-exiting-layer/, "Smooth outgoing card transition layer must exist");
+  assert.match(v2, /v2-card-entering-anim/, "Smooth incoming card transition animation must exist");
+
+  assert.doesNotMatch(card3d, /data\.ovr\s*\|\|\s*88/, "Card3DEngine must not invent fallback OVR 88");
+  assert.doesNotMatch(card3d, /data\.position\s*\|\|\s*"FWD"/, "Card3DEngine must not invent fallback FWD position");
+  assert.match(card3d, /inferno-front-series-bar/, "Card3DEngine must render real metadata bar when FIFA stats are null");
+
+  assert.doesNotMatch(badge, /cqw\]|inset-x|text-\[/, "CardBadgeHeader must not depend on missing Tailwind classes");
+  assert.doesNotMatch(nameplate, /cqw\]/, "CardNameplate must use explicit inline styles instead of missing Tailwind cqw classes");
 });

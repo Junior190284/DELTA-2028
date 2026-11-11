@@ -347,3 +347,73 @@
   text-transform: uppercase;
 }
 
+/* UI.5 Card3DEngine Polish: Specular Glare, Name Legibility, Touch Action, Mobile Perf */
+.inferno-scene-viewport.is-interactive {
+  touch-action: none;
+  cursor: grab;
+}
+.inferno-scene-viewport.is-static {
+  touch-action: pan-y;
+  cursor: default;
+}
+
+.inferno-specular-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 17;
+  transform: translateZ(102px);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: var(--glare-opacity, 0.26);
+  background:
+    radial-gradient(
+      circle at var(--glare-x, 50%) var(--glare-y, 44%),
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(255, 255, 255, 0.16) 24%,
+      transparent 58%
+    );
+  transition: opacity 0.22s ease;
+}
+
+.collection-card-theme .inferno-front-namebar {
+  padding: 6px 10px 4px;
+  border-radius: 10px;
+  background: radial-gradient(ellipse at center, rgba(2, 4, 8, 0.64) 0%, rgba(2, 4, 8, 0.25) 68%, transparent 100%);
+}
+
+.collection-card-theme .inferno-front-name-text {
+  text-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.98),
+    0 0 18px rgba(0, 0, 0, 0.88),
+    0 0 10px var(--card-glow, rgba(255, 42, 42, 0.45));
+}
+
+.collection-card-theme .inferno-front-series-bar {
+  background: rgba(8, 10, 18, 0.84);
+  border-color: var(--card-accent, rgba(255, 202, 88, 0.35));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+}
+
+@media (max-width: 768px) {
+  .inferno-scene-viewport {
+    filter: drop-shadow(0 20px 22px rgba(0, 0, 0, 0.78));
+  }
+  .inferno-aura {
+    filter: blur(22px);
+  }
+  .inferno-floor-glow {
+    filter: blur(12px);
+  }
+  .inferno-player-back-glow {
+    filter: blur(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inferno-specular-glare,
+  .inferno-holo-foil {
+    transition: none !important;
+  }
+}
+
+

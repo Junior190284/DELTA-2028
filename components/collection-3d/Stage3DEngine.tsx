@@ -3,10 +3,12 @@
 import React, { useRef, useState, useCallback, useMemo } from "react";
 import { CardVisualTheme } from "./types";
 import CanvasParticles from "@/components/CanvasParticles";
+import { getRarityPresentation } from "@/lib/cards/rarityPresentation";
 import "./stage.css";
 
 export interface Stage3DEngineProps {
   theme: CardVisualTheme;
+  rarity?: string | null;
   lightingMode?: "dynamic" | "stadium" | "stealth";
   isShockwaving?: boolean;
   isFlashing?: boolean;
@@ -14,6 +16,8 @@ export interface Stage3DEngineProps {
   isScreenShaking?: boolean;
   enableParallax?: boolean;
   enableParticles?: boolean;
+  reducedMotion?: boolean;
+  isMobile?: boolean;
   stadiumZoom?: boolean;
   ribbonText?: string;
   children: React.ReactNode;
@@ -23,6 +27,7 @@ export interface Stage3DEngineProps {
 
 export function Stage3DEngine({
   theme,
+  rarity,
   lightingMode = "dynamic",
   isShockwaving = false,
   isFlashing = false,
@@ -30,6 +35,8 @@ export function Stage3DEngine({
   isScreenShaking = false,
   enableParallax = true,
   enableParticles = true,
+  reducedMotion = false,
+  isMobile = false,
   stadiumZoom = false,
   ribbonText,
   children,
@@ -38,43 +45,54 @@ export function Stage3DEngine({
 }: Stage3DEngineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [parallaxOffset, setParallaxOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const effectiveParallax = enableParallax && !reducedMotion && !isMobile;
 
   // Mouse / Touch Parallax tracking
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!enableParallax || !containerRef.current) return;
+    if (!effectiveParallax || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const nx = (e.clientX - rect.left) / rect.width - 0.5;
     const ny = (e.clientY - rect.top) / rect.height - 0.5;
     setParallaxOffset({ x: nx, y: ny });
-  }, [enableParallax]);
+  }, [effectiveParallax]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    if (!enableParallax || !containerRef.current || e.touches.length === 0) return;
+    if (!effectiveParallax || !containerRef.current || e.touches.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
     const touch = e.touches[0];
     const nx = (touch.clientX - rect.left) / rect.width - 0.5;
     const ny = (touch.clientY - rect.top) / rect.height - 0.5;
     setParallaxOffset({ x: nx, y: ny });
-  }, [enableParallax]);
+  }, [effectiveParallax]);
 
   const handleMouseLeave = useCallback(() => {
     setParallaxOffset({ x: 0, y: 0 });
   }, []);
 
-  // Theme dynamic CSS variables
+  const rarityProfile = useMemo(
+    () => getRarityPresentation(rarity, theme.id),
+    [rarity, theme.id]
+  );
+
+  // Theme dynamic CSS variables (layered with rarity accent)
   const themeCssVars = useMemo(() => {
     return {
-      "--stage-core-glow": theme.stage.coreGlowColor,
+      "--stage-core-glow": rarity ? rarityProfile.glowRgba : theme.stage.coreGlowColor,
       "--stage-reflector-l": theme.stage.reflectorLeft,
       "--stage-reflector-r": theme.stage.reflectorRight,
       "--stage-pulse-color": theme.stage.pulseColor,
-      "--stage-primary-color": theme.styling.primaryColor,
+      "--stage-primary-color": rarity ? rarityProfile.accentHex : theme.styling.primaryColor,
+      "--stage-rarity-accent": rarityProfile.accentHex,
+      "--stage-rarity-secondary": rarityProfile.secondaryGlowRgba,
       ...style
     } as React.CSSProperties;
-  }, [theme, style]);
+  }, [theme, rarity, rarityProfile, style]);
 
-  // Particles theme mapping
+  // Particles theme respects canonical rarity presentation tiers
   const particlesTheme = useMemo(() => {
+    if (rarity) {
+      return rarityProfile.stageParticlesTheme;
+    }
     switch (theme.id) {
       case "INFERNO_ULTRA":
         return "inferno";
@@ -85,15 +103,21 @@ export function Stage3DEngine({
       default:
         return "standard";
     }
-  }, [theme.id]);
+  }, [rarity, rarityProfile.stageParticlesTheme, theme.id]);
 
-  const px = parallaxOffset.x;
-  const py = parallaxOffset.y;
+  const shouldRenderParticles =
+    enableParticles &&
+    !reducedMotion &&
+    (!rarity || rarityProfile.enableParticles);
+
+  const px = effectiveParallax ? parallaxOffset.x : 0;
+  const py = effectiveParallax ? parallaxOffset.y : 0;
 
   return (
     <div
       ref={containerRef}
-      className={`universal-stage-scene mode-${lightingMode} ${stadiumZoom ? "is-zooming" : ""} ${isScreenShaking ? "is-screen-shaking" : ""} ${isShockwaving ? "is-shockwaving" : ""} ${isFlashing ? "is-flashing" : ""} ${isPulsing ? "is-pulsing" : ""} ${className}`}
+      data-rarity={rarityProfile.tier}
+      className={`universal-stage-scene mode-${lightingMode} ${stadiumZoom && !reducedMotion ? "is-zooming" : ""} ${isScreenShaking && !reducedMotion && !isMobile ? "is-screen-shaking" : ""} ${isShockwaving && !reducedMotion ? "is-shockwaving" : ""} ${isFlashing && !reducedMotion ? "is-flashing" : ""} ${isPulsing && !reducedMotion ? "is-pulsing" : ""} ${reducedMotion ? "is-reduced-motion" : ""} ${isMobile ? "is-mobile-stage" : ""} ${className}`}
       style={themeCssVars}
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
@@ -104,7 +128,7 @@ export function Stage3DEngine({
         <div
           className="universal-stage-stands"
           style={{
-            transform: enableParallax ? `translate(${px * -16}px, ${py * -10}px) scale(1.04)` : "scale(1.04)"
+            transform: effectiveParallax ? `translate(${px * -16}px, ${py * -10}px) scale(1.04)` : "scale(1.04)"
           }}
         >
           <img
@@ -128,7 +152,7 @@ export function Stage3DEngine({
         <div
           className="universal-stage-floodlights"
           style={{
-            transform: enableParallax ? `translate(${px * -24}px, ${py * -14}px)` : "none"
+            transform: effectiveParallax ? `translate(${px * -24}px, ${py * -14}px)` : "none"
           }}
         >
           <div className="universal-stage-tower">
@@ -163,6 +187,7 @@ export function Stage3DEngine({
         <div className="universal-stage-beam-l" />
         <div className="universal-stage-beam-r" />
         <div className="universal-stage-core-glow" />
+        <div className="universal-stage-corona" />
         <div className="universal-stage-smoke-a" />
         <div className="universal-stage-smoke-b" />
 
@@ -178,11 +203,13 @@ export function Stage3DEngine({
       <div className="universal-stage-pulse" />
 
       {/* 4. CANVAS PARTICLES (Atmospheric depth behind 3D card) */}
-      {enableParticles && (
+      {shouldRenderParticles && (
         <div style={{ position: "absolute", inset: 0, zIndex: 6, pointerEvents: "none" }}>
           <CanvasParticles
             theme={particlesTheme}
             active={true}
+            reducedMotion={reducedMotion}
+            isMobile={isMobile}
           />
         </div>
       )}

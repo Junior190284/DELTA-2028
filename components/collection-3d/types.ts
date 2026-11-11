@@ -63,10 +63,11 @@ export interface PlayerCardData {
   playerId: string;
   imageUrl: string;
   surname: string;
+  fullDisplayName?: string;
   shirtNumber: string | number;
   position: PlayerPosition;
-  ovr: number;
-  stats: PlayerStats;
+  ovr?: number | null;
+  stats?: PlayerStats | null;
   visualType: CardVisualType;
   rarity: CollectionCategory;
   specialTitleId?: string | null;

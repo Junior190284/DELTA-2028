@@ -673,6 +673,39 @@
   line-height: 1;
 }
 
+/* Clean real metadata bar when card has no invented FIFA stats */
+.inferno-front-series-bar {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 8.8%;
+  height: 6.4%;
+  z-index: 15;
+  transform: translateZ(98px);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: rgba(14, 9, 14, 0.72);
+  border: 1px solid rgba(255, 202, 88, 0.28);
+  border-radius: 6px;
+  font-size: clamp(8px, 1.45vw, 10px);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inferno-front-series-bar b {
+  color: var(--inferno-gold);
+  font-weight: 1000;
+}
+
 /* Original Frame & FX */
 .inferno-fx-layer {
   z-index: 9;

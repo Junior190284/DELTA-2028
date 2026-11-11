@@ -132,7 +132,7 @@ export function normalizeCardTheme(rawTypeOrTheme?: string | null): CanonicalCar
   if (!rawTypeOrTheme) return "STANDARD";
   const upper = rawTypeOrTheme.toUpperCase().trim().replace(/[\s-]+/g, "_");
   if (upper.includes("INFERNO")) return "INFERNO";
-  if (upper.includes("DELTA_ICON") || upper.includes("ICON")) return "DELTA_ICON";
+  if (upper.includes("DELTA_ICON") || upper.includes("ICON") || upper.includes("LEGEND")) return "DELTA_ICON";
   if (upper.includes("GOLD_MASTER") || upper.includes("GOLD")) return "GOLD_MASTER";
   if (upper.includes("MATCHDAY_HERO") || upper.includes("MATCHDAY")) return "MATCHDAY_HERO";
   if (upper.includes("SEASONAL") || upper.includes("EVENT") || upper.includes("SPECIAL_EVENT")) return "SEASONAL_EVENT";

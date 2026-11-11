@@ -638,29 +638,33 @@ export function CollectionIntegrationLab({
                 </span>
               </div>
 
-              {/* OVR Badge */}
-              <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-black/60 border border-amber-400/40 text-amber-400 shadow-lg">
-                <span className="text-[10px] font-mono font-bold leading-none text-slate-400">OVR</span>
-                <span className="text-2xl font-black leading-none">{activeDrawnCard.ovr}</span>
-              </div>
+              {/* OVR Badge (only when real OVR exists) */}
+              {typeof activeDrawnCard.ovr === "number" && activeDrawnCard.ovr > 0 && (
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-black/60 border border-amber-400/40 text-amber-400 shadow-lg">
+                  <span className="text-[10px] font-mono font-bold leading-none text-slate-400">OVR</span>
+                  <span className="text-2xl font-black leading-none">{activeDrawnCard.ovr}</span>
+                </div>
+              )}
             </div>
 
             {/* 6 Stats Grid */}
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(activeDrawnCard.stats).map(([stat, val]) => (
-                <div
-                  key={stat}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/10"
-                >
-                  <span className="text-[11px] font-mono font-bold uppercase text-slate-400">
-                    {stat}
-                  </span>
-                  <span className="text-sm font-black text-white font-mono">
-                    {val}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {activeDrawnCard.stats && (
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(activeDrawnCard.stats).map(([stat, val]) => (
+                  <div
+                    key={stat}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/10"
+                  >
+                    <span className="text-[11px] font-mono font-bold uppercase text-slate-400">
+                      {stat}
+                    </span>
+                    <span className="text-sm font-black text-white font-mono">
+                      {val}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Technical Identifiers */}
             <div className="space-y-1.5 p-3 rounded-xl bg-black/30 border border-white/10 text-[11px] font-mono">

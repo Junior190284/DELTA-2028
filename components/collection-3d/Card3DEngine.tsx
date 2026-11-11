@@ -77,13 +77,18 @@ export function Card3DEngine({
     startPitch: number;
   }>({ startX: 0, startY: 0, startYaw: 0, startPitch: 0 });
 
-  // Generate embers on mount if theme supports embers
+  // Generate embers on mount if theme supports embers (throttled on mobile, skipped under reduced-motion)
   useEffect(() => {
-    if (!theme.styling.hasEmbers) {
+    const mqReduce =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        : false;
+    if (!theme.styling.hasEmbers || mqReduce) {
       setFrontEmbers([]);
       setBackEmbers([]);
       return;
     }
+    const isNarrow = typeof window !== "undefined" ? window.innerWidth < 768 : false;
     const makeEmbers = (count: number): EmberData[] => {
       return Array.from({ length: count }, (_, i) => ({
         id: i,
@@ -94,21 +99,28 @@ export function Card3DEngine({
         drift: `${(Math.random() * 110 - 55).toFixed(0)}px`
       }));
     };
-    setFrontEmbers(makeEmbers(38));
-    setBackEmbers(makeEmbers(28));
+    setFrontEmbers(makeEmbers(isNarrow ? 14 : 34));
+    setBackEmbers(makeEmbers(isNarrow ? 10 : 24));
   }, [theme.styling.hasEmbers]);
 
-  // Update holographic shine CSS variables based on tilt
+  // Update holographic shine & specular glare CSS variables based on tilt
   useEffect(() => {
     if (!cardRef.current) return;
     const cardEl = cardRef.current;
     const shine1 = `${85 - yaw * 0.9}%`;
     const shine2 = `${12 + yaw * 0.8}%`;
     const shine3 = `${52 - pitch * 0.8}%`;
+    const normYaw = (((yaw + 180) % 360) + 360) % 360 - 180;
+    const glareX = `${Math.max(8, Math.min(92, 50 - normYaw * 0.9)).toFixed(1)}%`;
+    const glareY = `${Math.max(8, Math.min(92, 48 + pitch * 1.15)).toFixed(1)}%`;
+    const glareOpacity = Math.min(0.68, 0.22 + (Math.abs(normYaw) + Math.abs(pitch)) * 0.0085).toFixed(3);
 
     cardEl.style.setProperty("--shine1", shine1);
     cardEl.style.setProperty("--shine2", shine2);
     cardEl.style.setProperty("--shine3", shine3);
+    cardEl.style.setProperty("--glare-x", glareX);
+    cardEl.style.setProperty("--glare-y", glareY);
+    cardEl.style.setProperty("--glare-opacity", glareOpacity);
   }, [yaw, pitch]);
 
   // Auto-rotation loop if requested
@@ -185,13 +197,18 @@ export function Card3DEngine({
   const crestSrc = theme.assets.crestImg || "/assets/cards/inferno-3d/delta-crest.png";
   const playerSrc = data.imageUrl || "/assets/cards/inferno-3d/player-default.png";
 
+  const hasRealOvr = typeof data.ovr === "number" && Number.isFinite(data.ovr) && data.ovr > 0;
+  const hasRealStats = Boolean(data.stats);
+  const hasShirtNumber = data.shirtNumber !== undefined && data.shirtNumber !== null && String(data.shirtNumber).trim() !== "";
+  const hasPosition = Boolean(data.position && String(data.position).trim() !== "");
+
   // Effective visual yaw including flipped state
   const effectiveYaw = yaw + (isFlipped ? 180 : 0);
 
   return (
     <div
       ref={sceneRef}
-      className={`inferno-scene-viewport collection-card-theme ${theme.styling.themeClass} ${!enableParallax ? "no-parallax" : ""} ${className}`}
+      className={`inferno-scene-viewport collection-card-theme ${theme.styling.themeClass} ${interactive ? "is-interactive" : "is-static"} ${!enableParallax ? "no-parallax" : ""} ${className}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -251,7 +268,9 @@ export function Card3DEngine({
           </div>
 
           {/* Player Number */}
-          <div className="inferno-player-number">{data.shirtNumber}</div>
+          {hasShirtNumber && (
+            <div className="inferno-player-number">{data.shirtNumber}</div>
+          )}
 
           {/* Club & Series Header */}
           <div className="inferno-brand-badge">
@@ -295,44 +314,61 @@ export function Card3DEngine({
                 </span>
               ))}
             </div>
-            <div className="inferno-front-submeta">
-              <span className="inferno-front-pos-tag">{data.position || "FWD"}</span>
-              <span className="inferno-front-ovr-tag">
-                OVR <b>{data.ovr || 88}</b>
-              </span>
-            </div>
+            {(hasPosition || hasRealOvr || hasShirtNumber) && (
+              <div className="inferno-front-submeta">
+                {hasPosition && (
+                  <span className="inferno-front-pos-tag">{data.position}</span>
+                )}
+                {hasShirtNumber && !hasRealOvr && (
+                  <span className="inferno-front-pos-tag">#{data.shirtNumber}</span>
+                )}
+                {hasRealOvr && (
+                  <span className="inferno-front-ovr-tag">
+                    OVR <b>{data.ovr}</b>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* 6 STATS IN 3 COLUMNS × 2 ROWS */}
-          <div className="inferno-front-stats-panel">
-            {/* Rząd 1: PAC, SHO, PAS */}
-            <div className="inferno-front-stat-box">
-              <span className="inferno-front-stat-label">PAC</span>
-              <b className="inferno-front-stat-value">{data.stats.pac}</b>
-            </div>
-            <div className="inferno-front-stat-box">
-              <span className="inferno-front-stat-label">SHO</span>
-              <b className="inferno-front-stat-value">{data.stats.sho}</b>
-            </div>
-            <div className="inferno-front-stat-box">
-              <span className="inferno-front-stat-label">PAS</span>
-              <b className="inferno-front-stat-value">{data.stats.pas}</b>
-            </div>
+          {/* 6 STATS ONLY IF REAL DATA EXISTS; OTHERWISE CLEAN REAL SERIES BAR */}
+          {hasRealStats && data.stats ? (
+            <div className="inferno-front-stats-panel">
+              {/* Rząd 1: PAC, SHO, PAS */}
+              <div className="inferno-front-stat-box">
+                <span className="inferno-front-stat-label">PAC</span>
+                <b className="inferno-front-stat-value">{data.stats.pac}</b>
+              </div>
+              <div className="inferno-front-stat-box">
+                <span className="inferno-front-stat-label">SHO</span>
+                <b className="inferno-front-stat-value">{data.stats.sho}</b>
+              </div>
+              <div className="inferno-front-stat-box">
+                <span className="inferno-front-stat-label">PAS</span>
+                <b className="inferno-front-stat-value">{data.stats.pas}</b>
+              </div>
 
-            {/* Rząd 2: DRI, DEF, PHY */}
-            <div className="inferno-front-stat-box">
-              <span className="inferno-front-stat-label">DRI</span>
-              <b className="inferno-front-stat-value">{data.stats.dri}</b>
+              {/* Rząd 2: DRI, DEF, PHY */}
+              <div className="inferno-front-stat-box">
+                <span className="inferno-front-stat-label">DRI</span>
+                <b className="inferno-front-stat-value">{data.stats.dri}</b>
+              </div>
+              <div className="inferno-front-stat-box">
+                <span className="inferno-front-stat-label">DEF</span>
+                <b className="inferno-front-stat-value">{data.stats.def}</b>
+              </div>
+              <div className="inferno-front-stat-box">
+                <span className="inferno-front-stat-label">PHY</span>
+                <b className="inferno-front-stat-value">{data.stats.phy}</b>
+              </div>
             </div>
-            <div className="inferno-front-stat-box">
-              <span className="inferno-front-stat-label">DEF</span>
-              <b className="inferno-front-stat-value">{data.stats.def}</b>
+          ) : (
+            <div className="inferno-front-series-bar">
+              <span>{theme.badgeLabel}</span>
+              <span>•</span>
+              <b>{data.season || "2026/27"}</b>
             </div>
-            <div className="inferno-front-stat-box">
-              <span className="inferno-front-stat-label">PHY</span>
-              <b className="inferno-front-stat-value">{data.stats.phy}</b>
-            </div>
-          </div>
+          )}
 
           {/* Energy FX, Frame & Holo Foil */}
           <img
@@ -347,6 +383,7 @@ export function Card3DEngine({
           />
           {enableHolo && (
             <>
+              <div className="inferno-specular-glare" />
               <div className="inferno-holo-foil" />
               <div className="inferno-sparktrail" />
             </>
@@ -426,20 +463,27 @@ export function Card3DEngine({
 
             <div className="inferno-back-gold-divider" />
 
-            {/* Credentials 3-box grid */}
+            {/* Credentials 3-box grid (strictly real data — no invented OVR or fake position) */}
             <div className="inferno-back-creds-grid">
               <div className="inferno-back-cred-cell">
                 <span>NUMER</span>
-                <b>#{data.shirtNumber}</b>
+                <b>{hasShirtNumber ? `#${data.shirtNumber}` : "—"}</b>
               </div>
               <div className="inferno-back-cred-cell">
                 <span>POZYCJA</span>
-                <b>{data.position || "FWD"}</b>
+                <b>{hasPosition ? data.position : "—"}</b>
               </div>
-              <div className="inferno-back-cred-cell">
-                <span>OVR</span>
-                <b>{data.ovr || 88}</b>
-              </div>
+              {hasRealOvr ? (
+                <div className="inferno-back-cred-cell">
+                  <span>OVR</span>
+                  <b>{data.ovr}</b>
+                </div>
+              ) : (
+                <div className="inferno-back-cred-cell">
+                  <span>SEZON</span>
+                  <b>{data.season || "2026/27"}</b>
+                </div>
+              )}
             </div>
 
             {/* Special Title Certification */}

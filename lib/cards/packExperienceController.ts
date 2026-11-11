@@ -85,6 +85,7 @@ export interface PackExperienceState {
   isMuted: boolean;
   hasWalkout: boolean;
   is3DWalkoutEnabled: boolean;
+  walkoutDurationMs: number;
 }
 
 export interface PackExperienceControllerOptions {
@@ -143,14 +144,17 @@ export class PackExperienceController {
 
     this.summaryCards = Object.freeze([...allItems]) as PackDrawnItem[];
 
-    // 2. Select exactly one highest-priority walkout card (if eligible)
-    const eligibleWalkouts = allItems
-      .filter((c) => c.priority > 0)
-      .sort((a, b) => b.priority - a.priority);
+    // 2. Select at most one highest-priority walkout card unless 3D walkout is explicitly disabled
+    const allowWalkout = this.result.enable_3d_walkout !== false;
+    const eligibleWalkouts = allowWalkout
+      ? allItems
+          .filter((c) => c.priority > 0)
+          .sort((a, b) => b.priority - a.priority)
+      : [];
 
     this.heroCard = eligibleWalkouts.length > 0 ? eligibleWalkouts[0] : null;
 
-    // 3. Prepare reveal cards WITHOUT duplicating the heroCard
+    // 3. Prepare reveal cards WITHOUT duplicating the heroCard (or keep all cards when walkout disabled)
     if (this.heroCard) {
       // Find index of first matching hero card and exclude only that exact instance
       let heroExcluded = false;
@@ -198,8 +202,16 @@ export class PackExperienceController {
       isComplete: this.phase === "COMPLETE",
       isMuted: this.isMuted,
       hasWalkout: this.heroCard !== null,
-      is3DWalkoutEnabled: this.result.enable_3d_walkout === true
+      is3DWalkoutEnabled: this.result.enable_3d_walkout === true,
+      walkoutDurationMs: this.getWalkoutDurationMs()
     };
+  }
+
+  public getWalkoutDurationMs(): number {
+    if (!this.heroCard) return 0;
+    return this.heroCard.theme === "INFERNO" || this.heroCard.theme === "DELTA_ICON"
+      ? this.timings.walkoutInfernoMs
+      : this.timings.walkoutStandardMs;
   }
 
   private notify(): void {
@@ -250,6 +262,31 @@ export class PackExperienceController {
     this.generation++;
     this.phase = newPhase;
     this.notify();
+  }
+
+  private enterWalkoutPhase(): void {
+    this.emitAudio("TEASER_HIT");
+    this.transitionTo("WALKOUT");
+
+    const walkoutDuration = this.getWalkoutDurationMs();
+    this.setStepTimer(walkoutDuration, (wGen) => {
+      if (this.generation === wGen && this.phase === "WALKOUT") {
+        this.dispatch("MEDIA_ENDED");
+      }
+    });
+  }
+
+  private advanceFromTransition(): void {
+    if (this.heroCard && this.result.enable_3d_walkout !== false) {
+      this.enterWalkoutPhase();
+    } else if (this.revealCards.length > 0) {
+      this.currentRevealIndex = 0;
+      this.emitAudio("CARD_FLIP");
+      this.transitionTo("CARD_REVEAL");
+    } else {
+      this.emitAudio("SUMMARY_CHIME");
+      this.transitionTo("SUMMARY");
+    }
   }
 
   // ===========================================================================
@@ -313,28 +350,7 @@ export class PackExperienceController {
           // Brief smooth flash transition into next arena
           this.setStepTimer(this.timings.transitionMs, (gen) => {
             if (this.generation === gen && this.phase === "TRANSITION") {
-              if (this.heroCard) {
-                this.emitAudio("TEASER_HIT");
-                this.transitionTo("WALKOUT");
-
-                const walkoutDuration =
-                  this.heroCard.theme === "INFERNO" || this.heroCard.theme === "DELTA_ICON"
-                    ? this.timings.walkoutInfernoMs
-                    : this.timings.walkoutStandardMs;
-
-                this.setStepTimer(walkoutDuration, (wGen) => {
-                  if (this.generation === wGen && this.phase === "WALKOUT") {
-                    this.dispatch("MEDIA_ENDED");
-                  }
-                });
-              } else if (this.revealCards.length > 0) {
-                this.currentRevealIndex = 0;
-                this.emitAudio("CARD_FLIP");
-                this.transitionTo("CARD_REVEAL");
-              } else {
-                this.emitAudio("SUMMARY_CHIME");
-                this.transitionTo("SUMMARY");
-              }
+              this.advanceFromTransition();
             }
           });
           return true;
@@ -345,17 +361,7 @@ export class PackExperienceController {
         // Manual override during transition
         if (event === "NEXT" || event === "MEDIA_ENDED") {
           this.clearActiveTimer();
-          if (this.heroCard) {
-            this.emitAudio("TEASER_HIT");
-            this.transitionTo("WALKOUT");
-          } else if (this.revealCards.length > 0) {
-            this.currentRevealIndex = 0;
-            this.emitAudio("CARD_FLIP");
-            this.transitionTo("CARD_REVEAL");
-          } else {
-            this.emitAudio("SUMMARY_CHIME");
-            this.transitionTo("SUMMARY");
-          }
+          this.advanceFromTransition();
           return true;
         }
         return false;
@@ -435,6 +441,7 @@ export class PackExperienceController {
 
   public dispose(): void {
     this.clearActiveTimer();
+    this.generation++;
     this.emitAudio("STOP_ALL");
     this.phase = "COMPLETE";
     this.listeners.clear();

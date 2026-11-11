@@ -1,4 +1,4 @@
-import { CardDefinition, CardRarity, UserCard, CardLayoutConfig } from "./types";
+import type { CardDefinition, CardRarity, UserCard, CardLayoutConfig } from "./types.ts";
 
 export type DeltaCardTheme = 
   | "STANDARD"
@@ -300,8 +300,12 @@ export function adaptLegacyToDeltaCardModel(props: {
   const card = props.card;
   const player = props.player || card?.player;
   const userCard = props.userCard;
-  const playerName = (player?.display_name || card?.card_name || "ZAWODNIK DELTA").toUpperCase();
-  const shirtNumber = player?.shirt_number ? String(player.shirt_number) : null;
+  const playerName = (player?.display_name || card?.card_name || card?.title || "ZAWODNIK DELTA").toUpperCase();
+  const shirtNumber = player?.shirt_number
+    ? String(player.shirt_number)
+    : card?.card_number !== null && card?.card_number !== undefined
+    ? String(card.card_number)
+    : null;
   const position = player?.position || card?.player?.position || null;
   const rarity = (card?.rarity || "common").toLowerCase() as CardRarity;
 

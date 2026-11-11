@@ -52,8 +52,14 @@ import {
 } from "@/lib/cards/types";
 import { PACK_PRICES } from "@/lib/economy/security";
 import { cardSound } from "@/lib/cards/audio";
+import { FetchSequenceGuard, createDebouncedRevalidator } from "@/lib/cards/cardSync";
+import {
+  reconcileUnopenedPacksAfterOpen,
+  selectPackSessionToOpen
+} from "@/lib/cards/packOpeningAlbumBridge";
+import type { PackOpeningResult } from "@/lib/cards/types";
 import CollectibleCard3D from "./CollectibleCard3D";
-import PackOpeningExperience from "./PackOpeningExperience";
+import CinematicPackExperience from "./pack-opening-v2/CinematicPackExperience";
 import CardUnlockCinematicModal from "./CardUnlockCinematicModal";
 import DailyInfernoSpin from "./DailyInfernoSpin";
 import SquadBuilder3D from "./SquadBuilder3D";
@@ -231,6 +237,14 @@ export function getRarityTier(card?: CardDefinition): {
   };
 }
 
+interface ActivePackSession {
+  pack: PackDefinition;
+  userUnopenedPackId: string | null;
+  sessionKey: number;
+  hasConsumedCurrentPack: boolean;
+  lastOpenResult: PackOpeningResult | null;
+}
+
 interface DeltaCollectionAlbumProps {
   currentUserId?: string;
   players?: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null }[];
@@ -247,7 +261,8 @@ export default function DeltaCollectionAlbum({
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [buyingPackId, setBuyingPackId] = useState<string | null>(null);
-  const [isOpeningPack, setIsOpeningPack] = useState(false);
+  const collectionFetchGuardRef = useRef(new FetchSequenceGuard());
+  const packSessionSeqRef = useRef(0);
 
   const [allCards, setAllCards] = useState<CardDefinition[]>([]);
   const [userCards, setUserCards] = useState<UserCard[]>([]);
@@ -278,7 +293,8 @@ export default function DeltaCollectionAlbum({
   // Modals
   const [inspectCard, setInspectCard] = useState<{ card: CardDefinition; userCard: UserCard | null } | null>(null);
   const [inspectFlipped, setInspectFlipped] = useState(false);
-  const [activePackToOpen, setActivePackToOpen] = useState<PackDefinition | null>(null);
+  const [activePackSession, setActivePackSession] = useState<ActivePackSession | null>(null);
+  const isOpeningPack = Boolean(activePackSession);
   const [cinematicCardToUnlock, setCinematicCardToUnlock] = useState<CardDefinition | null>(null);
   const [showDailySpin, setShowDailySpin] = useState(false);
   const [showSquadBuilder, setShowSquadBuilder] = useState(false);
@@ -306,6 +322,46 @@ export default function DeltaCollectionAlbum({
     setTimeout(() => {
       setToastMessage(null);
     }, 3500);
+  };
+
+  const launchPackFromUnopened = (
+    preferredPackTypeId?: string | null,
+    preferredUnopenedPackId?: string | null,
+    allowFallbackToAny = true
+  ) => {
+    if (activePackSession) return;
+    const selected = selectPackSessionToOpen({
+      unopenedPacks,
+      packDefinitions,
+      preferredPackTypeId,
+      preferredUnopenedPackId,
+      allowFallbackToAny,
+      fallbackCatalog: OFFICIAL_BOOSTER_PACKS
+    });
+    if (!selected) {
+      showToast("Brak nieotwartych paczek. Kup paczkę w sklepie lub zdobądź za aktywność!");
+      return;
+    }
+    packSessionSeqRef.current += 1;
+    setActivePackSession({
+      pack: selected.pack,
+      userUnopenedPackId: selected.targetUnopenedPack.id,
+      sessionKey: packSessionSeqRef.current,
+      hasConsumedCurrentPack: false,
+      lastOpenResult: null
+    });
+  };
+
+  const launchGrantedPack = (pack: PackDefinition | undefined | null) => {
+    if (activePackSession || !pack) return;
+    packSessionSeqRef.current += 1;
+    setActivePackSession({
+      pack,
+      userUnopenedPackId: null,
+      sessionKey: packSessionSeqRef.current,
+      hasConsumedCurrentPack: false,
+      lastOpenResult: null
+    });
   };
 
   const handleSetFeaturedCard = (cardId: string) => {
@@ -406,12 +462,18 @@ export default function DeltaCollectionAlbum({
   };
 
   // Fetch collection data from API
-  const fetchCollection = async () => {
+  const fetchCollection = async (silent = false) => {
+    const requestSeq = collectionFetchGuardRef.current.startRequest();
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const res = await fetch("/api/cards/collection");
       if (res.ok) {
         const data = await res.json();
+        if (!collectionFetchGuardRef.current.isLatest(requestSeq)) {
+          return;
+        }
         setAllCards(data.allCards || []);
         setUserCards(data.userCards || []);
         setUnopenedPacks(data.unopenedPacks || []);
@@ -447,7 +509,9 @@ export default function DeltaCollectionAlbum({
     } catch (e) {
       console.error("Error loading collection:", e);
     } finally {
-      setLoading(false);
+      if (!silent && collectionFetchGuardRef.current.isLatest(requestSeq)) {
+        setLoading(false);
+      }
     }
   };
 
@@ -459,14 +523,12 @@ export default function DeltaCollectionAlbum({
       .then(res => res.json())
       .then(data => {
         if (data.granted && data.granted.length > 0) {
-          fetchCollection();
+          fetchCollection(true);
         }
       })
       .catch(() => {});
 
-    const handlePackSync = () => {
-      fetchCollection();
-    };
+    const handlePackSync = createDebouncedRevalidator(() => fetchCollection(true), 120);
     window.addEventListener("delta:pack-opened", handlePackSync);
     window.addEventListener("delta:collection-updated", handlePackSync);
     return () => {
@@ -828,17 +890,7 @@ export default function DeltaCollectionAlbum({
                   disabled={isOpeningPack}
                   onClick={() => {
                     const firstPack = unopenedPacks[0];
-                    const packDef = packDefinitions.find(p => p.id === firstPack.pack_type_id) || {
-                      id: firstPack.pack_type_id || "standard_pack",
-                      name: "Paczka DELTA",
-                      description: "Oficjalna paczka kart",
-                      cards_count: 4,
-                      drop_rates: { common: 60, rare: 30, epic: 8, legendary: 1.8, inferno: 0.2 },
-                      min_rarity: "common",
-                      theme: "standard",
-                      is_active: true
-                    };
-                    setActivePackToOpen(packDef);
+                    launchPackFromUnopened(firstPack?.pack_type_id, firstPack?.id, true);
                   }}
                   className="v200-kpi-open-btn"
                 >
@@ -1053,18 +1105,7 @@ export default function DeltaCollectionAlbum({
                     className="delta-booster-visual"
                     onClick={() => {
                       if (ownedCountForPack > 0 && !isOpeningPack) {
-                        const packDef: PackDefinition = {
-                          id: pack.id,
-                          name: pack.name,
-                          description: pack.description,
-                          cards_count: pack.cardsCount,
-                          drop_rates: { common: 50, rare: 30, epic: 14, legendary: 5, inferno: 1 },
-                          min_rarity: pack.theme === "inferno" ? "epic" : pack.theme === "legend" ? "legendary" : "common",
-                          theme: pack.theme,
-                          image_url: pack.image,
-                          is_active: true
-                        };
-                        setActivePackToOpen(packDef);
+                        launchPackFromUnopened(pack.id, null, false);
                       }
                     }}
                     style={{ cursor: ownedCountForPack > 0 ? "pointer" : "default" }}
@@ -1106,18 +1147,9 @@ export default function DeltaCollectionAlbum({
                         type="button"
                         disabled={isOpeningPack}
                         onClick={() => {
-                          const packDef: PackDefinition = {
-                            id: pack.id,
-                            name: pack.name,
-                            description: pack.description,
-                            cards_count: pack.cardsCount,
-                            drop_rates: { common: 50, rare: 30, epic: 14, legendary: 5, inferno: 1 },
-                            min_rarity: pack.theme === "inferno" ? "epic" : pack.theme === "legend" ? "legendary" : "common",
-                            theme: pack.theme,
-                            image_url: pack.image,
-                            is_active: true
-                          };
-                          setActivePackToOpen(packDef);
+                          if (!isOpeningPack && ownedCountForPack > 0) {
+                            launchPackFromUnopened(pack.id, null, false);
+                          }
                         }}
                         className="delta-booster-btn-open"
                       >
@@ -1511,7 +1543,14 @@ export default function DeltaCollectionAlbum({
           paniniRewardClaimed={paniniRewardClaimed}
           onInspectCard={(card, userCard) => setInspectCard({ card, userCard })}
           onSelectPlayer={(playerId) => setSelectedAlbumPlayerId(playerId)}
-          onOpenPacks={() => setActivePackToOpen(packDefinitions[0] || null)}
+          onOpenPacks={() => {
+            if (unopenedPacks.length > 0) {
+              launchPackFromUnopened();
+            } else {
+              setActiveViewTab("collection2");
+              showToast("Brak nieotwartych paczek — odbierz lub kup paczkę poniżej!");
+            }
+          }}
           onOpenSBC={() => setShowSBC(true)}
           onOpenTradeHub={() => setShowTradeHub(true)}
           onClaimPaniniReward={() => {
@@ -1791,39 +1830,65 @@ export default function DeltaCollectionAlbum({
       )}
 
       {/* ========================================================================= */}
-      {/* PACK OPENING EXPERIENCE MODAL                                             */}
+      {/* PACK OPENING EXPERIENCE MODAL (DELTA INFERNO V2 3D)                       */}
       {/* ========================================================================= */}
-      {activePackToOpen && (
-        <PackOpeningExperience
-          pack={activePackToOpen}
-          unopenedCount={Math.max(0, unopenedPacks.length - 1)}
-          collectionProgress={{
-            currentOwned: uniqueOwnedCount,
-            totalCards: totalCardsCount
-          }}
-          getLayoutForCard={getLayoutForCard}
-          onPackConsumed={(remaining) => {
-            if (typeof remaining === "number") {
-              setUnopenedPacks(prev => prev.slice(0, remaining));
-            } else {
-              setUnopenedPacks(prev => prev.slice(1));
+      {activePackSession && (
+        <CinematicPackExperience
+          pack={activePackSession.pack}
+          userUnopenedPackId={activePackSession.userUnopenedPackId}
+          sessionKey={activePackSession.sessionKey}
+          unopenedCount={
+            activePackSession.hasConsumedCurrentPack
+              ? typeof activePackSession.lastOpenResult?.remaining_unopened_packs_count === "number"
+                ? activePackSession.lastOpenResult.remaining_unopened_packs_count
+                : unopenedPacks.length
+              : Math.max(0, unopenedPacks.length - 1)
+          }
+          onPackConsumed={(result) => {
+            setUnopenedPacks((prev) => reconcileUnopenedPacksAfterOpen(prev, result));
+            if (typeof result.new_points_balance === "number" && Number.isFinite(result.new_points_balance)) {
+              setDeltaPoints(result.new_points_balance);
             }
+            setActivePackSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    hasConsumedCurrentPack: true,
+                    lastOpenResult: result
+                  }
+                : prev
+            );
           }}
           onClose={() => {
-            setActivePackToOpen(null);
-            fetchCollection();
+            setActivePackSession(null);
+            void fetchCollection(true);
           }}
           onOpenAnother={() => {
-            if (unopenedPacks.length > 1) {
-              const nextPack = unopenedPacks[1];
-              const packDef = packDefinitions.find(p => p.id === nextPack.pack_type_id) || packDefinitions[0];
-              setUnopenedPacks(prev => prev.slice(1));
-              setActivePackToOpen(packDef);
+            const remainingPacks = activePackSession.lastOpenResult
+              ? reconcileUnopenedPacksAfterOpen(unopenedPacks, activePackSession.lastOpenResult)
+              : unopenedPacks;
+            const nextSession = selectPackSessionToOpen({
+              unopenedPacks: remainingPacks,
+              packDefinitions,
+              preferredPackTypeId: activePackSession.pack.id,
+              allowFallbackToAny: true,
+              fallbackCatalog: OFFICIAL_BOOSTER_PACKS
+            });
+            if (nextSession) {
+              packSessionSeqRef.current += 1;
+              setActivePackSession({
+                pack: nextSession.pack,
+                userUnopenedPackId: nextSession.targetUnopenedPack.id,
+                sessionKey: packSessionSeqRef.current,
+                hasConsumedCurrentPack: false,
+                lastOpenResult: null
+              });
             } else {
               setUnopenedPacks([]);
-              setActivePackToOpen(null);
+              setActivePackSession(null);
+              showToast("Brak kolejnych nieotwartych paczek.");
             }
-            fetchCollection();
+            void fetchCollection(true);
           }}
         />
       )}
@@ -1857,7 +1922,7 @@ export default function DeltaCollectionAlbum({
           }}
           onOpenPack={(pack) => {
             setShowDailySpin(false);
-            setActivePackToOpen(pack);
+            launchGrantedPack(pack);
           }}
           packDefinitions={packDefinitions}
         />
@@ -1934,7 +1999,7 @@ export default function DeltaCollectionAlbum({
           }}
           onOpenPackDirectly={(packId) => {
             const def = packDefinitions.find(p => p.id === packId) || packDefinitions[0];
-            setActivePackToOpen(def);
+            launchGrantedPack(def);
           }}
         />
       )}

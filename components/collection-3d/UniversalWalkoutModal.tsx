@@ -246,19 +246,23 @@ export default function UniversalWalkoutModal({
             {/* Player details & duplicate banner */}
             <div className="flex flex-col items-center text-center space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] font-mono font-bold text-slate-300">
-                  {card3DData.position}
-                </span>
-                <span 
-                  className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border"
-                  style={{
-                    backgroundColor: `${primaryColor}22`,
-                    borderColor: primaryColor,
-                    color: primaryColor
-                  }}
-                >
-                  OVR {card3DData.ovr}
-                </span>
+                {card3DData.position && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] font-mono font-bold text-slate-300">
+                    {card3DData.position}
+                  </span>
+                )}
+                {typeof card3DData.ovr === "number" && card3DData.ovr > 0 && (
+                  <span 
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border"
+                    style={{
+                      backgroundColor: `${primaryColor}22`,
+                      borderColor: primaryColor,
+                      color: primaryColor
+                    }}
+                  >
+                    OVR {card3DData.ovr}
+                  </span>
+                )}
 
                 {/* Duplicate Pill */}
                 {card3DData.isDuplicate && (

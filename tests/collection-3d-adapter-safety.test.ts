@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   fromProductionCard,
   toProductionCard,
+  toUnifiedCardShowcase,
   toCollectionCategory,
   toProductionRarity,
   toProductionCardType,
@@ -259,7 +260,7 @@ test("SAFETY 5: Pack opening attributes (cardId, duplicates, instanceId) round-t
   assert.equal(adapted.isDuplicate, true);
   assert.equal(adapted.duplicatePoints, 20);
   assert.equal(adapted.instanceId, "inst_user_card_12345");
-  assert.equal(adapted.stats.pac, 90);
+  assert.equal(adapted.stats?.pac, 90);
 
   const restored = toProductionCard(adapted);
   assert.equal(restored.id, "card_prod_998877");
@@ -347,5 +348,35 @@ test("SAFETY 7: Multi-card pack openings preserve all drawn cards without data l
   assert.equal(drawnCards[4].card.id, "card_g5");
   assert.equal(drawnCards[2].duplicate_points, 10);
   assert.equal(drawnCards[4].duplicate_points, 25);
+});
+
+// -------------------------------------------------------------
+// 8. ZERO FABRICATED STATS & UNIFIED SHOWCASE MAPPING (ETAP UI.3)
+// -------------------------------------------------------------
+test("SAFETY 8: Production cards without OVR/stats NEVER fabricate OVR 80 or fake FIFA attributes", () => {
+  const realProdCard = makeCardDefinition({
+    id: "card_no_stats_001",
+    rarity: "inferno",
+    card_type: "inferno",
+    artwork_url: "/assets/players/ryszard-inferno.png",
+    card_number: 7,
+    player: {
+      id: "player_rybacki_01",
+      display_name: "Ryszard Rybacki",
+      shirt_number: "7",
+      position: "NAP",
+      photo_path: "/assets/players/ryszard-rybacki.png"
+    }
+  });
+
+  const adapted = fromProductionCard(realProdCard);
+  assert.equal(adapted.ovr, null, "OVR must be null when no real OVR is supplied (never 80)");
+  assert.equal(adapted.stats, null, "Stats must be null when no real FIFA stats exist (never 75/70/72/74/65/70)");
+
+  const unified = toUnifiedCardShowcase(realProdCard, { isDuplicate: true, duplicatePoints: 50 });
+  assert.equal(unified.card3D.imageUrl, unified.deltaCard.playerImage, "3D card and DeltaCard miniature must resolve the exact same artwork/photo");
+  assert.equal(unified.card3D.fullDisplayName, unified.deltaCard.playerName, "3D card fullDisplayName and DeltaCard playerName must match");
+  assert.equal(String(unified.card3D.shirtNumber), String(unified.deltaCard.shirtNumber), "Shirt numbers must match across 3D and miniature");
+  assert.equal(unified.deltaCard.stats, undefined, "DeltaCard miniature must not receive invented stats");
 });
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useId } from "react";
 import { Card3DEngine } from "./Card3DEngine";
 import { TEST_PLAYERS } from "./mockData";
 import { CARD_VISUAL_THEMES } from "./themes";
-import { CardVisualType, CollectionCategory, PlayerCardData } from "./types";
+import { CardVisualType, CollectionCategory, PlayerCardData, PlayerStats } from "./types";
 import { SPECIAL_TITLES_REGISTRY, SpecialTitleDefinition } from "./specialTitles";
 
 const CATEGORIES: { category: CollectionCategory; visualType: CardVisualType; label: string; badge: string; color: string }[] = [
@@ -88,12 +88,12 @@ export function Collection3DEngineLab() {
   };
 
   // Live stat change
-  const handleStatChange = (key: keyof PlayerCardData["stats"], val: number) => {
+  const handleStatChange = (key: keyof PlayerStats, val: number) => {
     const clamped = Math.max(0, Math.min(99, isNaN(val) ? 0 : val));
     setPlayer((prev) => ({
       ...prev,
       stats: {
-        ...prev.stats,
+        ...(prev.stats ?? { pac: 0, sho: 0, pas: 0, dri: 0, def: 0, phy: 0 }),
         [key]: clamped
       }
     }));
@@ -543,7 +543,7 @@ export function Collection3DEngineLab() {
                   type="number"
                   min="0"
                   max="99"
-                  value={player.ovr}
+                  value={player.ovr ?? ""}
                   onChange={(e) => setPlayer((prev) => ({ ...prev, ovr: parseInt(e.target.value, 10) || 0 }))}
                   style={{
                     width: "100%",
@@ -592,13 +592,13 @@ export function Collection3DEngineLab() {
                 <div key={statKey}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 2 }}>
                     <span style={{ textTransform: "uppercase", color: "#64748b" }}>{statKey}</span>
-                    <span style={{ fontWeight: 700, color: "#cbd5e1" }}>{player.stats[statKey]}</span>
+                    <span style={{ fontWeight: 700, color: "#cbd5e1" }}>{player.stats?.[statKey] ?? 0}</span>
                   </div>
                   <input
                     type="range"
                     min="40"
                     max="99"
-                    value={player.stats[statKey]}
+                    value={player.stats?.[statKey] ?? 40}
                     onChange={(e) => handleStatChange(statKey, parseInt(e.target.value, 10))}
                     style={{ width: "100%", accentColor: primaryThemeColor }}
                   />

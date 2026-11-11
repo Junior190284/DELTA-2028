@@ -26,6 +26,10 @@ import type {
   PlayerCardData,
   PlayerStats
 } from "./types.ts";
+import {
+  adaptLegacyToDeltaCardModel,
+  type DeltaCardModel
+} from "../../lib/cards/deltaCardModel.ts";
 
 /**
  * 1. RESOLVE CARD VISUAL TYPE (Skórka / Ramka 3D)
@@ -216,19 +220,84 @@ export function getDefaultVisualTypeForCategory(category: CollectionCategory): C
 }
 
 /**
+ * Canonical field resolver shared between 3D cards (Card3DEngine), miniatures (DeltaCard), and collection views.
+ * Never fabricates OVR ratings or FIFA attributes when real stats are absent.
+ */
+export function resolveCanonicalCardFields(
+  card: CardDefinition,
+  options?: {
+    stats?: PlayerStats | null;
+    ovr?: number | null;
+    preferArtworkUrl?: boolean;
+    imageUrlOverride?: string | null;
+  }
+) {
+  const fullDisplayName = (
+    card.player?.display_name ||
+    card.card_name ||
+    card.title ||
+    "ZAWODNIK DELTA"
+  )
+    .trim()
+    .toUpperCase();
+  const nameParts = fullDisplayName.split(/\s+/).filter(Boolean);
+  const surname =
+    nameParts.length > 1
+      ? nameParts.slice(1).join(" ")
+      : nameParts[0] || "ZAWODNIK";
+
+  const shirtNumber =
+    card.player?.shirt_number ??
+    (card.card_number !== null && card.card_number !== undefined
+      ? String(card.card_number)
+      : "");
+
+  const position = card.player?.position || "";
+
+  const preferArtwork = options?.preferArtworkUrl !== false;
+  const resolvedImageUrl =
+    options?.imageUrlOverride ||
+    (preferArtwork
+      ? card.artwork_url || card.player?.photo_path
+      : card.player?.photo_path || card.artwork_url) ||
+    "/assets/cards/inferno-3d/player-default.png";
+
+  const realStats: PlayerStats | null = options?.stats
+    ? { ...options.stats }
+    : null;
+  const realOvr: number | null =
+    typeof options?.ovr === "number" && Number.isFinite(options.ovr) && options.ovr > 0
+      ? options.ovr
+      : null;
+
+  return {
+    fullDisplayName,
+    surname,
+    shirtNumber,
+    position,
+    imageUrl: resolvedImageUrl,
+    stats: realStats,
+    ovr: realOvr
+  };
+}
+
+/**
  * 6. LOSSLESS ROUND-TRIP: PRODUCTION CARD DEFINITION -> 3D PLAYER CARD DATA
  * Konwertuje encję bazy danych produkcyjnej na obiekt PlayerCardData silnika 3D.
- * Gwarantuje bezstratne zachowanie wszystkich oryginalnych danych ekonomicznych.
+ * Gwarantuje bezstratne zachowanie wszystkich oryginalnych danych ekonomicznych
+ * oraz brak wymyślania fikcyjnych statystyk/OVR.
  */
 export function fromProductionCard(
   card: CardDefinition,
   options?: {
-    stats?: PlayerStats;
-    ovr?: number;
+    stats?: PlayerStats | null;
+    ovr?: number | null;
     specialTitleId?: string | null;
     isDuplicate?: boolean;
     duplicatePoints?: number;
     instanceId?: string | null;
+    imageUrlOverride?: string | null;
+    preferArtworkUrl?: boolean;
   }
 ): PlayerCardData {
   const visualType = resolveCardVisualType({
@@ -238,31 +307,18 @@ export function fromProductionCard(
   });
 
   const category = toCollectionCategory(card.rarity, card.card_type);
-
-  // Bazowe statystyki lub wyliczone
-  const stats: PlayerStats = options?.stats || {
-    pac: 75,
-    sho: 70,
-    pas: 72,
-    dri: 74,
-    def: 65,
-    phy: 70
-  };
-
-  // Ekstrakcja nazwiska z display_name lub title
-  const displayName = card.player?.display_name || card.title || card.card_name || "ZAWODNIK";
-  const nameParts = displayName.trim().split(" ");
-  const surname = nameParts.length > 1 ? nameParts.slice(1).join(" ").toUpperCase() : nameParts[0].toUpperCase();
+  const canonical = resolveCanonicalCardFields(card, options);
 
   return {
     playerId: card.player_id,
     cardId: card.id,
-    imageUrl: card.player?.photo_path || card.artwork_url || "/assets/cards/inferno-3d/player-default.png",
-    surname,
-    shirtNumber: card.player?.shirt_number || card.card_number || 10,
-    position: card.player?.position || "FWD",
-    ovr: options?.ovr ?? 80,
-    stats,
+    imageUrl: canonical.imageUrl,
+    surname: canonical.surname,
+    fullDisplayName: canonical.fullDisplayName,
+    shirtNumber: canonical.shirtNumber,
+    position: canonical.position,
+    ovr: canonical.ovr,
+    stats: canonical.stats,
     visualType,
     rarity: category,
     specialTitleId: options?.specialTitleId ?? null,
@@ -277,6 +333,40 @@ export function fromProductionCard(
     productionCardType: card.card_type,
     rawDefinition: { ...card }
   };
+}
+
+/**
+ * Unified Showcase View Mapper:
+ * Produces synchronized 3D (Card3DEngine) and Miniature/Collection (DeltaCard) models
+ * from the exact same production CardDefinition without duplicated mapping logic.
+ */
+export function toUnifiedCardShowcase(
+  card: CardDefinition,
+  options?: {
+    isDuplicate?: boolean;
+    duplicatePoints?: number;
+    instanceId?: string | null;
+    specialTitleId?: string | null;
+    stats?: PlayerStats | null;
+    ovr?: number | null;
+    preferArtworkUrl?: boolean;
+  }
+): {
+  card3D: PlayerCardData;
+  deltaCard: DeltaCardModel;
+} {
+  const card3D = fromProductionCard(card, {
+    ...options,
+    preferArtworkUrl: options?.preferArtworkUrl ?? true
+  });
+
+  const deltaCard = adaptLegacyToDeltaCardModel({
+    card,
+    player: card.player,
+    customPhotoUrl: card3D.imageUrl
+  });
+
+  return { card3D, deltaCard };
 }
 
 /**

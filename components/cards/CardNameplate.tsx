@@ -25,29 +25,46 @@ export default function CardNameplate({
 
   return (
     <div 
-      className="card-layer-nameplate absolute inset-x-[7%] top-[67%] h-[7%] flex items-center justify-center text-center pointer-events-none z-25 px-[2cqw]"
+      className="card-layer-nameplate"
       style={{
         position: "absolute",
         left: "7%",
         right: "7%",
         top: "67%",
-        height: "7%",
+        height: "8%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
         pointerEvents: "none",
-        zIndex: 25
+        zIndex: 25,
+        paddingLeft: "2cqw",
+        paddingRight: "2cqw",
+        boxSizing: "border-box"
       }}
     >
-      <div className="flex items-center justify-center gap-[1cqw] max-w-full overflow-hidden">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "1.2cqw",
+          maxWidth: "100%",
+          overflow: "hidden"
+        }}
+      >
         <span
-          className="font-[1000] tracking-wider uppercase truncate whitespace-nowrap"
           style={{
             fontSize,
+            fontWeight: 900,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
             color: themeConfig.fontAccentColor,
             textShadow: `0 0 10px ${themeConfig.accentGlow}, 0 2px 4px #000`,
-            lineHeight: 1
+            lineHeight: 1.05
           }}
         >
           {displayName}
@@ -55,8 +72,18 @@ export default function CardNameplate({
         
         {shirtNumber && !isLocked && (
           <span
-            className="text-[3cqw] font-bold px-[1cqw] py-[0.2cqw] rounded-[0.6cqw] bg-black/50 text-white/80 border border-white/10 shrink-0"
-            style={{ lineHeight: 1 }}
+            style={{
+              fontSize: "2.9cqw",
+              fontWeight: 800,
+              lineHeight: 1,
+              padding: "0.45cqw 1.1cqw",
+              borderRadius: "0.7cqw",
+              backgroundColor: "rgba(0, 0, 0, 0.58)",
+              color: "rgba(255, 255, 255, 0.88)",
+              border: "1px solid rgba(255, 255, 255, 0.16)",
+              flexShrink: 0,
+              whiteSpace: "nowrap"
+            }}
           >
             #{shirtNumber}
           </span>

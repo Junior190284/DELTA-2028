@@ -96,6 +96,10 @@ export default function CardCutout({
         <div
           className="w-full h-full flex items-end justify-center transition-transform duration-300"
           style={{
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            minWidth: 0,
             transform: `translate(${finalTranslateX}%, ${finalTranslateY}%) scale(${finalScale}) rotate(${finalRotate}deg)`,
             filter: `brightness(${finalBrightness}) contrast(${finalContrast}) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85))`
           }}
@@ -103,7 +107,15 @@ export default function CardCutout({
           <img
             src={photoUrl}
             alt={playerName}
-            className="max-w-full max-h-full object-contain object-bottom pointer-events-none"
+            className="w-full h-full max-w-full max-h-full object-contain object-bottom pointer-events-none"
+            style={{
+              width: "100%",
+              height: "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              objectPosition: "center bottom"
+            }}
             loading="eager"
             decoding="sync"
             onError={handleImageError}

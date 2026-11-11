@@ -22,6 +22,7 @@
   height: 100%;
   min-height: 100vh;
   overflow: hidden;
+  overflow: clip;
   background-color: var(--stage-bg);
   color: #fff;
   font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
@@ -265,8 +266,11 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  border: 4px solid #ffffff;
-  box-shadow: 0 0 35px var(--stage-primary-color);
+  border: 2.5px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 0 32px var(--stage-primary-color),
+    inset 0 0 22px var(--stage-primary-color);
+  filter: blur(1.2px);
   transform: translate(-50%, -50%) scale(0.2);
   opacity: 0;
   pointer-events: none;
@@ -278,9 +282,9 @@
 }
 
 @keyframes stageShockwaveAnim {
-  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-width: 6px; }
-  60% { opacity: 0.85; border-width: 3px; }
-  100% { transform: translate(-50%, -50%) scale(9.5); opacity: 0; border-width: 1px; }
+  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0.92; }
+  55% { opacity: 0.55; }
+  100% { transform: translate(-50%, -50%) scale(9.5); opacity: 0; }
 }
 
 /* Stadium-wide Light Flash */
@@ -354,35 +358,135 @@
 /* ==========================================================================
    6. RESPONSIVENESS & ACCESSIBILITY
    ========================================================================== */
+/* Rarity Climax Corona Ring */
+.universal-stage-corona {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  width: min(560px, 92vw);
+  height: min(560px, 92vw);
+  transform: translate(-50%, -50%) scale(0.92);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.55s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Rarity Differentiation Across Stage Modes */
+.universal-stage-scene[data-rarity="common"] .universal-stage-beam-l,
+.universal-stage-scene[data-rarity="common"] .universal-stage-beam-r {
+  opacity: 0.34;
+}
+.universal-stage-scene[data-rarity="common"] .universal-stage-pedestal {
+  opacity: 0.35;
+}
+
+.universal-stage-scene[data-rarity="rare"] .universal-stage-beam-l,
+.universal-stage-scene[data-rarity="rare"] .universal-stage-beam-r {
+  opacity: 0.76;
+}
+.universal-stage-scene[data-rarity="rare"] .universal-stage-core-glow {
+  opacity: 0.92;
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.universal-stage-scene[data-rarity="epic"] .universal-stage-corona {
+  opacity: 0.65;
+  transform: translate(-50%, -50%) scale(1);
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.24) 0%, rgba(56, 189, 248, 0.14) 48%, transparent 72%);
+}
+.universal-stage-scene[data-rarity="epic"] .universal-stage-beam-l,
+.universal-stage-scene[data-rarity="epic"] .universal-stage-beam-r {
+  opacity: 0.84;
+}
+
+.universal-stage-scene[data-rarity="legendary"] .universal-stage-corona {
+  opacity: 0.88;
+  transform: translate(-50%, -50%) scale(1.08);
+  background:
+    conic-gradient(from 0deg, transparent 0deg, rgba(251, 191, 36, 0.22) 24deg, transparent 58deg, rgba(254, 240, 138, 0.2) 110deg, transparent 155deg, rgba(251, 191, 36, 0.2) 220deg, transparent 280deg),
+    radial-gradient(circle, rgba(251, 191, 36, 0.32) 0%, rgba(217, 119, 6, 0.14) 50%, transparent 74%);
+  animation: stageCoronaRotate 14s linear infinite;
+}
+.universal-stage-scene[data-rarity="legendary"] .universal-stage-beam-l,
+.universal-stage-scene[data-rarity="legendary"] .universal-stage-beam-r {
+  opacity: 0.92;
+}
+
+.universal-stage-scene[data-rarity="inferno"] .universal-stage-beam-l {
+  opacity: 0.95;
+  background: linear-gradient(180deg, rgba(255, 58, 36, 0.78) 0%, rgba(220, 20, 30, 0.26) 60%, transparent 100%);
+}
+.universal-stage-scene[data-rarity="inferno"] .universal-stage-beam-r {
+  opacity: 0.95;
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.72) 0%, rgba(234, 88, 12, 0.25) 60%, transparent 100%);
+}
+.universal-stage-scene[data-rarity="inferno"] .universal-stage-corona {
+  opacity: 0.95;
+  transform: translate(-50%, -50%) scale(1.12);
+  background:
+    conic-gradient(from 15deg, transparent 0deg, rgba(255, 62, 36, 0.28) 28deg, transparent 70deg, rgba(251, 191, 36, 0.26) 130deg, transparent 190deg, rgba(255, 78, 36, 0.25) 260deg, transparent 320deg),
+    radial-gradient(circle, rgba(255, 78, 40, 0.34) 0%, rgba(251, 191, 36, 0.18) 46%, transparent 74%);
+  animation: stageCoronaRotate 10s linear infinite;
+}
+
+.universal-stage-scene.mode-stealth .universal-stage-corona {
+  opacity: 0.18;
+}
+
+@keyframes stageCoronaRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg) scale(1.06); }
+  to { transform: translate(-50%, -50%) rotate(360deg) scale(1.06); }
+}
+
 @media (max-width: 768px) {
   .universal-stage-beam-l,
   .universal-stage-beam-r {
-    width: 320px;
-    height: 550px;
-    filter: blur(20px);
+    width: 300px;
+    height: 520px;
+    filter: blur(14px);
   }
 
   .universal-stage-core-glow {
-    width: 420px;
-    height: 420px;
+    width: 380px;
+    height: 380px;
+    filter: blur(20px);
+  }
+
+  .universal-stage-corona {
+    animation-duration: 18s !important;
   }
 
   .universal-stage-pedestal {
-    width: 380px;
-    height: 160px;
+    width: 360px;
+    height: 150px;
     bottom: 6%;
   }
 
   .universal-stage-ribbon {
     font-size: 9px;
     letter-spacing: 0.2em;
-    top: clamp(100px, 15vh, 130px);
+    top: clamp(96px, 14vh, 126px);
   }
 }
 
+.universal-stage-scene.is-mobile-stage .universal-stage-beam-l,
+.universal-stage-scene.is-mobile-stage .universal-stage-beam-r {
+  filter: blur(12px);
+}
+
 /* Reduced Motion Mode */
+.universal-stage-scene.is-reduced-motion .universal-stage-corona,
+.universal-stage-scene.is-reduced-motion .universal-stage-shockwave,
+.universal-stage-scene.is-reduced-motion .universal-stage-flash,
+.universal-stage-scene.is-reduced-motion .universal-stage-pulse {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .universal-stage-scene.is-screen-shaking {
+  .universal-stage-scene.is-screen-shaking,
+  .universal-stage-corona {
     animation: none !important;
   }
   .universal-stage-scene.is-shockwaving .universal-stage-shockwave {

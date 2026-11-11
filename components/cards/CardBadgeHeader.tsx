@@ -27,7 +27,7 @@ export default function CardBadgeHeader({
 }: CardBadgeHeaderProps) {
   return (
     <div 
-      className="card-layer-header absolute inset-x-[7%] top-[8%] flex justify-between items-start pointer-events-none z-35"
+      className="card-layer-header"
       style={{
         position: "absolute",
         left: "7%",
@@ -41,18 +41,38 @@ export default function CardBadgeHeader({
       }}
     >
       {/* Top-Left: Club Crest & Shirt Number (Real data only, NO fake OVR/Flag/Position) */}
-      <div className="flex items-center gap-[1cqw] pointer-events-none">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "1cqw",
+          pointerEvents: "none",
+          minWidth: 0
+        }}
+      >
         <img
           src="/teamlogos/gm.png"
           alt="DELTA"
-          className="w-[6cqw] h-[6cqw] object-contain filter drop-shadow(0 2px 4px rgba(0,0,0,0.8))"
+          style={{
+            width: "7cqw",
+            height: "7cqw",
+            maxWidth: "7cqw",
+            maxHeight: "7cqw",
+            objectFit: "contain",
+            flexShrink: 0,
+            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.85))"
+          }}
         />
         {shirtNumber && !isLocked && (
           <span
-            className="text-[4.5cqw] font-[1000] tracking-tight leading-none"
             style={{
+              fontSize: "4.6cqw",
+              fontWeight: 900,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
               color: themeConfig.fontAccentColor,
-              textShadow: `0 0 8px ${themeConfig.accentGlow}, 0 2px 4px #000`
+              textShadow: `0 0 8px ${themeConfig.accentGlow}, 0 2px 4px #000`,
+              whiteSpace: "nowrap"
             }}
           >
             #{shirtNumber}
@@ -61,14 +81,32 @@ export default function CardBadgeHeader({
       </div>
 
       {/* Top-Right: Series Pill, Milestone Badge, Duplicates, Favorite, Flip */}
-      <div className="flex flex-col items-end gap-[0.8cqw] pointer-events-auto">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: "0.9cqw",
+          pointerEvents: "auto",
+          maxWidth: "62%"
+        }}
+      >
         {/* Edition Pill */}
         <span
-          className="text-[2.8cqw] font-extrabold uppercase px-[1.8cqw] py-[0.6cqw] rounded-[1cqw] shadow-md border backdrop-blur-md whitespace-nowrap"
           style={{
-            backgroundColor: "rgba(0, 0, 0, 0.65)",
-            borderColor: themeConfig.primaryColor,
-            color: themeConfig.fontAccentColor
+            fontSize: "2.5cqw",
+            fontWeight: 900,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            lineHeight: 1.1,
+            padding: "0.7cqw 1.6cqw",
+            borderRadius: "1cqw",
+            border: `1px solid ${themeConfig.primaryColor}`,
+            backgroundColor: "rgba(0, 0, 0, 0.72)",
+            backdropFilter: "blur(6px)",
+            color: themeConfig.fontAccentColor,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.45)",
+            whiteSpace: "nowrap"
           }}
         >
           {themeConfig.badgePill}
@@ -77,12 +115,22 @@ export default function CardBadgeHeader({
         {/* Real Milestone Badge if present */}
         {milestoneBadge && !isLocked && (
           <span
-            className="text-[2.4cqw] font-bold uppercase px-[1.4cqw] py-[0.4cqw] rounded-[0.8cqw] border backdrop-blur-md flex items-center gap-[0.4cqw]"
             style={{
-              backgroundColor: "rgba(0, 0, 0, 0.7)",
-              borderColor: milestoneBadge.color,
+              fontSize: "2.2cqw",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              lineHeight: 1.1,
+              padding: "0.5cqw 1.2cqw",
+              borderRadius: "0.8cqw",
+              border: `1px solid ${milestoneBadge.color}`,
+              backgroundColor: "rgba(0, 0, 0, 0.75)",
+              backdropFilter: "blur(6px)",
               color: milestoneBadge.color,
-              boxShadow: `0 0 8px ${milestoneBadge.color}40`
+              boxShadow: `0 0 8px ${milestoneBadge.color}40`,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5cqw",
+              whiteSpace: "nowrap"
             }}
           >
             <span>{milestoneBadge.icon}</span>
@@ -91,21 +139,56 @@ export default function CardBadgeHeader({
         )}
 
         {/* Action / Status Tray */}
-        <div className="flex items-center gap-[0.6cqw] mt-[0.4cqw]">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.8cqw",
+            marginTop: "0.3cqw"
+          }}
+        >
           {/* Favorite Star */}
           {isFavorite && (
             <span
-              className="p-[0.6cqw] rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 shadow-md flex items-center justify-center"
+              style={{
+                padding: "0.7cqw",
+                borderRadius: "9999px",
+                backgroundColor: "rgba(245, 158, 11, 0.22)",
+                border: "1px solid #fbbf24",
+                color: "#fcd34d",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
               title="Ulubiona karta"
             >
-              <Star className="w-[3cqw] h-[3cqw] fill-amber-400 text-amber-400" />
+              <Star
+                style={{
+                  width: "3cqw",
+                  height: "3cqw",
+                  fill: "#fbbf24",
+                  color: "#fbbf24"
+                }}
+              />
             </span>
           )}
 
           {/* Duplicates Badge */}
           {duplicatesCount > 0 && (
             <span
-              className="text-[2.4cqw] font-black px-[1.2cqw] py-[0.3cqw] rounded-full bg-sky-500 text-white border border-white/30 shadow-md"
+              style={{
+                fontSize: "2.3cqw",
+                fontWeight: 900,
+                lineHeight: 1,
+                padding: "0.5cqw 1.2cqw",
+                borderRadius: "9999px",
+                backgroundColor: "#0ea5e9",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.35)",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.45)",
+                whiteSpace: "nowrap"
+              }}
               title={`Posiadasz duplikaty: ${duplicatesCount}`}
             >
               x{duplicatesCount + 1}
@@ -117,12 +200,23 @@ export default function CardBadgeHeader({
             <button
               type="button"
               onClick={onFlip}
-              className="p-[0.8cqw] rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white/90 hover:text-white transition-all shadow-md active:scale-95 flex items-center justify-center cursor-pointer pointer-events-auto"
-              style={{ pointerEvents: "auto" }}
+              style={{
+                padding: "1cqw",
+                borderRadius: "9999px",
+                backgroundColor: "rgba(0, 0, 0, 0.68)",
+                border: "1px solid rgba(255, 255, 255, 0.28)",
+                color: "rgba(255, 255, 255, 0.92)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                pointerEvents: "auto"
+              }}
               title="Obróć kartę (Rewers)"
               aria-label="Obróć kartę"
             >
-              <RotateCw className="w-[3.2cqw] h-[3.2cqw]" />
+              <RotateCw style={{ width: "3.4cqw", height: "3.4cqw", display: "block" }} />
             </button>
           )}
         </div>

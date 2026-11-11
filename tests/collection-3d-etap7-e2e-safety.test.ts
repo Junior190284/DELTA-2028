@@ -110,7 +110,7 @@ test("ETAP 7 - RC 2.1: Standard Booster (3 cards, Base / Common spotlight)", () 
   assert.equal(p3d.rarity, "COMMON");
   assert.equal(p3d.visualType, "BASE");
   assert.equal(p3d.ovr, 72);
-  assert.ok(p3d.stats.pac > 0);
+  assert.ok(p3d.stats && p3d.stats.pac > 0);
 });
 
 test("ETAP 7 - RC 2.2: Matchday Booster (4 cards, Matchday Hero spotlight)", () => {
