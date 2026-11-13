@@ -124,7 +124,7 @@ export default function LoginPage() {
                 });
                 window.location.href = "/dashboard";
               }}
-              style={{ padding: "8px 12px", borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "#000", fontWeight: 900, fontSize: 11, cursor: "pointer" }}
+              style={{ minHeight: 44, padding: "10px 14px", borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "#000", fontWeight: 900, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               👑 Wejdź jako Trener / Administrator
             </button>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                 });
                 window.location.href = "/dashboard";
               }}
-              style={{ padding: "8px 12px", borderRadius: 8, background: "#1e293b", border: "1px solid #334155", color: "#fff", fontWeight: 700, fontSize: 11, cursor: "pointer" }}
+              style={{ minHeight: 44, padding: "10px 14px", borderRadius: 8, background: "#1e293b", border: "1px solid #334155", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               ⚽ Wejdź jako Rodzic (Profil Zawodnika)
             </button>

@@ -184,9 +184,6 @@ export default function TeamHub(props:{
   const [tab,setTab]=useState<"home"|"mychild"|"matchday"|"collection"|"matches"|"calendar"|"training"|"players"|"stats"|"hall"|"achievements"|"chronicle"|"news"|"club"|"league"|"teamcenter">("home");
   const [viewFx,setViewFx]=useState(false);
   const [cinematicActive, setCinematicActive] = useState(false);
-  useEffect(() => {
-    setCinematicActive(true);
-  }, []);
   const [chronicleSeason,setChronicleSeason]=useState("all");
   const [noticesOpen,setNoticesOpen]=useState(false);
   const [players,setPlayers]=useState(props.initialPlayers);
