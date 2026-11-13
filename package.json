@@ -19,7 +19,8 @@
     "test:home-priority": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/home-priority.test.ts",
     "test:design-system": "node --test --experimental-strip-types tests/design-system-foundation.test.ts",
     "test:navigation": "node --test --experimental-strip-types tests/navigation-v3.test.ts",
-    "test:dashboard-v4": "node --test --experimental-strip-types tests/cinematic-dashboard-v4.test.ts"
+    "test:dashboard-v4": "node --test --experimental-strip-types tests/cinematic-dashboard-v4.test.ts",
+    "test:oauth": "node --test --experimental-strip-types tests/oauth-preview-redirect.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "latest",

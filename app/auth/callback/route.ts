@@ -9,7 +9,16 @@ import {
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const errorParam = requestUrl.searchParams.get("error");
+  const errorDesc = requestUrl.searchParams.get("error_description");
   const safeNext = sanitizeSafeRedirectPath(requestUrl.searchParams.get("next"), "/dashboard");
+
+  if (errorParam) {
+    console.error("OAuth provider error:", errorParam, errorDesc);
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(errorParam)}&message=${encodeURIComponent(errorDesc || errorParam)}`, requestUrl.origin)
+    );
+  }
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=no_code", requestUrl.origin));

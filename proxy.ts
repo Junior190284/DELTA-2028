@@ -10,6 +10,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(cleanUrl, 308);
   }
 
+  // Fallback redirect if an OAuth callback lands on root '/' with '?code=...'
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const callbackUrl = new URL("/auth/callback", request.url);
+    callbackUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(callbackUrl, 307);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

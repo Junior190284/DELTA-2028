@@ -1,0 +1,39 @@
+project_id = "tdlsxamxtygojxhmjjvp"
+
+[auth]
+additional_redirect_urls = [
+  "http://localhost:3000/**",
+  "http://127.0.0.1:3000/**",
+  "http://localhost:3006/**",
+  "http://127.0.0.1:3006/**",
+  "https://delta-2028-5lqwuu96i-tomaszrybacki-3187s-projects.vercel.app/**",
+  "https://delta-2028-*-tomaszrybacki-3187s-projects.vercel.app/**",
+  "https://delta-2028-*.vercel.app/**",
+  "https://delta-2028-git-*.vercel.app/**",
+  "https://delta-2028.vercel.app/**",
+  "https://*.vercel.app/**"
+]
+site_url = "https://delta-2028-5lqwuu96i-tomaszrybacki-3187s-projects.vercel.app"
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.sms]
+enable_confirmations = true
+
+[auth.external.google]
+client_id = "311579748883-2rept8dl1jr7lba8mn832h7lr9a3i01a.apps.googleusercontent.com"
+enabled = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[db.pooler]
+default_pool_size = 15
+max_client_conn = 200
+
+[storage.vector]
+enabled = false
