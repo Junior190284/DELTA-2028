@@ -83,7 +83,7 @@ export const DeltaCard = React.forwardRef<HTMLDivElement, DeltaCardProps>(
               }
             : undefined
         }
-        className={`${baseStyles} ${variantStyles[variant]} ${paddingStyles[padding]} ${glowStyle} ${className}`.trim()}
+        className={`delta-card delta-card-${variant} delta-card-pad-${padding} ${glow ? "delta-card-glow" : ""} ${isInteractive ? "delta-card-interactive" : ""} ${baseStyles} ${variantStyles[variant]} ${paddingStyles[padding]} ${glowStyle} ${className}`.trim()}
         style={{
           fontFamily: "var(--delta-font-sans, Inter, sans-serif)",
           ...style,

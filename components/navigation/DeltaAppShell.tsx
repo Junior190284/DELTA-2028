@@ -64,7 +64,7 @@ export const DeltaAppShell: React.FC<DeltaAppShellProps> = ({
   const showSubnavPills = currentSubtabs.length > 1 && activeSection !== "home";
 
   return (
-    <div className="min-h-screen flex bg-[#07080b] text-slate-100 overflow-x-hidden relative font-sans">
+    <div className="delta-app-shell min-h-screen flex bg-[#07080b] text-slate-100 overflow-x-hidden relative font-sans">
       {/* 1. DESKTOP RESPONSIVE SIDEBAR */}
       <DeltaSidebar
         activeTab={activeTab}
@@ -80,9 +80,9 @@ export const DeltaAppShell: React.FC<DeltaAppShellProps> = ({
       />
 
       {/* 2. MAIN VIEW CONTAINER */}
-      <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden">
+      <div className="delta-app-shell-main flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden">
         {/* TOPBAR */}
-        <header className="sticky top-0 z-20 flex items-center justify-between px-3.5 sm:px-6 py-2.5 bg-[#090b10]/90 backdrop-blur-xl border-b border-white/8 min-h-[58px]">
+        <header className="delta-topbar sticky top-0 z-20 flex items-center justify-between px-3.5 sm:px-6 py-2.5 bg-[#090b10]/90 backdrop-blur-xl border-b border-white/8 min-h-[58px]">
           {/* Mobile Brand Button (Visible only on mobile / small screen) */}
           <button
             type="button"

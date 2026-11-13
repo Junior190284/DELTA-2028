@@ -81,7 +81,7 @@ export const DeltaButton = React.forwardRef<HTMLButtonElement, DeltaButtonProps>
         ref={ref}
         disabled={disabled || isLoading}
         aria-busy={isLoading}
-        className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${touchStyles} ${widthStyle} ${stateStyles} ${className}`.trim()}
+        className={`delta-btn delta-btn-${variant} delta-btn-${size} ${touchTarget ? "delta-btn-touch" : ""} ${fullWidth ? "delta-btn-full" : ""} ${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${touchStyles} ${widthStyle} ${stateStyles} ${className}`.trim()}
         style={{
           fontFamily: "var(--delta-font-sans, Inter, sans-serif)",
           ...style,

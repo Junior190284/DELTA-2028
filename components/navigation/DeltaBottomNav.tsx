@@ -39,12 +39,14 @@ export const DeltaBottomNav: React.FC<DeltaBottomNavProps> = ({
       role="navigation"
       aria-label="Główna nawigacja mobilna DELTA INFERNO"
     >
-      <div className="grid grid-cols-4 items-center justify-around w-full max-w-lg mx-auto px-1 pt-1.5">
+      <div className="delta-bottom-nav-inner grid grid-cols-4 items-center justify-around w-full max-w-lg mx-auto px-1 pt-1.5">
         {/* 1. PULPIT */}
         <button
           type="button"
           onClick={() => onSelectTab("home")}
-          className="relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer"
+          className={`delta-bottom-nav-btn relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer ${
+            isHomeActive ? "active" : ""
+          }`}
           aria-label="Pulpit główny drużyny"
           aria-current={isHomeActive ? "page" : undefined}
         >
@@ -83,7 +85,9 @@ export const DeltaBottomNav: React.FC<DeltaBottomNavProps> = ({
               onSelectTab("matches");
             }
           }}
-          className="relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer"
+          className={`delta-bottom-nav-btn relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer ${
+            isTeamActive ? "active" : ""
+          }`}
           aria-label="Drużyna: mecze, treningi i skład"
           aria-current={isTeamActive ? "page" : undefined}
         >
@@ -121,7 +125,9 @@ export const DeltaBottomNav: React.FC<DeltaBottomNavProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab("collection")}
-          className="relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer"
+          className={`delta-bottom-nav-btn relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer ${
+            isCollectionActive ? "active" : ""
+          }`}
           aria-label="Kolekcja kart 3D i paczki"
           aria-current={isCollectionActive ? "page" : undefined}
         >
@@ -156,7 +162,9 @@ export const DeltaBottomNav: React.FC<DeltaBottomNavProps> = ({
         <button
           type="button"
           onClick={onToggleMore}
-          className="relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer"
+          className={`delta-bottom-nav-btn relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] w-full py-1 text-center transition-all group cursor-pointer ${
+            isMoreOpen ? "active" : ""
+          }`}
           aria-label="Więcej opcji drużyny i społeczność"
           aria-expanded={isMoreOpen}
           aria-controls="delta-mobile-more-menu"

@@ -60,7 +60,7 @@ export const DeltaBadge = React.forwardRef<HTMLSpanElement, DeltaBadgeProps>(
     return (
       <span
         ref={ref}
-        className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`.trim()}
+        className={`delta-badge delta-badge-${variant} delta-badge-${size} ${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`.trim()}
         style={{
           fontFamily: "var(--delta-font-sans, Inter, sans-serif)",
           ...style,

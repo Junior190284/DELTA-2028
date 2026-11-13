@@ -1,5 +1,5 @@
 /**
- * DELTA INFERNO — DESIGN SYSTEM 2.0 TOKENS
+ * DELTA INFERNO — DESIGN SYSTEM 2.0 TOKENS & RESPONSIVE ENGINE
  * Semantic Design Tokens for Dark Sports Experience & Inferno Theme
  */
 
@@ -144,8 +144,27 @@
 }
 
 /* =========================================================
-   GLOBAL OVERFLOW & VIEWPORT DEFENSE
+   UNIVERSAL CSS RESET FOR DELTA 2.0
    ========================================================= */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 html,
 body {
   overflow-x: hidden !important;
@@ -189,6 +208,42 @@ body {
    11. V3 GLOBAL NAVIGATION & LAYOUT RESPONSIVE SYSTEM
    ========================================================= */
 
+.delta-app-shell {
+  min-height: 100vh;
+  display: flex !important;
+  flex-direction: row;
+  background-color: #07080b;
+  color: #f8fafc;
+  overflow-x: hidden;
+  position: relative;
+  font-family: var(--delta-font-sans, Inter, sans-serif);
+}
+
+.delta-app-shell-main {
+  flex: 1 1 0% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+.delta-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 16px;
+  background-color: rgba(9, 11, 16, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 58px;
+  box-sizing: border-box;
+}
+
 .delta-sidebar {
   display: flex !important;
   flex-direction: column;
@@ -203,6 +258,15 @@ body {
   user-select: none;
   overflow-x: hidden;
   box-sizing: border-box;
+}
+
+.delta-sidebar button {
+  background: transparent !important;
+  border: none !important;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
 }
 
 .delta-sidebar.is-collapsed {
@@ -227,6 +291,99 @@ body {
   }
 }
 
+.delta-sidebar-brand-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-align: left !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  border-radius: 10px !important;
+  padding: 4px !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  color: inherit !important;
+}
+
+.delta-sidebar-collapse-btn {
+  position: relative;
+  z-index: 10;
+  padding: 6px !important;
+  border-radius: 8px !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  transition: all 150ms ease !important;
+}
+.delta-sidebar-collapse-btn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.delta-sidebar-nav-item {
+  position: relative;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  transition: all 150ms ease !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  background: transparent !important;
+  border: none !important;
+  border-left: 2px solid transparent !important;
+  color: #cbd5e1 !important;
+  text-decoration: none !important;
+  box-sizing: border-box !important;
+}
+.delta-sidebar-nav-item:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.delta-sidebar-nav-item.active {
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.22) 0%, rgba(245, 158, 11, 0.12) 60%, transparent 100%) !important;
+  color: #ffffff !important;
+  border-left-color: #f59e0b !important;
+  box-shadow: inset 0 0 12px rgba(245, 158, 11, 0.08) !important;
+}
+.delta-sidebar.is-collapsed .delta-sidebar-nav-item {
+  justify-content: center !important;
+  padding: 12px 0 !important;
+}
+
+.delta-sidebar-intro-btn {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  color: #fca5a5 !important;
+  background: rgba(127, 29, 29, 0.25) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+  box-sizing: border-box !important;
+}
+.delta-sidebar-intro-btn:hover {
+  background: rgba(153, 27, 27, 0.4) !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  color: #fee2e2 !important;
+}
+.delta-sidebar.is-collapsed .delta-sidebar-intro-btn {
+  justify-content: center !important;
+  padding: 10px 0 !important;
+}
+
 .delta-bottom-nav {
   position: fixed;
   bottom: 0;
@@ -235,6 +392,7 @@ body {
   z-index: 40;
   background-color: rgba(7, 8, 11, 0.94);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   user-select: none;
   padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
@@ -249,18 +407,47 @@ body {
   }
 }
 
-.delta-mobile-only {
-  display: flex !important;
+.delta-bottom-nav-inner {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+  width: 100% !important;
+  max-width: 512px !important;
+  margin: 0 auto !important;
+  padding: 6px 4px 2px !important;
+  box-sizing: border-box !important;
 }
 
+.delta-bottom-nav button,
+.delta-bottom-nav-btn {
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  width: 100% !important;
+  padding: 4px 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  transition: all 150ms ease !important;
+  box-sizing: border-box !important;
+}
+.delta-bottom-nav-btn.active,
+.delta-bottom-nav button[aria-current="page"] {
+  color: #fbbf24 !important;
+}
+
+/* Responsive visibility rules (without forcing display: flex) */
 @media (min-width: 769px) {
   .delta-mobile-only {
     display: none !important;
   }
-}
-
-.delta-desktop-only {
-  display: flex !important;
 }
 
 @media (max-width: 768px) {
@@ -284,7 +471,204 @@ body {
 }
 
 /* =========================================================
-   8. CINEMATIC DASHBOARD V4 LAYOUT & UTILITIES
+   12. DESIGN SYSTEM 2.0 ATOMIC COMPONENTS
+   ========================================================= */
+
+/* --- DELTA CARD --- */
+.delta-card {
+  position: relative;
+  border-radius: 16px;
+  transition: all 200ms ease;
+  overflow: hidden;
+  box-sizing: border-box;
+  background-color: var(--delta-bg-surface-1, #0f1117);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--delta-text-primary, #f8fafc);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.delta-card-elevated {
+  background-color: var(--delta-bg-surface-2, #161922);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+.delta-card-interactive {
+  cursor: pointer;
+}
+.delta-card-interactive:hover {
+  background-color: var(--delta-bg-surface-2, #161922);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+.delta-card-gold {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 17, 23, 0.95) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+}
+.delta-card-crimson {
+  background: linear-gradient(145deg, rgba(220, 38, 38, 0.18) 0%, rgba(15, 17, 23, 0.95) 100%);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.2);
+}
+.delta-card-glass {
+  background: rgba(15, 17, 23, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.delta-card-pad-none { padding: 0 !important; }
+.delta-card-pad-sm { padding: 12px !important; }
+.delta-card-pad-md { padding: 16px !important; }
+.delta-card-pad-lg { padding: 24px !important; }
+@media (min-width: 640px) {
+  .delta-card-pad-md { padding: 20px !important; }
+  .delta-card-pad-lg { padding: 32px !important; }
+}
+
+/* --- DELTA BUTTON --- */
+.delta-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: var(--delta-font-sans, Inter, sans-serif) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 200ms ease !important;
+  border: 1px solid transparent !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  text-decoration: none !important;
+}
+.delta-btn:active {
+  transform: scale(0.98);
+}
+.delta-btn-touch {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+.delta-btn-full {
+  width: 100% !important;
+}
+.delta-btn-primary {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4) !important;
+}
+.delta-btn-primary:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.55) !important;
+}
+.delta-btn-gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  color: #07080b !important;
+  font-weight: 900 !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+.delta-btn-gold:hover {
+  background: linear-gradient(135deg, #fde047 0%, #fbbf24 100%) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5) !important;
+}
+.delta-btn-secondary {
+  background: #161922 !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+.delta-btn-secondary:hover {
+  background: #1f2330 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+.delta-btn-outline {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+.delta-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  color: #fbbf24 !important;
+}
+.delta-btn-ghost {
+  background: transparent !important;
+  color: #cbd5e1 !important;
+  border-color: transparent !important;
+}
+.delta-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+.delta-btn-danger {
+  background: rgba(127, 29, 29, 0.6) !important;
+  color: #fecaca !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+.delta-btn-danger:hover {
+  background: rgba(153, 27, 27, 0.7) !important;
+}
+.delta-btn-sm {
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  gap: 6px !important;
+}
+.delta-btn-md {
+  font-size: 14px !important;
+  padding: 10px 16px !important;
+  gap: 8px !important;
+}
+.delta-btn-lg {
+  font-size: 16px !important;
+  padding: 14px 24px !important;
+  gap: 10px !important;
+}
+
+/* --- DELTA BADGE --- */
+.delta-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--delta-font-sans, Inter, sans-serif) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  border-radius: 9999px !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+.delta-badge-sm { font-size: 10px !important; padding: 2px 8px !important; }
+.delta-badge-md { font-size: 12px !important; padding: 4px 10px !important; }
+.delta-badge-default { background: rgba(255, 255, 255, 0.08) !important; color: #e2e8f0 !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; }
+.delta-badge-crimson { background: rgba(239, 68, 68, 0.15) !important; color: #fca5a5 !important; border: 1px solid rgba(239, 68, 68, 0.35) !important; }
+.delta-badge-gold { background: rgba(245, 158, 11, 0.15) !important; color: #fde047 !important; border: 1px solid rgba(245, 158, 11, 0.35) !important; box-shadow: 0 0 8px rgba(245, 158, 11, 0.2) !important; }
+.delta-badge-success { background: rgba(16, 185, 129, 0.15) !important; color: #6ee7b7 !important; border: 1px solid rgba(16, 185, 129, 0.35) !important; }
+.delta-badge-live { background: rgba(127, 29, 29, 0.8) !important; color: #fee2e2 !important; border: 1px solid rgba(239, 68, 68, 0.6) !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important; }
+.delta-badge-muted { background: rgba(15, 23, 42, 0.6) !important; color: #94a3b8 !important; border: 1px solid rgba(255, 255, 255, 0.06) !important; }
+
+/* --- DELTA SKELETON --- */
+@keyframes deltaShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.delta-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(22, 25, 34, 0.8);
+}
+.delta-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: deltaShimmer 1.8s infinite;
+}
+
+/* =========================================================
+   13. CINEMATIC DASHBOARD V4 LAYOUT & UTILITIES
    ========================================================= */
 .delta-dashboard-container {
   width: 100%;
@@ -311,83 +695,85 @@ body {
               url('/assets/stadium.png') center 30%/cover no-repeat, #07080b;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
   padding: 24px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 .delta-mobile-gamer-bar-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  margin: -8px -10px 12px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(15, 17, 23, 0.98), rgba(22, 25, 34, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  margin: -8px -10px 12px !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(15, 17, 23, 0.98), rgba(22, 25, 34, 0.95)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  box-sizing: border-box !important;
 }
 
 .delta-quick-actions-mobile-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
 }
 
 .delta-quick-actions-desktop-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
 }
 
 @media (max-width: 1024px) {
   .delta-quick-actions-desktop-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 .delta-dashboard-duo-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
 }
 
 @media (min-width: 1024px) {
   .delta-dashboard-duo-grid {
-    grid-template-columns: 1fr 2fr;
-    gap: 20px;
+    grid-template-columns: 1fr 2fr !important;
+    gap: 20px !important;
   }
 }
 
 .delta-dashboard-trio-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
 }
 
 @media (min-width: 769px) {
   .delta-dashboard-trio-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
   }
 }
 
 .delta-dashboard-stats-grid-box {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
 }
 
 @media (min-width: 640px) {
   .delta-dashboard-stats-grid-box {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
 
 @media (min-width: 1024px) {
   .delta-dashboard-stats-grid-box {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 }
 
@@ -413,4 +799,359 @@ body {
   min-height: 32px;
 }
 
+/* =========================================================
+   14. RESPONSIVE UTILITIES ENGINE
+   ========================================================= */
 
+/* Display & Flex */
+.flex { display: flex !important; }
+.inline-flex { display: inline-flex !important; }
+.flex-col { flex-direction: column !important; }
+.flex-row { flex-direction: row !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.flex-1 { flex: 1 1 0% !important; }
+.shrink-0 { flex-shrink: 0 !important; }
+.items-center { align-items: center !important; }
+.items-start { align-items: flex-start !important; }
+.items-end { align-items: flex-end !important; }
+.items-stretch { align-items: stretch !important; }
+.justify-center { justify-content: center !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-start { justify-content: flex-start !important; }
+.justify-end { justify-content: flex-end !important; }
+.justify-around { justify-content: space-around !important; }
+
+/* Grid */
+.grid { display: grid !important; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+.grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+.grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+.col-span-1 { grid-column: span 1 / span 1 !important; }
+.col-span-2 { grid-column: span 2 / span 2 !important; }
+.col-span-3 { grid-column: span 3 / span 3 !important; }
+.col-span-4 { grid-column: span 4 / span 4 !important; }
+.col-span-7 { grid-column: span 7 / span 7 !important; }
+
+/* Breakpoints */
+@media (min-width: 640px) {
+  .sm\:flex { display: flex !important; }
+  .sm\:hidden { display: none !important; }
+  .sm\:block { display: block !important; }
+  .sm\:flex-row { flex-direction: row !important; }
+  .sm\:items-center { align-items: center !important; }
+  .sm\:items-end { align-items: flex-end !important; }
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .sm\:gap-4 { gap: 16px !important; }
+  .sm\:gap-6 { gap: 24px !important; }
+  .sm\:p-5 { padding: 20px !important; }
+  .sm\:p-6 { padding: 24px !important; }
+  .sm\:p-7 { padding: 28px !important; }
+  .sm\:px-5 { padding-left: 20px !important; padding-right: 20px !important; }
+  .sm\:px-6 { padding-left: 24px !important; padding-right: 24px !important; }
+  .sm\:text-xs { font-size: 12px !important; }
+  .sm\:text-sm { font-size: 14px !important; }
+  .sm\:text-base { font-size: 16px !important; }
+  .sm\:text-xl { font-size: 20px !important; }
+  .sm\:text-2xl { font-size: 24px !important; }
+  .sm\:text-3xl { font-size: 30px !important; }
+  .sm\:w-10 { width: 40px !important; }
+  .sm\:h-10 { height: 40px !important; }
+  .sm\:w-20 { width: 80px !important; }
+  .sm\:h-20 { height: 80px !important; }
+  .sm\:flex-none { flex: none !important; }
+  .sm\:pt-0 { padding-top: 0 !important; }
+}
+
+@media (min-width: 769px) {
+  .md\:flex { display: flex !important; }
+  .md\:hidden { display: none !important; }
+  .md\:flex-row { flex-direction: row !important; }
+  .md\:items-center { align-items: center !important; }
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .md\:pt-0 { padding-top: 0 !important; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:flex { display: flex !important; }
+  .lg\:hidden { display: none !important; }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .lg\:col-span-1 { grid-column: span 1 / span 1 !important; }
+  .lg\:col-span-2 { grid-column: span 2 / span 2 !important; }
+  .lg\:gap-6 { gap: 24px !important; }
+}
+
+/* Sizing & Box Model */
+.w-full { width: 100% !important; }
+.max-w-full { max-width: 100% !important; }
+.min-w-0 { min-width: 0 !important; }
+.h-full { height: 100% !important; }
+.min-h-screen { min-height: 100vh !important; }
+.min-h-\[44px\] { min-height: 44px !important; }
+.min-w-\[44px\] { min-width: 44px !important; }
+.min-h-\[58px\] { min-height: 58px !important; }
+.min-h-\[64px\] { min-height: 64px !important; }
+.box-border { box-sizing: border-box !important; }
+
+/* Positioning */
+.relative { position: relative !important; }
+.absolute { position: absolute !important; }
+.fixed { position: fixed !important; }
+.sticky { position: sticky !important; }
+.inset-0 { inset: 0 !important; }
+.top-0 { top: 0 !important; }
+.bottom-0 { bottom: 0 !important; }
+.left-0 { left: 0 !important; }
+.right-0 { right: 0 !important; }
+.z-10 { z-index: 10 !important; }
+.z-20 { z-index: 20 !important; }
+.z-30 { z-index: 30 !important; }
+.z-40 { z-index: 40 !important; }
+.z-50 { z-index: 50 !important; }
+
+/* Gaps */
+.gap-0\.5 { gap: 2px !important; }
+.gap-1 { gap: 4px !important; }
+.gap-1\.5 { gap: 6px !important; }
+.gap-2 { gap: 8px !important; }
+.gap-2\.5 { gap: 10px !important; }
+.gap-3 { gap: 12px !important; }
+.gap-4 { gap: 16px !important; }
+.gap-5 { gap: 20px !important; }
+.gap-6 { gap: 24px !important; }
+.gap-8 { gap: 32px !important; }
+
+/* Spacing */
+.p-0 { padding: 0 !important; }
+.p-0\.5 { padding: 2px !important; }
+.p-1 { padding: 4px !important; }
+.p-1\.5 { padding: 6px !important; }
+.p-2 { padding: 8px !important; }
+.p-2\.5 { padding: 10px !important; }
+.p-3 { padding: 12px !important; }
+.p-3\.5 { padding: 14px !important; }
+.p-4 { padding: 16px !important; }
+.p-5 { padding: 20px !important; }
+.p-6 { padding: 24px !important; }
+.p-7 { padding: 28px !important; }
+.p-8 { padding: 32px !important; }
+
+.px-1 { padding-left: 4px !important; padding-right: 4px !important; }
+.px-1\.5 { padding-left: 6px !important; padding-right: 6px !important; }
+.px-2 { padding-left: 8px !important; padding-right: 8px !important; }
+.px-2\.5 { padding-left: 10px !important; padding-right: 10px !important; }
+.px-3 { padding-left: 12px !important; padding-right: 12px !important; }
+.px-3\.5 { padding-left: 14px !important; padding-right: 14px !important; }
+.px-4 { padding-left: 16px !important; padding-right: 16px !important; }
+.px-5 { padding-left: 20px !important; padding-right: 20px !important; }
+.px-6 { padding-left: 24px !important; padding-right: 24px !important; }
+
+.py-0\.5 { padding-top: 2px !important; padding-bottom: 2px !important; }
+.py-1 { padding-top: 4px !important; padding-bottom: 4px !important; }
+.py-1\.5 { padding-top: 6px !important; padding-bottom: 6px !important; }
+.py-2 { padding-top: 8px !important; padding-bottom: 8px !important; }
+.py-2\.5 { padding-top: 10px !important; padding-bottom: 10px !important; }
+.py-3 { padding-top: 12px !important; padding-bottom: 12px !important; }
+.py-3\.5 { padding-top: 14px !important; padding-bottom: 14px !important; }
+.py-4 { padding-top: 16px !important; padding-bottom: 16px !important; }
+.py-5 { padding-top: 20px !important; padding-bottom: 20px !important; }
+.py-6 { padding-top: 24px !important; padding-bottom: 24px !important; }
+
+.pb-1 { padding-bottom: 4px !important; }
+.pb-2 { padding-bottom: 8px !important; }
+.pb-3 { padding-bottom: 12px !important; }
+.pb-4 { padding-bottom: 16px !important; }
+.pb-8 { padding-bottom: 32px !important; }
+.pt-1 { padding-top: 4px !important; }
+.pt-1\.5 { padding-top: 6px !important; }
+.pt-2 { padding-top: 8px !important; }
+.pt-2\.5 { padding-top: 10px !important; }
+.pt-3 { padding-top: 12px !important; }
+
+.m-0 { margin: 0 !important; }
+.mx-auto { margin-left: auto !important; margin-right: auto !important; }
+.my-1 { margin-top: 4px !important; margin-bottom: 4px !important; }
+.my-2 { margin-top: 8px !important; margin-bottom: 8px !important; }
+.mt-0\.5 { margin-top: 2px !important; }
+.mt-1 { margin-top: 4px !important; }
+.mt-2 { margin-top: 8px !important; }
+.mt-3 { margin-top: 12px !important; }
+.mt-4 { margin-top: 16px !important; }
+.mb-0\.5 { margin-bottom: 2px !important; }
+.mb-1 { margin-bottom: 4px !important; }
+.mb-2 { margin-bottom: 8px !important; }
+.ml-auto { margin-left: auto !important; }
+.ml-0\.5 { margin-left: 2px !important; }
+
+/* Space-y */
+.space-y-0\.5 > * + * { margin-top: 2px !important; }
+.space-y-1 > * + * { margin-top: 4px !important; }
+.space-y-2 > * + * { margin-top: 8px !important; }
+.space-y-3 > * + * { margin-top: 12px !important; }
+.space-y-4 > * + * { margin-top: 16px !important; }
+.space-y-5 > * + * { margin-top: 20px !important; }
+.space-y-6 > * + * { margin-top: 24px !important; }
+
+/* Border radius */
+.rounded-sm { border-radius: 4px !important; }
+.rounded { border-radius: 6px !important; }
+.rounded-md { border-radius: 8px !important; }
+.rounded-lg { border-radius: 10px !important; }
+.rounded-xl { border-radius: 14px !important; }
+.rounded-2xl { border-radius: 18px !important; }
+.rounded-3xl { border-radius: 24px !important; }
+.rounded-full { border-radius: 9999px !important; }
+
+/* Backgrounds */
+.bg-transparent { background-color: transparent !important; }
+.bg-\[\#07080b\] { background-color: #07080b !important; }
+.bg-\[\#090b10\] { background-color: #090b10 !important; }
+.bg-\[\#0f1117\] { background-color: #0f1117 !important; }
+.bg-\[\#161922\] { background-color: #161922 !important; }
+.bg-\[\#1f2330\] { background-color: #1f2330 !important; }
+.bg-slate-900 { background-color: #0f172a !important; }
+.bg-slate-950 { background-color: #020617 !important; }
+.bg-white\/5 { background-color: rgba(255, 255, 255, 0.05) !important; }
+.bg-white\/6 { background-color: rgba(255, 255, 255, 0.06) !important; }
+.bg-white\/8 { background-color: rgba(255, 255, 255, 0.08) !important; }
+.bg-white\/10 { background-color: rgba(255, 255, 255, 0.10) !important; }
+.bg-white\/12 { background-color: rgba(255, 255, 255, 0.12) !important; }
+.bg-white\/15 { background-color: rgba(255, 255, 255, 0.15) !important; }
+.bg-white\/20 { background-color: rgba(255, 255, 255, 0.20) !important; }
+.bg-amber-400\/10 { background-color: rgba(251, 191, 36, 0.10) !important; }
+.bg-amber-400\/15 { background-color: rgba(251, 191, 36, 0.15) !important; }
+.bg-amber-400\/20 { background-color: rgba(251, 191, 36, 0.20) !important; }
+.bg-amber-400\/30 { background-color: rgba(251, 191, 36, 0.30) !important; }
+.bg-amber-500\/10 { background-color: rgba(245, 158, 11, 0.10) !important; }
+.bg-amber-500\/15 { background-color: rgba(245, 158, 11, 0.15) !important; }
+.bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.20) !important; }
+.bg-red-500\/10 { background-color: rgba(239, 68, 68, 0.10) !important; }
+.bg-red-500\/15 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.bg-red-500\/20 { background-color: rgba(239, 68, 68, 0.20) !important; }
+.bg-red-600\/15 { background-color: rgba(220, 38, 38, 0.15) !important; }
+.bg-red-600\/20 { background-color: rgba(220, 38, 38, 0.20) !important; }
+.bg-red-600\/25 { background-color: rgba(220, 38, 38, 0.25) !important; }
+.bg-emerald-500\/15 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.20) !important; }
+
+/* Gradients */
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops, transparent)) !important; }
+.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops, transparent)) !important; }
+.bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--tw-gradient-stops, transparent)) !important; }
+
+.from-red-600 { --tw-gradient-from: #dc2626; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(220, 38, 38, 0)) !important; }
+.to-amber-500 { --tw-gradient-to: #f59e0b !important; }
+.from-amber-400 { --tw-gradient-from: #fbbf24; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(251, 191, 36, 0)) !important; }
+.to-red-500 { --tw-gradient-to: #ef4444 !important; }
+.from-red-500 { --tw-gradient-from: #ef4444; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(239, 68, 68, 0)) !important; }
+.to-emerald-400 { --tw-gradient-to: #34d399 !important; }
+
+/* Text Colors */
+.text-white { color: #ffffff !important; }
+.text-slate-100 { color: #f1f5f9 !important; }
+.text-slate-200 { color: #e2e8f0 !important; }
+.text-slate-300 { color: #cbd5e1 !important; }
+.text-slate-400 { color: #94a3b8 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-amber-300 { color: #fde047 !important; }
+.text-amber-400 { color: #fbbf24 !important; }
+.text-amber-500 { color: #f59e0b !important; }
+.text-red-300 { color: #fca5a5 !important; }
+.text-red-400 { color: #f87171 !important; }
+.text-red-500 { color: #ef4444 !important; }
+.text-emerald-300 { color: #6ee7b7 !important; }
+.text-emerald-400 { color: #34d399 !important; }
+.text-emerald-500 { color: #10b981 !important; }
+
+/* Text sizes & fonts */
+.text-\[9px\] { font-size: 9px !important; }
+.text-\[10px\] { font-size: 10px !important; }
+.text-\[11px\] { font-size: 11px !important; }
+.text-\[13px\] { font-size: 13px !important; }
+.text-xs { font-size: 12px !important; }
+.text-sm { font-size: 14px !important; }
+.text-base { font-size: 16px !important; }
+.text-lg { font-size: 18px !important; }
+.text-xl { font-size: 20px !important; }
+.text-2xl { font-size: 24px !important; }
+.text-3xl { font-size: 30px !important; }
+.font-normal { font-weight: 400 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+.font-extrabold { font-weight: 800 !important; }
+.font-black { font-weight: 900 !important; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important; }
+.font-sans { font-family: var(--delta-font-sans, Inter, sans-serif) !important; }
+
+.tracking-tight { letter-spacing: -0.02em !important; }
+.tracking-wide { letter-spacing: 0.025em !important; }
+.tracking-wider { letter-spacing: 0.05em !important; }
+.tracking-widest { letter-spacing: 0.1em !important; }
+.uppercase { text-transform: uppercase !important; }
+.capitalize { text-transform: capitalize !important; }
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.text-right { text-align: right !important; }
+.truncate { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+.leading-none { line-height: 1 !important; }
+.leading-tight { line-height: 1.25 !important; }
+.leading-normal { line-height: 1.5 !important; }
+
+/* Borders */
+.border { border-width: 1px !important; border-style: solid !important; }
+.border-t { border-top-width: 1px !important; border-top-style: solid !important; }
+.border-b { border-bottom-width: 1px !important; border-bottom-style: solid !important; }
+.border-l { border-left-width: 1px !important; border-left-style: solid !important; }
+.border-r { border-right-width: 1px !important; border-right-style: solid !important; }
+.border-l-2 { border-left-width: 2px !important; border-left-style: solid !important; }
+.border-transparent { border-color: transparent !important; }
+.border-white\/5 { border-color: rgba(255, 255, 255, 0.05) !important; }
+.border-white\/6 { border-color: rgba(255, 255, 255, 0.06) !important; }
+.border-white\/8 { border-color: rgba(255, 255, 255, 0.08) !important; }
+.border-white\/10 { border-color: rgba(255, 255, 255, 0.10) !important; }
+.border-white\/12 { border-color: rgba(255, 255, 255, 0.12) !important; }
+.border-white\/15 { border-color: rgba(255, 255, 255, 0.15) !important; }
+.border-white\/20 { border-color: rgba(255, 255, 255, 0.20) !important; }
+.border-amber-400\/25 { border-color: rgba(251, 191, 36, 0.25) !important; }
+.border-amber-400\/30 { border-color: rgba(251, 191, 36, 0.30) !important; }
+.border-amber-400\/40 { border-color: rgba(251, 191, 36, 0.40) !important; }
+.border-amber-500\/20 { border-color: rgba(245, 158, 11, 0.20) !important; }
+.border-amber-500\/30 { border-color: rgba(245, 158, 11, 0.30) !important; }
+.border-red-500\/20 { border-color: rgba(239, 68, 68, 0.20) !important; }
+.border-red-500\/25 { border-color: rgba(239, 68, 68, 0.25) !important; }
+.border-red-500\/30 { border-color: rgba(239, 68, 68, 0.30) !important; }
+.border-red-500\/40 { border-color: rgba(239, 68, 68, 0.40) !important; }
+.border-red-500\/50 { border-color: rgba(239, 68, 68, 0.50) !important; }
+.border-emerald-500\/30 { border-color: rgba(16, 185, 129, 0.30) !important; }
+
+/* Shadows & Blurs */
+.shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; }
+.shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important; }
+.shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important; }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4) !important; }
+.shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3) !important; }
+.backdrop-blur-sm { backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important; }
+.backdrop-blur-md { backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; }
+.backdrop-blur-xl { backdrop-filter: blur(24px) !important; -webkit-backdrop-filter: blur(24px) !important; }
+
+/* Transitions & states */
+.overflow-hidden { overflow: hidden !important; }
+.overflow-x-hidden { overflow-x: hidden !important; }
+.overflow-y-auto { overflow-y: auto !important; }
+.cursor-pointer { cursor: pointer !important; }
+.select-none { user-select: none !important; }
+.transition-all { transition-property: all !important; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important; transition-duration: 150ms !important; }
+
+/* Animations */
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important; }
+.animate-spin { animation: spin 1s linear infinite !important; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

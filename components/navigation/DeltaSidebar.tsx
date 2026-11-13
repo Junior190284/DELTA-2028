@@ -67,7 +67,7 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab("home")}
-          className="flex items-center gap-3 text-left flex-1 min-w-0 group cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400 rounded-lg p-1"
+          className="delta-sidebar-brand-btn flex items-center gap-3 text-left flex-1 min-w-0 group cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400 rounded-lg p-1"
           title="Przejdź do Pulpitu Głównego"
         >
           <div
@@ -97,7 +97,7 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="relative z-10 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/8 transition-colors shrink-0 cursor-pointer"
+            className="delta-sidebar-collapse-btn relative z-10 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/8 transition-colors shrink-0 cursor-pointer"
             title="Zwiń pasek boczny"
             aria-label="Zwiń pasek boczny"
           >
@@ -132,9 +132,9 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => handleItemClick(item)}
-                    className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-left group ${
+                    className={`delta-sidebar-nav-item relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-left group ${
                       isItemActive
-                        ? "bg-gradient-to-r from-red-600/25 via-amber-600/15 to-transparent text-white border-l-2 border-amber-400 shadow-[inset_0_0_12px_rgba(245,158,11,0.08)]"
+                        ? "active bg-gradient-to-r from-red-600/25 via-amber-600/15 to-transparent text-white border-l-2 border-amber-400 shadow-[inset_0_0_12px_rgba(245,158,11,0.08)]"
                         : "text-slate-300 hover:text-white hover:bg-white/6 border-l-2 border-transparent"
                     } ${isCollapsed ? "justify-center px-0 py-3" : ""}`}
                     title={isCollapsed ? item.label : undefined}
@@ -193,7 +193,7 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
           <button
             type="button"
             onClick={onTriggerIntro}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-red-300 bg-red-950/25 hover:bg-red-900/40 border border-red-500/25 hover:border-red-500/50 cursor-pointer ${
+            className={`delta-sidebar-intro-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-red-300 bg-red-950/25 hover:bg-red-900/40 border border-red-500/25 hover:border-red-500/50 cursor-pointer ${
               isCollapsed ? "justify-center px-0 py-2.5" : ""
             }`}
             title="Odtwórz filmowe intro stadionowe"
@@ -207,7 +207,7 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
         {canOpenAdmin && (
           <a
             href="/admin"
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all text-amber-300 bg-amber-950/25 hover:bg-amber-900/40 border border-amber-500/25 hover:border-amber-500/50 no-underline cursor-pointer ${
+            className={`delta-sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all text-amber-300 bg-amber-950/25 hover:bg-amber-900/40 border border-amber-500/25 hover:border-amber-500/50 no-underline cursor-pointer ${
               isCollapsed ? "justify-center px-0 py-2.5" : ""
             }`}
             title="Panel Trenera / Administratora"
@@ -229,7 +229,7 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
+            className="delta-sidebar-collapse-btn w-full flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
             title="Rozwiń pasek boczny"
             aria-label="Rozwiń pasek boczny"
           >
