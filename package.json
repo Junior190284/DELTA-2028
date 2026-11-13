@@ -17,7 +17,8 @@
     "test:notifications": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/notifications-center.test.ts",
     "test:live-alert": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/live-alert.test.ts",
     "test:home-priority": "node --test --experimental-strip-types --experimental-specifier-resolution=node tests/home-priority.test.ts",
-    "test:design-system": "node --test --experimental-strip-types tests/design-system-foundation.test.ts"
+    "test:design-system": "node --test --experimental-strip-types tests/design-system-foundation.test.ts",
+    "test:navigation": "node --test --experimental-strip-types tests/navigation-v3.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "latest",

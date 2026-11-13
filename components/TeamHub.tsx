@@ -15,6 +15,7 @@ import PackOpeningModal from "./PackOpeningModal";
 import DeltaCollectionAlbum from "./DeltaCollectionAlbum";
 import DeltaLiveBar from "./DeltaLiveBar";
 import DeltaMoreMenuSheet from "./DeltaMoreMenuSheet";
+import { DeltaAppShell } from "./navigation";
 import DeltaLiveAlertBanner from "./DeltaLiveAlertBanner";
 import DeltaUrgentEventModal from "./DeltaUrgentEventModal";
 import DeltaSyncControlCenter from "./admin/DeltaSyncControlCenter";
@@ -277,7 +278,6 @@ export default function TeamHub(props:{
     fetchSystemEvents();
   }, [props.profile.id]);
   const [readNewsMap, setReadNewsMap] = useState<Record<string, boolean>>({});
-  const [activeDrawerCategory, setActiveDrawerCategory] = useState<string | null>(null);
   const [homePodiumMetric,setHomePodiumMetric]=useState<PodiumMetric>("goals");
   const [showcaseIndex,setShowcaseIndex]=useState(0);
   const showcaseStageRef=useRef<HTMLDivElement|null>(null);
@@ -1225,8 +1225,7 @@ export default function TeamHub(props:{
 
   function handleGoHomeTop() {
     setTab("home");
-    setActiveDrawerCategory(null);
-    setSelectedMatch(null);
+        setSelectedMatch(null);
     setMobileMoreOpen(false);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -1238,6 +1237,101 @@ export default function TeamHub(props:{
       }
     }
   }
+
+  const handleSelectTab = (targetTab: typeof tab) => {
+    setTab(targetTab);
+        setSelectedMatch(null);
+    setMobileMoreOpen(false);
+    if (typeof window !== "undefined") {
+      const hash = targetTab === "home" ? "" : `#tab=${targetTab}`;
+      if (window.location.hash !== hash) {
+        window.history.pushState(null, "", hash || window.location.pathname);
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleOpenModalAction = (actionId: string) => {
+    switch (actionId) {
+      case "missions":
+        setMissionsModalOpen(true);
+        break;
+      case "battle":
+        setBattleArenaModalOpen(true);
+        break;
+      case "competition":
+        setCompetitionHubOpen(true);
+        break;
+      case "trophies":
+        setTrophyCabinetOpen(true);
+        break;
+      case "trading":
+        setSafeTradingOpen(true);
+        break;
+      case "seasonpass":
+        setSeasonPassModalOpen(true);
+        break;
+      case "weeklysummary":
+        setWeeklySummaryModalOpen(true);
+        break;
+      case "typer":
+        setTyperModalOpen(true);
+        break;
+      case "achievements":
+        setAchievementsModalOpen(true);
+        break;
+      case "socialfeed":
+        setSocialFeedOpen(true);
+        break;
+      case "photobooth":
+        setPhotoBoothModalOpen(true);
+        break;
+      case "birthday":
+        setBirthdayModalOpen(true);
+        break;
+      case "coachcorner":
+        setCoachCornerModalOpen(true);
+        break;
+      case "notifications":
+        setNotificationsModalOpen(true);
+        break;
+      case "notifprefs":
+        setNotifPrefsModalOpen(true);
+        break;
+      case "changelog":
+        setChangelogModalOpen(true);
+        break;
+      case "knowledge":
+        setKnowledgeModalOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // ETAP V3: Browser History & Deep Linking Synchronization
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleHashSync = () => {
+      const raw = window.location.hash.replace(/^#tab=|^#/, "").trim();
+      const validTabs = [
+        "home", "mychild", "matchday", "collection", "matches",
+        "calendar", "training", "players", "stats", "hall",
+        "achievements", "chronicle", "news", "club", "league", "teamcenter"
+      ];
+      if (raw && validTabs.includes(raw)) {
+        setTab(raw as any);
+      }
+    };
+
+    handleHashSync();
+    window.addEventListener("hashchange", handleHashSync);
+    window.addEventListener("popstate", handleHashSync);
+    return () => {
+      window.removeEventListener("hashchange", handleHashSync);
+      window.removeEventListener("popstate", handleHashSync);
+    };
+  }, []);
 
   function openMatch(match:Match,initial:"summary"|"attendance"|"lineup"|"events"|"mvp"="summary",placement:"home"|"overlay"="overlay"){
     setMatchInitialTab(initial);
@@ -1535,96 +1629,6 @@ export default function TeamHub(props:{
     gameProfile?.dailySpinUsedToday
   ]);
 
-  const navCategories = useMemo(() => [
-    {
-      id: "main",
-      title: "GŁÓWNE",
-      shortLabel: "Pulpit",
-      subtitle: "Pulpit i centrum drużyny",
-      Icon: Home,
-      items: [
-        { id: "home", label: "Pulpit Główny", desc: "Najbliższy mecz, frekwencja i skróty", Icon: Home },
-        { id: "teamcenter", label: "Centrum Drużyny", desc: "Frekwencja i status całego zespołu", Icon: UserCheck },
-        ...(props.parentPlayerIds.length ? [
-          { id: "mychild", label: "Moje Dziecko", desc: "Obecności i rozwój Twojego zawodnika", Icon: UserRound, badge: "RODZIC" }
-        ] : []),
-      ]
-    },
-    {
-      id: "sport",
-      title: "SPORT & MECZE",
-      shortLabel: "Sport",
-      subtitle: "Terminarze, zbiórki i treningi",
-      Icon: CalendarDays,
-      items: [
-        ...(canManageMatches || canEditMatchEvents ? [
-          { id: "matchday", label: "Match Day", desc: "Panel meczowy na żywo (składy, minuty, gole)", Icon: Flame, badge: "LIVE" }
-        ] : []),
-        { id: "matches", label: "Mecze & Wyniki", desc: "Terminarz ligowy, składy i wyniki meczów", Icon: CalendarDays },
-        { id: "coach-corner-modal", label: "Kącik Trenera", desc: "Wyzwania Skill Master, zadania domowe i inspiracje", Icon: Award, badge: "SKILL MASTER", isGoldTag: true, isAction: "coachcorner" },
-        { id: "calendar", label: "Kalendarz", desc: "Zbiórki, wydarzenia klubowe i terminy", Icon: CalendarDays },
-        { id: "training", label: "Treningi", desc: "Frekwencja, historia gierek i ranking", Icon: Zap },
-        { id: "league", label: "Rozgrywki / Tabela", desc: "Tabela grupy MZPN i mecze rywali", Icon: Trophy },
-      ]
-    },
-    {
-      id: "stats",
-      title: "DRUŻYNA & DANE",
-      shortLabel: "Drużyna",
-      subtitle: "Karty zawodników, liczby i historia",
-      Icon: Users,
-      items: [
-        { id: "players", label: "Skład Drużyny", desc: "Profile zawodników i interaktywne karty", Icon: Users },
-        { id: "stats", label: "Statystyki", desc: "Bramki, asysty, minuty i wykresy", Icon: TrendingUp },
-        { id: "hall", label: "Hall of Fame", desc: "Klubowe legendy i rekordy sezonu", Icon: Medal },
-        { id: "chronicle", label: "Kronika Meczowa", desc: "Historia rozegranych spotkań i podsumowania", Icon: History },
-      ]
-    },
-    {
-      id: "gaming",
-      title: "STREFA ROZRYWKI",
-      shortLabel: "Strefa",
-      subtitle: "Karty 3D, Typer i Osiągnięcia",
-      Icon: Sparkles,
-      items: [
-        { id: "collection", label: "Kolekcja Kart", desc: "Klaser kart 3D, sklep z paczkami i album", Icon: Sparkles, badge: "3D", isGoldTag: true },
-        { id: "competition-modal", label: "Centrum Rywalizacji & Ligi", desc: "Liga kartowa, turnieje, wyzwania 1v1/3v3, draft i cele drużyny", Icon: Trophy, badge: "LIGA & ARENA", isGoldTag: true, isAction: "competition" },
-        { id: "missions-modal", label: "Centrum Misji", desc: "Dziennie i tygodniowe zadania, nagrody XP i paczki", Icon: Target, badge: "MISJE", isGoldTag: true, isAction: "missions" },
-        { id: "battle-arena-modal", label: "Arena Kart (1v1 & 3v3)", desc: "Pojedynki statystyk kart przeciwko rywalom CPU", Icon: Flame, badge: "PVE ARENA", isGoldTag: true, isAction: "battle" },
-        { id: "trophy-cabinet-modal", label: "Gablota Trofeów & Tytuły", desc: "Puchary, medale i wybór aktywnego tytułu profilu", Icon: Award, badge: "PROFIL", isGoldTag: true, isAction: "trophies" },
-        { id: "safe-trading-modal", label: "Bezpieczna Giełda Wymian", desc: "Wymieniaj duplikaty kart 1-za-1 z kolegami z zespołu", Icon: Layers, badge: "TRADE", isGoldTag: true, isAction: "trading" },
-        { id: "season-pass-modal", label: "DELTA Battle Pass", desc: "Sezonowa ścieżka nagród, poziomy 1–25 i XP", Icon: Trophy, badge: "SEZON 1", isGoldTag: true, isAction: "seasonpass" },
-        { id: "weekly-summary-modal", label: "Podsumowanie Tygodnia", desc: "Infografika postępów, zdobyte XP i obecności", Icon: Award, badge: "RAPORT", isGoldTag: true, isAction: "weeklysummary" },
-        { id: "typer-modal", label: "Klubowy Typer", desc: "Typuj wyniki spotkań i wygrywaj Delta Points", Icon: Crown, badge: "NOWOŚĆ", isGoldTag: true, isAction: "typer" },
-        { id: "achievements-modal", label: "Osiągnięcia i Misje", desc: "30 misji, poziomy i nagrody w paczkach", Icon: Trophy, badge: "30 MISJI", isGoldTag: true, isAction: "achievements" },
-      ]
-    },
-    {
-      id: "club",
-      title: "KLUB & MEDIA",
-      shortLabel: "Klub",
-      subtitle: "Aktualności i oficjalne komunikaty",
-      Icon: Shield,
-      items: [
-        { id: "social-feed-modal", label: "Feed Drużyny (Tablica)", desc: "Oficjalne ogłoszenia, wyróżnienia i pozytywny doping", Icon: MessageSquare, badge: "SPOŁECZNOŚĆ", isGoldTag: true, isAction: "socialfeed" },
-        { id: "photobooth-modal", label: "Foto-Budka DELTA", desc: "Twórz profesjonalne grafiki i relacje Instagram / WhatsApp", Icon: Camera, badge: "HD STUDIO", isGoldTag: true, isAction: "photobooth" },
-        { id: "birthday-modal", label: "Strefa Urodzin", desc: "Świętujemy urodziny zawodników, życzenia i prezenty", Icon: Cake, badge: "ŚWIĘTUJEMY", isGoldTag: true, isAction: "birthday" },
-        { id: "news", label: "Aktualności", desc: "Wiadomości z życia drużyny i ogłoszenia", Icon: Newspaper },
-        { id: "club", label: "Z Klubu", desc: "Oficjalny feed ze strony głównej DELTA", Icon: Shield },
-      ]
-    },
-  ], [props.parentPlayerIds, canManageMatches, canEditMatchEvents]);
-
-  const activeCategory = useMemo(() => {
-    if (["home", "teamcenter", "mychild"].includes(tab)) return "main";
-    if (["matchday", "matches", "calendar", "training", "league"].includes(tab)) return "sport";
-    if (["players", "stats", "hall", "chronicle"].includes(tab)) return "stats";
-    if (["collection", "achievements"].includes(tab)) return "gaming";
-    if (["news", "club"].includes(tab)) return "club";
-    return "main";
-  }, [tab]);
-
-  const openCategoryData = navCategories.find(c => c.id === activeDrawerCategory) || null;
 
   return <div className="hub v8-hub v101-stadium-hub v104-hub">
     <StadiumFX
@@ -1634,289 +1638,32 @@ export default function TeamHub(props:{
     />
     {viewFx&&<div className="v101-cinematic-veil" aria-hidden="true"><span className="v101-cinematic-smoke"/><span className="v101-cinematic-flare"/></div>}
 
-    {/* DESKTOP ICON RAIL DOCK (Modern Sidebar 2.0) */}
-    <aside className="v200-rail-container" aria-label="Nawigacja główna">
-      <button
-        type="button"
-        className="v200-rail-brand"
-        onClick={handleGoHomeTop}
-        title="Przejdź na stronę główną"
-        aria-label="DELTA 2018 GM - Start"
-      >
-        <img src="/teamlogos/gm.png" alt="DELTA GM" />
-        <span>GM</span>
-      </button>
-
-      <nav className="v200-rail-nav">
-        {navCategories.map(cat => {
-          const isCatActive = activeCategory === cat.id;
-          const isCatOpen = activeDrawerCategory === cat.id;
-          const CatIcon = cat.Icon;
-
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              className={`v200-rail-btn ${isCatActive ? "active" : ""} ${isCatOpen ? "open" : ""}`}
-              onClick={() => {
-                setActiveDrawerCategory(prev => prev === cat.id ? null : cat.id);
-              }}
-              title={`${cat.title} - ${cat.subtitle}`}
-              aria-label={cat.title}
-              aria-expanded={isCatOpen}
-            >
-              <CatIcon size={20} />
-              <span className="v200-rail-label">{cat.shortLabel}</span>
-              {cat.id === "main" && unanswered.length > 0 && (
-                <span className="v200-rail-badge">{unanswered.length}</span>
-              )}
-              {cat.id === "sport" && (isMatchToday || isTrainingToday) && (
-                <span className="v200-rail-badge" style={{ background: "#f6c952", color: "#000" }}>●</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="v200-rail-footer">
-        <button
-          type="button"
-          className="v200-rail-devil-btn"
-          onClick={() => setCinematicActive(true)}
-          title="Odtwórz filmowe intro stadionowe"
-          aria-label="Odtwórz filmowe intro"
-        >
-          <Flame size={18} />
-          <span>INTRO</span>
-        </button>
-      </div>
-    </aside>
-
-    {/* FLYOUT DRAWER & BACKDROP */}
-    {openCategoryData && (
-      <>
-        <div
-          className="v200-drawer-backdrop"
-          onClick={() => setActiveDrawerCategory(null)}
-          aria-hidden="true"
-        />
-        <div
-          className="v200-rail-drawer"
-          role="region"
-          aria-label={`Menu: ${openCategoryData.title}`}
-        >
-          <div className="v200-drawer-header">
-            <div className="v200-drawer-header-left">
-              <span className="v200-drawer-category-badge">{openCategoryData.title}</span>
-              <span className="v200-drawer-title">{openCategoryData.subtitle}</span>
-            </div>
-            <button
-              type="button"
-              className="v200-drawer-close-btn"
-              onClick={() => setActiveDrawerCategory(null)}
-              aria-label="Zamknij menu"
-            >
-              <X size={15} />
-            </button>
-          </div>
-
-          <div className="v200-drawer-items-list">
-            {openCategoryData.items.map(item => {
-              const ItemIcon = item.Icon;
-              const isItemActive = tab === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`v200-drawer-card-btn ${isItemActive ? "active" : ""}`}
-                  onClick={() => {
-                    if ((item as any).isAction === "competition") {
-                      setCompetitionHubOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "trophies") {
-                      setTrophyCabinetOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "trading") {
-                      setSafeTradingOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "socialfeed") {
-                      setSocialFeedOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "missions") {
-                      setMissionsModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "battle") {
-                      setBattleArenaModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "weeklysummary") {
-                      setWeeklySummaryModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "typer") {
-                      setTyperModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "achievements") {
-                      setAchievementsModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "seasonpass") {
-                      setSeasonPassModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "photobooth") {
-                      setPhotoBoothModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "birthday") {
-                      setBirthdayModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else if ((item as any).isAction === "coachcorner") {
-                      setCoachCornerModalOpen(true);
-                      setActiveDrawerCategory(null);
-                    } else {
-                      setTab(item.id as any);
-                      setActiveDrawerCategory(null);
-                    }
-                  }}
-                >
-                  <div className="v200-drawer-card-icon">
-                    <ItemIcon size={18} />
-                  </div>
-                  <div className="v200-drawer-card-body">
-                    <div className="v200-drawer-card-title-row">
-                      <span className="v200-drawer-card-title">{item.label}</span>
-                      {item.badge && (
-                        <span className={`v200-drawer-card-tag ${(item as any).isGoldTag ? "gold" : ""}`}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                    <span className="v200-drawer-card-desc">{item.desc}</span>
-                  </div>
-                  <ChevronRight size={14} className="v200-drawer-card-chevron" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </>
-    )}
-
-    <header className="hub-top v8-topbar">
-      <button className="v8-mini-brand v101-home-logo-btn" onClick={handleGoHomeTop} aria-label="Przejdź na stronę główną"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/><div><b>DELTA 2018 GM</b><span>Górny Mokotów</span></div></button>
-      
-      {/* Central XP & Level Pill */}
-      {gameProfile && (
-        <div 
-          className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 border border-amber-500/30 text-xs shadow-inner cursor-pointer hover:border-amber-500/60 transition-all"
-          onClick={() => setWeeklySummaryModalOpen(true)}
-          title="Kliknij, aby otworzyć Podsumowanie Tygodnia"
-        >
-          <span className="font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-            POZ. {gameProfile.levelInfo?.level || 1}
-          </span>
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between gap-2 text-[10px] text-slate-300 font-bold">
-              <span>{gameProfile.levelInfo?.title || 'Zawodnik DELTA'}</span>
-              <span className="text-amber-400">{gameProfile.levelInfo?.currentLevelXP || 0}/{gameProfile.levelInfo?.nextLevelXP || 100} XP</span>
-            </div>
-            <div className="w-24 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
-              <div 
-                className="h-full bg-gradient-to-r from-amber-400 to-red-500 rounded-full transition-all duration-500" 
-                style={{ width: `${gameProfile.levelInfo?.progressPercent || 0}%` }}
-              />
-            </div>
-          </div>
-          {gameProfile.activityStreak > 0 && (
-            <span className="flex items-center gap-0.5 text-xs font-black text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20 ml-1">
-              <Flame size={12} className="text-red-500" /> {gameProfile.activityStreak}d
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="v8-top-spacer"/>
-
-      {/* Quick Game Buttons */}
-      <button
-        type="button"
-        className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-red-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs uppercase tracking-wider hover:border-amber-400 transition-all"
-        onClick={() => setMissionsModalOpen(true)}
-        title="Centrum Misji Dziennych i Tygodniowych"
-      >
-        <Target size={14} /> <span>MISJE</span>
-      </button>
-
-      <button
-        type="button"
-        className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600/20 to-amber-600/20 border border-red-500/30 text-red-300 font-bold text-xs uppercase tracking-wider hover:border-red-400 transition-all"
-        onClick={() => setBattleArenaModalOpen(true)}
-        title="Arena Pojedynków Kart PvE"
-      >
-        <Flame size={14} /> <span>ARENA</span>
-      </button>
-
-      <button
-        type="button"
-        className="v101-hub-intro-btn"
-        onClick={() => setCinematicActive(true)}
-        title="Odtwórz filmowe intro stadionowe"
-        aria-label="Odtwórz filmowe intro stadionowe"
-      >
-        <Flame size={15}/> <span>ZOBACZ INTRO</span>
-      </button>
-      {canOpenAdmin&&<a href="/admin" className="admin-link v8-admin-chip">{staff?"ADMIN":"POMOCNIK"}</a>}
-      {canOpenAdmin&&<a href="/admin?tab=training" className="v105-mobile-training-shortcut" aria-label="Panel administratora: dodaj trening"><CalendarDays size={16}/> DODAJ TRENING</a>}
-      
-      {/* Notification Center Trigger */}
-      <button 
-        className="icon-btn v8-bell relative" 
-        onClick={() => setNotificationsModalOpen(true)} 
-        aria-label="Centrum powiadomień"
-        title="Centrum powiadomień i aktualności"
-      >
-        <Bell size={18}/>
-        {unreadNewsCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white font-black text-[9px] flex items-center justify-center border border-slate-900 shadow-sm" aria-live="polite">
-            {unreadNewsCount > 99 ? "99+" : unreadNewsCount}
-          </span>
-        )}
-      </button>
-
-      <div className="v8-account-wrap">
-        <button className="v8-account-btn" onClick={()=>setAccountOpen(v=>!v)} aria-label="Konto użytkownika"><UserRound size={17}/></button>
-        {accountOpen&&<div className="v8-account-popover space-y-2">
-          <div>
-            <small>KONTO</small>
-            <b>{props.profile.display_name||"Użytkownik"}</b>
-            <span>{props.profile.role}</span>
-          </div>
-          <div className="border-t border-white/10 pt-2 space-y-1">
-            {canOpenAdmin && (
-              <a
-                href="/admin"
-                className="w-full text-left text-xs font-bold text-amber-400 hover:text-amber-300 py-1 flex items-center gap-1.5 transition-colors"
-              >
-                <Shield size={13} /> Panel administratora ({staff ? "ADMIN" : "POMOCNIK"})
-              </a>
-            )}
-            <button
-              onClick={() => { setAccountOpen(false); setNotifPrefsModalOpen(true); }}
-              className="w-full text-left text-xs font-bold text-slate-300 hover:text-amber-400 py-1 transition-colors"
-            >
-              🔔 Preferencje powiadomień
-            </button>
-            <button
-              onClick={() => { setAccountOpen(false); setChangelogModalOpen(true); }}
-              className="w-full text-left text-xs font-bold text-slate-300 hover:text-amber-400 py-1 transition-colors"
-            >
-              🚀 Co nowego? (v1.8.0)
-            </button>
-          </div>
-        </div>}
-      </div>
-      <button className="icon-btn v8-bell v151-notice-trigger" onClick={()=>setNoticesOpen(v=>!v)} aria-label="Komunikaty drużyny" aria-expanded={noticesOpen}><History size={18}/>{unanswered.length>0&&<i aria-hidden="true"/>}</button>
-    </header>
-
-    {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
-    <main className={`hub-main v8-main ${viewFx?"v101-view-enter":""}`}>
+    <DeltaAppShell
+      activeTab={tab}
+      onSelectTab={handleSelectTab}
+      navContext={{
+        role: props.profile.role,
+        isParent: props.parentPlayerIds.length > 0,
+        staff,
+        isAdmin: canOpenAdmin && staff,
+        isMatchToday,
+        isTrainingToday,
+        unreadNewsCount,
+      }}
+      onOpenModalAction={handleOpenModalAction}
+      onTriggerIntro={() => setCinematicActive(true)}
+      onToggleMore={() => setMobileMoreOpen((v) => !v)}
+      isMoreOpen={mobileMoreOpen}
+      canOpenAdmin={canOpenAdmin}
+      staff={staff}
+      userProfile={props.profile}
+      unreadNewsCount={unreadNewsCount}
+      isMatchToday={isMatchToday}
+      isTrainingToday={isTrainingToday}
+      gameProfile={gameProfile}
+    >
+      {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
+      <div className={`hub-main v8-main ${viewFx ? "v101-view-enter" : ""}`}>
       {/* IN-APP LIVE ALERTS (TOASTS / IMPORTANT BANNERS) */}
       <DeltaLiveAlertBanner
         events={systemEvents}
@@ -1925,7 +1672,7 @@ export default function TeamHub(props:{
         parentPlayerIds={props.parentPlayerIds}
         excludeEventIds={tab === "home" && homePriorityData?.primaryAction?.eventId ? [homePriorityData.primaryAction.eventId] : []}
         onNavigate={(targetTab) => {
-          setTab(targetTab as any);
+          handleSelectTab(targetTab as any);
         }}
         onOpenNotifications={() => {
           setNotificationsModalOpen(true);
@@ -1947,7 +1694,7 @@ export default function TeamHub(props:{
           } else if (event.type.startsWith("TRAINING")) {
             setTab("training");
           } else {
-            setTab("news");
+            handleSelectTab("news");
           }
         }}
       />
@@ -1970,15 +1717,15 @@ export default function TeamHub(props:{
               setMatchPlacement("overlay");
             }
           } else if (targetTab === "news") {
-            setTab("news");
+            handleSelectTab("news");
           } else if (targetTab === "training") {
             setTab("training");
           } else if (targetTab === "achievements") {
-            setTab("achievements");
+            handleSelectTab("achievements");
           } else if (targetTab === "collection") {
-            setTab("collection");
+            handleSelectTab("collection");
           } else if (targetTab === "players") {
-            setTab("players");
+            handleSelectTab("players");
           } else if (targetTab === "teamcenter") {
             setTab("teamcenter");
           } else if (targetTab === "typer") {
@@ -1990,15 +1737,15 @@ export default function TeamHub(props:{
           } else if (targetTab === "tv") {
             setSocialFeedOpen(true);
           } else if (targetTab === "chronicle") {
-            setTab("chronicle");
+            handleSelectTab("chronicle");
           } else if (targetTab === "hall") {
-            setTab("hall");
+            handleSelectTab("hall");
           } else if (targetTab === "settings") {
             setNotifPrefsModalOpen(true);
           } else if (targetTab === "knowledge") {
             setKnowledgeModalOpen(true);
           } else {
-            setTab(targetTab as any);
+            handleSelectTab(targetTab as any);
           }
         }}
       />
@@ -2214,7 +1961,7 @@ export default function TeamHub(props:{
             ) : (
               <div className="v200-tc-parent-box">
                 <p className="text-sm text-slate-400">Jesteś zalogowany jako kibic / sztab. Powiąż profil dziecka w ustawieniach, aby zgłaszać obecności.</p>
-                <button type="button" className="v200-tc-link-btn mt-2" onClick={() => setTab("players")}>
+                <button type="button" className="v200-tc-link-btn mt-2" onClick={() => handleSelectTab("players")}>
                   KADRA ZESPOŁU <ChevronRight size={14}/>
                 </button>
               </div>
@@ -2228,7 +1975,7 @@ export default function TeamHub(props:{
             <span className="eyebrow gold">SZYBKIE SKRÓTY</span>
           </div>
           <div className="v200-tc-shortcuts-grid">
-            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setTab("collection")}>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => handleSelectTab("collection")}>
               <Sparkles size={22} className="text-amber-400" />
               <div>
                 <strong>Kolekcja Kart 3D</strong>
@@ -2242,7 +1989,7 @@ export default function TeamHub(props:{
                 <small>G+A, strzelcy, asysty</small>
               </div>
             </button>
-            <button type="button" className="v200-tc-shortcut-tile" onClick={() => setTab("hall")}>
+            <button type="button" className="v200-tc-shortcut-tile" onClick={() => handleSelectTab("hall")}>
               <Trophy size={22} className="text-yellow-400" />
               <div>
                 <strong>Hall of Fame</strong>
@@ -2323,13 +2070,13 @@ export default function TeamHub(props:{
             } else if (targetTab === "training") {
               setTab("training");
             } else if (targetTab === "news") {
-              setTab("news");
+              handleSelectTab("news");
             } else if (targetTab === "collection") {
-              setTab("collection");
+              handleSelectTab("collection");
             } else if (targetTab === "achievements") {
-              setTab("achievements");
+              handleSelectTab("achievements");
             } else {
-              setTab(targetTab as any);
+              handleSelectTab(targetTab as any);
             }
           }}
         />
@@ -2717,7 +2464,7 @@ export default function TeamHub(props:{
         </section>
 
         <section className="v8-bottom-grid">
-          <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>setTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
+          <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>handleSelectTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
           <article className="v8-panel devil-card">
             <div className="v8-panel-title">
               <Newspaper size={18}/> AKTUALNOŚCI 
@@ -2728,7 +2475,7 @@ export default function TeamHub(props:{
                 const isRead = !!readNewsMap[n.id];
                 const isUrgent = n.priority === "urgent" || n.type === "wazne";
                 return (
-                  <div key={n.id} onClick={()=>setTab("news")} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+                  <div key={n.id} onClick={()=>handleSelectTab("news")} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
                     <i style={{background: isUrgent ? "#ef4444" : isRead ? "#4b5563" : "#f6c952"}}/>
                     <div style={{flex:1}}>
                       <b>{n.title}</b>
@@ -3398,7 +3145,7 @@ export default function TeamHub(props:{
           playerAchievements={allPlayerAchievements}
           playerName={primaryPlayer?.display_name || "Zawodnik DELTA"}
           onOpenCard={() => {
-            setTab("collection");
+            handleSelectTab("collection");
           }}
         />
 
@@ -3922,7 +3669,8 @@ export default function TeamHub(props:{
           )}
         </div>
       </section>}
-    </main>
+    </div>
+    </DeltaAppShell>
 
     {/* NAVIGATION 2.0: KAFELKOWY HUB "WIĘCEJ" (KAFELKI PREMIUM + ADMIN ACCESS) */}
     <DeltaMoreMenuSheet
@@ -3941,98 +3689,36 @@ export default function TeamHub(props:{
         if (targetTab === "admin") {
           window.location.href = "/admin";
         } else if (targetTab === "players") {
-          setTab("players");
+          handleSelectTab("players");
         } else if (targetTab === "typer") {
           setTyperModalOpen(true);
         } else if (targetTab === "game") {
           window.location.href = "/game";
         } else if (targetTab === "collection") {
-          setTab("collection");
+          handleSelectTab("collection");
         } else if (targetTab === "achievements") {
-          setTab("achievements");
+          handleSelectTab("achievements");
         } else if (targetTab === "gallery") {
           setPhotoBoothModalOpen(true);
         } else if (targetTab === "tv") {
           setSocialFeedOpen(true);
         } else if (targetTab === "chronicle") {
-          setTab("chronicle");
+          handleSelectTab("chronicle");
         } else if (targetTab === "hall") {
-          setTab("hall");
+          handleSelectTab("hall");
         } else if (targetTab === "settings") {
           setNotifPrefsModalOpen(true);
         } else if (targetTab === "news" || targetTab === "notifications") {
-          setTab("news");
+          handleSelectTab("news");
         } else if (targetTab === "knowledge") {
           setKnowledgeModalOpen(true);
         } else {
-          setTab(targetTab as any);
+          handleSelectTab(targetTab as any);
         }
       }}
     />
 
-    {/* NAVIGATION 2.0: DOKŁADNIE 4 GŁÓWNE ELEMENTY (BOTTOM BAR: HOME | MECZE | TRENING | WIĘCEJ) */}
-    <nav className="bottom-nav v200-bottom-nav" aria-label="Główna nawigacja drużyny">
-      {/* 1. HOME */}
-      <button 
-        type="button" 
-        className={`v200-nav-btn ${tab === "home" ? "active" : ""}`} 
-        onClick={handleGoHomeTop}
-        aria-label="HOME"
-      >
-        <div className="v200-nav-icon-wrap">
-          <Home size={20} />
-        </div>
-        <span>HOME</span>
-      </button>
-
-      {/* 2. MECZE (z poświatą Matchday gdy mecz dziś) */}
-      <button 
-        type="button" 
-        className={`v200-nav-btn ${tab === "matches" || tab === "calendar" ? "active" : ""} ${isMatchToday ? "matchday-glow" : ""}`} 
-        onClick={() => { setMobileMoreOpen(false); setTab("matches"); }}
-        aria-label="MECZE"
-      >
-        <div className="v200-nav-icon-wrap">
-          <CalendarDays size={20} />
-          {isMatchToday && <span className="v200-live-dot" title="Dziś mecz!" />}
-        </div>
-        <span>MECZE</span>
-      </button>
-
-      {/* 3. TRENING (z kropką LIVE gdy trwa trening) */}
-      <button 
-        type="button" 
-        className={`v200-nav-btn ${tab === "training" ? "active" : ""}`} 
-        onClick={() => { setMobileMoreOpen(false); setTab("training"); }}
-        aria-label="TRENING"
-      >
-        <div className="v200-nav-icon-wrap">
-          <Zap size={20} />
-          {isTrainingToday && <span className="v200-live-dot" title="Trening w toku" />}
-        </div>
-        <span>TRENING</span>
-      </button>
-
-      {/* 4. WIĘCEJ (Kafelkowy Hub + Badge Nieprzeczytanych Wiadomości) */}
-      <button 
-        type="button" 
-        className={`v200-nav-btn ${mobileMoreOpen || !["home", "matches", "calendar", "training"].includes(tab) ? "active" : ""}`} 
-        onClick={() => setMobileMoreOpen(v => !v)}
-        aria-label="WIĘCEJ"
-        aria-expanded={mobileMoreOpen}
-        aria-controls="delta-mobile-more-menu"
-      >
-        <div className="v200-nav-icon-wrap">
-          <LayoutGrid size={20} />
-          {unreadNewsCount > 0 && (
-            <span className="v200-nav-badge" aria-live="polite">
-              {unreadNewsCount > 99 ? "99+" : unreadNewsCount}
-            </span>
-          )}
-        </div>
-        <span>WIĘCEJ</span>
-      </button>
-    </nav>
+    {/* Bottom nav rendered cleanly by DeltaAppShell */}
 
     {selectedPlayer&&createPortal(<section className="v111-player-screen v112-player-screen" role="dialog" aria-modal="true" aria-label={`Profil zawodnika: ${selectedPlayer.display_name}`}>
       {playerIntro&&<div className="v112-intro" aria-hidden="true"><span className="v112-intro-glow"/><img src="/teamlogos/gm.png" alt=""/><strong>{selectedPlayer.shirt_number?`#${selectedPlayer.shirt_number}`:"DELTA"}</strong><span>{selectedPlayer.display_name}</span><small>DELTA PLAYER EXPERIENCE</small></div>}
@@ -4361,7 +4047,7 @@ export default function TeamHub(props:{
           if (actionKey === "knowledge") setKnowledgeModalOpen(true);
           else if (actionKey === "typer") setTyperModalOpen(true);
           else if (actionKey === "attendance") setTab("teamcenter");
-          else if (actionKey === "cards") setTab("collection");
+          else if (actionKey === "cards") handleSelectTab("collection");
           else if (actionKey === "fanvote" && matches.length > 0) setSelectedMatch(matches[0]);
         }}
       />
@@ -4462,7 +4148,7 @@ export default function TeamHub(props:{
         onOpenSettings={() => setNotifPrefsModalOpen(true)}
         onNavigate={(targetTab) => {
           setNotificationsModalOpen(false);
-          setTab(targetTab as any);
+          handleSelectTab(targetTab as any);
         }}
         onNotificationRead={() => {
           fetchSystemEvents();
