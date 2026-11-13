@@ -51,6 +51,7 @@ import { DeltaSocialFeedModal } from "./social/DeltaSocialFeedModal";
 import { DeltaTrophyCabinetModal } from "./social/DeltaTrophyCabinetModal";
 import { DeltaSafeTradingModal } from "./social/DeltaSafeTradingModal";
 import DeltaHomePrioritySection from "./DeltaHomePrioritySection";
+import { DeltaCinematicDashboard } from "./dashboard";
 import { computeHomePriorities } from "@/lib/home/priority-engine";
 import { calculatePlayerAchievements, calculatePlayerRecords } from "@/lib/achievements/engine";
 import type { UserPermissions } from "@/lib/permissions";
@@ -1632,7 +1633,7 @@ export default function TeamHub(props:{
 
   return <div className="hub v8-hub v101-stadium-hub v104-hub">
     <StadiumFX
-      intro
+      intro={false}
       cinematicIntro={cinematicActive}
       onCloseCinematic={() => setCinematicActive(false)}
     />
@@ -2021,313 +2022,52 @@ export default function TeamHub(props:{
         </div>
       </section>}
       {tab==="home"&&<>
-        <section className="v8-hero v82-hero-clean v101-logged-hero" aria-label="DELTA 2018 GM — Górny Mokotów">
-          <div className="v82-hero-vignette"/>
-          <img className="v106-logged-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM"/>
-          <div className="v104-logged-hero-copy">
-            <span>RAZEM DO WIELKICH RZECZY</span>
-            <h1>DELTA 2018 GM</h1>
-            <p>GÓRNY MOKOTÓW • OFICJALNY PANEL DRUŻYNY</p>
-            <div style={{ marginTop: 12 }}>
-              <button
-                type="button"
-                className="v101-hero-intro-btn"
-                onClick={() => setCinematicActive(true)}
-                title="Odtwórz filmowe intro stadionowe"
-              >
-                <Flame size={14}/> ZOBACZ INTRO
-              </button>
-            </div>
-          </div>
-          <div className="v101-hero-club-identity" onClick={() => setCinematicActive(true)} role="button" title="Odtwórz filmowe intro stadionowe" style={{ cursor: "pointer" }}>
-            <div className="v101-hero-crest-wrap">
-              <span className="v101-hero-crest-fire"/>
-              <img src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
-            </div>
-            <div className="v101-hero-identity-copy">
-              <span>K.S. DELTA WARSZAWA</span>
-              <strong>GÓRNY MOKOTÓW</strong>
-              <b>2018</b>
-            </div>
-          </div>
-        </section>
-
-        {/* COMMUNICATION PRIORITY LAYER (ETAP 12C: "NAJWAŻNIEJSZE TERAZ") */}
-        <DeltaHomePrioritySection
-          priorityData={homePriorityData}
-          unreadCount={unreadNewsCount}
-          dailySpinAvailable={!gameProfile?.dailySpinUsedToday}
-          onNavigate={(targetTab, payload) => {
-            if (targetTab === "notifications") {
-              setNotificationsModalOpen(true);
-            } else if (targetTab === "matches" && payload?.matchId) {
-              const m = matches.find(item => item.id === payload.matchId);
-              if (m) {
-                setSelectedMatch(m);
-                setMatchPlacement("overlay");
-              }
-              setTab("matches");
-            } else if (targetTab === "training") {
-              setTab("training");
-            } else if (targetTab === "news") {
-              handleSelectTab("news");
-            } else if (targetTab === "collection") {
-              handleSelectTab("collection");
-            } else if (targetTab === "achievements") {
-              handleSelectTab("achievements");
-            } else {
-              handleSelectTab(targetTab as any);
-            }
-          }}
+        <DeltaCinematicDashboard
+          profile={props.profile}
+          gameProfile={gameProfile}
+          players={players}
+          matches={matches}
+          nextMatch={nextMatch}
+          nextMatchCountdown={nextMatchCountdown}
+          nextPresent={nextPresent}
+          attendance={attendance}
+          parentPlayerIds={props.parentPlayerIds}
+          myChild={parentPlayers[0] || null}
+          news={news}
+          unreadNewsCount={unreadNewsCount}
+          readNewsMap={readNewsMap}
+          clubUpdates={clubUpdates}
+          homePriorityData={homePriorityData}
+          teamSummary={teamSummary}
+          teamGoalTarget={teamGoalTarget}
+          teamGoalProgress={teamGoalProgress}
+          currentWinStreak={currentWinStreak}
+          currentUnbeatenStreak={currentUnbeatenStreak}
+          recentMatches={recentMatches}
+          scorersRanking={scorersRanking}
+          assistsRanking={assistsRanking}
+          stats={stats}
+          onSelectTab={(t: any, p?: any) => handleSelectTab(t)}
+          onOpenModalAction={handleOpenModalAction}
+          onTriggerIntro={() => setCinematicActive(true)}
+          openMatch={openMatch}
+          openPlayerProfile={openPlayerProfile}
+          staff={staff}
+          canManageMatches={canManageMatches}
         />
 
-        {nextMatch&&<><section className="v105-home-command-grid">
-          <SpotlightCard className="v8-match-card devil-card v101-logged-match v200-match-hero" glowColor="gold" enableTilt={true}>
-            <div className="v8-section-label">
-              <span className="v200-live-pill-badge"><CalendarDays size={13}/> NAJBLIŻSZY MECZ</span>
-              <span style={{ color: "#f6c952", fontWeight: 900, fontSize: "11px" }}>Kolejka {nextMatch.round_no||"—"}</span>
-            </div>
-            <div className="v8-match-stage">
-              <div className="v8-team">
-                <Logo team={nextMatch.home_team} size={155}/>
-                <b>{formatTeamName(nextMatch.home_team)}</b>
-                <small>GOSPODARZ</small>
-              </div>
-              <div className="v8-vs">
-                <strong>VS</strong>
-                <span>{datePL(nextMatch.match_date)} • {(nextMatch.match_time||"").slice(0, 5)||"—"}</span>
-                <small>{nextMatch.venue||"Miejsce do ustalenia"}</small>
-              </div>
-              <div className="v8-team">
-                <Logo team={nextMatch.away_team} size={155}/>
-                <b>{formatTeamName(nextMatch.away_team)}</b>
-                <small>GOŚĆ</small>
-              </div>
-            </div>
-
-            <div className="v891-match-tools">
-              <div className="v891-match-clock">
-                <span>DO MECZU</span>
-                <b>{nextMatchCountdown}</b>
-                <small>{datePL(nextMatch.match_date)} • {(nextMatch.match_time||"").slice(0, 5)||"godzina do ustalenia"}</small>
-              </div>
-
-              <button type="button" className="v891-attendance-mini" onClick={()=>openMatch(nextMatch,"attendance","home")}>
-                <span><UserCheck size={16}/> OBECNOŚĆ</span>
-                <strong>{nextPresent}<em>/ {players.length}</em></strong>
-                <div className="v891-attendance-progress"><i style={{width:`${players.length?Math.min(100,nextPresent/players.length*100):0}%`}}/></div>
-                <small>{staff?"Zobacz obecności i skład":"Potwierdź udział dziecka"} <ChevronRight size={12}/></small>
-              </button>
-            </div>
-
-            <button className="v8-red-cta" onClick={()=>openMatch(nextMatch,"summary","home")}>CENTRUM MECZU <ChevronRight size={17}/></button>
-          </SpotlightCard>
-          {(nextTeamEvent||importantTeamEvent)&&<div className="v105-command-side">
-          {nextTeamEvent&&<article className={`v891-team-clock devil-card event-${nextTeamEvent.kind||"other"}`} onClick={()=>setTab("calendar")}>
-            <div className="v891-clock-icon"><CalendarDays size={22}/></div>
-            <div className="v891-clock-copy">
-              <span>PLAN TYGODNIA</span>
-              <h3>{nextTeamEvent.title}</h3>
-              <p>{nextTeamEvent.subtitle}</p>
-            </div>
-            <div className="v891-clock-time">
-              <small>DO WYDARZENIA</small>
-              <b>{teamClockCountdown}</b>
-            </div>
-            <ChevronRight size={18}/>
-          </article>}
-
-          {importantTeamEvent&&<article className="v891-important-note devil-card has-event" onClick={()=>setTab("calendar")}>
-            <div className="v8-panel-title"><Bell size={16}/> WAŻNE</div>
-            <>
-              <b>{importantTeamEvent.title}</b>
-              <span>{[importantTeamEvent.event_date,importantTeamEvent.start_time?.slice(0,5),importantTeamEvent.location].filter(Boolean).join(" • ")}</span>
-              {importantTeamEvent.details&&<p>{importantTeamEvent.details}</p>}
-            </>
-          </article>}
-          </div>}
-        </section>
-        {selectedMatch&&matchPlacement==="home"&&<div id="home-match-center" className="v110-home-match-center"><MatchCenterModal
+        {selectedMatch&&matchPlacement==="home"&&<div id="home-match-center" className="v110-home-match-center my-4"><MatchCenterModal
           embedded match={selectedMatch} players={players} attendance={attendance} lineup={lineup} events={events}
           currentUserId={props.profile.id} currentUserRole={props.profile.role} canManageMatch={canManageMatches} canEditEvents={canEditMatchEvents}
           parentPlayerIds={props.parentPlayerIds} initialTab={matchInitialTab} onClose={()=>setSelectedMatch(null)}
           onDataChange={(d)=>{if(d.match){setMatches(prev=>prev.map(m=>m.id===d.match!.id?d.match!:m));setSelectedMatch(d.match);}if(d.attendance)setAttendance(d.attendance);if(d.lineup)setLineup(d.lineup);if(d.events)setEvents(d.events);}}
         /></div>}
-        </>}
 
-        <section className="v8-stats-row">
-          {[
-            { label: "MECZE", val: teamSummary.played, Icon: Target, glow: "gold", note: "Rozegrane" },
-            { label: "WYGRANE", val: teamSummary.wins, Icon: Trophy, glow: "emerald", note: "Zwycięstwa" },
-            { label: "REMISY", val: teamSummary.draws, Icon: Shield, glow: "blue", note: "Podział pkt" },
-            { label: "PORAŻKI", val: teamSummary.losses, Icon: X, glow: "red", note: "Przegrane" },
-            { label: "BRAMKI", val: teamSummary.goals, Icon: Goal, glow: "gold", note: `${teamSummary.goals > 0 && teamSummary.played > 0 ? (teamSummary.goals / teamSummary.played).toFixed(1) : "0"} / mecz` },
-            { label: "ASYSTY", val: teamSummary.assists, Icon: Star, glow: "gold", note: "Kluczowe podania" }
-          ].map((item) => (
-            <SpotlightCard className={`v200-stat-card ${item.glow}`} glowColor={item.glow as any} enableTilt={true} key={item.label}>
-              <div className="v200-stat-head">
-                <span className="v200-stat-label">{item.label}</span>
-                <div className="v200-stat-icon-wrap">
-                  <item.Icon size={16}/>
-                </div>
-              </div>
-              <div className="v200-stat-body">
-                <b className="v200-stat-val">{item.val}</b>
-                <span className="v200-stat-note">{item.note}</span>
-              </div>
-            </SpotlightCard>
-          ))}
-        </section>
-
-        <div className="v200-home-duo-grid">
-          <SpotlightCard className="v200-feature-banner team-center" glowColor="red" enableTilt={true} onClick={()=>setTab("teamcenter")}>
-            <div className="v200-feature-avatar red">
-              <UserCheck size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge red">
-                <span>STREFA DRUŻYNY</span>
-              </div>
-              <h3>CENTRUM DRUŻYNY</h3>
-              <p>Frekwencja na treningach, status powołań oraz sprawy zespołu</p>
-            </div>
-            <div className="v200-feature-cta red">
-              <span>OTWÓRZ</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner typer-vip" glowColor="gold" enableTilt={true} onClick={()=>setTyperModalOpen(true)}>
-            <div className="v200-feature-avatar gold">
-              <Crown size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge gold">
-                <Flame size={12}/>
-                <span>ZGARNIAJ PUNKTY DP</span>
-              </div>
-              <h3>KLUBOWY TYPER MECZOWY</h3>
-              <p>Typuj dokładny wynik meczu, zdobywaj punkty i otwieraj paczki kart!</p>
-            </div>
-            <div className="v200-feature-cta gold">
-              <span>ZATYPUJ</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner knowledge-academy" glowColor="gold" enableTilt={true} onClick={()=>setKnowledgeModalOpen(true)}>
-            <div className="v200-feature-avatar gold">
-              <BookOpen size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge gold">
-                <Sparkles size={12}/>
-                <span>AKADEMIA & QUIZY</span>
-              </div>
-              <h3>KĄCIK WIEDZY I ZASAD</h3>
-              <p>Zasady gry, zdrowe żywienie i regeneracja. Zrób test i odbierz punkty DP!</p>
-            </div>
-            <div className="v200-feature-cta gold">
-              <span>CZYTAJ & TEST</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner season-pass-vip" glowColor="gold" enableTilt={true} onClick={()=>setSeasonPassModalOpen(true)}>
-            <div className="v200-feature-avatar gold">
-              <Flame size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge gold">
-                <Crown size={12}/>
-                <span>SEZON 1: MŁODE WILKI</span>
-              </div>
-              <h3>DELTA BATTLE PASS 🏆</h3>
-              <p>Zdobywaj XP za mecze i quizy, awansuj poziomy 1–20 i odbieraj Złote Skrzynie!</p>
-            </div>
-            <div className="v200-feature-cta gold">
-              <span>BATTLE PASS</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner photobooth-vip" glowColor="gold" enableTilt={true} onClick={()=>setPhotoBoothModalOpen(true)}>
-            <div className="v200-feature-avatar gold">
-              <Camera size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge gold">
-                <Sparkles size={12}/>
-                <span>STUDIO GRAFIK HD</span>
-              </div>
-              <h3>FOTO-BUDKA DELTA 📸</h3>
-              <p>Twórz profesjonalne plakaty, relacje na Instagram / WhatsApp i karty meczowe!</p>
-            </div>
-            <div className="v200-feature-cta gold">
-              <span>STWÓRZ PLAKAT</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner birthday-vip" glowColor="gold" enableTilt={true} onClick={()=>setBirthdayModalOpen(true)}>
-            <div className="v200-feature-avatar gold">
-              <Cake size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge gold">
-                <Cake size={12}/>
-                <span>ŚWIĘTUJEMY RAZEM</span>
-              </div>
-              <h3>STREFA URODZIN DRUŻYNY 🎉</h3>
-              <p>Składaj sportowe życzenia kolegom, świętuj urodziny i odbieraj prezenty w kartach!</p>
-            </div>
-            <div className="v200-feature-cta gold">
-              <span>ŻYCZENIA</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner coach-vip" glowColor="gold" enableTilt={true} onClick={()=>setCoachCornerModalOpen(true)}>
-            <div className="v200-feature-avatar gold">
-              <Award size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge gold">
-                <Crown size={12}/>
-                <span>SZTAB SZKOLENIOWY</span>
-              </div>
-              <h3>KĄCIK TRENERA & SKILL MASTER ⚽</h3>
-              <p>Wyzwania techniczne zatwierdzane przez trenera, zadania domowe i inspiracje!</p>
-            </div>
-            <div className="v200-feature-cta gold">
-              <span>WYZWANIA</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="v200-feature-banner tactics-whiteboard" glowColor="red" enableTilt={true} onClick={()=>setTacticsModalOpen(true)}>
-            <div className="v200-feature-avatar red">
-              <Target size={26}/>
-            </div>
-            <div className="v200-feature-content">
-              <div className="v200-feature-badge red">
-                <Shield size={12}/>
-                <span>ODPRAWA PRZEDMECZOWA</span>
-              </div>
-              <h3>TABLICA TAKTYCZNA ORLIKA</h3>
-              <p>Formacje 1-2-3-1, rozstawienie składu na boisku i zadania meczowe</p>
-            </div>
-            <div className="v200-feature-cta red">
-              <span>TABLICA</span>
-              <ChevronRight size={18}/>
-            </div>
-          </SpotlightCard>
-        </div>
-        <div className="v104-league-feature">
-        <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
+        <div className="v104-league-feature mt-6">
+          <LeagueHome matches={matches} onOpen={()=>setTab("league")}/>
         </div>
 
-        <section className={`v8-dashboard-grid ${homeAgendaItems.length?"has-week-pulse":"without-week-pulse"}`}>
+        <section className={`v8-dashboard-grid mt-4 ${homeAgendaItems.length?"has-week-pulse":"without-week-pulse"}`}>
           {homeAgendaItems.length>0&&<article className={`v8-panel v101-now-card v108-week-pulse devil-card ${isTeamLive?"is-live":""}`} onClick={()=>setTab("calendar")}>
             <div className="v8-panel-title"><Flame size={18}/> {isTeamLive?"DZIEJE SIĘ TERAZ":"RYTM TYGODNIA"} {isTeamLive&&<span className="v101-live-dot">LIVE</span>}</div>
             <div className="v108-week-list">
@@ -2363,52 +2103,9 @@ export default function TeamHub(props:{
               <small>ostatnie {recentMatches.length} {recentMatches.length===1?"spotkanie":"spotkania"}</small>
             </div>}
           </article>
-
         </section>
 
-        <section className="v8-lower-grid v885-rankings-grid">
-          <article className="v8-panel devil-card v885-ranking-panel">
-            <div className="v8-panel-title"><Target size={18}/> STRZELCY BRAMEK</div>
-            <div className="v885-ranking-list">
-              {scorersRanking.length>0?scorersRanking.map((p,index)=>{
-                const s=stats[p.id];
-                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>openPlayerProfile(p)}>
-                  <span className="v885-rank-number">{index+1}</span>
-                  <span className="v885-rank-photo">
-                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
-                  </span>
-                  <span className="v885-rank-name"><b>{p.display_name}</b><small>{s?.m||0} {s?.m===1?"mecz":"mecze"}</small></span>
-                  <span className="v885-rank-value"><b>{s?.g||0}</b><small>GOLE</small></span>
-                  <ChevronRight size={15}/>
-                </button>
-              }):<div className="v885-ranking-empty">Pierwsze gole uruchomią ranking.</div>}
-            </div>
-          </article>
-
-          <article className="v8-panel devil-card v885-ranking-panel">
-            <div className="v8-panel-title"><Star size={18}/> ASYSTY</div>
-            <div className="v885-ranking-list">
-              {assistsRanking.length>0?assistsRanking.map((p,index)=>{
-                const s=stats[p.id];
-                return <button type="button" className={`v885-ranking-row ${index<3?"top-three":""}`} key={p.id} onClick={()=>openPlayerProfile(p)}>
-                  <span className="v885-rank-number">{index+1}</span>
-                  <span className="v885-rank-photo">
-                    {isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}
-                  </span>
-                  <span className="v885-rank-name"><b>{p.display_name}</b><small>{s?.m||0} {s?.m===1?"mecz":"mecze"}</small></span>
-                  <span className="v885-rank-value"><b>{s?.a||0}</b><small>ASYSTY</small></span>
-                  <ChevronRight size={15}/>
-                </button>
-              }):<div className="v885-ranking-empty">Pierwsza asysta uruchomi ranking.</div>}
-            </div>
-          </article>
-
-          <article className="v8-quote devil-card"><span>„</span><p>Drużyna to nie tylko zawodnicy. To rodzina.</p></article>
-          <article className="v8-banner-small devil-card"><div>JEDEN ZESPÓŁ</div><b>WIELE MOŻLIWOŚCI</b></article>
-        </section>
-
-
-        <section className="v87-season-grid">
+        <section className="v87-season-grid mt-6">
           <SpotlightCard className="v87-leaders devil-card v885-season-best v113-season-podium-panel" glowColor="gold" enableTilt={true}>
             <div className="v8-panel-title"><Medal size={18}/> PODIUM SEZONU <span>DELTA 2018 GM</span></div>
             <div className="v142-gala-tabs" role="group" aria-label="Wybierz kategorię podium sezonu">
@@ -2417,34 +2114,6 @@ export default function TeamHub(props:{
             <div className="v142-gala-caption"><span>{homePodiumMetric==='goals'?'STRZELCY BRAMEK':homePodiumMetric==='assists'?'ASYSTY':'MVP'}</span><small>Wybierz kartę zawodnika, aby otworzyć jego profil</small></div>
             <PremiumPodium players={players} stats={stats} metric={homePodiumMetric} onOpen={openPlayerProfile}/>
             <button type="button" className="v142-hall-link" onClick={()=>setTab('hall')}>PRZEJDŹ DO HALL OF FAME <ChevronRight size={16}/></button>
-          </SpotlightCard>
-
-          <SpotlightCard className="v877-club-home devil-card" glowColor="blue" enableTilt={true}>
-            <div className="v8-panel-title"><Shield size={18}/> Z KLUBU <span>DELTA SYNC</span></div>
-            {clubUpdates.length>0?<>
-              <div className="v877-club-home-list">
-                {clubUpdates.slice(0,3).map(item=><button type="button" key={item.id} onClick={()=>{setTab("club");setFocusedClubKey(item.source_key);window.setTimeout(()=>document.getElementById(`club-update-${item.source_key}`)?.scrollIntoView({behavior:"smooth",block:"center"}),250)}}>
-                  <span>{new Date(item.published_at).toLocaleDateString("pl-PL")}</span>
-                  <b>{decodeHtmlEntities(item.title)}</b>
-                  <ChevronRight size={14}/>
-                </button>)}
-              </div>
-              <button className="v877-club-all" type="button" onClick={()=>setTab("club")}>WSZYSTKIE INFORMACJE Z KLUBU <ChevronRight size={14}/></button>
-            </>:<div className="v877-club-home-empty"><Shield size={24}/><div><b>DELTA Sync</b><span>Uruchom synchronizację w panelu Admin.</span></div></div>}
-          </SpotlightCard>
-
-          <SpotlightCard className="v87-team-goal devil-card" glowColor="gold" enableTilt={true}>
-            <div className="v8-panel-title"><Target size={18}/> CEL DRUŻYNY</div>
-            <div className="v87-goal-number"><b>{teamSummary.goals}</b><span>/ {teamGoalTarget}</span></div>
-            <h3>50 BRAMEK W SEZONIE</h3>
-            <p>Każdy gol przybliża Diabełki do wspólnego celu.</p>
-            <div className="v87-goal-track v200-flame-meter">
-              <i style={{width:`${teamGoalProgress}%`}}>
-                <em>{teamGoalProgress}%</em>
-                <span className="v200-flame-tip"><Flame size={14} color="#ff202b"/></span>
-              </i>
-            </div>
-            <small>Do celu pozostało {Math.max(0,teamGoalTarget-teamSummary.goals)} bramek</small>
           </SpotlightCard>
 
           <SpotlightCard className="v87-streak devil-card" glowColor="red" enableTilt={true}>
@@ -2461,33 +2130,6 @@ export default function TeamHub(props:{
               {recentMatches.length===0&&<small>Pierwszy wynik uruchomi serię.</small>}
             </div>
           </SpotlightCard>
-        </section>
-
-        <section className="v8-bottom-grid">
-          <article className="v8-panel devil-card"><div className="v8-panel-title"><Award size={18}/> OSIĄGNIĘCIA</div><div className="v8-achievement-preview"><Trophy/><div><b>{teamSummary.wins>=1?"Pierwsze sukcesy zapisane":"Pierwsze trofea czekają"}</b><span>{teamSummary.wins} zwycięstw • {teamSummary.goals} bramek</span></div></div><button className="v8-link-btn" onClick={()=>handleSelectTab("achievements")}>ZOBACZ WSZYSTKIE <ChevronRight size={14}/></button></article>
-          <article className="v8-panel devil-card">
-            <div className="v8-panel-title">
-              <Newspaper size={18}/> AKTUALNOŚCI 
-              {staff && <button onClick={openAddNewsModal}>DODAJ</button>}
-            </div>
-            <div className="v8-news-list">
-              {news.slice(0,3).map(n=>{
-                const isRead = !!readNewsMap[n.id];
-                const isUrgent = n.priority === "urgent" || n.type === "wazne";
-                return (
-                  <div key={n.id} onClick={()=>handleSelectTab("news")} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
-                    <i style={{background: isUrgent ? "#ef4444" : isRead ? "#4b5563" : "#f6c952"}}/>
-                    <div style={{flex:1}}>
-                      <b>{n.title}</b>
-                      <span>{new Date(n.published_at).toLocaleDateString("pl-PL")} {isRead ? "• ✓ Odczytane" : isUrgent ? "• 🔴 PILNE" : ""}</span>
-                    </div>
-                  </div>
-                );
-              })}
-              {news.length===0&&<p className="muted">Brak aktualności.</p>}
-            </div>
-          </article>
-          <article className="v8-panel devil-card"><div className="v8-panel-title"><History size={18}/> KRONIKA</div><div className="v8-chronicle-preview">{matches.filter(m=>m.status==="played").slice(-2).reverse().map(m=><div key={m.id}><b>{datePL(m.match_date)}</b><span>{m.home_team} {m.home_score}:{m.away_score} {m.away_team}</span></div>)}{matches.filter(m=>m.status==="played").length===0&&<p className="muted">Historia sezonu dopiero się zaczyna.</p>}</div></article>
         </section>
       </>}
 

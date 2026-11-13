@@ -90,11 +90,14 @@ export const DeltaAppShell: React.FC<DeltaAppShellProps> = ({
             className="delta-mobile-only items-center gap-2.5 text-left focus:outline-none cursor-pointer"
             aria-label="Przejdź na stronę główną"
           >
-            <div className="w-8 h-8 rounded-lg bg-slate-900 border border-white/10 p-0.5 shrink-0 flex items-center justify-center">
+            <div
+              className="rounded-lg bg-slate-900 border border-white/10 p-0.5 shrink-0 flex items-center justify-center"
+              style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
+            >
               <img
                 src="/teamlogos/gm.png"
                 alt="DELTA 2018 GM"
-                className="w-full h-full object-contain"
+                style={{ width: "26px", height: "26px", objectFit: "contain" }}
               />
             </div>
             <div className="flex flex-col min-w-0">

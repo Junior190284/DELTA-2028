@@ -283,3 +283,134 @@ body {
   }
 }
 
+/* =========================================================
+   8. CINEMATIC DASHBOARD V4 LAYOUT & UTILITIES
+   ========================================================= */
+.delta-dashboard-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 769px) {
+  .delta-dashboard-container {
+    gap: 24px;
+  }
+}
+
+.delta-stadium-header-box {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(7, 8, 11, 0.45) 0%, rgba(7, 8, 11, 0.94) 100%),
+              url('/assets/stadium.png') center 30%/cover no-repeat, #07080b;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.delta-mobile-gamer-bar-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin: -8px -10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(15, 17, 23, 0.98), rgba(22, 25, 34, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.delta-quick-actions-mobile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.delta-quick-actions-desktop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1024px) {
+  .delta-quick-actions-desktop-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.delta-dashboard-duo-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .delta-dashboard-duo-grid {
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+  }
+}
+
+.delta-dashboard-trio-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 769px) {
+  .delta-dashboard-trio-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+.delta-dashboard-stats-grid-box {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .delta-dashboard-stats-grid-box {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .delta-dashboard-stats-grid-box {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* Brand Logos & Crests */
+.delta-crest-box-xl {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
+}
+
+.delta-crest-box-md {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.delta-crest-box-sm {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+

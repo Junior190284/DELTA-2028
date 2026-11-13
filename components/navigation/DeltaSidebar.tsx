@@ -70,11 +70,14 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
           className="flex items-center gap-3 text-left flex-1 min-w-0 group cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-400 rounded-lg p-1"
           title="Przejdź do Pulpitu Głównego"
         >
-          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-red-600/30 via-slate-900 to-amber-500/20 p-1 flex items-center justify-center border border-white/10 shrink-0 group-hover:border-amber-400/50 transition-colors shadow-md">
+          <div
+            className="relative rounded-xl bg-gradient-to-br from-red-600/30 via-slate-900 to-amber-500/20 p-1 flex items-center justify-center border border-white/10 shrink-0 group-hover:border-amber-400/50 transition-colors shadow-md"
+            style={{ width: "36px", height: "36px", minWidth: "36px", minHeight: "36px" }}
+          >
             <img
               src="/teamlogos/gm.png"
               alt="K.S. Delta Warszawa"
-              className="w-full h-full object-contain"
+              style={{ width: "28px", height: "28px", objectFit: "contain" }}
             />
           </div>
           {!isCollapsed && (
