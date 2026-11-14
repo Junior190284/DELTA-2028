@@ -2033,6 +2033,8 @@ export default function TeamHub(props:{
           attendance={attendance}
           parentPlayerIds={props.parentPlayerIds}
           myChild={parentPlayers[0] || null}
+          nextTraining={nextTraining}
+          trainingSessions={trainingSessions}
           news={news}
           unreadNewsCount={unreadNewsCount}
           readNewsMap={readNewsMap}

@@ -132,12 +132,13 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => handleItemClick(item)}
-                    className={`delta-sidebar-nav-item relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-left group ${
+                    className={`delta-sidebar-nav-item relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
                       isItemActive
                         ? "active bg-gradient-to-r from-red-600/25 via-amber-600/15 to-transparent text-white border-l-2 border-amber-400 shadow-[inset_0_0_12px_rgba(245,158,11,0.08)]"
                         : "text-slate-300 hover:text-white hover:bg-white/6 border-l-2 border-transparent"
                     } ${isCollapsed ? "justify-center px-0 py-3" : ""}`}
                     title={isCollapsed ? item.label : undefined}
+                    aria-label={isCollapsed ? item.label : undefined}
                     aria-current={isItemActive ? "page" : undefined}
                   >
                     <div
@@ -193,10 +194,11 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
           <button
             type="button"
             onClick={onTriggerIntro}
-            className={`delta-sidebar-intro-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-red-300 bg-red-950/25 hover:bg-red-900/40 border border-red-500/25 hover:border-red-500/50 cursor-pointer ${
+            className={`delta-sidebar-intro-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-red-300 bg-red-950/25 hover:bg-red-900/40 border border-red-500/25 hover:border-red-500/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
               isCollapsed ? "justify-center px-0 py-2.5" : ""
             }`}
             title="Odtwórz filmowe intro stadionowe"
+            aria-label={isCollapsed ? "Zobacz filmowe intro stadionowe" : undefined}
           >
             <Flame size={16} className="text-red-400 shrink-0" />
             {!isCollapsed && <span className="truncate">ZOBACZ INTRO</span>}
@@ -207,10 +209,11 @@ export const DeltaSidebar: React.FC<DeltaSidebarProps> = ({
         {canOpenAdmin && (
           <a
             href="/admin"
-            className={`delta-sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all text-amber-300 bg-amber-950/25 hover:bg-amber-900/40 border border-amber-500/25 hover:border-amber-500/50 no-underline cursor-pointer ${
+            className={`delta-sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all text-amber-300 bg-amber-950/25 hover:bg-amber-900/40 border border-amber-500/25 hover:border-amber-500/50 no-underline cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
               isCollapsed ? "justify-center px-0 py-2.5" : ""
             }`}
             title="Panel Trenera / Administratora"
+            aria-label={isCollapsed ? "Panel Trenera / Administratora" : undefined}
           >
             <Shield size={16} className="text-amber-400 shrink-0" />
             {!isCollapsed && (

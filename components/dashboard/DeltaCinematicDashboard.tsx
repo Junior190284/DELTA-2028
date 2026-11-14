@@ -29,7 +29,8 @@ import {
   ExternalLink,
   Layers,
   HelpCircle,
-  X
+  X,
+  Dumbbell
 } from 'lucide-react';
 
 import {
@@ -79,6 +80,8 @@ export interface DeltaCinematicDashboardProps {
   attendance: any[];
   parentPlayerIds: string[];
   myChild?: any | null;
+  nextTraining?: any | null;
+  trainingSessions?: any[];
   news: any[];
   unreadNewsCount: number;
   readNewsMap: Record<string, boolean>;
@@ -166,7 +169,7 @@ function Logo({ team, size = 48 }: { team: string; size?: number }) {
 }
 
 // ============================================================================
-// MAIN CINEMATIC DASHBOARD COMPONENT (V4.2 REDESIGN)
+// MAIN CINEMATIC DASHBOARD COMPONENT (V4.4 PREMIUM POLISH)
 // ============================================================================
 
 export default function DeltaCinematicDashboard({
@@ -180,6 +183,8 @@ export default function DeltaCinematicDashboard({
   attendance,
   parentPlayerIds,
   myChild,
+  nextTraining,
+  trainingSessions,
   news,
   unreadNewsCount,
   readNewsMap,
@@ -207,6 +212,10 @@ export default function DeltaCinematicDashboard({
   const [missionsLoading, setMissionsLoading] = useState(true);
   const [recentRewards, setRecentRewards] = useState<any[]>([]);
   const [rewardsLoading, setRewardsLoading] = useState(true);
+
+  // User Owned Cards State (Zadanie 3)
+  const [userCards, setUserCards] = useState<any[]>([]);
+  const [cardsLoading, setCardsLoading] = useState(true);
 
   // Fetch real missions from existing API
   useEffect(() => {
@@ -258,6 +267,31 @@ export default function DeltaCinematicDashboard({
     };
   }, [profile.id]);
 
+  // Fetch real user cards collection from existing API
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUserCards() {
+      try {
+        setCardsLoading(true);
+        const res = await fetch('/api/cards/collection');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.success && Array.isArray(data.userCards)) {
+            setUserCards(data.userCards);
+          }
+        }
+      } catch (err) {
+        console.warn('Dashboard: could not load user collection', err);
+      } finally {
+        if (isMounted) setCardsLoading(false);
+      }
+    }
+    loadUserCards();
+    return () => {
+      isMounted = false;
+    };
+  }, [profile.id]);
+
   // Derive child attendance status for parent role
   const childAttendanceStatus = useMemo(() => {
     if (!myChild || !nextMatch) return null;
@@ -283,122 +317,28 @@ export default function DeltaCinematicDashboard({
   const streak = gameProfile?.activityStreak || 1;
   const unopenedPacks = gameProfile?.unopenedPacks || 0;
 
-  // Featured cards for INFERNO 3D Showcase (picked from real team players)
-  const featuredPlayers = useMemo(() => {
+  // Resolve featured cards for INFERNO 3D Showcase (Zadanie 3)
+  // If user owns cards, pick from userCards. If not, fallback to empty state.
+  const featuredShowcasePlayers = useMemo(() => {
     if (!players || players.length === 0) return [];
-    const list: any[] = [];
-    if (myChild) list.push(myChild);
-    for (const p of scorersRanking) {
-      if (list.length >= 3) break;
-      if (!list.some((x) => x.id === p.id)) list.push(p);
+
+    // If user owns cards in userCards, highlight their owned players
+    if (userCards && userCards.length > 0) {
+      const ownedPlayerIds = new Set(
+        userCards.map((uc: any) => uc.card?.player_id || uc.card?.player?.id).filter(Boolean)
+      );
+      const matched = players.filter((p) => ownedPlayerIds.has(p.id));
+      if (matched.length > 0) return matched.slice(0, 3);
     }
-    for (const p of players) {
-      if (list.length >= 3) break;
-      if (!list.some((x) => x.id === p.id)) list.push(p);
-    }
-    return list;
-  }, [players, myChild, scorersRanking]);
+
+    // If user owns no cards, return empty list so the proper Empty State with preview designs triggers
+    return [];
+  }, [players, userCards]);
 
   return (
     <div className="delta-cinematic-dashboard w-full min-w-0 max-w-full space-y-4 sm:space-y-5 pb-8">
       {/* ==================================================================
-          1. TOP GAMER PROFILE BAR (MOBILE COMPACT & STREAMLINED)
-          ================================================================== */}
-      <div className="delta-mobile-only delta-mobile-gamer-bar-box">
-        <div className="flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="relative shrink-0 rounded-full bg-gradient-to-br from-red-600 to-amber-500 p-0.5 shadow-sm"
-              style={{ width: "32px", height: "32px", minWidth: "32px", minHeight: "32px" }}
-            >
-              <div className="w-full h-full rounded-full bg-[#07080b] flex items-center justify-center font-black text-[11px] text-amber-300">
-                {profile.display_name?.slice(0, 2).toUpperCase() || "GM"}
-              </div>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-slate-100 truncate">
-                  {profile.display_name || "Zawodnik DELTA"}
-                </span>
-                <DeltaBadge
-                  variant={
-                    profile.role === "admin"
-                      ? "gold"
-                      : profile.role === "coach"
-                      ? "crimson"
-                      : profile.role === "parent"
-                      ? "default"
-                      : "muted"
-                  }
-                  size="sm"
-                >
-                  {profile.role === "admin"
-                    ? "Admin"
-                    : profile.role === "coach"
-                    ? "Trener"
-                    : profile.role === "parent"
-                    ? "Rodzic"
-                    : "Zawodnik"}
-                </DeltaBadge>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] text-amber-400/90 font-bold">
-                <span>LVL {levelInfo.level} • {levelInfo.title}</span>
-                <span className="text-slate-400">•</span>
-                <span className="flex items-center gap-0.5 text-red-400">
-                  <Flame size={11} className="animate-pulse" /> {streak} dni
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {unopenedPacks > 0 && (
-              <button
-                type="button"
-                onClick={() => onSelectTab("collection")}
-                className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/25 to-yellow-500/15 border border-amber-400/40 text-amber-300 text-xs font-black flex items-center gap-1 cursor-pointer active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
-                aria-label="Otwórz paczki kart"
-              >
-                <Gift size={13} className="text-amber-400 animate-bounce" />
-                <span>{unopenedPacks} PACZEK</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => onOpenModalAction("missions")}
-              className="px-2 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-black flex items-center gap-1 cursor-pointer active:scale-95"
-              aria-label="Misje i zadania"
-            >
-              <Zap size={13} className="text-amber-400" />
-              <span>Misje</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onSelectTab("collection")}
-              className="p-1.5 rounded-lg bg-red-600/15 border border-red-500/30 text-red-300 flex items-center justify-center cursor-pointer active:scale-95"
-              aria-label="Kolekcja kart"
-            >
-              <Layers size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* Compact XP Progress Bar */}
-        <div className="mt-2 flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/5">
-            <div
-              className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-300"
-              style={{ width: `${levelInfo.progressPercent}%` }}
-            />
-          </div>
-          <span className="text-[10px] font-mono font-bold text-slate-400 shrink-0">
-            {levelInfo.currentLevelXP}/{levelInfo.nextLevelXP} XP
-          </span>
-        </div>
-      </div>
-
-      {/* ==================================================================
-          2. DESKTOP CINEMATIC STADIUM COMMAND BAR (V4.2 COMPACT & SHORTENED)
+          1. DESKTOP CINEMATIC STADIUM COMMAND BAR (V4.4 STADIUM ATMOSPHERE)
           ================================================================== */}
       <section
         className="delta-desktop-only delta-stadium-header-box"
@@ -407,7 +347,7 @@ export default function DeltaCinematicDashboard({
         <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/80 to-transparent pointer-events-none" />
 
         <div className="relative z-10 w-full flex items-center justify-between gap-4">
-          {/* Left: Fiery Crest & Identity */}
+          {/* Fiery Crest & Identity */}
           <div className="flex items-center gap-3.5 min-w-0">
             <div
               className="relative shrink-0 rounded-xl bg-gradient-to-b from-[#1c2232] to-[#0a0d14] border border-amber-400/40 p-1.5 shadow-[0_0_20px_rgba(245,158,11,0.22)] flex items-center justify-center cursor-pointer group"
@@ -442,38 +382,8 @@ export default function DeltaCinematicDashboard({
             </div>
           </div>
 
-          {/* Right: Integrated Gamer HUD + Intro Button */}
+          {/* Stadium Intro Button */}
           <div className="flex items-center gap-3 shrink-0">
-            {/* Desktop Gamer XP Mini-Widget */}
-            <div className="hidden xl:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#0e1118]/80 border border-white/8 text-xs shadow-inner">
-              <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                <Crown size={14} className="text-amber-400" />
-                <span>LVL {levelInfo.level}</span>
-              </div>
-              <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                  style={{ width: `${levelInfo.progressPercent}%` }}
-                />
-              </div>
-              <span className="flex items-center gap-1 text-red-400 font-bold">
-                <Flame size={13} className="animate-pulse" /> {streak}d
-              </span>
-            </div>
-
-            {/* Unopened Packs Quick Pill */}
-            {unopenedPacks > 0 && (
-              <button
-                type="button"
-                onClick={() => onSelectTab("collection")}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-400/40 text-amber-300 font-black text-xs cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-                title="Otwórz oczekujące paczki kart 3D"
-              >
-                <Gift size={14} className="text-amber-400 animate-bounce" />
-                <span>{unopenedPacks} PACZEK</span>
-              </button>
-            )}
-
             <DeltaButton
               variant="outline"
               size="sm"
@@ -488,7 +398,141 @@ export default function DeltaCinematicDashboard({
       </section>
 
       {/* ==================================================================
-          3. CRITICAL / ACTIONABLE PRIORITY BANNER (ETAP 12C LAYER)
+          2. UNIFIED GAMER PROFILE & PROGRESS PANEL (ZADANIE 2 — COMPACT & INTEGRATED)
+          Single authoritative panel for Level, XP, Streak, with clear parent vs child separation.
+          Responsive for mobile (delta-mobile-only compatible) and desktop.
+          ================================================================== */}
+      <section
+        aria-label="Profil zawodnika i punkty doświadczenia"
+        className="delta-unified-profile-box w-full"
+      >
+        <DeltaCard
+          variant="elevated"
+          padding="sm"
+          className="delta-gaming-card border-white/10 bg-gradient-to-r from-[#0d1017] via-[#141822] to-[#0d1017] p-3 sm:p-4 shadow-lg"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+            {/* Identity & Role (with strict Parent vs Child separation) */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="relative shrink-0 rounded-2xl bg-gradient-to-br from-red-600 via-amber-500 to-red-600 p-0.5 shadow-md flex items-center justify-center"
+                style={{ width: "42px", height: "42px", minWidth: "42px", minHeight: "42px" }}
+              >
+                <div className="w-full h-full rounded-[14px] bg-[#07080b] flex items-center justify-center font-black text-xs text-amber-300">
+                  {profile.display_name?.slice(0, 2).toUpperCase() || "GM"}
+                </div>
+              </div>
+
+              <div className="flex flex-col min-w-0">
+                {profile.role === "parent" && myChild ? (
+                  <>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-300 truncate">
+                        Konto rodzica: <strong className="text-slate-100">{profile.display_name || "Rodzic"}</strong>
+                      </span>
+                      <DeltaBadge variant="default" size="sm">Rodzic</DeltaBadge>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <DeltaBadge variant="gold" size="sm">Zawodnik</DeltaBadge>
+                      <strong className="text-xs sm:text-sm font-black text-amber-300 truncate">
+                        {myChild.display_name}
+                      </strong>
+                      <span className="text-[11px] text-slate-400">
+                        • {myChild.position || "Zawodnik"} #{myChild.shirt_number || "–"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <strong className="text-sm font-black text-slate-100 truncate">
+                      {profile.display_name || "Zawodnik DELTA"}
+                    </strong>
+                    <DeltaBadge
+                      variant={
+                        profile.role === "admin"
+                          ? "gold"
+                          : profile.role === "coach"
+                          ? "crimson"
+                          : profile.role === "parent"
+                          ? "default"
+                          : "muted"
+                      }
+                      size="sm"
+                    >
+                      {profile.role === "admin"
+                        ? "Admin"
+                        : profile.role === "coach"
+                        ? "Trener"
+                        : profile.role === "parent"
+                        ? "Rodzic"
+                        : "Zawodnik"}
+                    </DeltaBadge>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-amber-400 font-bold">
+                  <span className="flex items-center gap-1 text-slate-300">
+                    <Crown size={12} className="text-amber-400" />
+                    <span>LVL {levelInfo.level}</span>
+                    <span className="text-amber-400 font-semibold">• {levelInfo.title}</span>
+                  </span>
+                  <span className="text-slate-500">•</span>
+                  <span className="flex items-center gap-1 text-red-400 font-black">
+                    <Flame size={12} className="animate-pulse" />
+                    <span>{streak} {streak === 1 ? "dzień serii" : "dni serii"}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Numerical XP & Level Progress Bar */}
+            <div className="flex-1 min-w-[180px] max-w-md flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[11px] font-mono font-bold">
+                <span className="text-slate-400">POSTĘP POZIOMU</span>
+                <span className="text-amber-300">
+                  {levelInfo.currentLevelXP} / {levelInfo.nextLevelXP} XP
+                  <span className="text-slate-400 ml-1">({levelInfo.progressPercent}%)</span>
+                </span>
+              </div>
+              <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/10 p-[1px]">
+                <div
+                  className="h-full bg-gradient-to-r from-red-500 via-amber-400 to-amber-300 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, levelInfo.progressPercent))}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Actions: Unopened Packs & Direct Missions Access */}
+            <div className="flex items-center gap-2 shrink-0">
+              {unopenedPacks > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onSelectTab("collection")}
+                  className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/25 to-yellow-500/15 border border-amber-400/40 text-amber-300 text-xs font-black flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)] min-h-[44px]"
+                  title="Otwórz oczekujące paczki kart 3D"
+                  aria-label="Otwórz oczekujące paczki kart 3D"
+                >
+                  <Gift size={14} className="text-amber-400 animate-bounce" />
+                  <span>{unopenedPacks} PACZEK</span>
+                </button>
+              )}
+              <DeltaButton
+                variant="outline"
+                size="sm"
+                touchTarget={true}
+                onClick={() => onOpenModalAction("missions")}
+                className="text-xs font-bold text-amber-300 border-amber-400/30"
+                title="Otwórz listę misji i zadań"
+              >
+                <Zap size={14} className="text-amber-400" />
+                <span>MISJE & CELE</span>
+              </DeltaButton>
+            </div>
+          </div>
+        </DeltaCard>
+      </section>
+
+      {/* ==================================================================
+          3. CRITICAL / ACTIONABLE PRIORITY BANNER (COMMUNICATION STRIP)
           ================================================================== */}
       <DeltaHomePrioritySection
         priorityData={homePriorityData}
@@ -518,14 +562,14 @@ export default function DeltaCinematicDashboard({
       />
 
       {/* ==================================================================
-          4. V4.2 HERO COMMAND CENTER (ASYMMETRIC DUAL ARENA)
+          4. V4.4 HERO COMMAND CENTER (ASYMMETRIC DUAL ARENA)
           ================================================================== */}
       <div className="delta-dashboard-hero-grid w-full">
         {/* ================================================================
-            COLUMN 1 (LEFT / 7 COLS): MATCH ARENA & QUICK ACTION TILES
+            COLUMN 1 (LEFT / 7 COLS): SPORT FIRST & UNIFIED QUICK ACTIONS
             ================================================================ */}
         <div className="flex flex-col gap-4 min-w-0">
-          {/* NEXT MATCH HERO OR COMPACT EMPTY STATE */}
+          {/* SPORT FIRST (ZADANIE 4: MATCH OR TRAINING OR COMPACT EMPTY STATE) */}
           {nextMatch ? (
             <section
               className="delta-next-match-hero w-full"
@@ -700,8 +744,81 @@ export default function DeltaCinematicDashboard({
                 </div>
               </DeltaCard>
             </section>
+          ) : nextTraining ? (
+            /* UPCOMING TRAINING HERO (SPORT FIRST REQUIREMENT 1) */
+            <section
+              className="delta-next-training-hero w-full"
+              aria-label="Najbliższy trening drużyny"
+            >
+              <DeltaCard
+                variant="elevated"
+                padding="none"
+                className="delta-gaming-card border-red-500/25 shadow-xl relative overflow-hidden"
+              >
+                {/* Header Ribbon */}
+                <div className="flex items-center justify-between px-3.5 sm:px-4 py-2 bg-gradient-to-r from-red-950/40 via-[#141822] to-[#0c0f16] border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <DeltaBadge variant="crimson" size="sm" dot>
+                      NAJBLIŻSZY TRENING
+                    </DeltaBadge>
+                    <span className="text-xs font-bold text-red-300/90">
+                      ZESPÓŁ 2018 GM
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+                    <Dumbbell size={13} className="text-red-400" />
+                    <span>Trening przygotowawczy</span>
+                  </div>
+                </div>
+
+                {/* Training Details Stage */}
+                <div className="p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-red-600/30 to-amber-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0 shadow-inner">
+                      <Dumbbell size={26} />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                          Jednostka treningowa
+                        </span>
+                      </div>
+                      <b className="text-sm sm:text-base font-black text-slate-100 truncate mt-0.5">
+                        {datePL(nextTraining.session?.training_date || nextTraining.start)} • {(nextTraining.session?.start_time || "17:00").slice(0, 5)}–{(nextTraining.session?.end_time || "18:30").slice(0, 5)}
+                      </b>
+                      <span className="text-xs text-slate-400 truncate mt-0.5">
+                        📍 {nextTraining.session?.location || "Boisko K.S. Delta Warszawa"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <DeltaButton
+                      variant="gold"
+                      size="sm"
+                      touchTarget={true}
+                      className="flex-1 sm:flex-none text-xs font-black"
+                      onClick={() => onSelectTab("training")}
+                    >
+                      <UserCheck size={14} />
+                      <span>POTWIERDŹ OBECNOŚĆ</span>
+                    </DeltaButton>
+                    <DeltaButton
+                      variant="outline"
+                      size="sm"
+                      touchTarget={true}
+                      className="flex-1 sm:flex-none text-xs font-bold"
+                      onClick={() => onSelectTab("training")}
+                    >
+                      <span>CENTRUM TRENINGOWE</span>
+                      <ChevronRight size={14} />
+                    </DeltaButton>
+                  </div>
+                </div>
+              </DeltaCard>
+            </section>
           ) : (
-            /* COMPACT EMPTY STATE (V4.2 REQUIREMENT 2) */
+            /* COMPACT EMPTY STATE (SPORT FIRST REQUIREMENT 3) */
             <DeltaCard
               variant="elevated"
               padding="sm"
@@ -743,78 +860,19 @@ export default function DeltaCinematicDashboard({
             </DeltaCard>
           )}
 
-          {/* QUICK ACTION TILES (MOBILE 2x2 / DESKTOP 4x1) */}
+          {/* ================================================================
+              UNIFIED QUICK ACTIONS GRID (ZADANIE 1 — SINGLE RESPONSIVE SET)
+              Consolidated 4 canonical tiles: Terminarz, Kolekcja kart, Misje i XP, Typer DELTA.
+              No redundant duplicate grids.
+              ================================================================ */}
           <section aria-label="Szybkie akcje" className="w-full">
-            {/* Mobile: 4 Large Touch-Optimized Tiles */}
-            <div className="delta-mobile-only delta-quick-actions-mobile-grid">
-              <DeltaCard
-                variant="interactive"
-                padding="sm"
-                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
-                onClick={() => onSelectTab("matches")}
-              >
-                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
-                  <CalendarDays size={18} />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <strong className="text-xs font-black text-slate-100 truncate">Terminarz</strong>
-                  <small className="text-[10px] text-slate-400">Mecze i wyniki</small>
-                </div>
-              </DeltaCard>
-
-              <DeltaCard
-                variant="interactive"
-                padding="sm"
-                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
-                onClick={() => onSelectTab("collection")}
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 shrink-0">
-                  <Layers size={18} />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <strong className="text-xs font-black text-slate-100 truncate">Karty 3D</strong>
-                  <small className="text-[10px] text-slate-400">Album i paczki</small>
-                </div>
-              </DeltaCard>
-
-              <DeltaCard
-                variant="interactive"
-                padding="sm"
-                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
-                onClick={() => onOpenModalAction("typer")}
-              >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                  <Target size={18} />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <strong className="text-xs font-black text-slate-100 truncate">Typer DELTA</strong>
-                  <small className="text-[10px] text-slate-400">Typuj i zbieraj DP</small>
-                </div>
-              </DeltaCard>
-
-              <DeltaCard
-                variant="interactive"
-                padding="sm"
-                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
-                onClick={() => onOpenModalAction("missions")}
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                  <Zap size={18} />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <strong className="text-xs font-black text-slate-100 truncate">Misje & XP</strong>
-                  <small className="text-[10px] text-slate-400">Cele dzienne</small>
-                </div>
-              </DeltaCard>
-            </div>
-
-            {/* Desktop: Streamlined 4-tile Gaming Action Bar */}
-            <div className="delta-desktop-only delta-quick-actions-desktop-grid">
+            <div className="delta-quick-actions-grid delta-quick-actions-mobile-grid delta-quick-actions-desktop-grid grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
               {[
                 {
                   id: "matches",
-                  title: "Terminarz & Wyniki",
-                  desc: "Mecze i tabela ligowa",
+                  title: "Terminarz & Treningi",
+                  shortTitle: "Terminarz",
+                  desc: "Mecze, treningi i wyniki",
                   icon: CalendarDays,
                   color: "text-red-400",
                   badge: "MECZE",
@@ -823,8 +881,9 @@ export default function DeltaCinematicDashboard({
                 },
                 {
                   id: "collection",
-                  title: "Karty 3D & Paczki",
-                  desc: "Album i wymiany",
+                  title: "Kolekcja kart 3D",
+                  shortTitle: "Karty 3D",
+                  desc: "Album, paczki i wymiany",
                   icon: Layers,
                   color: "text-amber-400",
                   badge: "INFERNO",
@@ -832,31 +891,33 @@ export default function DeltaCinematicDashboard({
                   action: () => onSelectTab("collection"),
                 },
                 {
+                  id: "missions",
+                  title: "Misje & Cele",
+                  shortTitle: "Misje & XP",
+                  desc: "Wyzwania dzienne i XP",
+                  icon: Zap,
+                  color: "text-amber-400",
+                  badge: "XP & CELE",
+                  badgeVariant: "gold" as const,
+                  action: () => onOpenModalAction("missions"),
+                },
+                {
                   id: "typer",
                   title: "Typer DELTA",
-                  desc: "Zbieraj punkty DP",
+                  shortTitle: "Typer DELTA",
+                  desc: "Typuj mecze i zbieraj DP",
                   icon: Target,
                   color: "text-emerald-400",
                   badge: "PUNKTY DP",
                   badgeVariant: "gold" as const,
                   action: () => onOpenModalAction("typer"),
                 },
-                {
-                  id: "missions",
-                  title: "Misje & Cele",
-                  desc: "Wyzwania dzienne",
-                  icon: Zap,
-                  color: "text-amber-400",
-                  badge: "XP & NAGRODY",
-                  badgeVariant: "gold" as const,
-                  action: () => onOpenModalAction("missions"),
-                },
               ].map((tile) => (
                 <DeltaCard
                   key={tile.id}
                   variant="interactive"
                   padding="sm"
-                  className="delta-gaming-card flex flex-col justify-between gap-2.5 group"
+                  className="delta-gaming-card flex flex-col justify-between gap-2 min-h-[64px] sm:min-h-[72px] group focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer"
                   onClick={tile.action}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -868,8 +929,8 @@ export default function DeltaCinematicDashboard({
                     </DeltaBadge>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <strong className="text-xs font-black text-slate-100 group-hover:text-amber-300 transition-colors">
-                      {tile.title}
+                    <strong className="text-xs font-black text-slate-100 group-hover:text-amber-300 transition-colors truncate">
+                      {tile.shortTitle}
                     </strong>
                     <span className="text-[10px] text-slate-400 line-clamp-1">{tile.desc}</span>
                   </div>
@@ -880,18 +941,26 @@ export default function DeltaCinematicDashboard({
         </div>
 
         {/* ================================================================
-            COLUMN 2 (RIGHT / 5 COLS): GAMING SIDECAR (VAULT + XP & MISSIONS)
+            COLUMN 2 (RIGHT / 5 COLS): INFERNO COLLECTION SHOWCASE & MISSIONS
             ================================================================ */}
         <div className="flex flex-col gap-4 min-w-0">
-          {/* 1. INFERNO 3D CARDS VAULT & PACKS (HIGH ON SCREEN) */}
+          {/* ==============================================================
+              1. INFERNO 3D CARDS SHOWCASE (ZADANIE 3 — PREMIUM ATMOSPHERE)
+              High visual impact, dark stadium lighting, real 3D cards,
+              and beautiful empty state with preview designs when user has 0 cards.
+              ============================================================== */}
           <DeltaCard
             variant="elevated"
             padding="md"
-            className="delta-gaming-card border-white/10 relative overflow-hidden"
+            className="delta-gaming-card border-amber-400/25 bg-gradient-to-b from-[#14101e] via-[#0d0f17] to-[#07080b] relative overflow-hidden shadow-2xl"
           >
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/8">
-              <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
-                <Sparkles size={14} />
+            {/* Top Atmospheric Glow */}
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-red-600/15 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Showcase Header */}
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10 relative z-10">
+              <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5 tracking-wider">
+                <Sparkles size={14} className="text-amber-300 animate-spin" style={{ animationDuration: '6s' }} />
                 KOLEKCJA INFERNO 3D
               </span>
               <DeltaBadge variant="gold" size="sm">
@@ -899,10 +968,17 @@ export default function DeltaCinematicDashboard({
               </DeltaBadge>
             </div>
 
-            {/* Featured Cards Mini-Row */}
-            {featuredPlayers.length > 0 ? (
-              <div className="flex items-center justify-around gap-2 py-1 overflow-x-auto">
-                {featuredPlayers.slice(0, 3).map((player) => (
+            {/* Cards Stage: Either User's Owned Cards OR Showcase Empty State with Preview Designs */}
+            {cardsLoading ? (
+              <div className="py-6 flex items-center justify-center gap-3">
+                <DeltaSkeleton variant="card" width="80px" height="110px" />
+                <DeltaSkeleton variant="card" width="80px" height="110px" />
+                <DeltaSkeleton variant="card" width="80px" height="110px" />
+              </div>
+            ) : featuredShowcasePlayers.length > 0 ? (
+              /* REAL 3D OWNED CARDS STAGE */
+              <div className="flex items-center justify-around gap-2 py-2 overflow-x-auto relative z-10">
+                {featuredShowcasePlayers.map((player) => (
                   <div
                     key={player.id}
                     className="flex flex-col items-center gap-1.5 cursor-pointer group"
@@ -925,19 +1001,57 @@ export default function DeltaCinematicDashboard({
                 ))}
               </div>
             ) : (
-              <div className="py-4 text-center text-slate-400 text-xs">
-                Karty zawodników są synchronizowane.
+              /* ATTRACTIVE EMPTY STATE WITH PREVIEW DESIGNS (ZADANIE 3 REQUIREMENT 3) */
+              <div className="py-3 px-2 flex flex-col items-center text-center relative z-10">
+                {/* 3 Stylized Holographic Preview Placeholders */}
+                <div className="flex items-center justify-center -space-x-3 sm:-space-x-4 mb-3">
+                  {/* Card 1 Preview */}
+                  <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-gradient-to-b from-red-950/80 to-[#0e1017] border border-red-500/40 shadow-lg transform -rotate-6 transition-transform hover:rotate-0 hover:z-20 p-1 flex flex-col items-center justify-between">
+                    <span className="text-[8px] font-black text-red-400 uppercase tracking-widest">WZÓR</span>
+                    <Shield size={22} className="text-red-400/60 my-auto" />
+                    <span className="text-[8px] font-bold text-slate-400">INFERNO</span>
+                  </div>
+
+                  {/* Card 2 Preview (Hero Center) */}
+                  <div className="w-18 h-26 sm:w-22 sm:h-32 rounded-xl bg-gradient-to-b from-amber-950/80 via-[#161924] to-[#0a0d14] border-2 border-amber-400/60 shadow-[0_0_16px_rgba(245,158,11,0.25)] z-10 transform scale-105 p-1.5 flex flex-col items-center justify-between">
+                    <span className="text-[9px] font-black text-amber-300 uppercase tracking-widest">3D GOLD</span>
+                    <Sparkles size={26} className="text-amber-400 my-auto drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                    <span className="text-[9px] font-extrabold text-amber-300">DELTA GM</span>
+                  </div>
+
+                  {/* Card 3 Preview */}
+                  <div className="w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-gradient-to-b from-red-950/80 to-[#0e1017] border border-red-500/40 shadow-lg transform rotate-6 transition-transform hover:rotate-0 hover:z-20 p-1 flex flex-col items-center justify-between">
+                    <span className="text-[8px] font-black text-amber-400 uppercase tracking-widest">WZÓR</span>
+                    <Award size={22} className="text-amber-400/60 my-auto" />
+                    <span className="text-[8px] font-bold text-slate-400">LEGEND</span>
+                  </div>
+                </div>
+
+                <b className="text-xs sm:text-sm font-black text-slate-100">
+                  Twój album czeka na pierwsze karty!
+                </b>
+                <p className="text-[11px] text-slate-400 max-w-xs mt-1 mb-0 leading-relaxed">
+                  Zbuduj swój mistrzowski skład DELTA 2018 GM. Zdobywaj paczki z kartami za treningi, mecze i misje klubowe!
+                </p>
+                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-[10px] font-bold text-amber-300">
+                  <span>Wzory kart klubowych do zdobycia w paczkach</span>
+                </div>
               </div>
             )}
 
-            {/* Live Packs Counter & Action Bar */}
-            <div className="mt-3 pt-3 border-t border-white/8 flex flex-col gap-2.5">
+            {/* Live Packs Counter & Action Bar (Zadanie 3 Requirement 4: Conditional CTA) */}
+            <div className="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2.5 relative z-10">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 font-medium">Paczki do otwarcia:</span>
-                <span className="font-mono font-black text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/30">
+                <span className={`font-mono font-black px-2 py-0.5 rounded-lg border ${
+                  unopenedPacks > 0
+                    ? "text-amber-300 bg-amber-400/15 border-amber-400/40 shadow-[0_0_8px_rgba(245,158,11,0.2)]"
+                    : "text-slate-400 bg-white/5 border-white/10"
+                }`}>
                   {unopenedPacks} PACZEK
                 </span>
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <DeltaButton
                   variant="outline"
@@ -946,50 +1060,50 @@ export default function DeltaCinematicDashboard({
                   className="text-xs font-bold"
                   onClick={() => onSelectTab("collection")}
                 >
+                  <Sparkles size={14} className="text-amber-400" />
                   <span>ZAKRĘĆ KOŁEM</span>
                 </DeltaButton>
-                <DeltaButton
-                  variant="primary"
-                  size="sm"
-                  touchTarget={true}
-                  className="text-xs font-black"
-                  onClick={() => onSelectTab("collection")}
-                >
-                  <Gift size={14} />
-                  <span>OTWÓRZ PACZKĘ</span>
-                </DeltaButton>
+
+                {/* Conditional Pack Button Logic: OTWÓRZ PACZKĘ only when unopenedPacks > 0 */}
+                {unopenedPacks > 0 ? (
+                  <DeltaButton
+                    variant="primary"
+                    size="sm"
+                    touchTarget={true}
+                    className="text-xs font-black shadow-[0_0_12px_rgba(239,68,68,0.3)]"
+                    onClick={() => onSelectTab("collection")}
+                  >
+                    <Gift size={14} className="animate-bounce" />
+                    <span>OTWÓRZ PACZKĘ</span>
+                  </DeltaButton>
+                ) : (
+                  <DeltaButton
+                    variant="secondary"
+                    size="sm"
+                    touchTarget={true}
+                    className="text-xs font-bold text-amber-300"
+                    onClick={() => onSelectTab("collection")}
+                  >
+                    <Layers size={14} />
+                    <span>PRZEJDŹ DO KOLEKCJI</span>
+                  </DeltaButton>
+                )}
               </div>
             </div>
           </DeltaCard>
 
-          {/* 2. PLAYER XP & DAILY MISSIONS (HIGH ON SCREEN) */}
+          {/* ==============================================================
+              2. DAILY MISSIONS & BATTLE PASS (WITHOUT DUPLICATE XP BAR)
+              ============================================================== */}
           <DeltaCard variant="gold" padding="md" className="delta-gaming-card flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <Crown size={14} />
+                <Zap size={14} />
                 PROFIL & MISJE DNIA
               </span>
               <DeltaBadge variant="crimson" size="sm">
                 🔥 {streak} {streak === 1 ? "dzień serii" : "dni"}
               </DeltaBadge>
-            </div>
-
-            {/* Level & XP Mini Banner */}
-            <div className="p-2.5 rounded-xl bg-[#0b0e14]/90 border border-white/8">
-              <div className="flex items-baseline justify-between gap-2 mb-1">
-                <span className="text-sm font-black text-slate-100">
-                  Poziom {levelInfo.level} • <span className="text-amber-300">{levelInfo.title}</span>
-                </span>
-                <span className="text-[10px] font-mono text-slate-400">
-                  {levelInfo.currentLevelXP}/{levelInfo.nextLevelXP} XP
-                </span>
-              </div>
-              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                  style={{ width: `${levelInfo.progressPercent}%` }}
-                />
-              </div>
             </div>
 
             {/* Missions List */}

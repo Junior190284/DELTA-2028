@@ -752,6 +752,16 @@ body {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
+.delta-unified-profile-box {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.delta-next-training-hero {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
 .delta-mobile-gamer-bar-box {
   display: flex !important;
   flex-direction: column !important;

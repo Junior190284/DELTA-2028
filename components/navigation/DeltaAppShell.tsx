@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Bell,
   UserRound,
@@ -57,6 +57,25 @@ export const DeltaAppShell: React.FC<DeltaAppShellProps> = ({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("delta_sidebar_collapsed");
+      if (saved !== null) {
+        setIsSidebarCollapsed(saved === "true");
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("delta_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const activeSection: DeltaPrimarySectionId = mapTabToSection(activeTab);
 
   // Subtabs for the active section (e.g. Drużyna, Kolekcja)
@@ -73,7 +92,7 @@ export const DeltaAppShell: React.FC<DeltaAppShellProps> = ({
         onOpenModalAction={onOpenModalAction}
         onTriggerIntro={onTriggerIntro}
         isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
+        onToggleCollapse={handleToggleSidebar}
         navContext={navContext}
         canOpenAdmin={canOpenAdmin}
         staff={staff}
