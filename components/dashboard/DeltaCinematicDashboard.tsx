@@ -166,7 +166,7 @@ function Logo({ team, size = 48 }: { team: string; size?: number }) {
 }
 
 // ============================================================================
-// MAIN CINEMATIC DASHBOARD COMPONENT
+// MAIN CINEMATIC DASHBOARD COMPONENT (V4.2 REDESIGN)
 // ============================================================================
 
 export default function DeltaCinematicDashboard({
@@ -281,11 +281,11 @@ export default function DeltaCinematicDashboard({
     progressPercent: 0,
   };
   const streak = gameProfile?.activityStreak || 1;
+  const unopenedPacks = gameProfile?.unopenedPacks || 0;
 
   // Featured cards for INFERNO 3D Showcase (picked from real team players)
   const featuredPlayers = useMemo(() => {
     if (!players || players.length === 0) return [];
-    // Prioritize child if parent, then top scorers, or first players
     const list: any[] = [];
     if (myChild) list.push(myChild);
     for (const p of scorersRanking) {
@@ -300,7 +300,7 @@ export default function DeltaCinematicDashboard({
   }, [players, myChild, scorersRanking]);
 
   return (
-    <div className="delta-cinematic-dashboard w-full min-w-0 max-w-full space-y-4 sm:space-y-6 pb-8">
+    <div className="delta-cinematic-dashboard w-full min-w-0 max-w-full space-y-4 sm:space-y-5 pb-8">
       {/* ==================================================================
           1. TOP GAMER PROFILE BAR (MOBILE COMPACT & STREAMLINED)
           ================================================================== */}
@@ -352,6 +352,17 @@ export default function DeltaCinematicDashboard({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {unopenedPacks > 0 && (
+              <button
+                type="button"
+                onClick={() => onSelectTab("collection")}
+                className="px-2 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/25 to-yellow-500/15 border border-amber-400/40 text-amber-300 text-xs font-black flex items-center gap-1 cursor-pointer active:scale-95 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+                aria-label="Otwórz paczki kart"
+              >
+                <Gift size={13} className="text-amber-400 animate-bounce" />
+                <span>{unopenedPacks} PACZEK</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onOpenModalAction("missions")}
@@ -387,55 +398,86 @@ export default function DeltaCinematicDashboard({
       </div>
 
       {/* ==================================================================
-          2. DESKTOP CINEMATIC STADIUM HEADER
+          2. DESKTOP CINEMATIC STADIUM COMMAND BAR (V4.2 COMPACT & SHORTENED)
           ================================================================== */}
       <section
         className="delta-desktop-only delta-stadium-header-box"
         aria-label="DELTA 2018 GM — Panel Stadionowy"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/75 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07080b]/95 via-[#07080b]/80 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 p-5 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-            {/* Glowing Fiery Club Crest */}
+        <div className="relative z-10 w-full flex items-center justify-between gap-4">
+          {/* Left: Fiery Crest & Identity */}
+          <div className="flex items-center gap-3.5 min-w-0">
             <div
-              className="relative shrink-0 rounded-2xl bg-gradient-to-b from-[#181d2a] to-[#0a0d14] border border-amber-400/40 p-2 shadow-[0_0_28px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer group"
-              style={{ width: "72px", height: "72px", minWidth: "72px", minHeight: "72px" }}
+              className="relative shrink-0 rounded-xl bg-gradient-to-b from-[#1c2232] to-[#0a0d14] border border-amber-400/40 p-1.5 shadow-[0_0_20px_rgba(245,158,11,0.22)] flex items-center justify-center cursor-pointer group"
+              style={{ width: "46px", height: "46px", minWidth: "46px", minHeight: "46px" }}
               onClick={onTriggerIntro}
               title="Odtwórz filmowe intro stadionowe"
             >
-              <div className="absolute -inset-0.5 rounded-2xl bg-red-500/20 blur-sm pointer-events-none group-hover:bg-red-500/35 transition-all" />
+              <div className="absolute -inset-0.5 rounded-xl bg-red-500/20 blur-xs pointer-events-none group-hover:bg-red-500/40 transition-all" />
               <img
                 src="/teamlogos/gm.png"
                 alt="K.S. Delta Warszawa"
-                style={{ width: "56px", height: "56px", objectFit: "contain" }}
-                className="relative z-10 transition-transform group-hover:scale-105"
+                style={{ width: "34px", height: "34px", objectFit: "contain" }}
+                className="relative z-10 transition-transform group-hover:scale-110"
               />
             </div>
 
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-lg font-black text-slate-100 tracking-tight flex items-center gap-1.5">
+                  DELTA 2018 GM
+                </span>
                 <DeltaBadge variant="crimson" size="sm" dot>
-                  Górny Mokotów • 2018
+                  Górny Mokotów
                 </DeltaBadge>
                 <DeltaBadge variant="gold" size="sm">
-                  Sezon 2026/27 • MZPN
+                  Sezon 2026/27
                 </DeltaBadge>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight mt-1 mb-0.5">
-                DELTA 2018 GM
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium m-0 max-w-xl">
+              <p className="text-xs text-slate-400 font-medium m-0 truncate max-w-md">
                 Oficjalne centrum dowodzenia drużyny. Razem do wielkich rzeczy.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0">
+          {/* Right: Integrated Gamer HUD + Intro Button */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Desktop Gamer XP Mini-Widget */}
+            <div className="hidden xl:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-[#0e1118]/80 border border-white/8 text-xs shadow-inner">
+              <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                <Crown size={14} className="text-amber-400" />
+                <span>LVL {levelInfo.level}</span>
+              </div>
+              <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
+                  style={{ width: `${levelInfo.progressPercent}%` }}
+                />
+              </div>
+              <span className="flex items-center gap-1 text-red-400 font-bold">
+                <Flame size={13} className="animate-pulse" /> {streak}d
+              </span>
+            </div>
+
+            {/* Unopened Packs Quick Pill */}
+            {unopenedPacks > 0 && (
+              <button
+                type="button"
+                onClick={() => onSelectTab("collection")}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-400/40 text-amber-300 font-black text-xs cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                title="Otwórz oczekujące paczki kart 3D"
+              >
+                <Gift size={14} className="text-amber-400 animate-bounce" />
+                <span>{unopenedPacks} PACZEK</span>
+              </button>
+            )}
+
             <DeltaButton
               variant="outline"
-              size="md"
-              icon={<Flame size={16} className="text-red-500 animate-pulse" />}
+              size="sm"
+              icon={<Flame size={15} className="text-red-500 animate-pulse" />}
               onClick={onTriggerIntro}
               title="Odtwórz filmowe intro stadionowe"
             >
@@ -476,567 +518,394 @@ export default function DeltaCinematicDashboard({
       />
 
       {/* ==================================================================
-          4. NEXT MATCH HERO & ATTENDANCE (ABOVE THE FOLD ON MOBILE)
+          4. V4.2 HERO COMMAND CENTER (ASYMMETRIC DUAL ARENA)
           ================================================================== */}
-      {nextMatch ? (
-        <section
-          className="delta-next-match-hero w-full"
-          aria-label="Najbliższy mecz drużyny"
-        >
-          <DeltaCard
-            variant="elevated"
-            padding="none"
-            className="border-amber-400/25 shadow-xl relative overflow-hidden"
-          >
-            {/* Header Ribbon */}
-            <div className="flex items-center justify-between px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-red-950/40 via-[#141822] to-[#0c0f16] border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <DeltaBadge variant="gold" size="sm" dot>
-                  NAJBLIŻSZY MECZ
-                </DeltaBadge>
-                <span className="text-xs font-bold text-amber-300/90">
-                  Kolejka {nextMatch.round_no || "—"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
-                <Clock size={13} className="text-amber-400" />
-                <span>{nextMatchCountdown}</span>
-              </div>
-            </div>
-
-            {/* Match Stage — Home vs Away */}
-            <div className="p-4 sm:p-6">
-              <div className="grid grid-cols-7 items-center gap-2 sm:gap-4 text-center">
-                {/* Home Team */}
-                <div className="col-span-3 flex flex-col items-center gap-1.5 sm:gap-2">
-                  <div className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center p-1 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
-                    <Logo team={nextMatch.home_team} size={64} />
-                  </div>
-                  <b className="text-xs sm:text-base font-black text-slate-100 line-clamp-2 max-w-[140px] leading-tight">
-                    {formatTeamName(nextMatch.home_team)}
-                  </b>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Gospodarz
-                  </span>
-                </div>
-
-                {/* VS Badge & Match Info */}
-                <div className="col-span-1 flex flex-col items-center justify-center gap-1">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-red-600 to-amber-500 p-0.5 shadow-md flex items-center justify-center">
-                    <div className="w-full h-full rounded-full bg-[#07080b] flex items-center justify-center font-black text-xs sm:text-sm text-amber-300">
-                      VS
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 hidden sm:block">
-                    {datePL(nextMatch.match_date)}
-                  </span>
-                </div>
-
-                {/* Away Team */}
-                <div className="col-span-3 flex flex-col items-center gap-1.5 sm:gap-2">
-                  <div className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center p-1 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
-                    <Logo team={nextMatch.away_team} size={64} />
-                  </div>
-                  <b className="text-xs sm:text-base font-black text-slate-100 line-clamp-2 max-w-[140px] leading-tight">
-                    {formatTeamName(nextMatch.away_team)}
-                  </b>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Gość
-                  </span>
-                </div>
-              </div>
-
-              {/* Match Details Meta */}
-              <div className="mt-4 pt-3 border-t border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-300">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="flex items-center gap-1 font-bold text-slate-200">
-                    <CalendarDays size={14} className="text-amber-400" />
-                    {datePL(nextMatch.match_date)} • {(nextMatch.match_time || "").slice(0, 5) || "godz. do ustalenia"}
-                  </span>
-                  <span className="text-slate-500 hidden sm:inline">•</span>
-                  <span className="text-slate-400 truncate max-w-[280px]">
-                    📍 {nextMatch.venue || "Miejsce spotkania do ustalenia"}
-                  </span>
-                </div>
-
-                {/* Attendance Summary Bar */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-slate-400">
-                    Zadeklarowani: <strong className="text-slate-100">{nextPresent}</strong> / {players.length}
-                  </span>
-                  <div className="w-20 h-2 bg-slate-900 rounded-full overflow-hidden border border-white/10">
-                    <div
-                      className="h-full bg-gradient-to-r from-red-500 to-emerald-400"
-                      style={{
-                        width: `${players.length ? Math.min(100, (nextPresent / players.length) * 100) : 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Attendance & Action Buttons (Mobile-first, min 44px touch targets) */}
-            <div className="p-3 sm:p-4 bg-gradient-to-r from-[#090b10] via-[#0f121a] to-[#090b10] border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              {/* Parent attendance indicator / Coach tools */}
-              <div className="flex items-center gap-2 min-w-0">
-                {myChild ? (
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div
-                      className={`w-3 h-3 rounded-full shrink-0 ${
-                        childAttendanceStatus === "present"
-                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
-                          : childAttendanceStatus === "absent"
-                          ? "bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]"
-                          : "bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.6)]"
-                      }`}
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-slate-100 truncate">
-                        {myChild.display_name}:{" "}
-                        {childAttendanceStatus === "present"
-                          ? "OBECNY"
-                          : childAttendanceStatus === "absent"
-                          ? "NIEOBECNY"
-                          : "BRAK DEKLARACJI"}
-                      </span>
-                      <small className="text-[10px] text-slate-400">
-                        {childAttendanceStatus === "unconfirmed"
-                          ? "Wymagane zgłoszenie obecności na mecz"
-                          : "Deklaracja zapisana pomyślnie"}
-                      </small>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs text-slate-300">
-                    <UserCheck size={16} className="text-amber-400" />
-                    <span>
-                      {staff
-                        ? "Zarządzanie obecnościami i kadrą meczową"
-                        : "Frekwencja drużyny przed spotkaniem"}
+      <div className="delta-dashboard-hero-grid w-full">
+        {/* ================================================================
+            COLUMN 1 (LEFT / 7 COLS): MATCH ARENA & QUICK ACTION TILES
+            ================================================================ */}
+        <div className="flex flex-col gap-4 min-w-0">
+          {/* NEXT MATCH HERO OR COMPACT EMPTY STATE */}
+          {nextMatch ? (
+            <section
+              className="delta-next-match-hero w-full"
+              aria-label="Najbliższy mecz drużyny"
+            >
+              <DeltaCard
+                variant="elevated"
+                padding="none"
+                className="delta-gaming-card border-amber-400/25 shadow-xl relative overflow-hidden"
+              >
+                {/* Header Ribbon */}
+                <div className="flex items-center justify-between px-3.5 sm:px-4 py-2 bg-gradient-to-r from-red-950/40 via-[#141822] to-[#0c0f16] border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <DeltaBadge variant="gold" size="sm" dot>
+                      NAJBLIŻSZY MECZ
+                    </DeltaBadge>
+                    <span className="text-xs font-bold text-amber-300/90">
+                      Kolejka {nextMatch.round_no || "—"}
                     </span>
                   </div>
-                )}
-              </div>
-
-              {/* CTAs with minimum 44px height */}
-              <div className="flex items-center gap-2 shrink-0">
-                <DeltaButton
-                  variant={childAttendanceStatus === "unconfirmed" ? "gold" : "secondary"}
-                  size="md"
-                  touchTarget={true}
-                  className="flex-1 sm:flex-none font-black text-xs sm:text-sm"
-                  onClick={() => openMatch(nextMatch, "attendance", "home")}
-                >
-                  <UserCheck size={16} />
-                  <span>
-                    {staff
-                      ? `OBECNOŚCI (${nextPresent}/${players.length})`
-                      : childAttendanceStatus === "unconfirmed"
-                      ? "POTWIERDŹ OBECNOŚĆ"
-                      : "ZMIEŃ OBECNOŚĆ"}
-                  </span>
-                </DeltaButton>
-
-                <DeltaButton
-                  variant="primary"
-                  size="md"
-                  touchTarget={true}
-                  className="flex-1 sm:flex-none font-black text-xs sm:text-sm"
-                  onClick={() => openMatch(nextMatch, "summary", "home")}
-                >
-                  <span>CENTRUM MECZU</span>
-                  <ChevronRight size={16} />
-                </DeltaButton>
-              </div>
-            </div>
-          </DeltaCard>
-        </section>
-      ) : (
-        <DeltaEmptyState
-          icon={<CalendarDays size={32} />}
-          title="Brak zaplanowanych meczów"
-          description="Terminarz kolejnych spotkań w rozgrywkach MZPN zostanie opublikowany wkrótce."
-          action={{
-            label: "PRZEGLĄDAJ ARCHIWUM MECZÓW",
-            onClick: () => onSelectTab("matches"),
-          }}
-        />
-      )}
-
-      {/* ==================================================================
-          5. QUICK ACTIONS (MOBILE: 4 KLUCZOWE AKCJE / DESKTOP: 8 KAFELKÓW)
-          ================================================================== */}
-      <section aria-label="Szybkie akcje" className="w-full">
-        {/* Mobile: Exactly 4 Large Touch-Optimized Tiles */}
-        <div className="delta-mobile-only delta-quick-actions-mobile-grid">
-          <DeltaCard
-            variant="interactive"
-            padding="sm"
-            className="flex items-center gap-2.5 min-h-[58px]"
-            onClick={() => onSelectTab("matches")}
-          >
-            <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
-              <CalendarDays size={18} />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <strong className="text-xs font-black text-slate-100 truncate">Terminarz</strong>
-              <small className="text-[10px] text-slate-400">Mecze i wyniki</small>
-            </div>
-          </DeltaCard>
-
-          <DeltaCard
-            variant="interactive"
-            padding="sm"
-            className="flex items-center gap-2.5 min-h-[58px]"
-            onClick={() => onSelectTab("collection")}
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 shrink-0">
-              <Layers size={18} />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <strong className="text-xs font-black text-slate-100 truncate">Karty 3D</strong>
-              <small className="text-[10px] text-slate-400">Album i paczki</small>
-            </div>
-          </DeltaCard>
-
-          <DeltaCard
-            variant="interactive"
-            padding="sm"
-            className="flex items-center gap-2.5 min-h-[58px]"
-            onClick={() => onOpenModalAction("typer")}
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <Target size={18} />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <strong className="text-xs font-black text-slate-100 truncate">Typer DELTA</strong>
-              <small className="text-[10px] text-slate-400">Typuj i zbieraj DP</small>
-            </div>
-          </DeltaCard>
-
-          <DeltaCard
-            variant="interactive"
-            padding="sm"
-            className="flex items-center gap-2.5 min-h-[58px]"
-            onClick={() => onOpenModalAction("missions")}
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Zap size={18} />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <strong className="text-xs font-black text-slate-100 truncate">Misje & XP</strong>
-              <small className="text-[10px] text-slate-400">Cele dzienne</small>
-            </div>
-          </DeltaCard>
-        </div>
-
-        {/* Desktop: Expanded Feature Grid (8 tiles) */}
-        <div className="delta-desktop-only delta-quick-actions-desktop-grid">
-          {[
-            {
-              id: "matches",
-              title: "Terminarz & Wyniki",
-              desc: "Kalendarz ligowy i sparingi",
-              icon: CalendarDays,
-              color: "text-red-400",
-              badge: "MECZE",
-              badgeVariant: "crimson" as const,
-              action: () => onSelectTab("matches"),
-            },
-            {
-              id: "collection",
-              title: "Kolekcja Kart 3D",
-              desc: "Album, paczki i wymiany kart",
-              icon: Layers,
-              color: "text-amber-400",
-              badge: "INFERNO",
-              badgeVariant: "gold" as const,
-              action: () => onSelectTab("collection"),
-            },
-            {
-              id: "typer",
-              title: "Typer Meczowy DELTA",
-              desc: "Typuj wyniki spotkań i zbieraj DP",
-              icon: Target,
-              color: "text-emerald-400",
-              badge: "PUNKTY DP",
-              badgeVariant: "gold" as const,
-              action: () => onOpenModalAction("typer"),
-            },
-            {
-              id: "missions",
-              title: "Misje & Cele Sezonu",
-              desc: "Wyzwania dzienne i tygodniowe",
-              icon: Zap,
-              color: "text-amber-400",
-              badge: "XP & NAGRODY",
-              badgeVariant: "gold" as const,
-              action: () => onOpenModalAction("missions"),
-            },
-            {
-              id: "knowledge",
-              title: "Kącik Wiedzy & Quizy",
-              desc: "Taktyka, zasady i regeneracja",
-              icon: BookOpen,
-              color: "text-blue-400",
-              badge: "AKADEMIA",
-              badgeVariant: "default" as const,
-              action: () => onOpenModalAction("knowledge"),
-            },
-            {
-              id: "seasonpass",
-              title: "Battle Pass Sezon 1",
-              desc: "Poziomy 1–20 i Złote Skrzynie",
-              icon: Crown,
-              color: "text-amber-400",
-              badge: "BATTLE PASS",
-              badgeVariant: "gold" as const,
-              action: () => onOpenModalAction("seasonpass"),
-            },
-            {
-              id: "photobooth",
-              title: "Studio Foto-Budka",
-              desc: "Plakaty i grafiki meczowe HD",
-              icon: Camera,
-              color: "text-purple-400",
-              badge: "GRAFIKI HD",
-              badgeVariant: "default" as const,
-              action: () => onOpenModalAction("photobooth"),
-            },
-            {
-              id: "teamcenter",
-              title: "Strefa Drużyny",
-              desc: "Obecności i sprawy zespołu",
-              icon: Users,
-              color: "text-red-400",
-              badge: "ZESPÓŁ",
-              badgeVariant: "crimson" as const,
-              action: () => onSelectTab("teamcenter"),
-            },
-          ].map((tile) => (
-            <DeltaCard
-              key={tile.id}
-              variant="interactive"
-              padding="sm"
-              className="flex flex-col justify-between gap-3 group"
-              onClick={tile.action}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className={`p-2 rounded-xl bg-white/5 border border-white/10 ${tile.color} group-hover:scale-110 transition-transform`}>
-                  <tile.icon size={20} />
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+                    <Clock size={13} className="text-amber-400" />
+                    <span>{nextMatchCountdown}</span>
+                  </div>
                 </div>
-                <DeltaBadge variant={tile.badgeVariant} size="sm">
-                  {tile.badge}
-                </DeltaBadge>
+
+                {/* Match Stage — Home vs Away */}
+                <div className="p-3.5 sm:p-5">
+                  <div className="grid grid-cols-7 items-center gap-2 sm:gap-3 text-center">
+                    {/* Home Team */}
+                    <div className="col-span-3 flex flex-col items-center gap-1.5">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center p-1 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
+                        <Logo team={nextMatch.home_team} size={52} />
+                      </div>
+                      <b className="text-xs sm:text-sm font-black text-slate-100 line-clamp-2 max-w-[130px] leading-tight">
+                        {formatTeamName(nextMatch.home_team)}
+                      </b>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                        Gospodarz
+                      </span>
+                    </div>
+
+                    {/* VS Badge & Match Info */}
+                    <div className="col-span-1 flex flex-col items-center justify-center gap-1">
+                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-red-600 to-amber-500 p-0.5 shadow-md flex items-center justify-center">
+                        <div className="w-full h-full rounded-full bg-[#07080b] flex items-center justify-center font-black text-[11px] sm:text-xs text-amber-300">
+                          VS
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 hidden sm:block">
+                        {datePL(nextMatch.match_date)}
+                      </span>
+                    </div>
+
+                    {/* Away Team */}
+                    <div className="col-span-3 flex flex-col items-center gap-1.5">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center p-1 bg-white/5 rounded-2xl border border-white/10 shadow-inner">
+                        <Logo team={nextMatch.away_team} size={52} />
+                      </div>
+                      <b className="text-xs sm:text-sm font-black text-slate-100 line-clamp-2 max-w-[130px] leading-tight">
+                        {formatTeamName(nextMatch.away_team)}
+                      </b>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                        Gość
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Match Details Meta */}
+                  <div className="mt-3 pt-2.5 border-t border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-300">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="flex items-center gap-1 font-bold text-slate-200">
+                        <CalendarDays size={13} className="text-amber-400" />
+                        {datePL(nextMatch.match_date)} • {(nextMatch.match_time || "").slice(0, 5) || "godz. do ustalenia"}
+                      </span>
+                      <span className="text-slate-500 hidden sm:inline">•</span>
+                      <span className="text-slate-400 truncate max-w-[240px]">
+                        📍 {nextMatch.venue || "Miejsce do ustalenia"}
+                      </span>
+                    </div>
+
+                    {/* Attendance Summary Bar */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-400">
+                        Zadeklarowani: <strong className="text-slate-100">{nextPresent}</strong> / {players.length}
+                      </span>
+                      <div className="w-16 h-2 bg-slate-900 rounded-full overflow-hidden border border-white/10">
+                        <div
+                          className="h-full bg-gradient-to-r from-red-500 to-emerald-400"
+                          style={{
+                            width: `${players.length ? Math.min(100, (nextPresent / players.length) * 100) : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Attendance & Action Buttons (Mobile-first, min 44px touch targets) */}
+                <div className="p-3 sm:p-3.5 bg-gradient-to-r from-[#090b10] via-[#0f121a] to-[#090b10] border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                  {/* Parent attendance indicator / Coach tools */}
+                  <div className="flex items-center gap-2 min-w-0">
+                    {myChild ? (
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div
+                          className={`w-3 h-3 rounded-full shrink-0 ${
+                            childAttendanceStatus === "present"
+                              ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
+                              : childAttendanceStatus === "absent"
+                              ? "bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]"
+                              : "bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                          }`}
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold text-slate-100 truncate">
+                            {myChild.display_name}:{" "}
+                            {childAttendanceStatus === "present"
+                              ? "OBECNY"
+                              : childAttendanceStatus === "absent"
+                              ? "NIEOBECNY"
+                              : "BRAK DEKLARACJI"}
+                          </span>
+                          <small className="text-[10px] text-slate-400">
+                            {childAttendanceStatus === "unconfirmed"
+                              ? "Wymagane zgłoszenie obecności na mecz"
+                              : "Deklaracja zapisana pomyślnie"}
+                          </small>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-slate-300">
+                        <UserCheck size={15} className="text-amber-400" />
+                        <span className="truncate">
+                          {staff
+                            ? "Zarządzanie obecnościami i kadrą meczową"
+                            : "Frekwencja drużyny przed spotkaniem"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* CTAs with minimum 44px height */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <DeltaButton
+                      variant={childAttendanceStatus === "unconfirmed" ? "gold" : "secondary"}
+                      size="sm"
+                      touchTarget={true}
+                      className="flex-1 sm:flex-none font-black text-xs"
+                      onClick={() => openMatch(nextMatch, "attendance", "home")}
+                    >
+                      <UserCheck size={15} />
+                      <span>
+                        {staff
+                          ? `OBECNOŚCI (${nextPresent}/${players.length})`
+                          : childAttendanceStatus === "unconfirmed"
+                          ? "POTWIERDŹ OBECNOŚĆ"
+                          : "ZMIEŃ OBECNOŚĆ"}
+                      </span>
+                    </DeltaButton>
+
+                    <DeltaButton
+                      variant="primary"
+                      size="sm"
+                      touchTarget={true}
+                      className="flex-1 sm:flex-none font-black text-xs"
+                      onClick={() => openMatch(nextMatch, "summary", "home")}
+                    >
+                      <span>CENTRUM MECZU</span>
+                      <ChevronRight size={15} />
+                    </DeltaButton>
+                  </div>
+                </div>
+              </DeltaCard>
+            </section>
+          ) : (
+            /* COMPACT EMPTY STATE (V4.2 REQUIREMENT 2) */
+            <DeltaCard
+              variant="elevated"
+              padding="sm"
+              className="delta-gaming-card border-white/10 bg-gradient-to-r from-[#0d1017] via-[#121520] to-[#0d1017] flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4"
+            >
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
+                  <CalendarDays size={20} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <DeltaBadge variant="default" size="sm">
+                      PRZERWA W ROZGRYWKACH
+                    </DeltaBadge>
+                    <span className="text-[11px] font-bold text-slate-400">
+                      DELTA 2018 GM
+                    </span>
+                  </div>
+                  <strong className="text-xs sm:text-sm font-black text-slate-100 truncate mt-0.5">
+                    Brak zaplanowanych meczów ligowych
+                  </strong>
+                  <span className="text-[11px] text-slate-400 line-clamp-1">
+                    Terminarz kolejnych spotkań MZPN zostanie opublikowany wkrótce.
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col gap-0.5">
-                <strong className="text-sm font-black text-slate-100 group-hover:text-amber-300 transition-colors">
-                  {tile.title}
-                </strong>
-                <span className="text-xs text-slate-400 line-clamp-1">{tile.desc}</span>
-              </div>
-              <div className="flex items-center justify-end text-xs font-bold text-slate-400 group-hover:text-amber-400 transition-colors">
-                <span>Otwórz</span>
-                <ChevronRight size={14} />
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                <DeltaButton
+                  variant="outline"
+                  size="sm"
+                  touchTarget={true}
+                  className="flex-1 sm:flex-none text-xs font-bold"
+                  onClick={() => onSelectTab("matches")}
+                >
+                  <CalendarDays size={14} />
+                  <span>TERMINARZ & WYNIKI</span>
+                </DeltaButton>
               </div>
             </DeltaCard>
-          ))}
-        </div>
-      </section>
-
-      {/* ==================================================================
-          6. LEVEL & XP GAMING PANEL + MISSIONS & WEEKLY GOALS (DUO GRID)
-          ================================================================== */}
-      <section className="delta-dashboard-duo-grid">
-        {/* Left: Level & XP Panel */}
-        <DeltaCard variant="gold" padding="md" className="flex flex-col justify-between gap-4">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <Crown size={14} />
-                PROFIL GRACZA
-              </span>
-              <DeltaBadge variant="crimson" size="sm">
-                🔥 {streak} {streak === 1 ? "dzień serii" : "dni serii"}
-              </DeltaBadge>
-            </div>
-
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-xl sm:text-2xl font-black text-slate-100 m-0">
-                Poziom {levelInfo.level}
-              </h3>
-              <span className="text-xs font-bold text-amber-300 truncate">
-                {levelInfo.title}
-              </span>
-            </div>
-
-            <p className="text-xs text-slate-300 mt-1 mb-3">
-              Zdobywaj XP za obecności, mecze, quizy oraz misje tygodniowe.
-            </p>
-
-            {/* XP Progress Bar */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono font-bold">
-                <span className="text-slate-400">Postęp poziomu</span>
-                <span className="text-amber-300">
-                  {levelInfo.currentLevelXP} / {levelInfo.nextLevelXP} XP
-                </span>
-              </div>
-              <div className="h-2.5 bg-slate-900 rounded-full overflow-hidden border border-white/10 p-0.5">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
-                  style={{ width: `${levelInfo.progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
-            <span className="text-xs font-bold text-slate-300">
-              Sezon 1: Młode Wilki
-            </span>
-            <DeltaButton
-              variant="gold"
-              size="sm"
-              onClick={() => onOpenModalAction("seasonpass")}
-            >
-              <span>BATTLE PASS</span>
-              <ChevronRight size={14} />
-            </DeltaButton>
-          </div>
-        </DeltaCard>
-
-        {/* Center / Right (Col span 2): Missions & Weekly Goals */}
-        <DeltaCard variant="default" padding="md" className="lg:col-span-2 flex flex-col justify-between gap-3">
-          <DeltaSectionHeader
-            kicker="WYZWANIA & CELE"
-            title="Misje Dnia i Rytm Sezonu"
-            action={
-              <DeltaButton
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenModalAction("missions")}
-              >
-                WSZYSTKIE MISJE ({dailyMissions.length || 0})
-              </DeltaButton>
-            }
-          />
-
-          {missionsLoading ? (
-            <div className="space-y-2 py-2">
-              <DeltaSkeleton variant="card" height="48px" />
-              <DeltaSkeleton variant="card" height="48px" />
-            </div>
-          ) : dailyMissions.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 my-1">
-              {dailyMissions.slice(0, 2).map((mission) => (
-                <div
-                  key={mission.id}
-                  className="p-3 rounded-xl bg-[#141822] border border-white/8 flex items-center justify-between gap-2.5 hover:border-amber-400/30 transition-all cursor-pointer"
-                  onClick={() => onOpenModalAction("missions")}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span className="text-lg shrink-0">{mission.icon || "⚽"}</span>
-                    <div className="flex flex-col min-w-0">
-                      <b className="text-xs font-black text-slate-100 truncate">
-                        {mission.title}
-                      </b>
-                      <span className="text-[10px] text-slate-400 line-clamp-1">
-                        {mission.description}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end shrink-0">
-                    <DeltaBadge variant="gold" size="sm">
-                      +{mission.xpReward} XP
-                    </DeltaBadge>
-                    <span className="text-[10px] font-mono text-slate-400 mt-1">
-                      {mission.currentCount}/{mission.targetCount}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <DeltaEmptyState
-              title="Wszystkie misje wykonane!"
-              description="Nowe wyzwania pojawią się o północy. Sprawdź tabelę ligową lub zagraj w Typera."
-              action={{
-                label: "PRZEJDŹ DO TYPERA",
-                onClick: () => onOpenModalAction("typer"),
-              }}
-            />
           )}
 
-          {/* Team Season Goal Track */}
-          <div className="p-3 rounded-xl bg-gradient-to-r from-red-950/25 via-[#121622] to-[#0d1017] border border-red-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-2 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 shrink-0">
-                <Target size={18} />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-black text-slate-100 truncate">
-                  Wspólny cel: 50 bramek w sezonie
-                </span>
-                <small className="text-[10px] text-slate-400">
-                  Aktualnie: <strong className="text-amber-300">{teamSummary.goals}</strong> / {teamGoalTarget} bramek ({teamGoalProgress}%)
-                </small>
-              </div>
-            </div>
-            <div className="w-full sm:w-44 h-2 bg-slate-900 rounded-full overflow-hidden border border-white/10 shrink-0">
-              <div
-                className="h-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400"
-                style={{ width: `${Math.min(100, teamGoalProgress)}%` }}
-              />
-            </div>
-          </div>
-        </DeltaCard>
-      </section>
+          {/* QUICK ACTION TILES (MOBILE 2x2 / DESKTOP 4x1) */}
+          <section aria-label="Szybkie akcje" className="w-full">
+            {/* Mobile: 4 Large Touch-Optimized Tiles */}
+            <div className="delta-mobile-only delta-quick-actions-mobile-grid">
+              <DeltaCard
+                variant="interactive"
+                padding="sm"
+                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
+                onClick={() => onSelectTab("matches")}
+              >
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                  <CalendarDays size={18} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <strong className="text-xs font-black text-slate-100 truncate">Terminarz</strong>
+                  <small className="text-[10px] text-slate-400">Mecze i wyniki</small>
+                </div>
+              </DeltaCard>
 
-      {/* ==================================================================
-          7. INFERNO 3D COLLECTION SHOWCASE & RECENT REWARDS
-          ================================================================== */}
-      <section className="space-y-4">
-        <DeltaSectionHeader
-          kicker="INFERNO 3D CARDS"
-          title="Kolekcja Kart Zawodników DELTA"
-          subtitle="Zbieraj trójwymiarowe karty klubowe, sprawdzaj statystyki i buduj mistrzowski skład."
-          action={
-            <DeltaButton
-              variant="gold"
-              size="sm"
-              onClick={() => onSelectTab("collection")}
-            >
-              <span>OTWÓRZ ALBUM</span>
-              <ChevronRight size={14} />
-            </DeltaButton>
-          }
-        />
+              <DeltaCard
+                variant="interactive"
+                padding="sm"
+                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
+                onClick={() => onSelectTab("collection")}
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 shrink-0">
+                  <Layers size={18} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <strong className="text-xs font-black text-slate-100 truncate">Karty 3D</strong>
+                  <small className="text-[10px] text-slate-400">Album i paczki</small>
+                </div>
+              </DeltaCard>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
-          {/* Left & Center: Featured 3D Player Cards Showcase */}
+              <DeltaCard
+                variant="interactive"
+                padding="sm"
+                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
+                onClick={() => onOpenModalAction("typer")}
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                  <Target size={18} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <strong className="text-xs font-black text-slate-100 truncate">Typer DELTA</strong>
+                  <small className="text-[10px] text-slate-400">Typuj i zbieraj DP</small>
+                </div>
+              </DeltaCard>
+
+              <DeltaCard
+                variant="interactive"
+                padding="sm"
+                className="delta-gaming-card flex items-center gap-2.5 min-h-[58px]"
+                onClick={() => onOpenModalAction("missions")}
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Zap size={18} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <strong className="text-xs font-black text-slate-100 truncate">Misje & XP</strong>
+                  <small className="text-[10px] text-slate-400">Cele dzienne</small>
+                </div>
+              </DeltaCard>
+            </div>
+
+            {/* Desktop: Streamlined 4-tile Gaming Action Bar */}
+            <div className="delta-desktop-only delta-quick-actions-desktop-grid">
+              {[
+                {
+                  id: "matches",
+                  title: "Terminarz & Wyniki",
+                  desc: "Mecze i tabela ligowa",
+                  icon: CalendarDays,
+                  color: "text-red-400",
+                  badge: "MECZE",
+                  badgeVariant: "crimson" as const,
+                  action: () => onSelectTab("matches"),
+                },
+                {
+                  id: "collection",
+                  title: "Karty 3D & Paczki",
+                  desc: "Album i wymiany",
+                  icon: Layers,
+                  color: "text-amber-400",
+                  badge: "INFERNO",
+                  badgeVariant: "gold" as const,
+                  action: () => onSelectTab("collection"),
+                },
+                {
+                  id: "typer",
+                  title: "Typer DELTA",
+                  desc: "Zbieraj punkty DP",
+                  icon: Target,
+                  color: "text-emerald-400",
+                  badge: "PUNKTY DP",
+                  badgeVariant: "gold" as const,
+                  action: () => onOpenModalAction("typer"),
+                },
+                {
+                  id: "missions",
+                  title: "Misje & Cele",
+                  desc: "Wyzwania dzienne",
+                  icon: Zap,
+                  color: "text-amber-400",
+                  badge: "XP & NAGRODY",
+                  badgeVariant: "gold" as const,
+                  action: () => onOpenModalAction("missions"),
+                },
+              ].map((tile) => (
+                <DeltaCard
+                  key={tile.id}
+                  variant="interactive"
+                  padding="sm"
+                  className="delta-gaming-card flex flex-col justify-between gap-2.5 group"
+                  onClick={tile.action}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className={`p-2 rounded-xl bg-white/5 border border-white/10 ${tile.color} group-hover:scale-110 transition-transform`}>
+                      <tile.icon size={18} />
+                    </div>
+                    <DeltaBadge variant={tile.badgeVariant} size="sm">
+                      {tile.badge}
+                    </DeltaBadge>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <strong className="text-xs font-black text-slate-100 group-hover:text-amber-300 transition-colors">
+                      {tile.title}
+                    </strong>
+                    <span className="text-[10px] text-slate-400 line-clamp-1">{tile.desc}</span>
+                  </div>
+                </DeltaCard>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* ================================================================
+            COLUMN 2 (RIGHT / 5 COLS): GAMING SIDECAR (VAULT + XP & MISSIONS)
+            ================================================================ */}
+        <div className="flex flex-col gap-4 min-w-0">
+          {/* 1. INFERNO 3D CARDS VAULT & PACKS (HIGH ON SCREEN) */}
           <DeltaCard
             variant="elevated"
             padding="md"
-            className="lg:col-span-2 border-white/10 relative overflow-hidden"
+            className="delta-gaming-card border-white/10 relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/8">
               <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
                 <Sparkles size={14} />
-                WYRÓŻNIENI ZAWODNICY DRUŻYNY
+                KOLEKCJA INFERNO 3D
               </span>
-              <DeltaBadge variant="default" size="sm">
-                Skład: {players.length} graczy
+              <DeltaBadge variant="gold" size="sm">
+                Skład: {players.length}
               </DeltaBadge>
             </div>
 
+            {/* Featured Cards Mini-Row */}
             {featuredPlayers.length > 0 ? (
-              <div className="flex items-center justify-around gap-2 sm:gap-4 flex-wrap sm:flex-nowrap py-2 overflow-x-auto">
+              <div className="flex items-center justify-around gap-2 py-1 overflow-x-auto">
                 {featuredPlayers.slice(0, 3).map((player) => (
                   <div
                     key={player.id}
-                    className="flex flex-col items-center gap-2 cursor-pointer group"
+                    className="flex flex-col items-center gap-1.5 cursor-pointer group"
                     onClick={() => openPlayerProfile(player)}
                   >
                     <div className="transform transition-transform group-hover:scale-105 group-hover:-translate-y-1 duration-200">
@@ -1049,123 +918,147 @@ export default function DeltaCinematicDashboard({
                         templateOverride="inferno"
                       />
                     </div>
-                    <span className="text-xs font-black text-slate-200 group-hover:text-amber-400 transition-colors truncate max-w-[140px] text-center">
-                      {player.display_name}
+                    <span className="text-[11px] font-black text-slate-200 group-hover:text-amber-400 transition-colors truncate max-w-[90px] text-center">
+                      {player.display_name?.split(" ")[0]}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <DeltaEmptyState
-                icon={<Layers size={32} />}
-                title="Karty zawodników w przygotowaniu"
-                description="Kolekcja kart 3D jest synchronizowana ze składem drużyny."
-                action={{
-                  label: "PRZEJDŹ DO SKŁADU",
-                  onClick: () => onSelectTab("players"),
-                }}
-              />
+              <div className="py-4 text-center text-slate-400 text-xs">
+                Karty zawodników są synchronizowane.
+              </div>
             )}
 
-            <div className="mt-4 pt-3 border-t border-white/8 flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-xs text-slate-400 font-medium">
-                Paczki do otwarcia: <strong className="text-amber-300">{gameProfile?.unopenedPacks || 0}</strong>
-              </span>
-              <div className="flex items-center gap-2">
+            {/* Live Packs Counter & Action Bar */}
+            <div className="mt-3 pt-3 border-t border-white/8 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium">Paczki do otwarcia:</span>
+                <span className="font-mono font-black text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/30">
+                  {unopenedPacks} PACZEK
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 <DeltaButton
                   variant="outline"
                   size="sm"
+                  touchTarget={true}
+                  className="text-xs font-bold"
                   onClick={() => onSelectTab("collection")}
                 >
-                  ZAKRĘĆ KOŁEM
+                  <span>ZAKRĘĆ KOŁEM</span>
                 </DeltaButton>
                 <DeltaButton
                   variant="primary"
                   size="sm"
+                  touchTarget={true}
+                  className="text-xs font-black"
                   onClick={() => onSelectTab("collection")}
                 >
-                  OTWÓRZ PACZKĘ
+                  <Gift size={14} />
+                  <span>OTWÓRZ PACZKĘ</span>
                 </DeltaButton>
               </div>
             </div>
           </DeltaCard>
 
-          {/* Right: Recent Rewards / Achievements Feed */}
-          <DeltaCard variant="default" padding="md" className="flex flex-col justify-between gap-3 h-full">
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/8">
-                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
-                  <Gift size={14} />
-                  OSTATNIE NAGRODY & PUNKTY
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onOpenModalAction("trophies")}
-                  className="text-[11px] font-bold text-slate-400 hover:text-amber-300 cursor-pointer"
-                >
-                  Trofea →
-                </button>
-              </div>
-
-              {rewardsLoading ? (
-                <div className="space-y-2 py-2">
-                  <DeltaSkeleton variant="text" width="100%" />
-                  <DeltaSkeleton variant="text" width="80%" />
-                  <DeltaSkeleton variant="text" width="90%" />
-                </div>
-              ) : recentRewards.length > 0 ? (
-                <div className="space-y-2.5">
-                  {recentRewards.map((notif: any) => (
-                    <div
-                      key={notif.id}
-                      className="p-2.5 rounded-lg bg-white/4 border border-white/6 flex items-start gap-2.5"
-                    >
-                      <div className="p-1.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20 shrink-0 mt-0.5">
-                        <Sparkles size={13} />
-                      </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <b className="text-xs font-bold text-slate-100 truncate">
-                          {notif.title}
-                        </b>
-                        <p className="text-[10px] text-slate-400 m-0 line-clamp-1">
-                          {notif.message || notif.body}
-                        </p>
-                        <small className="text-[9px] text-slate-500 mt-0.5">
-                          {new Date(notif.created_at).toLocaleDateString("pl-PL")}
-                        </small>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-slate-400 text-xs">
-                  <Trophy size={28} className="mx-auto text-amber-400/50 mb-1.5" />
-                  <p className="m-0 font-bold text-slate-300">Pierwsze nagrody czekają</p>
-                  <small className="text-slate-500">
-                    Otwieraj paczki, typuj wyniki i zbieraj trofea.
-                  </small>
-                </div>
-              )}
+          {/* 2. PLAYER XP & DAILY MISSIONS (HIGH ON SCREEN) */}
+          <DeltaCard variant="gold" padding="md" className="delta-gaming-card flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <Crown size={14} />
+                PROFIL & MISJE DNIA
+              </span>
+              <DeltaBadge variant="crimson" size="sm">
+                🔥 {streak} {streak === 1 ? "dzień serii" : "dni"}
+              </DeltaBadge>
             </div>
 
-            <div className="pt-2 border-t border-white/8">
+            {/* Level & XP Mini Banner */}
+            <div className="p-2.5 rounded-xl bg-[#0b0e14]/90 border border-white/8">
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <span className="text-sm font-black text-slate-100">
+                  Poziom {levelInfo.level} • <span className="text-amber-300">{levelInfo.title}</span>
+                </span>
+                <span className="text-[10px] font-mono text-slate-400">
+                  {levelInfo.currentLevelXP}/{levelInfo.nextLevelXP} XP
+                </span>
+              </div>
+              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
+                  style={{ width: `${levelInfo.progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Missions List */}
+            {missionsLoading ? (
+              <div className="space-y-1.5 py-1">
+                <DeltaSkeleton variant="text" width="100%" />
+                <DeltaSkeleton variant="text" width="80%" />
+              </div>
+            ) : dailyMissions.length > 0 ? (
+              <div className="space-y-1.5">
+                {dailyMissions.slice(0, 2).map((mission) => (
+                  <div
+                    key={mission.id}
+                    className="p-2 rounded-lg bg-[#141822]/90 border border-white/8 flex items-center justify-between gap-2 hover:border-amber-400/30 transition-all cursor-pointer"
+                    onClick={() => onOpenModalAction("missions")}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-sm shrink-0">{mission.icon || "⚽"}</span>
+                      <div className="flex flex-col min-w-0">
+                        <b className="text-xs font-bold text-slate-100 truncate">
+                          {mission.title}
+                        </b>
+                        <span className="text-[10px] text-slate-400 truncate">
+                          {mission.description}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <DeltaBadge variant="gold" size="sm">
+                        +{mission.xpReward} XP
+                      </DeltaBadge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <DeltaEmptyState
+                variant="compact"
+                title="Wszystkie misje wykonane!"
+                description="Kolejne zadania pojawią się o północy."
+                action={{
+                  label: "PRZEJDŹ DO TYPERA",
+                  onClick: () => onOpenModalAction("typer"),
+                }}
+              />
+            )}
+
+            {/* Battle Pass Link */}
+            <div className="pt-2 border-t border-white/8 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-300">
+                Sezon 1: Młode Wilki
+              </span>
               <DeltaButton
-                variant="secondary"
+                variant="outline"
                 size="sm"
-                fullWidth={true}
-                onClick={() => onOpenModalAction("notifications")}
+                onClick={() => onOpenModalAction("seasonpass")}
               >
-                CENTRUM POWIADOMIEŃ
+                <span>BATTLE PASS</span>
+                <ChevronRight size={13} />
               </DeltaButton>
             </div>
           </DeltaCard>
         </div>
-      </section>
+      </div>
 
       {/* ==================================================================
-          8. CLUB NEWS & DELTA SYNC UPDATES
+          5. CLUB NEWS & DELTA SYNC UPDATES (TRIO GRID)
           ================================================================== */}
-      <section className="space-y-3">
+      <section className="space-y-3 pt-2">
         <DeltaSectionHeader
           kicker="Z ŻYCIA KLUBU"
           title="Aktualności & Komunikaty"
@@ -1189,7 +1082,7 @@ export default function DeltaCinematicDashboard({
                 key={item.id}
                 variant="interactive"
                 padding="sm"
-                className="flex flex-col justify-between gap-3"
+                className="delta-gaming-card flex flex-col justify-between gap-3"
                 onClick={() => onSelectTab("news")}
               >
                 <div className="space-y-1.5">
@@ -1226,7 +1119,8 @@ export default function DeltaCinematicDashboard({
           {news.length === 0 && (
             <div className="col-span-3">
               <DeltaEmptyState
-                icon={<Bell size={28} />}
+                variant="compact"
+                icon={<Bell size={24} />}
                 title="Brak nowych komunikatów"
                 description="Wszystkie oficjalne informacje klubowe pojawią się w tej sekcji."
               />
@@ -1236,9 +1130,9 @@ export default function DeltaCinematicDashboard({
       </section>
 
       {/* ==================================================================
-          9. TEAM SUMMARY & STATS STRIP
+          6. TEAM SUMMARY & STATS STRIP
           ================================================================== */}
-      <section aria-label="Statystyki zespołu" className="w-full">
+      <section aria-label="Statystyki zespołu" className="w-full pt-1">
         <div className="delta-dashboard-stats-grid-box">
           {[
             { label: "MECZE", val: teamSummary.played, icon: Target, glow: "gold" as const, note: "Rozegrane" },
@@ -1254,11 +1148,11 @@ export default function DeltaCinematicDashboard({
             },
             { label: "ASYSTY", val: teamSummary.assists, icon: Star, glow: "gold" as const, note: "Kluczowe podania" },
           ].map((item) => (
-            <DeltaCard key={item.label} variant={item.glow} padding="sm" className="text-center">
+            <DeltaCard key={item.label} variant={item.glow} padding="sm" className="delta-gaming-card text-center">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
                 {item.label}
               </span>
-              <strong className="text-2xl sm:text-3xl font-black text-slate-100 block">
+              <strong className="text-xl sm:text-2xl font-black text-slate-100 block">
                 {item.val}
               </strong>
               <small className="text-[10px] text-slate-400 block mt-0.5 truncate">
