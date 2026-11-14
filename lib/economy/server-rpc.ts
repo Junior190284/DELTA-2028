@@ -749,12 +749,12 @@ export async function computeAuthoritativeSeasonXp(
     const [{ count: matchCount }, { count: trainCount }] = await Promise.all([
       adminClient
         .from("match_attendance")
-        .select("id", { count: "exact", head: true })
+        .select("*", { count: "exact", head: true })
         .in("player_id", playerIds)
         .in("status", ["present", "yes"]),
       adminClient
         .from("training_attendance")
-        .select("id", { count: "exact", head: true })
+        .select("*", { count: "exact", head: true })
         .in("player_id", playerIds)
         .eq("status", "present")
     ]);

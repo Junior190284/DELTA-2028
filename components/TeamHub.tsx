@@ -1374,8 +1374,30 @@ export default function TeamHub(props:{
   }
 
   async function setParentAttendance(matchId:string,playerId:string,status:"yes"|"no"|"maybe"){
-    const {error}=await supabase.from("match_attendance").upsert({match_id:matchId,player_id:playerId,status,updated_by:props.profile.id},{onConflict:"match_id,player_id"});
-    if(!error)setAttendance(prev=>[...prev.filter(a=>!(a.match_id===matchId&&a.player_id===playerId)),{match_id:matchId,player_id:playerId,status}]);
+    const previous = attendance.find(a => a.match_id === matchId && a.player_id === playerId);
+    setAttendance(prev=>[...prev.filter(a=>!(a.match_id===matchId&&a.player_id===playerId)),{match_id:matchId,player_id:playerId,status}]);
+
+    try {
+      const res = await fetch("/api/matches/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, playerId, status })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error("Błąd zapisu obecności na meczu:", data.error);
+        setAttendance(prev => [
+          ...prev.filter(a => !(a.match_id === matchId && a.player_id === playerId)),
+          ...(previous ? [previous] : [])
+        ]);
+      }
+    } catch (err) {
+      console.error("Wyjątek zapisu obecności na meczu:", err);
+      setAttendance(prev => [
+        ...prev.filter(a => !(a.match_id === matchId && a.player_id === playerId)),
+        ...(previous ? [previous] : [])
+      ]);
+    }
   }
 
   async function handleSetTrainingAttendance(
@@ -1394,15 +1416,22 @@ export default function TeamHub(props:{
       { training_id: trainingId, player_id: playerId, status, updated_by: props.profile.id }
     ]);
 
-    const { error } = await supabase.from("training_attendance").upsert({
-      training_id: trainingId,
-      player_id: playerId,
-      status,
-      updated_by: props.profile.id
-    }, { onConflict: "training_id,player_id" });
-
-    if (error) {
-      console.error("Błąd zapisu obecności na treningu:", error);
+    try {
+      const res = await fetch("/api/training/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, playerId, status })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error("Błąd zapisu obecności na treningu:", data.error);
+        setTrainingAttendance(prev => [
+          ...prev.filter(a => !(a.training_id === trainingId && a.player_id === playerId)),
+          ...(previous ? [previous] : [])
+        ]);
+      }
+    } catch (err) {
+      console.error("Wyjątek zapisu obecności na treningu:", err);
       setTrainingAttendance(prev => [
         ...prev.filter(a => !(a.training_id === trainingId && a.player_id === playerId)),
         ...(previous ? [previous] : [])
