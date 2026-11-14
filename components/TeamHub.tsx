@@ -26,6 +26,7 @@ import AchievementUnlock from "./AchievementUnlock";
 import DeltaTyperModal from "./DeltaTyperModal";
 import DeltaKnowledgeCornerModal from "./DeltaKnowledgeCornerModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
+import DeltaMatchHub20 from "./matches/DeltaMatchHub20";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
 import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
 import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
@@ -2190,7 +2191,22 @@ export default function TeamHub(props:{
         players={players} stats={stats} trainingStats={trainingPlayerStats} chemistry={trainingChemistry} matches={matches} trainingSessions={trainingSessions} onOpenPlayer={openPlayerProfile}
       />}
 
-      {tab==="matches"&&<section className="section v8-section-page v105-match-archive"><header className="v105-section-hero devil-card"><div className="v105-section-hero-content"><span className="eyebrow gold">DELTA 2018 GM • MATCH CENTER</span><h2>WSZYSTKIE <em>MECZE</em></h2><p>Każda kolejka. Każdy wynik. Jedna drużyna.</p><div className="v105-section-hero-meta"><span><Trophy size={15}/>{teamSummary.played} rozegranych</span><span><Goal size={15}/>{teamSummary.goals} bramek</span><span><CalendarDays size={15}/>{matches.filter(m=>m.status==="scheduled").length} zaplanowanych</span></div></div><div className="v105-section-hero-icon" aria-hidden="true"><img src="/teamlogos/gm.png" alt=""/></div></header><div className="list">{matchArchiveItems.map(item=>item.match?(()=>{const m=item.match;return <article className={`match-row devil-card v105-broadcast-fixture ${m.status==="played"?"is-played":"is-upcoming"}`} key={item.key}><div className="teamline"><Logo team={m.home_team} size={38}/><strong>{m.home_team}</strong></div><div className="score">{m.status==="played"?`${m.home_score}:${m.away_score}`:"–:–"}</div><div className="teamline right"><strong>{m.away_team}</strong><Logo team={m.away_team} size={38}/></div><div className="match-meta">Kolejka {m.round_no||"—"} • {datePL(m.match_date)} {m.match_time||""} • {m.venue||"—"}</div><div className="match-actions-row"><button className="open-match-btn" onClick={()=>openMatch(m,"summary")}>{canManageMatches||canEditMatchEvents?"EDYTUJ MECZ / CENTRUM MECZU":"SZCZEGÓŁY MECZU"}</button></div></article>})():<article className="devil-card v105-bye-card" key={item.key}><CalendarDays size={30}/><div><span>KOLEJKA {item.bye!.round} • {datePL(item.bye!.date)}</span><h3>DELTA GM PAUZUJE</h3><p>W tej kolejce drużyna nie rozgrywa meczu.</p></div></article>)}</div></section>}
+      {tab==="matches"&&<DeltaMatchHub20
+        matches={matches}
+        players={players}
+        attendance={attendance}
+        lineup={lineup}
+        events={events}
+        leagueByes={ourLeagueByes}
+        currentUserId={props.profile.id}
+        currentUserRole={props.profile.role}
+        parentPlayerIds={props.parentPlayerIds}
+        canManageMatches={canManageMatches}
+        canEditMatchEvents={canEditMatchEvents}
+        onOpenMatch={(m,t)=>openMatch(m,t)}
+        onSetAttendance={setParentAttendance}
+        onSwitchToTraining={()=>setTab("training")}
+      />}
 
       {tab==="calendar"&&<section className="section v8-section-page v891-calendar-page">
         <div className="v891-calendar-hero devil-card">
