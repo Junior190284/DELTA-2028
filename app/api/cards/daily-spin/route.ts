@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DAILY_SPIN_SEGMENTS, selectRandomSpinSegment, type SpinSegment } from "@/lib/economy/security";
 import { claimDailySpinServerSide, serializeEconomyError } from "@/lib/economy/server-rpc";
-
-export { DAILY_SPIN_SEGMENTS, selectRandomSpinSegment, type SpinSegment };
 
 function getTodayDateStr(): string {
   return new Date().toISOString().slice(0, 10);

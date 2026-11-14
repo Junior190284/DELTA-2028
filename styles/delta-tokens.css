@@ -1,7 +1,30 @@
 /**
- * DELTA INFERNO — DESIGN SYSTEM 2.0 TOKENS & RESPONSIVE ENGINE
+ * DELTA INFERNO — DESIGN SYSTEM 2.0 TOKENS & TAILWIND CSS V4 ENGINE
  * Semantic Design Tokens for Dark Sports Experience & Inferno Theme
  */
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme {
+  --color-delta-canvas: #07080b;
+  --color-delta-canvas-subtle: #0b0d13;
+  --color-delta-surface-1: #0f1117;
+  --color-delta-surface-2: #161922;
+  --color-delta-surface-3: #1f2330;
+  --color-delta-crimson: #dc2626;
+  --color-delta-crimson-hover: #ef4444;
+  --color-delta-crimson-active: #b91c1c;
+  --color-delta-gold: #f59e0b;
+  --color-delta-gold-hover: #fbbf24;
+  --color-delta-gold-active: #d97706;
+  --color-delta-success: #10b981;
+  --color-delta-info: #3b82f6;
+  --color-delta-warning: #f59e0b;
+  --color-delta-danger: #ef4444;
+}
 
 :root {
   /* =========================================================

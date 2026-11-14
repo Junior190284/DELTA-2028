@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  QUIZ_PASS_THRESHOLD_PERCENT,
-  QUIZ_LESSON_REWARDS,
-  getQuizRewardForLesson
-} from "@/lib/economy/security";
 import { completeQuizServerSide, serializeEconomyError } from "@/lib/economy/server-rpc";
-
-export { QUIZ_PASS_THRESHOLD_PERCENT, QUIZ_LESSON_REWARDS, getQuizRewardForLesson };
 
 export async function POST(req: Request) {
   try {

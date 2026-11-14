@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PACK_PRICES } from "@/lib/economy/security";
 import { purchasePackServerSide, serializeEconomyError } from "@/lib/economy/server-rpc";
-
-export { PACK_PRICES };
 
 export async function POST(req: Request) {
   try {
