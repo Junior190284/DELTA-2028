@@ -267,6 +267,16 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
       .sort((a, b) => a.match_date.localeCompare(b.match_date));
   }, [matches]);
 
+  // Upcoming matches timeline items (scheduled matches + upcoming byes)
+  const upcomingTimelineItems = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const list: Array<{ key: string; date: string; match?: Match; bye?: LeagueBye }> = [
+      ...scheduledMatches.map(m => ({ key: `match-${m.id}`, date: m.match_date, match: m })),
+      ...leagueByes.filter(b => b.date >= today).map(b => ({ key: `bye-${b.round}`, date: b.date, bye: b }))
+    ];
+    return list.sort((a, b) => a.date.localeCompare(b.date));
+  }, [scheduledMatches, leagueByes]);
+
   // Combined timeline items (matches + byes)
   const allTimelineItems = useMemo(() => {
     const list: Array<{ key: string; date: string; match?: Match; bye?: LeagueBye }> = [
@@ -368,53 +378,53 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
   };
 
   return (
-    <section className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6 text-white">
-      {/* HEADER: CINEMATIC STADIUM ATMOSPHERE */}
-      <header className="relative mb-6 rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-b from-[#141824] via-[#0d1017] to-[#07090d] p-5 sm:p-6 md:p-8 shadow-2xl">
+    <section className="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-white">
+      {/* HEADER: CINEMATIC STADIUM ATMOSPHERE (COMPACT ~38% HEIGHT REDUCTION) */}
+      <header className="relative mb-3.5 sm:mb-4 rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-b from-[#141824] via-[#0d1017] to-[#07090d] p-3.5 sm:p-4 md:p-5 shadow-2xl">
         <div
           className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_50%_0%,#dc2626_0%,transparent_60%)]"
           aria-hidden="true"
         />
         <div
-          className="absolute -right-16 -top-16 w-64 h-64 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_center,#f59e0b_0%,transparent_70%)]"
+          className="absolute -right-16 -top-16 w-48 h-48 pointer-events-none opacity-10 bg-[radial-gradient(circle_at_center,#f59e0b_0%,transparent_70%)]"
           aria-hidden="true"
         />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase bg-red-600/20 text-red-400 border border-red-500/30 mb-2">
-              <Flame size={13} className="text-red-500 animate-pulse" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-red-600/20 text-red-400 border border-red-500/30 mb-1.5">
+              <Flame size={12} className="text-red-500 animate-pulse" />
               <span>DELTA INFERNO • MATCH HUB 2.0</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2 m-0">
               CENTRUM <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500">MECZOWE</span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-              Oficjalne mecze ligowe, terminarz spotkań, statystyki bramkowe oraz 1-Click zgłoszenia obecności dla rodziców.
+            <p className="text-xs text-slate-300 mt-0.5 max-w-xl">
+              Oficjalne mecze ligowe, terminarz, wyniki i zgłoszenia obecności dla rodziców.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-start md:self-center">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10">
-              <Trophy size={16} className="text-amber-400" />
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 self-start md:self-center">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+              <Trophy size={15} className="text-amber-400" />
               <div className="text-left">
-                <span className="block text-[10px] text-slate-400 uppercase font-semibold">Rozegrane</span>
-                <b className="text-sm font-black text-amber-300">{teamStats.played} meczów</b>
+                <span className="block text-[9px] text-slate-400 uppercase font-semibold">Rozegrane</span>
+                <b className="text-xs sm:text-sm font-black text-amber-300">{teamStats.played} meczów</b>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10">
-              <Goal size={16} className="text-red-400" />
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+              <Goal size={15} className="text-red-400" />
               <div className="text-left">
-                <span className="block text-[10px] text-slate-400 uppercase font-semibold">Bramki</span>
-                <b className="text-sm font-black text-white">{teamStats.goalsFor} goli</b>
+                <span className="block text-[9px] text-slate-400 uppercase font-semibold">Bramki</span>
+                <b className="text-xs sm:text-sm font-black text-white">{teamStats.goalsFor} goli</b>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* MATCH HERO: CENTRAL KICK-OFF CARD OR EMPTY STATE */}
-      <div className="mb-8">
+      {/* MATCH HERO: CENTRAL KICK-OFF CARD OR COMPACT EMPTY STATE */}
+      <div className="mb-3.5 sm:mb-4">
         {nextMatch ? (
           <article className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-b from-[#161c29]/95 via-[#0e131d]/95 to-[#080b11]/95 p-5 sm:p-6 md:p-8 shadow-2xl backdrop-blur-xl">
             {/* Ambient glows */}
@@ -636,38 +646,44 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
             </div>
           </article>
         ) : (
-          /* EMPTY STATE (COMPACT, ZERO FABRICATED MATCHES) */
-          <article className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#141824] to-[#0a0d14] p-6 sm:p-8 text-center shadow-xl">
-            <div className="max-w-md mx-auto flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
-                <Shield size={28} />
+          /* EMPTY STATE (COMPACT, SLEEK ~70% HEIGHT REDUCTION, ZERO FABRICATED MATCHES) */
+          <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r from-[#141824] via-[#0f131c] to-[#0a0d14] p-3.5 sm:p-4 md:p-5 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 shadow-md">
+                  <Shield size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/[0.06] text-slate-300 border border-white/10">
+                      PAUZA LIGOWA • DELTA 2018 GM
+                    </span>
+                    <h3 className="text-sm sm:text-base font-black text-white m-0">
+                      Mecze w trakcie ustalania
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    W najbliższym terminie drużyna pauzuje w lidze. Sprawdź treningi i archiwum wyników.
+                  </p>
+                </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-white/[0.06] text-slate-300 text-[11px] font-bold tracking-widest uppercase border border-white/10 mb-2">
-                PAUZA LIGOWA • DELTA 2018 GM
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-                Mecze w trakcie ustalania
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mb-6 leading-relaxed">
-                W najbliższym terminie drużyna nie rozgrywa oficjalnego meczu ligowego. Bądź gotowy na nadchodzące treningi i sprawdź ostatnie wyniki.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3 w-full">
+              <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
                 {onSwitchToTraining && (
                   <button
                     type="button"
                     onClick={onSwitchToTraining}
-                    className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-colors flex items-center gap-2 min-h-[44px]"
+                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-colors flex items-center gap-1.5 min-h-[40px]"
                   >
-                    <span>Zobacz harmonogram treningów</span>
-                    <ArrowRight size={14} />
+                    <span>Treningi</span>
+                    <ArrowRight size={13} />
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => setActiveTab("results")}
-                  className="px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs border border-white/10 transition-colors min-h-[44px]"
+                  className="px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs border border-white/10 transition-colors min-h-[40px]"
                 >
-                  Archiwum wyników
+                  Wyniki
                 </button>
               </div>
             </div>
@@ -675,12 +691,12 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
         )}
       </div>
 
-      {/* FILTER PILLS / NAVIGATION TABS */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
+      {/* FILTER PILLS / NAVIGATION TABS (OPTIMIZED SPACING) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 mb-3.5 sm:mb-4 scrollbar-none">
         <button
           type="button"
           onClick={() => setActiveTab("upcoming")}
-          className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[44px] flex items-center gap-1.5 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[40px] flex items-center gap-1.5 ${
             activeTab === "upcoming"
               ? "bg-amber-500 text-black shadow-lg shadow-amber-950/30"
               : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/10"
@@ -693,7 +709,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
         <button
           type="button"
           onClick={() => setActiveTab("results")}
-          className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[44px] flex items-center gap-1.5 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[40px] flex items-center gap-1.5 ${
             activeTab === "results"
               ? "bg-amber-500 text-black shadow-lg shadow-amber-950/30"
               : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/10"
@@ -706,7 +722,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
         <button
           type="button"
           onClick={() => setActiveTab("stats")}
-          className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[44px] flex items-center gap-1.5 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[40px] flex items-center gap-1.5 ${
             activeTab === "stats"
               ? "bg-amber-500 text-black shadow-lg shadow-amber-950/30"
               : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/10"
@@ -719,7 +735,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
         <button
           type="button"
           onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[44px] flex items-center gap-1.5 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-black tracking-wide shrink-0 transition-all min-h-[40px] flex items-center gap-1.5 ${
             activeTab === "all"
               ? "bg-amber-500 text-black shadow-lg shadow-amber-950/30"
               : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/10"
@@ -732,64 +748,87 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
 
       {/* TAB CONTENT 1: UPCOMING SCHEDULE */}
       {activeTab === "upcoming" && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1 mb-1">
             <span className="font-bold uppercase tracking-wider">NADCHODZĄCE SPOTKANIA LIGOWE</span>
             <span>{scheduledMatches.length} w terminarzu</span>
           </div>
 
-          {scheduledMatches.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3">
-              {scheduledMatches.map(m => {
-                const timing = getMatchTimingStatus(m.match_date, m.match_time);
-                return (
-                  <article
-                    key={m.id}
-                    className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-                      {/* Date & Round badge */}
-                      <div className="sm:w-28 shrink-0">
-                        <span className="block text-[11px] font-bold text-amber-400 uppercase">
-                          Kolejka {m.round_no || "—"}
-                        </span>
-                        <b className="text-sm text-white block">{datePL(m.match_date)}</b>
-                        <span className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                          <Clock size={12} /> {m.match_time ? m.match_time.slice(0, 5) : "Do ustalenia"}
-                        </span>
-                      </div>
-
-                      {/* Teams & Logos */}
-                      <div className="flex items-center gap-3">
-                        <TeamLogo team={m.home_team} size={36} />
-                        <div className="text-sm font-black text-white">
-                          <span>{formatTeamName(m.home_team)}</span>
-                          <span className="text-slate-500 font-normal mx-2">vs</span>
-                          <span>{formatTeamName(m.away_team)}</span>
+          {upcomingTimelineItems.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
+              {upcomingTimelineItems.map(item => {
+                if (item.match) {
+                  const m = item.match;
+                  const timing = getMatchTimingStatus(m.match_date, m.match_time);
+                  return (
+                    <article
+                      key={item.key}
+                      className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5">
+                        {/* Date & Round badge */}
+                        <div className="sm:w-28 shrink-0">
+                          <span className="block text-[11px] font-bold text-amber-400 uppercase">
+                            Kolejka {m.round_no || "—"}
+                          </span>
+                          <b className="text-sm text-white block">{datePL(m.match_date)}</b>
+                          <span className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Clock size={12} /> {m.match_time ? m.match_time.slice(0, 5) : "Do ustalenia"}
+                          </span>
                         </div>
-                        <TeamLogo team={m.away_team} size={36} />
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0 border-white/5">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${timing.badgeClass}`}>
-                        {timing.label}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => onOpenMatch(m, "summary")}
-                        className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white font-bold text-xs border border-white/10 transition-colors flex items-center gap-1 min-h-[44px]"
-                      >
-                        <span>Szczegóły</span>
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
-                  </article>
-                );
+                        {/* Teams & Logos */}
+                        <div className="flex items-center gap-3">
+                          <TeamLogo team={m.home_team} size={36} />
+                          <div className="text-sm font-black text-white">
+                            <span>{formatTeamName(m.home_team)}</span>
+                            <span className="text-slate-500 font-normal mx-2">vs</span>
+                            <span>{formatTeamName(m.away_team)}</span>
+                          </div>
+                          <TeamLogo team={m.away_team} size={36} />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-white/5">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${timing.badgeClass}`}>
+                          {timing.label}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onOpenMatch(m, "summary")}
+                          className="px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white font-bold text-xs border border-white/10 transition-colors flex items-center gap-1 min-h-[44px]"
+                        >
+                          <span>Szczegóły</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                }
+
+                if (item.bye) {
+                  return (
+                    <article
+                      key={item.key}
+                      className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/15 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-3 text-amber-300">
+                        <CalendarDays size={18} className="text-amber-400 shrink-0" />
+                        <div>
+                          <b className="block text-white">KOLEJKA {item.bye.round} • DELTA GM PAUZUJE</b>
+                          <span className="text-slate-400">W tej kolejce drużyna nie rozgrywa meczu ligowego.</span>
+                        </div>
+                      </div>
+                      <span className="text-slate-400 font-medium shrink-0">{datePL(item.bye.date)}</span>
+                    </article>
+                  );
+                }
+
+                return null;
               })}
             </div>
           ) : (
-            <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-slate-400 text-sm">
+            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-slate-400 text-sm">
               Brak kolejnych zaplanowanych meczów w tym sezonie.
             </div>
           )}
@@ -798,14 +837,14 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
 
       {/* TAB CONTENT 2: RESULTS HISTORY */}
       {activeTab === "results" && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1 mb-1">
             <span className="font-bold uppercase tracking-wider">ROZEGRANE MECZE I WYNIKI</span>
             <span>{playedMatches.length} wyników</span>
           </div>
 
           {playedMatches.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {playedMatches.map(m => {
                 const isHome = isDeltaTeam(m.home_team);
                 const deltaG = isHome ? (m.home_score ?? 0) : (m.away_score ?? 0);
@@ -821,11 +860,11 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
                 return (
                   <article
                     key={m.id}
-                    className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 transition-all"
+                    className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 transition-all"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                       {/* Meta & Teams */}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5">
                         <div className="sm:w-28 shrink-0">
                           <span className="block text-[11px] font-bold text-amber-400 uppercase">
                             Kolejka {m.round_no || "—"}
@@ -835,19 +874,19 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <TeamLogo team={m.home_team} size={38} />
+                          <TeamLogo team={m.home_team} size={36} />
                           <div className="text-sm font-black text-white">
                             <span className={isDeltaTeam(m.home_team) ? "text-amber-300" : ""}>{formatTeamName(m.home_team)}</span>
                             <span className="text-slate-500 font-normal mx-2">vs</span>
                             <span className={isDeltaTeam(m.away_team) ? "text-amber-300" : ""}>{formatTeamName(m.away_team)}</span>
                           </div>
-                          <TeamLogo team={m.away_team} size={38} />
+                          <TeamLogo team={m.away_team} size={36} />
                         </div>
                       </div>
 
                       {/* Score Box & W/D/L Badge */}
-                      <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0 border-white/5">
-                        <div className="text-center px-3 py-1.5 rounded-xl bg-black/40 border border-white/10">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-white/5">
+                        <div className="text-center px-3 py-1 rounded-xl bg-black/40 border border-white/10">
                           <div className="text-lg font-black tracking-wider text-amber-400">
                             {m.home_score ?? 0} : {m.away_score ?? 0}
                           </div>
@@ -878,7 +917,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
 
                     {/* Goalscorers & MVP pill */}
                     {(matchGoals.length > 0 || mvpPlayer) && (
-                      <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-2 text-xs">
+                      <div className="mt-2.5 pt-2.5 border-t border-white/5 flex flex-wrap items-center gap-2 text-xs">
                         {matchGoals.length > 0 && (
                           <div className="flex items-center gap-1.5 text-slate-300 bg-white/[0.02] px-2.5 py-1 rounded-lg border border-white/5">
                             <Goal size={13} className="text-amber-400 shrink-0" />
@@ -906,7 +945,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
               })}
             </div>
           ) : (
-            <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-slate-400 text-sm">
+            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center text-slate-400 text-sm">
               Brak rozegranych meczów w tym sezonie.
             </div>
           )}
@@ -915,43 +954,43 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
 
       {/* TAB CONTENT 3: STATS & FORM */}
       {activeTab === "stats" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Summary Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
               <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mecze</span>
               <b className="text-2xl sm:text-3xl font-black text-white">{teamStats.played}</b>
-              <span className="block text-[10px] text-slate-500 mt-1">
+              <span className="block text-[10px] text-slate-500 mt-0.5">
                 {teamStats.wins}W - {teamStats.draws}R - {teamStats.losses}P
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
               <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Skuteczność</span>
               <b className="text-2xl sm:text-3xl font-black text-amber-400">{teamStats.winRate}%</b>
-              <span className="block text-[10px] text-slate-500 mt-1">Zwycięstw w sezonie</span>
+              <span className="block text-[10px] text-slate-500 mt-0.5">Zwycięstw w sezonie</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
               <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Bramki</span>
               <b className="text-2xl sm:text-3xl font-black text-emerald-400">{teamStats.goalsFor}</b>
-              <span className="block text-[10px] text-slate-500 mt-1">Stracone: {teamStats.goalsAgainst}</span>
+              <span className="block text-[10px] text-slate-500 mt-0.5">Stracone: {teamStats.goalsAgainst}</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
+            <div className="p-3 sm:p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-center">
               <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Bilans</span>
               <b className={`text-2xl sm:text-3xl font-black ${teamStats.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {teamStats.goalDiff > 0 ? `+${teamStats.goalDiff}` : teamStats.goalDiff}
               </b>
-              <span className="block text-[10px] text-slate-500 mt-1">Różnica goli</span>
+              <span className="block text-[10px] text-slate-500 mt-0.5">Różnica goli</span>
             </div>
           </div>
 
           {/* Form Strip & Top Scorers */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {/* Form */}
-            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-2">
                 <Flame size={14} className="text-red-400" />
                 <span>FORMA W OSTATNICH SPOTKANIACH</span>
               </h4>
@@ -960,7 +999,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
                   {teamStats.form.map((f, i) => (
                     <div
                       key={i}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border ${f.color}`}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-sm border ${f.color}`}
                       title={f.label}
                     >
                       {f.letter}
@@ -973,13 +1012,13 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
             </div>
 
             {/* Top Scorers */}
-            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-2">
                 <Goal size={14} className="text-amber-400" />
                 <span>NAJLEPSI STRZELCY ZESPOŁU</span>
               </h4>
               {teamStats.topScorers.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {teamStats.topScorers.map(({ player, goals, assists }, idx) => (
                     <div
                       key={player.id}
@@ -1006,13 +1045,13 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
 
       {/* TAB CONTENT 4: ALL TIMELINE (MATCHES + BYES) */}
       {activeTab === "all" && (
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1 mb-1">
             <span className="font-bold uppercase tracking-wider">KOMPLETNY SEZON • TERMINARZ I HISTORIA</span>
             <span>{allTimelineItems.length} pozycji</span>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
             {allTimelineItems.map(item => {
               if (item.match) {
                 const m = item.match;
@@ -1020,7 +1059,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
                 return (
                   <article
                     key={item.key}
-                    className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                       isPlayed
                         ? "bg-white/[0.02] border-white/5"
                         : "bg-white/[0.04] border-white/10"
@@ -1066,7 +1105,7 @@ export default function DeltaMatchHub20(props: DeltaMatchHub20Props) {
                 return (
                   <article
                     key={item.key}
-                    className="p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/15 flex items-center justify-between gap-3 text-xs"
+                    className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/15 flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="flex items-center gap-3 text-amber-300">
                       <CalendarDays size={18} className="text-amber-400 shrink-0" />

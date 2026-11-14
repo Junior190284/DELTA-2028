@@ -110,3 +110,102 @@ test("V6B Section Breakdown & Statistics — Schedule, Results, Stats & Form", (
   assert.ok(code.includes("topScorers"), "Must calculate top scorers from events");
   assert.ok(code.includes("teamStats.form"), "Must calculate team form streak (W/R/P)");
 });
+
+test("V6B.1 Polish — Compact Header (~35-40% height reduction) and tighter vertical rhythm", () => {
+  const code = fs.readFileSync(
+    path.join(rootDir, "components/matches/DeltaMatchHub20.tsx"),
+    "utf8"
+  );
+
+  // Compact padding
+  assert.ok(
+    code.includes("p-3.5 sm:p-4 md:p-5"),
+    "Header uses compact padding p-3.5 sm:p-4 md:p-5 for ~38% height reduction"
+  );
+  // Preserved stadium colors & gradients
+  assert.ok(
+    code.includes("from-[#141824] via-[#0d1017] to-[#07090d]"),
+    "Header preserves dark stadium gradient"
+  );
+  assert.ok(
+    code.includes("bg-[radial-gradient(circle_at_50%_0%,#dc2626_0%,transparent_60%)]"),
+    "Header preserves red ambient stadium lighting"
+  );
+  assert.ok(
+    code.includes("bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500"),
+    "Header preserves gold trophy gradient typography"
+  );
+  // Tighter bottom margins
+  assert.ok(
+    code.includes("mb-3.5 sm:mb-4"),
+    "Header and hero use compact mb-3.5 sm:mb-4 to bring schedule and results higher"
+  );
+});
+
+test("V6B.1 Polish — Compact Empty State (~70% height reduction)", () => {
+  const code = fs.readFileSync(
+    path.join(rootDir, "components/matches/DeltaMatchHub20.tsx"),
+    "utf8"
+  );
+
+  // Horizontal layout & compact padding
+  assert.ok(
+    code.includes("flex-col sm:flex-row sm:items-center justify-between"),
+    "Empty state uses horizontal layout on larger screens"
+  );
+  assert.ok(
+    code.includes("w-10 h-10 rounded-xl"),
+    "Empty state uses compact 40px icon box"
+  );
+});
+
+test("V6B.1 Global PWA — Multi-session suppression, 7-day postpone, safe positioning, menu install", () => {
+  const pwaCode = fs.readFileSync(
+    path.join(rootDir, "components/DeltaPWAInstallPrompt.tsx"),
+    "utf8"
+  );
+  const moreMenuCode = fs.readFileSync(
+    path.join(rootDir, "components/DeltaMoreMenuSheet.tsx"),
+    "utf8"
+  );
+
+  // Session suppression
+  assert.ok(
+    pwaCode.includes("delta_pwa_shown_session"),
+    "PWA prompt prevents multiple appearances per session using delta_pwa_shown_session"
+  );
+  assert.ok(
+    pwaCode.includes("delta_pwa_dismissed_session"),
+    "PWA prompt checks session dismissal"
+  );
+
+  // 7-day postpone
+  assert.ok(
+    pwaCode.includes("delta_pwa_dismissed_until"),
+    "PWA prompt respects 7-day postpone timestamp"
+  );
+  assert.ok(
+    pwaCode.includes("7 * 24 * 60 * 60 * 1000"),
+    "PWA prompt calculates 7 days"
+  );
+
+  // Safe positioning above bottom navigation
+  assert.ok(
+    pwaCode.includes("bottom-[84px]"),
+    "PWA prompt uses safe area bottom-[84px] above bottom nav"
+  );
+
+  // Manual trigger from menu
+  assert.ok(
+    pwaCode.includes("delta_trigger_pwa_install"),
+    "PWA prompt listens for manual delta_trigger_pwa_install custom event"
+  );
+  assert.ok(
+    moreMenuCode.includes("delta_trigger_pwa_install"),
+    "More menu dispatches delta_trigger_pwa_install custom event"
+  );
+  assert.ok(
+    moreMenuCode.includes("ZAINSTALUJ APLIKACJĘ (PWA)"),
+    "More menu provides direct manual install action"
+  );
+});
