@@ -1239,7 +1239,36 @@ export default function TeamHub(props:{
     }
   }
 
+  const closeAllModals = () => {
+    setMissionsModalOpen(false);
+    setBattleArenaModalOpen(false);
+    setSeasonPassModalOpen(false);
+    setCompetitionHubOpen(false);
+    setTrophyCabinetOpen(false);
+    setSafeTradingOpen(false);
+    setSocialFeedOpen(false);
+    setWeeklySummaryModalOpen(false);
+    setNotifPrefsModalOpen(false);
+    setChangelogModalOpen(false);
+    setCoachCornerModalOpen(false);
+    setPhotoBoothModalOpen(false);
+    setBirthdayModalOpen(false);
+    setNewsModalOpen(false);
+    setDpRulesModalOpen(false);
+    setNotificationsModalOpen(false);
+    setSyncControlModalOpen(false);
+    setAchievementsModalOpen(false);
+    setTyperModalOpen(false);
+    setKnowledgeModalOpen(false);
+    setMatchBriefModalOpen(false);
+    setTacticsModalOpen(false);
+    setQuestsModalOpen(false);
+    setTrainingKingModalOpen(false);
+    setMobileMoreOpen(false);
+  };
+
   const handleSelectTab = (targetTab: typeof tab) => {
+    closeAllModals();
     setTab(targetTab);
         setSelectedMatch(null);
     setMobileMoreOpen(false);
@@ -1321,6 +1350,7 @@ export default function TeamHub(props:{
         "achievements", "chronicle", "news", "club", "league", "teamcenter"
       ];
       if (raw && validTabs.includes(raw)) {
+        closeAllModals();
         setTab(raw as any);
       }
     };

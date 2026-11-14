@@ -649,7 +649,7 @@ export default function DeltaCollectionAlbum({
   }, [playerAlbums, selectedAlbumPlayerId]);
 
   return (
-    <section className="section v8-section-page delta-collection-20-page w-full min-w-0 max-w-full space-y-5 animate-fadeIn">
+    <section className="section v8-section-page delta-collection-20-page w-full min-w-0 max-w-full space-y-5 pb-24 sm:pb-16 animate-fadeIn">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-[100000] p-3 px-4 rounded-xl bg-gradient-to-r from-[#141824] to-[#0a0d14] border border-amber-400/40 text-slate-100 text-xs font-bold shadow-2xl flex items-center gap-2 animate-fadeIn backdrop-blur-md">

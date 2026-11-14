@@ -19,6 +19,11 @@ export const DeltaPWAInstallPrompt: React.FC = () => {
         return;
       }
 
+      // Sprawdź czy użytkownik zamknął w bieżącej sesji
+      if (sessionStorage.getItem('delta_pwa_dismissed_session') === 'true') {
+        return;
+      }
+
       // 2. Sprawdź czy użytkownik poprosił o późniejsze przypomnienie
       const dismissedUntil = localStorage.getItem('delta_pwa_dismissed_until');
       if (dismissedUntil && Number(dismissedUntil) > Date.now()) {
@@ -65,6 +70,7 @@ export const DeltaPWAInstallPrompt: React.FC = () => {
   const handleDismiss = () => {
     setIsVisible(false);
     try {
+      sessionStorage.setItem('delta_pwa_dismissed_session', 'true');
       // Przypomnij za 7 dni, nie blokując kolejnych sesji
       localStorage.setItem(
         'delta_pwa_dismissed_until',
@@ -77,7 +83,7 @@ export const DeltaPWAInstallPrompt: React.FC = () => {
 
   return (
     <div
-      className="fixed bottom-[84px] sm:bottom-6 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-40 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-red-950/80 border border-amber-500/35 shadow-2xl backdrop-blur-md animate-fadeIn flex items-start gap-3"
+      className="fixed bottom-[84px] sm:bottom-6 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-40 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-red-950/90 border border-amber-500/35 shadow-2xl backdrop-blur-md animate-fadeIn flex items-start gap-3 pointer-events-auto"
       role="alert"
       aria-live="polite"
     >
@@ -120,10 +126,10 @@ export const DeltaPWAInstallPrompt: React.FC = () => {
       <button
         type="button"
         onClick={handleDismiss}
-        className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
         aria-label="Zamknij powiadomienie instalacji"
       >
-        <X size={15} />
+        <X size={16} />
       </button>
     </div>
   );
