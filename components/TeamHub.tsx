@@ -27,6 +27,7 @@ import DeltaTyperModal from "./DeltaTyperModal";
 import DeltaKnowledgeCornerModal from "./DeltaKnowledgeCornerModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import DeltaMatchHub20 from "./matches/DeltaMatchHub20";
+import DeltaTrainingCenter20 from "./training/DeltaTrainingCenter20";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
 import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
 import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
@@ -1376,6 +1377,38 @@ export default function TeamHub(props:{
     const {error}=await supabase.from("match_attendance").upsert({match_id:matchId,player_id:playerId,status,updated_by:props.profile.id},{onConflict:"match_id,player_id"});
     if(!error)setAttendance(prev=>[...prev.filter(a=>!(a.match_id===matchId&&a.player_id===playerId)),{match_id:matchId,player_id:playerId,status}]);
   }
+
+  async function handleSetTrainingAttendance(
+    trainingId: string,
+    playerId: string,
+    status: "yes" | "no" | "maybe" | "present" | "absent"
+  ) {
+    const isCoachOrAdmin = canManageTrainingAttendance;
+    const isParent = props.parentPlayerIds.includes(playerId);
+    if (!isCoachOrAdmin && !isParent) return;
+    if (!isCoachOrAdmin && (status === "present" || status === "absent")) return;
+
+    const previous = trainingAttendance.find(a => a.training_id === trainingId && a.player_id === playerId);
+    setTrainingAttendance(prev => [
+      ...prev.filter(a => !(a.training_id === trainingId && a.player_id === playerId)),
+      { training_id: trainingId, player_id: playerId, status, updated_by: props.profile.id }
+    ]);
+
+    const { error } = await supabase.from("training_attendance").upsert({
+      training_id: trainingId,
+      player_id: playerId,
+      status,
+      updated_by: props.profile.id
+    }, { onConflict: "training_id,player_id" });
+
+    if (error) {
+      console.error("Błąd zapisu obecności na treningu:", error);
+      setTrainingAttendance(prev => [
+        ...prev.filter(a => !(a.training_id === trainingId && a.player_id === playerId)),
+        ...(previous ? [previous] : [])
+      ]);
+    }
+  }
   useEffect(() => {
     // Load cached read map
     try {
@@ -2268,153 +2301,29 @@ export default function TeamHub(props:{
         </div>}
       </section>}
 
-      {tab==="training"&&<section className="section v8-section-page v900-training-center">
-        <div className="v900-training-hero devil-card">
-          <div className="v900-training-hero-bg"/>
-          <div className="v900-training-copy">
-            <span className="eyebrow gold">DELTA 2018 GM • PERFORMANCE LAB</span>
-            <h2>CENTRUM <span>TRENINGOWE</span></h2>
-            <p>Frekwencja, gry kontrolne, gole treningowe, asysty i chemia zespołu — całkowicie oddzielone od statystyk meczów oficjalnych.</p>
-          </div>
-          <div className="v900-training-kpis">
-            <div><strong>{trainingSessions.length}</strong><span>TRENINGI</span></div>
-            <div><strong>{avgTrainingAttendance.toFixed(1)}</strong><span>ŚR. OBECNOŚĆ</span></div>
-            <div><strong>{trainingGames.length}</strong><span>GRY KONTROLNE</span></div>
-            <div><strong>{trainingEvents.filter(e=>e.event_type==="goal").length}</strong><span>GOLE TRENINGOWE</span></div>
-          </div>
-          <div style={{ marginTop: "14px", display: "flex", gap: "10px" }}>
-            <button 
-              type="button" 
-              className="v200-btn-claim-chest" 
-              onClick={() => setTrainingKingModalOpen(true)}
-              style={{ fontSize: "12px", padding: "10px 18px" }}
-            >
-              <Trophy size={16}/> OTWÓRZ RANKING: KRÓL TRENINGU & GIERKI
-            </button>
-          </div>
-        </div>
-
-        <div className="v900-training-grid">
-          <article className="v900-training-card devil-card">
-            <div className="v8-panel-title"><Users size={18}/> FREKWENCJA TRENINGOWA</div>
-            <div className="v900-training-ranking">
-              {trainingAttendanceRank.map((p,index)=>{
-                const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
-                  <span className="rank">{index+1}</span>
-                  <span className="photo">{isRyszardPlayer(p)?<img src="/assets/ryszard-player-card.png" alt={p.display_name}/>:<PlayerPhoto playerId={p.id}/>}</span>
-                  <span className="name"><b>{p.display_name}</b><small>seria: {s?.attendanceStreak||0}</small></span>
-                  <strong>{s?.sessions||0}</strong>
-                </button>
-              })}
-            </div>
-          </article>
-
-          <article className="v900-training-card devil-card">
-            <div className="v8-panel-title"><Goal size={18}/> GOLE TRENINGOWE</div>
-            <div className="v900-training-ranking compact">
-              {trainingScorers.slice(0,8).map((p,index)=>{
-                const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
-                  <span className="rank">{index+1}</span>
-                  <span className="name"><b>{p.display_name}</b><small>{s?.games||0} gier</small></span>
-                  <strong>{s?.goals||0}</strong>
-                </button>
-              })}
-            </div>
-          </article>
-
-          <article className="v900-training-card devil-card">
-            <div className="v8-panel-title"><Star size={18}/> ASYSTY TRENINGOWE</div>
-            <div className="v900-training-ranking compact">
-              {trainingAssisters.slice(0,8).map((p,index)=>{
-                const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
-                  <span className="rank">{index+1}</span>
-                  <span className="name"><b>{p.display_name}</b><small>{s?.ga||0} G+A</small></span>
-                  <strong>{s?.assists||0}</strong>
-                </button>
-              })}
-            </div>
-          </article>
-
-          <article className="v900-training-card devil-card">
-            <div className="v8-panel-title"><Zap size={18}/> G+A TRENINGOWE</div>
-            <div className="v900-training-ranking compact">
-              {trainingGA.slice(0,8).map((p,index)=>{
-                const s=trainingPlayerStats[p.id];
-                return <button key={p.id} onClick={()=>openPlayerProfile(p)}>
-                  <span className="rank">{index+1}</span>
-                  <span className="name"><b>{p.display_name}</b><small>{s?.goals||0}G • {s?.assists||0}A</small></span>
-                  <strong>{s?.ga||0}</strong>
-                </button>
-              })}
-            </div>
-          </article>
-        </div>
-
-        <article className="v900-chemistry devil-card">
-          <div className="v900-chemistry-head">
-            <div><span className="eyebrow gold">PAIR PERFORMANCE</span><h3>Chemia zespołu</h3></div>
-            <p>Wynik oparty na wspólnych grach kontrolnych: zwycięstwach oraz wspólnym udziale przy golach. To wskaźnik zabawowy, nie ocena zawodnika.</p>
-          </div>
-
-          {chemistryNetwork.nodes.length>1&&<div className="v103-chemistry-network" aria-label="Mapa połączeń między zawodnikami">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              {chemistryNetwork.links.map(({pair,from,to})=><line
-                key={`${pair.a.id}-${pair.b.id}`}
-                x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                className={pair.score>=70?"strong":pair.score>=45?"medium":"developing"}
-                style={{strokeWidth:Math.max(1.1,pair.score/28)}}
-              />)}
-            </svg>
-            {chemistryNetwork.nodes.map(node=><button
-              key={node.player.id}
-              className="v103-chemistry-node"
-              style={{left:`${node.x}%`,top:`${node.y}%`}}
-              onClick={()=>openPlayerProfile(node.player)}
-              title={`Otwórz profil: ${node.player.display_name}`}
-            >
-              <span>{isRyszardPlayer(node.player)?<img src="/assets/ryszard-player-card.png" alt=""/>:<PlayerPhoto playerId={node.player.id}/>}</span>
-              <b>{node.player.display_name}</b>
-            </button>)}
-            <div className="v103-chemistry-legend"><span className="strong">silne</span><span className="medium">dobre</span><span className="developing">rozwijane</span></div>
-          </div>}
-
-          <div className="v900-chemistry-grid">
-            {trainingChemistry.slice(0,10).map((pair,index)=><button className="v900-pair-card" key={`${pair.a.id}-${pair.b.id}`}>
-              <span className="v900-pair-rank">#{index+1}</span>
-              <div className="v900-pair-players">
-                <span>{isRyszardPlayer(pair.a)?<img src="/assets/ryszard-player-card.png" alt={pair.a.display_name}/>:<PlayerPhoto playerId={pair.a.id}/>}</span>
-                <i>+</i>
-                <span>{isRyszardPlayer(pair.b)?<img src="/assets/ryszard-player-card.png" alt={pair.b.display_name}/>:<PlayerPhoto playerId={pair.b.id}/>}</span>
-              </div>
-              <b>{pair.a.display_name} + {pair.b.display_name}</b>
-              <strong>{pair.score}%</strong>
-              <div className="v900-chem-bar"><i style={{width:`${pair.score}%`}}/></div>
-              <small>{pair.games} wspólnych gier • {pair.wins} wygranych • {pair.combinedGA} akcji G/A</small>
-            </button>)}
-            {trainingChemistry.length===0&&<div className="v900-no-chemistry">Chemia pojawi się po zapisaniu pierwszych gier kontrolnych i składów.</div>}
-          </div>
-        </article>
-
-        <article className="v900-training-history devil-card">
-          <div className="v8-panel-title"><History size={18}/> OSTATNIE TRENINGI</div>
-          <div className="v900-training-history-list">
-            {trainingSessions.slice(0,8).map(s=>{
-              const present=trainingAttendance.filter(a=>a.training_id===s.id&&a.status==="present").length;
-              const games=trainingGames.filter(g=>g.training_id===s.id);
-              return <div key={s.id}>
-                <span className="date">{datePL(s.training_date)}</span>
-                <div><b>{s.title||"Trening"}</b><small>{[s.start_time?.slice(0,5),s.location].filter(Boolean).join(" • ")}</small></div>
-                <strong>{present}/{players.length}</strong>
-                <em>{games.length} {games.length===1?"gra":"gry"}</em>
-              </div>
-            })}
-            {trainingSessions.length===0&&<p className="muted">Pierwszy trening dodasz w panelu Admin.</p>}
-          </div>
-        </article>
-      </section>}
+      {tab==="training"&&<DeltaTrainingCenter20
+        trainingSessions={trainingSessions}
+        trainingAttendance={trainingAttendance}
+        trainingGames={trainingGames}
+        trainingEvents={trainingEvents}
+        players={players}
+        trainingPlayerStats={trainingPlayerStats}
+        trainingChemistry={trainingChemistry}
+        chemistryNetwork={chemistryNetwork}
+        trainingAttendanceRank={trainingAttendanceRank}
+        trainingScorers={trainingScorers}
+        trainingAssisters={trainingAssisters}
+        trainingGA={trainingGA}
+        avgTrainingAttendance={avgTrainingAttendance}
+        currentUserId={props.profile.id}
+        currentUserRole={props.profile.role}
+        parentPlayerIds={props.parentPlayerIds}
+        canManageTraining={canManageTraining}
+        canManageTrainingAttendance={canManageTrainingAttendance}
+        onSetAttendance={handleSetTrainingAttendance}
+        onOpenPlayerProfile={openPlayerProfile}
+        onOpenTrainingKingModal={()=>setTrainingKingModalOpen(true)}
+      />}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
         <div className="v871-team-hero v108-team-hero devil-card">
