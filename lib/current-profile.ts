@@ -3,7 +3,33 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureUserProfileExists } from "@/lib/auth/profile-bootstrap";
 import { cookies, headers } from "next/headers";
 
-export async function getCurrentProfile() {
+export async function getCurrentProfile(req?: Request) {
+  // Support Authorization: Bearer <token> for API callers and automated tests
+  try {
+    let authHeader: string | null = null;
+    if (req) {
+      authHeader = req.headers.get("authorization");
+    } else {
+      const headerStore = await headers();
+      authHeader = headerStore.get("authorization");
+    }
+
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "").trim();
+      const admin = createAdminClient();
+      const { data: { user }, error: userError } = await admin.auth.getUser(token);
+      if (user && !userError) {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("id,role,display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        return { user, profile, error: null };
+      }
+    }
+  } catch {}
+
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 

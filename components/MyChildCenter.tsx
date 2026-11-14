@@ -220,18 +220,19 @@ export function MyChildCenter({
   const handleMatchRsvp = async (matchId: string, newStatus: "yes" | "no" | "maybe") => {
     setRsvpLoading(`match-${matchId}`);
     try {
-      const { error } = await supabase
-        .from("match_attendance")
-        .upsert(
-          { match_id: matchId, player_id: activeChild.id, status: newStatus },
-          { onConflict: "match_id,player_id" }
-        );
-
-      if (!error) {
+      const res = await fetch("/api/matches/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, playerId: activeChild.id, status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
         setLocalAttendance(prev => {
           const filtered = prev.filter(a => !(a.match_id === matchId && a.player_id === activeChild.id));
           return [...filtered, { match_id: matchId, player_id: activeChild.id, status: newStatus }];
         });
+      } else {
+        console.error("Błąd RSVP meczu:", data.error);
       }
     } catch (err) {
       console.error("Błąd RSVP meczu:", err);
@@ -244,18 +245,19 @@ export function MyChildCenter({
   const handleTrainingRsvp = async (trainingId: string, newStatus: "yes" | "no" | "maybe") => {
     setRsvpLoading(`training-${trainingId}`);
     try {
-      const { error } = await supabase
-        .from("training_attendance")
-        .upsert(
-          { training_id: trainingId, player_id: activeChild.id, status: newStatus },
-          { onConflict: "training_id,player_id" }
-        );
-
-      if (!error) {
+      const res = await fetch("/api/training/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingId, playerId: activeChild.id, status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
         setLocalTrAttendance(prev => {
           const filtered = prev.filter(a => !(a.training_id === trainingId && a.player_id === activeChild.id));
           return [...filtered, { training_id: trainingId, player_id: activeChild.id, status: newStatus }];
         });
+      } else {
+        console.error("Błąd RSVP treningu:", data.error);
       }
     } catch (err) {
       console.error("Błąd RSVP treningu:", err);
