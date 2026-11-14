@@ -1330,6 +1330,14 @@
   .cinematic-v2-arena .cinematic-v2-spotlight-right {
     display: none;
   }
+  .cinematic-v2-arena .v2-icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .cinematic-v2-arena .v2-skip-btn {
+    min-height: 44px;
+    padding: 0 14px;
+  }
   .cinematic-v2-arena .v2-header,
   .cinematic-v2-arena .v2-footer-summary,
   .cinematic-v2-arena .v2-walkout-btn,
@@ -1339,6 +1347,7 @@
   .cinematic-v2-arena .v2-summary-primary-btn,
   .cinematic-v2-arena .v2-summary-secondary-btn {
     flex: 1 1 140px;
+    min-height: 44px;
   }
 }
 

@@ -1,0 +1,312 @@
+/* ==========================================================================
+   DELTA INFERNO 2.0 — COLLECTION EXPERIENCE & BOOSTER SHOP STYLES
+   Tailwind CSS v4 + Design System DELTA 2.0 tokens
+   Dark stadium: #07080b, obsidian: #0f121a, gold: #f59e0b, crimson: #ef4444
+   ========================================================================== */
+
+/* 1. Main Collection Hero Panel */
+.delta-collection-hero-panel {
+  position: relative;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(20, 16, 30, 0.95) 0%, rgba(13, 15, 23, 0.98) 50%, rgba(7, 8, 11, 0.98) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  padding: 18px 20px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .delta-collection-hero-panel {
+    padding: 22px 26px;
+  }
+}
+
+.delta-collection-hero-glow {
+  position: absolute;
+  top: -80px;
+  right: 15%;
+  width: 320px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.18) 0%, rgba(245, 158, 11, 0.12) 50%, transparent 70%);
+  border-radius: 9999px;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* 2. Collection Stats KPI Strip */
+.delta-collection-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin-top: 14px;
+}
+
+@media (min-width: 1024px) {
+  .delta-collection-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+.delta-stat-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%), #0e1119;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.delta-stat-card:hover {
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(245, 158, 11, 0.1);
+}
+
+/* 3. Segmented Navigation Tabs */
+.delta-collection-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(10, 12, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.delta-collection-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.delta-collection-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.delta-collection-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.delta-collection-tab-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(245, 158, 11, 0.2) 100%);
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.15);
+}
+
+/* 4. Booster Packs Shop Grid (FAZA 3) */
+.delta-booster-shop-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
+}
+
+@media (min-width: 640px) {
+  .delta-booster-shop-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .delta-booster-shop-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+.delta-booster-card-v5 {
+  position: relative;
+  background: linear-gradient(180deg, #11141e 0%, #090b10 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.delta-booster-card-v5:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+}
+
+/* Booster Themes */
+.delta-booster-card-v5.theme-standard {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.delta-booster-card-v5.theme-standard:hover {
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 16px 40px rgba(239, 68, 68, 0.2);
+}
+
+.delta-booster-card-v5.theme-matchday {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+.delta-booster-card-v5.theme-matchday:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 16px 40px rgba(56, 189, 248, 0.2);
+}
+
+.delta-booster-card-v5.theme-gold {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.delta-booster-card-v5.theme-gold:hover {
+  border-color: rgba(245, 158, 11, 0.85);
+  box-shadow: 0 16px 40px rgba(245, 158, 11, 0.25);
+}
+
+.delta-booster-card-v5.theme-inferno {
+  border-color: rgba(220, 38, 38, 0.5);
+}
+.delta-booster-card-v5.theme-inferno:hover {
+  border-color: rgba(239, 68, 68, 0.9);
+  box-shadow: 0 16px 40px rgba(220, 38, 38, 0.35);
+}
+
+.delta-booster-card-v5.theme-legend {
+  border-color: rgba(192, 132, 252, 0.45);
+}
+.delta-booster-card-v5.theme-legend:hover {
+  border-color: rgba(192, 132, 252, 0.85);
+  box-shadow: 0 16px 40px rgba(192, 132, 252, 0.3);
+}
+
+/* 5. Main Card Grid & Cell States (FAZA 2) */
+.delta-collection-cards-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+@media (min-width: 640px) {
+  .delta-collection-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .delta-collection-cards-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .delta-collection-cards-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .delta-collection-cards-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
+
+.delta-card-cell-v5 {
+  position: relative;
+  border-radius: 16px;
+  background: #0d1017;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.delta-card-cell-v5:hover {
+  transform: translateY(-4px);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.12);
+}
+
+/* Card Cell States */
+.delta-card-cell-v5.is-owned {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.delta-card-cell-v5.is-locked {
+  opacity: 0.62;
+  filter: grayscale(0.25);
+}
+
+.delta-card-cell-v5.is-locked:hover {
+  opacity: 0.9;
+  filter: grayscale(0);
+}
+
+.delta-card-cell-v5.is-preview-demo {
+  border-style: dashed;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+/* 6. Empty State with Holographic Preview Mockups */
+.delta-collection-empty-showcase {
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(22, 16, 32, 0.9) 0%, rgba(13, 15, 23, 0.95) 50%, rgba(7, 8, 11, 0.98) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  padding: 32px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 7. Card 3D Inspect Modal */
+.delta-inspect-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(2, 4, 8, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.delta-inspect-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #141722 0%, #0c0e14 100%);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

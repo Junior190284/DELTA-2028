@@ -36,7 +36,9 @@ import {
   Zap,
   Info,
   SlidersHorizontal,
-  Bookmark
+  Bookmark,
+  ShoppingCart,
+  RotateCw
 } from "lucide-react";
 import { 
   CardDefinition, 
@@ -58,6 +60,7 @@ import {
   selectPackSessionToOpen
 } from "@/lib/cards/packOpeningAlbumBridge";
 import type { PackOpeningResult } from "@/lib/cards/types";
+import { DeltaCard, DeltaButton, DeltaBadge } from "@/components/ui";
 import CollectibleCard3D from "./CollectibleCard3D";
 import CinematicPackExperience from "./pack-opening-v2/CinematicPackExperience";
 import CardUnlockCinematicModal from "./CardUnlockCinematicModal";
@@ -76,6 +79,8 @@ import PlayerVideoHighlightModal from "./PlayerVideoHighlightModal";
 import DigitalSignatureModal from "./DigitalSignatureModal";
 import PlayerCardsCircular3DCarousel from "./PlayerCardsCircular3DCarousel";
 import Panini3DAlbumBinder from "./Panini3DAlbumBinder";
+
+import "@/styles/delta-inferno-collection.css";
 
 // 5 Standard Booster Packs Configuration (Authoritative Scenario B Prices)
 const OFFICIAL_BOOSTER_PACKS: {
@@ -146,96 +151,8 @@ const OFFICIAL_BOOSTER_PACKS: {
   }
 ];
 
-// Helper: Rarity classification for 6 tiers
-export function getRarityTier(card?: CardDefinition): {
-  id: "common" | "rare" | "gold" | "matchday" | "inferno" | "legend";
-  label: string;
-  color: string;
-  textColor: string;
-  badgeBg: string;
-  borderColor: string;
-  glow: string;
-} {
-  if (!card) {
-    return {
-      id: "common",
-      label: "COMMON",
-      color: "#94a3b8",
-      textColor: "#e2e8f0",
-      badgeBg: "rgba(148, 163, 184, 0.15)",
-      borderColor: "rgba(148, 163, 184, 0.4)",
-      glow: "rgba(148, 163, 184, 0.2)"
-    };
-  }
-
-  const r = (card.rarity || "").toLowerCase();
-  const t = (card.card_type || "").toLowerCase();
-
-  if (r === "inferno" || t.includes("inferno")) {
-    return {
-      id: "inferno",
-      label: "INFERNO",
-      color: "#ef4444",
-      textColor: "#fca5a5",
-      badgeBg: "linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(249, 115, 22, 0.25))",
-      borderColor: "rgba(239, 68, 68, 0.7)",
-      glow: "rgba(239, 68, 68, 0.5)"
-    };
-  }
-  if (r === "legendary" || r === "legend" || t.includes("legend") || t.includes("ikona")) {
-    return {
-      id: "legend",
-      label: "LEGEND",
-      color: "#c084fc",
-      textColor: "#f3e8ff",
-      badgeBg: "linear-gradient(135deg, rgba(192, 132, 252, 0.25), rgba(126, 34, 206, 0.3))",
-      borderColor: "rgba(192, 132, 252, 0.7)",
-      glow: "rgba(192, 132, 252, 0.5)"
-    };
-  }
-  if (r === "gold" || r === "epic" || t.includes("gold") || t.includes("mvp")) {
-    return {
-      id: "gold",
-      label: "GOLD",
-      color: "#f1c95c",
-      textColor: "#fef08a",
-      badgeBg: "linear-gradient(135deg, rgba(241, 201, 92, 0.25), rgba(202, 138, 4, 0.3))",
-      borderColor: "rgba(241, 201, 92, 0.7)",
-      glow: "rgba(241, 201, 92, 0.5)"
-    };
-  }
-  if (r === "matchday" || t.includes("matchday")) {
-    return {
-      id: "matchday",
-      label: "MATCHDAY",
-      color: "#38bdf8",
-      textColor: "#bae6fd",
-      badgeBg: "linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(14, 165, 233, 0.25))",
-      borderColor: "rgba(56, 189, 248, 0.7)",
-      glow: "rgba(56, 189, 248, 0.4)"
-    };
-  }
-  if (r === "rare" || t.includes("training") || t.includes("warrior")) {
-    return {
-      id: "rare",
-      label: "RARE",
-      color: "#60a5fa",
-      textColor: "#bfdbfe",
-      badgeBg: "linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(37, 99, 235, 0.25))",
-      borderColor: "rgba(96, 165, 250, 0.6)",
-      glow: "rgba(96, 165, 250, 0.3)"
-    };
-  }
-  return {
-    id: "common",
-    label: "COMMON",
-    color: "#94a3b8",
-    textColor: "#e2e8f0",
-    badgeBg: "rgba(148, 163, 184, 0.15)",
-    borderColor: "rgba(148, 163, 184, 0.4)",
-    glow: "rgba(148, 163, 184, 0.2)"
-  };
-}
+import { getRarityTier, type RarityTier } from "@/lib/cards/rarityTiers";
+export { getRarityTier, type RarityTier };
 
 interface ActivePackSession {
   pack: PackDefinition;
@@ -245,7 +162,7 @@ interface ActivePackSession {
   lastOpenResult: PackOpeningResult | null;
 }
 
-interface DeltaCollectionAlbumProps {
+export interface DeltaCollectionAlbumProps {
   currentUserId?: string;
   players?: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null }[];
   matches?: any[];
@@ -275,8 +192,8 @@ export default function DeltaCollectionAlbum({
   const [featuredCardId, setFeaturedCardId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // View Modes: "collection2" (New Collection 2.0 Hub), "panini" (Binder 3D), "roster" (Player Albums)
-  const [activeViewTab, setActiveViewTab] = useState<"collection2" | "panini" | "roster">("collection2");
+  // View Modes: "collection2" (Main Grid & Album), "shop" (Dedicated Booster Shop), "panini" (Binder 3D), "roster" (Player Albums)
+  const [activeViewTab, setActiveViewTab] = useState<"collection2" | "shop" | "panini" | "roster">("collection2");
   const [paniniRewardClaimed, setPaniniRewardClaimed] = useState(false);
 
   // Active Player Album View (null = none, playerId = show carousel)
@@ -321,7 +238,7 @@ export default function DeltaCollectionAlbum({
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 3500);
+    }, 3800);
   };
 
   const launchPackFromUnopened = (
@@ -352,8 +269,8 @@ export default function DeltaCollectionAlbum({
     });
   };
 
-  const launchGrantedPack = (pack: PackDefinition | undefined | null) => {
-    if (activePackSession || !pack) return;
+  const launchGrantedPack = (pack: PackDefinition) => {
+    if (activePackSession) return;
     packSessionSeqRef.current += 1;
     setActivePackSession({
       pack,
@@ -364,99 +281,47 @@ export default function DeltaCollectionAlbum({
     });
   };
 
-  const handleSetFeaturedCard = (cardId: string) => {
-    setFeaturedCardId(cardId);
-    try {
-      localStorage.setItem("delta_featured_card_id", cardId);
-    } catch {}
-    cardSound.playPurchase();
-    showToast("⭐ Karta została ustawiona jako Twoja wyróżniona wizytówka!");
+  const getLayoutForCard = (card: CardDefinition): Partial<CardLayoutConfig> | undefined => {
+    if (!card.player_id) return undefined;
+    const templateKey = (card as any).template_override || card.frame_theme || card.card_type || "default";
+    return cardLayoutsMap[`${card.player_id}_${templateKey}`] || cardLayoutsMap[`${card.player_id}_default`];
   };
-
-  const handleToggleLockCard = async (userCard: UserCard | null) => {
-    if (!userCard) return;
-    const newLocked = !(userCard as any).is_locked;
-    try {
-      const res = await fetch("/api/cards/lock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userCardId: userCard.id, isLocked: newLocked })
-      });
-      if (res.ok) {
-        setUserCards(prev => prev.map(uc => uc.id === userCard.id ? { ...uc, is_locked: newLocked } as any : uc));
-        if (inspectCard && inspectCard.userCard?.id === userCard.id) {
-          setInspectCard({
-            ...inspectCard,
-            userCard: { ...inspectCard.userCard, is_locked: newLocked } as any
-          });
-        }
-        showToast(newLocked ? "🔒 Karta zabezpieczona przed przetopieniem w SBC" : "🔓 Zdjęto blokadę z karty");
-      }
-    } catch (e) {
-      console.error("Error toggling card lock:", e);
-    }
-  };
-
-  const getLayoutForCard = useMemo(() => {
-    return (card?: CardDefinition): Partial<CardLayoutConfig> | undefined => {
-      if (!card) return undefined;
-      const pId = card.player_id || card.player?.id;
-      if (!pId) return undefined;
-      const t = (card.card_type || "").toLowerCase();
-      const r = (card.rarity || "").toLowerCase();
-      const templateKey = t.includes("training") || t.includes("warrior") ? "training" :
-                          t.includes("inferno") || r === "inferno" ? "inferno" :
-                          t.includes("legend") || r === "legendary" ? "legend" :
-                          t.includes("gold") || t.includes("mvp") || r === "epic" ? "gold" :
-                          t.includes("matchday") || r === "rare" ? "matchday" :
-                          t.includes("panini") ? "panini" : "base";
-
-      return cardLayoutsMap[`${pId}_${templateKey}`] || cardLayoutsMap[`${pId}_base`] || undefined;
-    };
-  }, [cardLayoutsMap]);
 
   const getCardUnlockCondition = (card: CardDefinition): { condition: string; packType: string; achievement: string } => {
-    const t = (card.card_name || card.title || card.card_type || "").toLowerCase();
-    const r = (card.rarity || "").toLowerCase();
+    const rarity = (card.rarity || "").toLowerCase();
+    const type = (card.card_type || "").toLowerCase();
 
-    if (r === "inferno" || t.includes("inferno")) {
+    if (rarity === "inferno" || type.includes("inferno")) {
       return {
-        condition: "Hat-trick w meczu ligowym lub odblokowanie w Kole Fortuny",
-        packType: "Inferno Booster (gwarancja)",
-        achievement: "🏆 Inferno Striker Master"
+        condition: "Odblokuj poprzez otwarcie paczki Inferno Booster lub osiągnięcie serii treningowej.",
+        packType: "Inferno Booster (500 DP)",
+        achievement: "🔥 Płonący Duch DELTY"
       };
     }
-    if (r === "legendary" || t.includes("legend") || t.includes("ikona")) {
+    if (rarity === "legendary" || rarity === "legend") {
       return {
-        condition: "Tytuł MVP Oficjalnego Meczu lub rozegranie 25 spotkań",
-        packType: "Legend Pack (gwarancja)",
-        achievement: "👑 Klubowa Ikona DELTA"
+        condition: "Zdobądź w paczce Legend Pack lub ukończ wyzwanie Hall of Fame.",
+        packType: "Legend Pack (750 DP)",
+        achievement: "👑 Legenda Górnego Mokotowa"
       };
     }
-    if (r === "epic" || r === "gold" || t.includes("gold") || t.includes("mvp")) {
+    if (rarity === "gold" || type.includes("mvp")) {
       return {
-        condition: "Czyste konto bramkarza, asysta meczowa lub wysoki wskaźnik zaangażowania",
-        packType: "Gold Booster / Paczki za mecze",
-        achievement: "🌟 Złoty Mistrz Formy"
+        condition: "Wypada z Gold Boostera lub nagród MVP za ligowe mecze MZPN.",
+        packType: "Gold Booster (350 DP)",
+        achievement: "⭐ Złoty Mistrz Sezonu"
       };
     }
-    if (t.includes("matchday") || card.card_type === "matchday" || r === "rare") {
+    if (rarity === "matchday") {
       return {
-        condition: "Obecność i powołanie na oficjalny mecz turniejowy DELTA",
-        packType: "Matchday Booster / Standardowa",
-        achievement: "⚡ Gotowość Meczowa"
-      };
-    }
-    if (t.includes("training") || card.card_type === "training") {
-      return {
-        condition: "100% frekwencja treningowa w danym miesiącu",
-        packType: "Standardowa Paczka / Trening",
-        achievement: "🛡️ Tytan Treningu"
+        condition: "Zdobądź w Matchday Boosterze lub za 100% frekwencję meczową.",
+        packType: "Matchday Booster (200 DP)",
+        achievement: "⚡ Wojownik Dnia Meczowego"
       };
     }
     return {
-      condition: "Oficjalny debiut w roczniku 2018 lub otwarcie dowolnej paczki",
-      packType: "Wszystkie paczki DELTA",
+      condition: "Dostępna w paczce Standardowej oraz za punkty DP i obecności treningowe.",
+      packType: "Paczka Standardowa (100 DP)",
       achievement: "⚽ Pierwszy Krok w Klubie"
     };
   };
@@ -559,14 +424,14 @@ export default function DeltaCollectionAlbum({
     }
   };
 
-  // Buy pack with Delta Points
+  // Buy pack with Delta Points (FAZA 3 — Client DP check, zero API call on shortfall)
   const handleBuyPack = async (packId: string) => {
     if (buyingPackId || isOpeningPack) return;
     const packObj = OFFICIAL_BOOSTER_PACKS.find(p => p.id === packId);
     const price = packObj?.priceDp || 100;
 
     if (deltaPoints < price) {
-      alert(`Potrzebujesz ${price} DP, aby odblokować paczkę "${packObj?.name || packId}". Twój obecny stan to ${deltaPoints} DP.`);
+      showToast(`⚠️ Niewystarczająca liczba Punktów DELTA. Paczka "${packObj?.name || packId}" kosztuje ${price} DP, a posiadasz ${deltaPoints} DP (brakuje ${price - deltaPoints} DP).`);
       return;
     }
 
@@ -587,9 +452,9 @@ export default function DeltaCollectionAlbum({
       }
       cardSound.playPurchase();
       showToast(`🎁 Pomyślnie zakupiono paczkę "${packObj?.name || 'Booster'}"!`);
-      await fetchCollection();
+      await fetchCollection(true);
     } catch (e: any) {
-      alert(e.message || "Nie udało się kupić paczki.");
+      showToast(`❌ ${e.message || "Nie udało się kupić paczki."}`);
     } finally {
       setBuyingPackId(null);
     }
@@ -599,142 +464,140 @@ export default function DeltaCollectionAlbum({
   const ownedCardsMap = useMemo(() => {
     const map = new Map<string, UserCard>();
     userCards.forEach(uc => {
-      map.set(uc.card_id, uc);
+      const cardId = uc.card_id || uc.card_definition?.id;
+      if (cardId) {
+        map.set(cardId, uc);
+      }
     });
     return map;
   }, [userCards]);
 
-  const uniqueOwnedCards = useMemo(() => {
-    return allCards.filter(c => ownedCardsMap.has(c.id));
-  }, [allCards, ownedCardsMap]);
+  const uniqueOwnedCount = useMemo(() => {
+    return ownedCardsMap.size;
+  }, [ownedCardsMap]);
 
-  const totalCardsCount = allCards.length || 1;
-  const uniqueOwnedCount = uniqueOwnedCards.length;
-  const totalDuplicatesCount = userCards.reduce((acc, uc) => acc + (uc.duplicates_count || 0), 0);
-  const completionPercentage = Math.round((uniqueOwnedCount / totalCardsCount) * 100);
+  const totalCardsCount = useMemo(() => {
+    return allCards.length || 1;
+  }, [allCards]);
 
-  // Recently acquired cards (sorted by acquired_at desc)
-  const recentlyAcquiredList = useMemo(() => {
-    const sortedUserCards = [...userCards].sort((a, b) => {
-      const dateA = new Date(a.acquired_at || 0).getTime();
-      const dateB = new Date(b.acquired_at || 0).getTime();
-      return dateB - dateA;
-    });
+  const totalDuplicatesCount = useMemo(() => {
+    return userCards.reduce((acc, curr) => acc + (curr.duplicates_count || 0), 0);
+  }, [userCards]);
 
-    return sortedUserCards
-      .map(uc => {
-        const cardDef = allCards.find(c => c.id === uc.card_id) || uc.card_definition;
-        return { userCard: uc, card: cardDef };
-      })
-      .filter(item => item.card)
-      .slice(0, 10);
+  const completionPercentage = useMemo(() => {
+    if (totalCardsCount === 0) return 0;
+    return Math.min(100, Math.round((uniqueOwnedCount / totalCardsCount) * 100));
+  }, [uniqueOwnedCount, totalCardsCount]);
+
+  // Featured / Last Acquired
+  const lastAcquiredItem = useMemo(() => {
+    if (userCards.length === 0) return null;
+    const sorted = [...userCards].sort((a, b) => new Date(b.acquired_at).getTime() - new Date(a.acquired_at).getTime());
+    const latest = sorted[0];
+    const targetCardId = latest.card_id || latest.card_definition?.id;
+    const cardDef = allCards.find(c => c.id === targetCardId);
+    return cardDef ? { card: cardDef, userCard: latest } : null;
   }, [userCards, allCards]);
 
-  // Last acquired card & last special card
-  const lastAcquiredItem = recentlyAcquiredList[0] || null;
-  const lastSpecialItem = useMemo(() => {
-    return recentlyAcquiredList.find(item => {
-      const r = (item.card?.rarity || "").toLowerCase();
-      const t = (item.card?.card_type || "").toLowerCase();
-      return r === "inferno" || r === "legendary" || r === "epic" || r === "gold" || t.includes("inferno") || t.includes("legend");
-    }) || null;
-  }, [recentlyAcquiredList]);
+  const recentlyAcquiredList = useMemo(() => {
+    if (userCards.length === 0) return [];
+    const sorted = [...userCards].sort((a, b) => new Date(b.acquired_at).getTime() - new Date(a.acquired_at).getTime());
+    const top6 = sorted.slice(0, 6);
+    return top6.map(uc => {
+      const targetCardId = uc.card_id || uc.card_definition?.id;
+      const card = allCards.find(c => c.id === targetCardId);
+      return card ? { card, userCard: uc } : null;
+    }).filter(Boolean) as { card: CardDefinition; userCard: UserCard }[];
+  }, [userCards, allCards]);
 
-  // Missing cards list
   const missingCardsList = useMemo(() => {
     return allCards.filter(c => !ownedCardsMap.has(c.id));
   }, [allCards, ownedCardsMap]);
 
-  // Helper for Card OVR rating
-  const getCardOvr = (c: CardDefinition): number => {
-    const tier = getRarityTier(c);
-    switch (tier.id) {
-      case "inferno": return 95;
-      case "legend": return 91;
-      case "gold": return 86;
-      case "matchday": return 82;
-      case "rare": return 78;
-      default: return 74;
-    }
-  };
-
-  // Filtered Cards for Grid
+  // Filtered Cards for Main Grid
   const filteredGridCards = useMemo(() => {
-    return allCards.filter(card => {
-      // Search
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const pName = (card.player?.display_name || card.card_name || card.title || "").toLowerCase();
-        if (!pName.includes(q)) return false;
-      }
+    let result = [...allCards];
 
-      // Player Filter
-      if (selectedPlayerFilter !== "all") {
-        if (card.player_id !== selectedPlayerFilter && card.player?.id !== selectedPlayerFilter) return false;
-      }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(c => {
+        const pName = (c.player?.display_name || "").toLowerCase();
+        const cName = (c.card_name || "").toLowerCase();
+        const rName = (c.rarity || "").toLowerCase();
+        const tName = (c.card_type || "").toLowerCase();
+        return pName.includes(q) || cName.includes(q) || rName.includes(q) || tName.includes(q);
+      });
+    }
 
-      // Rarity Tier Filter
-      if (selectedRarityFilter !== "all") {
-        const tier = getRarityTier(card);
-        if (tier.id !== selectedRarityFilter) return false;
-      }
+    if (selectedPlayerFilter !== "all") {
+      result = result.filter(c => c.player_id === selectedPlayerFilter);
+    }
 
-      // Card Type Filter
-      if (selectedTypeFilter !== "all") {
-        const t = (card.card_type || "").toLowerCase();
-        if (selectedTypeFilter === "inferno" && !t.includes("inferno")) return false;
-        if (selectedTypeFilter === "legend" && !t.includes("legend")) return false;
-        if (selectedTypeFilter === "gold" && !t.includes("gold") && !t.includes("mvp")) return false;
-        if (selectedTypeFilter === "matchday" && !t.includes("matchday")) return false;
-        if (selectedTypeFilter === "training" && !t.includes("training")) return false;
-        if (selectedTypeFilter === "base" && !t.includes("base") && !t.includes("standard") && t !== "") return false;
-      }
+    if (selectedRarityFilter !== "all") {
+      result = result.filter(c => {
+        const tier = getRarityTier(c);
+        return tier.id === selectedRarityFilter;
+      });
+    }
 
-      // Ownership Filter
-      const isOwned = ownedCardsMap.has(card.id);
-      const userCard = ownedCardsMap.get(card.id);
-      if (selectedOwnershipFilter === "owned" && !isOwned) return false;
-      if (selectedOwnershipFilter === "missing" && isOwned) return false;
-      if (selectedOwnershipFilter === "duplicates" && (!userCard || (userCard.duplicates_count || 0) <= 0)) return false;
-      if (selectedOwnershipFilter === "new") {
-        // Defined as cards acquired in the last 7 days or single copy
-        if (!isOwned) return false;
-      }
+    if (selectedTypeFilter !== "all") {
+      result = result.filter(c => c.card_type === selectedTypeFilter);
+    }
 
-      return true;
-    }).sort((a, b) => {
+    if (selectedOwnershipFilter === "owned") {
+      result = result.filter(c => ownedCardsMap.has(c.id));
+    } else if (selectedOwnershipFilter === "missing") {
+      result = result.filter(c => !ownedCardsMap.has(c.id));
+    } else if (selectedOwnershipFilter === "duplicates") {
+      result = result.filter(c => {
+        const uc = ownedCardsMap.get(c.id);
+        return uc && uc.duplicates_count > 0;
+      });
+    }
+
+    result.sort((a, b) => {
       if (sortBy === "newest") {
         const uca = ownedCardsMap.get(a.id);
         const ucb = ownedCardsMap.get(b.id);
-        if (uca && ucb) {
-          return new Date(ucb.acquired_at || 0).getTime() - new Date(uca.acquired_at || 0).getTime();
-        }
-        if (uca) return -1;
-        if (ucb) return 1;
-        return 0;
+        if (uca && !ucb) return -1;
+        if (!uca && ucb) return 1;
+        if (uca && ucb) return new Date(ucb.acquired_at).getTime() - new Date(uca.acquired_at).getTime();
+        return (a.card_number || 0) - (b.card_number || 0);
       }
       if (sortBy === "rarity_desc") {
-        const rank: Record<string, number> = { inferno: 6, legend: 5, gold: 4, matchday: 3, rare: 2, common: 1 };
-        const rankA = rank[getRarityTier(a).id] || 1;
-        const rankB = rank[getRarityTier(b).id] || 1;
-        return rankB - rankA;
-      }
-      if (sortBy === "player_asc") {
-        const nameA = a.player?.display_name || a.card_name || "";
-        const nameB = b.player?.display_name || b.card_name || "";
-        return nameA.localeCompare(nameB);
+        const rarityWeights: Record<string, number> = { legend: 6, inferno: 5, gold: 4, matchday: 3, rare: 2, common: 1 };
+        const wA = rarityWeights[getRarityTier(a).id] || 0;
+        const wB = rarityWeights[getRarityTier(b).id] || 0;
+        return wB - wA;
       }
       if (sortBy === "ovr_desc") {
-        return getCardOvr(b) - getCardOvr(a);
+        const ovrA = (a as any).attributes?.ovr || 70;
+        const ovrB = (b as any).attributes?.ovr || 70;
+        return ovrB - ovrA;
+      }
+      if (sortBy === "player_asc") {
+        const nameA = a.player?.display_name || a.card_name;
+        const nameB = b.player?.display_name || b.card_name;
+        return nameA.localeCompare(nameB, "pl");
       }
       return 0;
     });
-  }, [allCards, searchQuery, selectedPlayerFilter, selectedRarityFilter, selectedTypeFilter, selectedOwnershipFilter, sortBy, ownedCardsMap]);
 
-  // Grouped Player Albums
+    return result;
+  }, [allCards, ownedCardsMap, searchQuery, selectedPlayerFilter, selectedRarityFilter, selectedTypeFilter, selectedOwnershipFilter, sortBy]);
+
+  const handleSetFeaturedCard = (cardId: string) => {
+    try {
+      localStorage.setItem("delta_featured_card_id", cardId);
+      setFeaturedCardId(cardId);
+      cardSound.playWalkoutFanfare();
+      showToast("⭐ Karta została ustawiona jako Twoja wyróżniona wizytówka!");
+    } catch {}
+  };
+
   const playerAlbums = useMemo(() => {
     const map = new Map<string, {
-      player: { id: string; display_name: string; shirt_number: string | null; position: string | null; photo_path?: string | null };
+      player: any;
       cards: CardDefinition[];
       ownedCount: number;
       topOwnedCard: CardDefinition | null;
@@ -786,304 +649,295 @@ export default function DeltaCollectionAlbum({
   }, [playerAlbums, selectedAlbumPlayerId]);
 
   return (
-    <section className="section v8-section-page delta-collection-20-page animate-fadeIn">
+    <section className="section v8-section-page delta-collection-20-page w-full min-w-0 max-w-full space-y-5 animate-fadeIn">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="delta-toast-notification">
-          <Sparkles size={16} className="text-yellow-400" />
+        <div className="fixed top-6 right-6 z-[100000] p-3 px-4 rounded-xl bg-gradient-to-r from-[#141824] to-[#0a0d14] border border-amber-400/40 text-slate-100 text-xs font-bold shadow-2xl flex items-center gap-2 animate-fadeIn backdrop-blur-md">
+          <Sparkles size={16} className="text-amber-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 1. GŁÓWNY PANEL PODSUMOWANIA (TOP KPI SUMMARY PANEL)                      */}
+      {/* 1. GŁÓWNY PANEL PODSUMOWANIA (INFERNO 3D HERO COMMAND PANEL)               */}
       {/* ========================================================================= */}
-      <div className="v200-collection-top-panel">
-        <div className="v200-hero-backdrop-glow" />
+      <div className="delta-collection-hero-panel w-full">
+        <div className="delta-collection-hero-glow" />
 
-        {/* Branding header */}
-        <div className="v200-top-branding-row">
-          <div className="v200-brand-left">
-            <div className="v200-vip-badge">
-              <Sparkles size={14} className="text-yellow-400" />
-              <span>OFICJALNY SYSTEM KART KLUBOWYCH • DELTA 2018 GM</span>
+        {/* Branding header & Resource Actions */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div
+              className="relative shrink-0 rounded-2xl bg-gradient-to-br from-red-600 via-amber-500 to-red-600 p-1 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center"
+              style={{ width: "52px", height: "52px", minWidth: "52px", minHeight: "52px" }}
+            >
+              <img
+                src="/teamlogos/gm.png"
+                alt="DELTA Warszawa"
+                style={{ width: "38px", height: "38px", objectFit: "contain" }}
+                className="relative z-10"
+              />
             </div>
-            <h1 className="v200-main-title">
-              DELTA <span className="text-gold">COLLECTION 2.0</span>
-            </h1>
-            <p className="v200-main-subtitle">
-              Kolekcjonuj unikalne cyfrowe karty zawodników DELTA Warszawa 2018 GM. Zdobywaj boostery za mecze i treningi, kompletuj albumy oraz odkrywaj legendy!
-            </p>
+
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xl sm:text-2xl font-black text-slate-100 tracking-tight">
+                  DELTA <span className="text-amber-400">INFERNO 3D</span>
+                </span>
+                <DeltaBadge variant="crimson" size="sm" dot>
+                  Kolekcja 2026/27
+                </DeltaBadge>
+                <DeltaBadge variant="gold" size="sm">
+                  Górny Mokotów
+                </DeltaBadge>
+              </div>
+              <p className="text-xs text-slate-400 font-medium m-0 truncate max-w-xl">
+                Oficjalny album kart 3D zawodników, gablota pucharowa i skarbiec paczek boosterów.
+              </p>
+            </div>
           </div>
 
-          {/* Points & Sync action */}
-          <div className="v200-brand-actions">
-            <div className="v200-dp-balance-chip">
-              <Coins size={18} className="text-yellow-400" />
-              <div>
-                <span className="dp-label">TWÓJ SKARBIEC DP</span>
-                <strong className="dp-amount">{deltaPoints} DP</strong>
+          {/* Points Balance & Quick Actions */}
+          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+            {/* DP Balance Pill */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#090c14]/90 border border-amber-400/35 text-xs font-bold shadow-inner">
+              <Coins size={16} className="text-amber-400" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">SKARBIEC</span>
+                <strong className="text-xs font-black text-amber-300 font-mono">{deltaPoints} DP</strong>
               </div>
             </div>
+
+            {/* Unopened Packs Quick Pill */}
+            {unopenedPacks.length > 0 && (
+              <button
+                type="button"
+                disabled={isOpeningPack}
+                onClick={() => launchPackFromUnopened()}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-xs cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(239,68,68,0.4)] min-h-[44px]"
+                title="Otwórz pierwszą z oczekujących paczek"
+              >
+                <Gift size={15} className="animate-bounce" />
+                <span>{unopenedPacks.length} PACZEK</span>
+              </button>
+            )}
+
+            {/* Quick Wheel Button */}
+            <DeltaButton
+              variant="outline"
+              size="sm"
+              touchTarget={true}
+              onClick={() => setShowDailySpin(true)}
+              className="text-xs font-bold text-amber-300 border-amber-400/30"
+              title="Zakręć darmowym kołem fortuny"
+            >
+              <Sparkles size={14} className="text-amber-400" />
+              <span>KOŁO FORTUNY</span>
+            </DeltaButton>
+
+            {/* Sync Rewards Button */}
             <button
               type="button"
               onClick={handleSyncRewards}
               disabled={syncing}
-              className="v200-sync-rewards-btn"
-              title="Sprawdź i odbierz nowe paczki za ostatnie mecze i treningi"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              title="Synchronizuj nagrody za ostatnie mecze i treningi"
+              aria-label="Synchronizuj nagrody"
             >
-              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
-              <span>{syncing ? "SPRAWDZAM..." : "SYNCHRONIZUJ"}</span>
+              <RefreshCw size={15} className={syncing ? "animate-spin text-amber-400" : ""} />
             </button>
           </div>
         </div>
 
-        {/* 5 Głównych Kafelków Podsumowania (KPI GRID) */}
-        <div className="v200-kpi-summary-grid">
-          {/* Tile 1: Zdobyte Unikalne Karty */}
-          <div className="v200-kpi-card">
-            <div className="v200-kpi-icon-wrap icon-cards">
-              <Layers size={20} />
+        {/* 4 Kompaktowe Kafelki Statystyk (KPI GRID) */}
+        <div className="delta-collection-stats-grid">
+          {/* Tile 1: Ukończenie Kolekcji */}
+          <div className="delta-stat-card">
+            <div className="flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <span>UKOŃCZENIE</span>
+              <Trophy size={14} className="text-amber-400" />
             </div>
-            <div className="v200-kpi-content">
-              <span className="v200-kpi-label">ZDOBYTE KARTY</span>
-              <div className="v200-kpi-val-row">
-                <b className="v200-kpi-val-main">{uniqueOwnedCount}</b>
-                <span className="v200-kpi-val-sub">/ {totalCardsCount}</span>
-              </div>
-              <span className="v200-kpi-hint">
-                {totalDuplicatesCount > 0 ? `+${totalDuplicatesCount} duplikatów do SBC` : "Unikalne karty w klaserze"}
+            <div className="flex items-baseline justify-between gap-2">
+              <strong className="text-xl sm:text-2xl font-black text-amber-300 font-mono">
+                {completionPercentage}%
+              </strong>
+              <span className="text-[11px] font-bold text-slate-400">
+                {uniqueOwnedCount}/{totalCardsCount}
               </span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+              <div
+                className="h-full bg-gradient-to-r from-red-500 via-amber-400 to-amber-300 rounded-full transition-all duration-500"
+                style={{ width: `${completionPercentage}%` }}
+              />
             </div>
           </div>
 
-          {/* Tile 2: Procent Ukończenia Kolekcji */}
-          <div className="v200-kpi-card">
-            <div className="v200-kpi-icon-wrap icon-progress">
-              <Trophy size={20} />
+          {/* Tile 2: Karty w Klaserze */}
+          <div className="delta-stat-card">
+            <div className="flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <span>W KLASERZE</span>
+              <Layers size={14} className="text-slate-300" />
             </div>
-            <div className="v200-kpi-content">
-              <span className="v200-kpi-label">UKOŃCZENIE KOLEKCJI</span>
-              <div className="v200-kpi-val-row">
-                <b className="v200-kpi-val-main text-gold">{completionPercentage}%</b>
-              </div>
-              <div className="v200-kpi-mini-track">
-                <div className="v200-kpi-mini-fill" style={{ width: `${completionPercentage}%` }} />
-              </div>
+            <div className="flex items-baseline justify-between gap-1">
+              <strong className="text-xl sm:text-2xl font-black text-slate-100 font-mono">
+                {uniqueOwnedCount}
+              </strong>
+              <span className="text-[10px] font-bold text-slate-400 truncate">
+                {totalDuplicatesCount > 0 ? `+${totalDuplicatesCount} powtórek` : "unikalnych"}
+              </span>
             </div>
+            <span className="text-[10px] text-slate-400 truncate">
+              {totalCardsCount - uniqueOwnedCount > 0 ? `Brakuje jeszcze ${totalCardsCount - uniqueOwnedCount} kart` : "Kompletny album!"}
+            </span>
           </div>
 
           {/* Tile 3: Nieotwarte Paczki */}
-          <div className={`v200-kpi-card ${unopenedPacks.length > 0 ? "has-unopened" : ""}`}>
-            <div className="v200-kpi-icon-wrap icon-packs">
-              <Gift size={20} />
+          <div className="delta-stat-card">
+            <div className="flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <span>PACZKI</span>
+              <Gift size={14} className="text-red-400" />
             </div>
-            <div className="v200-kpi-content">
-              <span className="v200-kpi-label">NIEOTWARTE PACZKI</span>
-              <div className="v200-kpi-val-row">
-                <b className="v200-kpi-val-main text-red-400">{unopenedPacks.length}</b>
-                <span className="v200-kpi-val-sub">SZT.</span>
-              </div>
+            <div className="flex items-baseline justify-between gap-2">
+              <strong className="text-xl sm:text-2xl font-black text-red-400 font-mono">
+                {unopenedPacks.length}
+              </strong>
               {unopenedPacks.length > 0 ? (
                 <button
                   type="button"
                   disabled={isOpeningPack}
-                  onClick={() => {
-                    const firstPack = unopenedPacks[0];
-                    launchPackFromUnopened(firstPack?.pack_type_id, firstPack?.id, true);
-                  }}
-                  className="v200-kpi-open-btn"
+                  onClick={() => launchPackFromUnopened()}
+                  className="px-2 py-0.5 rounded-lg bg-red-600/25 border border-red-500/40 text-red-300 text-[10px] font-black hover:bg-red-600/40 cursor-pointer"
                 >
-                  <Sparkles size={12} />
-                  <span>OTWÓRZ TERAZ</span>
+                  OTWÓRZ
                 </button>
               ) : (
-                <span className="v200-kpi-hint">Wszystkie paczki otwarte</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveViewTab("shop")}
+                  className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-[10px] font-bold hover:text-white cursor-pointer"
+                >
+                  SKLEP
+                </button>
               )}
             </div>
+            <span className="text-[10px] text-slate-400 truncate">
+              {unopenedPacks.length > 0 ? "Gotowe do otwarcia" : "Kup w sklepie za DP"}
+            </span>
           </div>
 
-          {/* Tile 4: Ostatnio Zdobyta Karta */}
-          <div className="v200-kpi-card">
-            <div className="v200-kpi-icon-wrap icon-recent">
-              <Sparkles size={20} />
+          {/* Tile 4: Ostatnio Zdobyta */}
+          <div className="delta-stat-card">
+            <div className="flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <span>OSTATNIA KARTA</span>
+              <Sparkles size={14} className="text-amber-400" />
             </div>
-            <div className="v200-kpi-content">
-              <span className="v200-kpi-label">OSTATNIO ZDOBYTA</span>
-              {lastAcquiredItem?.card ? (
-                <div 
-                  className="v200-kpi-recent-row cursor-pointer"
-                  onClick={() => setInspectCard({ card: lastAcquiredItem.card, userCard: lastAcquiredItem.userCard })}
+            {lastAcquiredItem?.card ? (
+              <div 
+                className="flex items-center justify-between gap-1.5 cursor-pointer group"
+                onClick={() => setInspectCard({ card: lastAcquiredItem.card, userCard: lastAcquiredItem.userCard })}
+              >
+                <span className="text-xs font-black text-slate-200 group-hover:text-amber-300 transition-colors truncate">
+                  {lastAcquiredItem.card.player?.display_name || lastAcquiredItem.card.card_name}
+                </span>
+                <span 
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded border uppercase shrink-0"
+                  style={{ color: getRarityTier(lastAcquiredItem.card).color, borderColor: getRarityTier(lastAcquiredItem.card).borderColor }}
                 >
-                  <span className="v200-kpi-recent-name">
-                    {lastAcquiredItem.card.player?.display_name || lastAcquiredItem.card.card_name}
-                  </span>
-                  <span 
-                    className="v200-rarity-pill-sm"
-                    style={{ color: getRarityTier(lastAcquiredItem.card).color, borderColor: getRarityTier(lastAcquiredItem.card).borderColor }}
-                  >
-                    {getRarityTier(lastAcquiredItem.card).label}
-                  </span>
-                </div>
-              ) : (
-                <span className="v200-kpi-hint">Brak kart w kolekcji</span>
-              )}
-            </div>
-          </div>
-
-          {/* Tile 5: Ostatnia Karta Specjalna */}
-          <div className="v200-kpi-card">
-            <div className="v200-kpi-icon-wrap icon-special">
-              <Crown size={20} />
-            </div>
-            <div className="v200-kpi-content">
-              <span className="v200-kpi-label">KARTA SPECJALNA</span>
-              {lastSpecialItem?.card ? (
-                <div 
-                  className="v200-kpi-recent-row cursor-pointer"
-                  onClick={() => setInspectCard({ card: lastSpecialItem.card, userCard: lastSpecialItem.userCard })}
-                >
-                  <span className="v200-kpi-recent-name text-yellow-300">
-                    {lastSpecialItem.card.player?.display_name || lastSpecialItem.card.card_name}
-                  </span>
-                  <span 
-                    className="v200-rarity-pill-sm"
-                    style={{ color: getRarityTier(lastSpecialItem.card).color, borderColor: getRarityTier(lastSpecialItem.card).borderColor }}
-                  >
-                    {getRarityTier(lastSpecialItem.card).label}
-                  </span>
-                </div>
-              ) : (
-                <span className="v200-kpi-hint">Zdobądź kartę Gold/Inferno/Legend</span>
-              )}
-            </div>
+                  {getRarityTier(lastAcquiredItem.card).label}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs font-bold text-slate-400">Brak kart w kolekcji</span>
+            )}
+            <span className="text-[10px] text-slate-400 truncate">
+              {lastAcquiredItem ? "Kliknij aby obejrzeć w 3D" : "Otwórz pierwszą paczkę"}
+            </span>
           </div>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* SEKCJA ZAKŁADEK I MODÓW WIDOKU                                            */}
+      {/* 2. ZAKŁADKI I MODY WIDOKU (SEGMENTED VIEW SWITCHER)                        */}
       {/* ========================================================================= */}
-      <div className="v200-collection-view-tabs">
+      <div className="delta-collection-nav-tabs w-full">
         <button
           type="button"
+          data-tab="album"
           onClick={() => {
             setActiveViewTab("collection2");
             setSelectedAlbumPlayerId(null);
           }}
-          className={`v200-view-mode-tab ${activeViewTab === "collection2" && !selectedAlbumPlayerId ? "active" : ""}`}
+          className={`delta-collection-tab-btn ${activeViewTab === "collection2" && !selectedAlbumPlayerId ? "active" : ""}`}
         >
-          <Layers size={16} />
-          <span>🃏 KOLEKCJA 2.0 & GRID ({uniqueOwnedCount}/{totalCardsCount})</span>
+          <Layers size={15} />
+          <span>ALBUM & SIATKA KART ({uniqueOwnedCount}/{totalCardsCount})</span>
         </button>
 
         <button
           type="button"
+          data-tab="shop"
+          onClick={() => {
+            setActiveViewTab("shop");
+            setSelectedAlbumPlayerId(null);
+          }}
+          className={`delta-collection-tab-btn ${activeViewTab === "shop" ? "active" : ""}`}
+        >
+          <ShoppingCart size={15} className="text-amber-400" />
+          <span>SKLEP PACZEK (5 BOOSTERÓW)</span>
+        </button>
+
+        <button
+          type="button"
+          data-tab="panini"
           onClick={() => {
             setActiveViewTab("panini");
             setSelectedAlbumPlayerId(null);
           }}
-          className={`v200-view-mode-tab ${activeViewTab === "panini" ? "active" : ""}`}
+          className={`delta-collection-tab-btn ${activeViewTab === "panini" ? "active" : ""}`}
         >
-          <Shield size={16} />
-          <span>📖 KLASER PANINI 3D ({playerAlbums.filter(a => a.ownedCount > 0).length}/{playerAlbums.length})</span>
+          <Shield size={15} />
+          <span>KLASER PANINI 3D</span>
         </button>
 
         <button
           type="button"
+          data-tab="roster"
           onClick={() => {
             setActiveViewTab("roster");
             setSelectedAlbumPlayerId(null);
           }}
-          className={`v200-view-mode-tab ${activeViewTab === "roster" ? "active" : ""}`}
+          className={`delta-collection-tab-btn ${activeViewTab === "roster" ? "active" : ""}`}
         >
-          <Users size={16} />
-          <span>👥 ALBUMY ZAWODNIKÓW ({playerAlbums.length})</span>
+          <Users size={15} />
+          <span>KARTY ZAWODNIKÓW ({playerAlbums.length})</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* WIDOK DEDYKOWANEGO ALBUMU POJEDYNCZEGO ZAWODNIKA                          */}
+      {/* 3. SKLEP PACZEK (FAZA 3 — 5 OFICJALNYCH BOOSTERÓW DELTA)                   */}
+      {/* Widok dedykowany                                                          */}
       {/* ========================================================================= */}
-      {currentAlbum && (
-        <div className="v104-single-player-album animate-fadeIn mb-8">
-          <div className="v104-player-album-topbar devil-card">
-            <button
-              type="button"
-              onClick={() => setSelectedAlbumPlayerId(null)}
-              className="v104-album-back-btn"
-            >
-              <ArrowLeft size={16} /> WRÓĆ DO KOLEKCJI
-            </button>
-            <span className="v104-album-player-indicator">
-              {currentAlbum.player.display_name} • {currentAlbum.ownedCount} / {currentAlbum.cards.length} KART
-            </span>
-          </div>
-
-          <div className="v104-album-player-banner devil-card">
-            <div className="v104-player-banner-info">
-              <div className="v104-player-avatar-large">
-                <span className="v104-avatar-initials-lg">
-                  {currentAlbum.player.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <span className="eyebrow gold">KLASER ZAWODNIKA DELTA 2018</span>
-                <h3 className="v104-album-player-name">{currentAlbum.player.display_name}</h3>
-                <div className="v104-album-player-meta">
-                  <span className="v104-album-badge pos">{currentAlbum.player.position || "ZAWODNIK"}</span>
-                  <span className="v104-album-badge num">#{currentAlbum.player.shirt_number || "DELTA"}</span>
-                  <span className="v104-album-badge count">
-                    <Sparkles size={13} className="inline mr-1" />
-                    {currentAlbum.ownedCount} / {currentAlbum.cards.length} ({currentAlbum.completionRate}%)
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="v104-album-progress-box">
-              <div className="v104-album-progress-bar">
-                <i style={{ width: `${currentAlbum.completionRate}%` }} />
-              </div>
-              <span className="v104-album-progress-label">
-                {currentAlbum.completionRate === 100 ? "👑 KOMPLETNA KOLEKCJA!" : `Brakuje ${currentAlbum.cards.length - currentAlbum.ownedCount} kart`}
-              </span>
-            </div>
-          </div>
-
-          <div className="v104-album-carousel-section">
-            <PlayerCardsCircular3DCarousel
-              cards={currentAlbum.cards}
-              ownedCardsMap={ownedCardsMap}
-              onInspectCard={(card, userCard) => setInspectCard({ card, userCard })}
-              onCinematicReveal={(card) => setCinematicCardToUnlock(card)}
-              getCardUnlockCondition={(c) => getCardUnlockCondition(c).condition}
-              layoutsMap={cardLayoutsMap}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 2. PACZKI I BOOSTERY (5 OFICJALNYCH TYPÓW PACZEK)                         */}
-      {/* ========================================================================= */}
-      {!selectedAlbumPlayerId && activeViewTab === "collection2" && (
-        <div className="v200-vault-section">
-          <div className="v200-section-heading-row">
+      {activeViewTab === "shop" && (
+        <section aria-label="Sklep Paczek i Boosterów" className="w-full space-y-3 pt-1">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="v200-section-eyebrow">
-                <Gift size={14} className="text-yellow-400 inline mr-1" />
-                OFICJALNE PACZKI & BOOSTERY DELTA
+              <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <Gift size={13} />
+                OFICJALNY SKLEP PACZEK DELTA
               </div>
-              <h2 className="v200-section-title">PACZKI I BOOSTERY KOLEKCJONERSKIE</h2>
+              <h2 className="text-base sm:text-lg font-black text-slate-100 m-0">
+                Paczki i Boostery Kolekcjonerskie
+              </h2>
             </div>
-            <div className="v200-vault-info-pill">
-              <Coins size={14} className="text-yellow-400 mr-1" />
-              <span>Otwieraj zdobyte paczki lub odblokowuj za punkty DP</span>
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+              <Coins size={14} className="text-amber-400" />
+              <span>Kupuj za punkty DP lub zdobywaj za mecze i frekwencję</span>
             </div>
           </div>
 
           {/* 5 Booster Pack Cards Grid */}
-          <div className="delta-boosters-carousel">
+          <div className="delta-booster-shop-grid">
             {OFFICIAL_BOOSTER_PACKS.map(pack => {
               const ownedCountForPack = unopenedPacks.filter(p => p.pack_type_id === pack.id).length;
               const canAfford = deltaPoints >= pack.priceDp;
@@ -1092,290 +946,162 @@ export default function DeltaCollectionAlbum({
               return (
                 <div 
                   key={pack.id}
-                  className={`delta-booster-card theme-${pack.theme}`}
+                  className={`delta-booster-card-v5 theme-${pack.theme}`}
                 >
                   {/* Top Foil Banner */}
-                  <div className="delta-booster-top">
-                    <span className="delta-booster-badge">{pack.badgeLabel}</span>
-                    <span className="delta-booster-cards-count">{pack.cardsCount} KART</span>
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase">
+                    <span className="text-slate-300 tracking-wider truncate max-w-[130px]">{pack.badgeLabel}</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-slate-200 shrink-0 font-mono">{pack.cardsCount} KART</span>
                   </div>
 
                   {/* Pack Graphic Visual */}
                   <div 
-                    className="delta-booster-visual"
+                    className="relative w-full aspect-[1/1.4] rounded-xl overflow-hidden bg-radial from-slate-800 to-[#07090e] border border-white/10 flex items-center justify-center group cursor-pointer"
                     onClick={() => {
                       if (ownedCountForPack > 0 && !isOpeningPack) {
                         launchPackFromUnopened(pack.id, null, false);
                       }
                     }}
-                    style={{ cursor: ownedCountForPack > 0 ? "pointer" : "default" }}
                   >
                     <img 
                       src={pack.image} 
                       alt={pack.name} 
-                      className="delta-booster-img" 
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" 
                       loading="lazy"
                     />
-                    <div className="delta-booster-shine" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
                     {/* Stock Indicator Badge */}
-                    {ownedCountForPack > 0 ? (
-                      <div className="delta-booster-stock-badge in-stock">
-                        <Sparkles size={12} className="animate-spin" />
-                        <span>{ownedCountForPack} W POSIADANIU</span>
-                      </div>
-                    ) : (
-                      <div className="delta-booster-stock-badge empty">
-                        <span>0 W POSIADANIU</span>
-                      </div>
-                    )}
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center">
+                      {ownedCountForPack > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-600/90 text-white font-black text-[10px] shadow-lg">
+                          <Sparkles size={11} className="animate-spin" />
+                          <span>{ownedCountForPack} W POSIADANIU</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-black/60 text-slate-400 font-bold text-[9px]">
+                          0 W POSIADANIU
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Pack Info & Details */}
-                  <div className="delta-booster-body">
-                    <h3 className="delta-booster-name">{pack.name}</h3>
-                    <p className="delta-booster-desc">{pack.description}</p>
-                    
-                    <div className="delta-booster-guarantee">
-                      <Zap size={13} className="text-yellow-400" />
-                      <span>{pack.guaranteeText}</span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    {ownedCountForPack > 0 ? (
-                      <button
-                        type="button"
-                        disabled={isOpeningPack}
-                        onClick={() => {
-                          if (!isOpeningPack && ownedCountForPack > 0) {
-                            launchPackFromUnopened(pack.id, null, false);
-                          }
-                        }}
-                        className="delta-booster-btn-open"
-                      >
-                        <Sparkles size={16} />
-                        <span>OTWÓRZ TERAZ ({ownedCountForPack})</span>
-                      </button>
-                    ) : (
-                      <div className="delta-booster-buy-group">
-                        <button
-                          type="button"
-                          onClick={() => handleBuyPack(pack.id)}
-                          disabled={isBuyingThis || isOpeningPack || !canAfford}
-                          className={`delta-booster-btn-buy ${canAfford ? "affordable" : "unaffordable"}`}
-                        >
-                          <Coins size={15} />
-                          <span>
-                            {isBuyingThis ? "ODBLOKOWYWANIE..." : `KUP ZA ${pack.priceDp} DP`}
-                          </span>
-                        </button>
-                        <span className="delta-booster-subtext">
-                          LUB ZDOBĄDŹ DARMOWĄ ZA MECZE
-                        </span>
+                  <div className="flex flex-col gap-1.5 flex-1 justify-between">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-100 truncate m-0">{pack.name}</h3>
+                      <p className="text-[10px] text-slate-400 line-clamp-2 m-0 mt-0.5 leading-snug">{pack.description}</p>
+                      
+                      <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20">
+                        <Zap size={12} className="text-amber-400 shrink-0" />
+                        <span className="truncate">{pack.guaranteeText}</span>
                       </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                    </div>
 
-      {/* ========================================================================= */}
-      {/* 3. OSTATNIO ZDOBYTE KARTY                                                 */}
-      {/* ========================================================================= */}
-      {!selectedAlbumPlayerId && activeViewTab === "collection2" && recentlyAcquiredList.length > 0 && (
-        <div className="v200-recently-acquired-section">
-          <div className="v200-section-heading-row">
-            <div>
-              <div className="v200-section-eyebrow">
-                <Sparkles size={14} className="text-yellow-400 inline mr-1" />
-                HISTORIA ZDOBYWANIA
-              </div>
-              <h3 className="v200-section-title">OSTATNIO ZDOBYTE KARTY</h3>
-            </div>
-            <span className="text-xs text-slate-400">
-              Ostatnie {recentlyAcquiredList.length} kart w Twoim klaserze
-            </span>
-          </div>
-
-          <div className="delta-recent-cards-row">
-            {recentlyAcquiredList.map(({ card, userCard }, idx) => {
-              const tier = getRarityTier(card);
-              const isDuplicate = userCard && userCard.duplicates_count > 0;
-
-              return (
-                <div
-                  key={`${card.id}_${idx}`}
-                  className="delta-recent-card-item"
-                  onClick={() => setInspectCard({ card, userCard })}
-                >
-                  <div className="delta-recent-card-wrapper">
-                    <CollectibleCard3D
-                      card={card}
-                      userCard={userCard}
-                      isLocked={false}
-                      size="sm"
-                      interactive={false}
-                      showFlip={false}
-                      layoutOverride={getLayoutForCard(card)}
-                    />
-                    {isDuplicate ? (
-                      <span className="delta-badge-dup">
-                        DUPLIKAT (x{userCard.duplicates_count + 1})
-                      </span>
-                    ) : (
-                      <span className="delta-badge-new">
-                        NEW
-                      </span>
-                    )}
-                  </div>
-                  <div className="delta-recent-card-meta">
-                    <strong className="delta-recent-pname">
-                      {card.player?.display_name || card.card_name}
-                    </strong>
-                    <span 
-                      className="delta-recent-rarity"
-                      style={{ color: tier.color }}
-                    >
-                      {tier.label}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 4. BRAKUJĄCE KARTY (LOCKED HIGHLIGHT)                                      */}
-      {/* ========================================================================= */}
-      {!selectedAlbumPlayerId && activeViewTab === "collection2" && missingCardsList.length > 0 && (
-        <div className="v200-missing-cards-section">
-          <div className="v200-section-heading-row">
-            <div>
-              <div className="v200-section-eyebrow text-slate-400">
-                <Lock size={14} className="inline mr-1" />
-                DO ODKRYCIA W GRZE
-              </div>
-              <h3 className="v200-section-title">BRAKUJĄCE KARTY DO KOMPLETU ({missingCardsList.length})</h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedOwnershipFilter("missing");
-                const gridElem = document.getElementById("delta-cards-grid-anchor");
-                if (gridElem) gridElem.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="text-xs text-yellow-400 hover:underline font-bold"
-            >
-              Zobacz wszystkie brakujące w gridzie →
-            </button>
-          </div>
-
-          <div className="delta-missing-cards-row">
-            {missingCardsList.slice(0, 6).map(card => {
-              const tier = getRarityTier(card);
-              const info = getCardUnlockCondition(card);
-
-              return (
-                <div
-                  key={card.id}
-                  className="delta-missing-card-item"
-                  onClick={() => setCinematicCardToUnlock(card)}
-                >
-                  <div className="delta-missing-card-wrapper">
-                    <CollectibleCard3D
-                      card={card}
-                      userCard={undefined}
-                      isLocked={true}
-                      size="sm"
-                      interactive={false}
-                      showFlip={false}
-                      layoutOverride={getLayoutForCard(card)}
-                    />
-                    <div className="delta-locked-overlay">
-                      <Lock size={22} className="text-slate-300 mb-1" />
-                      <span className="delta-locked-label">ZABLOKOWANA</span>
+                    {/* Action Buttons with Strict Minimum 44px Touch Target */}
+                    <div className="mt-2 pt-2 border-t border-white/8">
+                      {ownedCountForPack > 0 ? (
+                        <DeltaButton
+                          variant="primary"
+                          size="sm"
+                          touchTarget={true}
+                          disabled={isOpeningPack}
+                          onClick={() => launchPackFromUnopened(pack.id, null, false)}
+                          className="w-full font-black text-xs shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                        >
+                          <Sparkles size={14} className="text-amber-300 animate-spin" />
+                          <span>OTWÓRZ ({ownedCountForPack})</span>
+                        </DeltaButton>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <DeltaButton
+                            variant={canAfford ? "gold" : "secondary"}
+                            size="sm"
+                            touchTarget={true}
+                            disabled={isBuyingThis || isOpeningPack || !canAfford}
+                            onClick={() => handleBuyPack(pack.id)}
+                            className="w-full font-black text-xs"
+                          >
+                            <Coins size={14} />
+                            <span>
+                              {isBuyingThis ? "KUPUJĘ..." : `KUP ZA ${pack.priceDp} DP`}
+                            </span>
+                          </DeltaButton>
+                          {!canAfford && (
+                            <span className="text-[9px] text-center text-slate-400">
+                              Brakuje {pack.priceDp - deltaPoints} DP
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="delta-missing-meta">
-                    <strong className="delta-missing-pname">
-                      {card.player?.display_name || card.card_name}
-                    </strong>
-                    <span className="delta-missing-source">
-                      Wypada z: {info.packType}
-                    </span>
-                  </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {/* ========================================================================= */}
-      {/* 5. GŁÓWNY GRID KART & FILTRY                                              */}
+      {/* 4. GŁÓWNA SIATKA KART & FILTRY (FAZA 2 — NOWY ALBUM)                       */}
       {/* ========================================================================= */}
       {!selectedAlbumPlayerId && activeViewTab === "collection2" && (
-        <div className="v200-all-cards-section" id="delta-cards-grid-anchor">
-          {/* Filter & Sort Bar */}
-          <div className="delta-collection-toolbar">
-            <div className="toolbar-search-row">
-              {/* Search */}
-              <div className="delta-search-box">
-                <Search size={16} className="text-slate-400" />
+        <section aria-label="Siatka Kart Kolekcji" className="w-full space-y-3 pt-2">
+          {/* Toolbar: Wyszukiwarka, Filtry Zawodnika i Sortowanie */}
+          <div className="p-3 sm:p-4 rounded-2xl bg-[#0b0e15] border border-white/10 shadow-lg space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Search input */}
+              <div className="relative flex items-center">
+                <Search size={15} className="absolute left-3 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Szukaj karty, zawodnika, edycji..."
+                  placeholder="Szukaj karty, zawodnika, rzadkości..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-slate-100 placeholder-slate-400 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
                 />
                 {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-white">
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 p-1 text-slate-400 hover:text-white"
+                  >
                     <X size={14} />
                   </button>
                 )}
               </div>
 
-              {/* Player Filter Dropdown */}
-              <div className="delta-filter-select-wrap">
-                <span className="filter-label">ZAWODNIK:</span>
-                <select
-                  value={selectedPlayerFilter}
-                  onChange={e => setSelectedPlayerFilter(e.target.value)}
-                  className="delta-select"
-                >
-                  <option value="all">Wszyscy Zawodnicy ({realPlayers.length})</option>
-                  {realPlayers.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.display_name} (#{p.shirt_number || "GM"})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Player selector */}
+              <select
+                value={selectedPlayerFilter}
+                onChange={e => setSelectedPlayerFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-[#121520] border border-white/10 text-xs font-bold text-slate-200 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
+              >
+                <option value="all">Wszyscy Zawodnicy ({realPlayers.length})</option>
+                {realPlayers.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.display_name} (#{p.shirt_number || "GM"})
+                  </option>
+                ))}
+              </select>
 
-              {/* Sort Dropdown */}
-              <div className="delta-filter-select-wrap">
-                <span className="filter-label">SORTUJ:</span>
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as any)}
-                  className="delta-select"
-                >
-                  <option value="newest">Najnowsze Zdobyte</option>
-                  <option value="rarity_desc">Rzadkość (Od Najwyższej)</option>
-                  <option value="ovr_desc">Ocena OVR (Najwyższa)</option>
-                  <option value="player_asc">Zawodnik (A-Z)</option>
-                </select>
-              </div>
+              {/* Sort selector */}
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-xl bg-[#121520] border border-white/10 text-xs font-bold text-slate-200 focus:outline-none focus:border-amber-400/50 min-h-[44px]"
+              >
+                <option value="newest">Najnowsze Zdobyte</option>
+                <option value="rarity_desc">Rzadkość (Od Najwyższej)</option>
+                <option value="ovr_desc">Ocena OVR (Najwyższa)</option>
+                <option value="player_asc">Zawodnik (A-Z)</option>
+              </select>
             </div>
 
-            {/* Rarity Filter Tabs (6 Tiers) */}
-            <div className="delta-filter-chips-row">
-              <span className="filter-chip-label">RZADKOŚĆ:</span>
+            {/* Rarity Filter Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">RZADKOŚĆ:</span>
               {[
                 { id: "all", label: "Wszystkie", color: "#ffffff" },
                 { id: "common", label: "COMMON", color: "#94a3b8" },
@@ -1389,66 +1115,140 @@ export default function DeltaCollectionAlbum({
                   key={tier.id}
                   type="button"
                   onClick={() => setSelectedRarityFilter(tier.id)}
-                  className={`delta-filter-chip ${selectedRarityFilter === tier.id ? "active" : ""}`}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[34px] border ${
+                    selectedRarityFilter === tier.id
+                      ? "bg-white/15 text-white shadow-sm"
+                      : "bg-white/5 text-slate-400 hover:text-white border-transparent"
+                  }`}
                   style={{
                     borderColor: selectedRarityFilter === tier.id ? tier.color : undefined,
                     color: selectedRarityFilter === tier.id ? tier.color : undefined
                   }}
                 >
-                  <span>{tier.label}</span>
+                  {tier.label}
                 </button>
               ))}
             </div>
 
-            {/* Ownership Filter Tabs */}
-            <div className="delta-filter-chips-row">
-              <span className="filter-chip-label">STAN:</span>
+            {/* Ownership Filter Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">STAN:</span>
               {[
                 { id: "all", label: `Wszystkie (${allCards.length})` },
                 { id: "owned", label: `Zdobyte (${uniqueOwnedCount})` },
                 { id: "missing", label: `Brakujące (${missingCardsList.length})` },
-                { id: "new", label: "Nowe (NEW)" },
                 { id: "duplicates", label: `Duplikaty (${totalDuplicatesCount})` }
               ].map(tab => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setSelectedOwnershipFilter(tab.id as any)}
-                  className={`delta-filter-chip ownership ${selectedOwnershipFilter === tab.id ? "active" : ""}`}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[34px] border ${
+                    selectedOwnershipFilter === tab.id
+                      ? "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-sm"
+                      : "bg-white/5 text-slate-400 hover:text-white border-transparent"
+                  }`}
                 >
-                  <span>{tab.label}</span>
+                  {tab.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Grid of Cards */}
+          {/* Cards Grid: Rendered Cards OR Empty States */}
           {loading ? (
-            <div className="delta-collection-loading">
-              <RefreshCw size={36} className="animate-spin text-yellow-400" />
-              <span>Ładowanie kart DELTA...</span>
+            <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+              <RefreshCw size={36} className="animate-spin text-amber-400" />
+              <span className="text-xs font-bold">Ładowanie kart DELTA INFERNO...</span>
+            </div>
+          ) : userCards.length === 0 && selectedOwnershipFilter === "owned" ? (
+            /* DEDICATED HIGH-IMPACT EMPTY STATE (FAZA 2.3) */
+            <div className="delta-collection-empty-showcase">
+              <div className="flex items-center justify-center -space-x-3 sm:-space-x-4 mb-4">
+                <div className="w-18 h-28 sm:w-24 sm:h-34 rounded-xl bg-gradient-to-b from-red-950/80 to-[#0e1017] border border-red-500/40 shadow-lg transform -rotate-6 p-1.5 flex flex-col items-center justify-between">
+                  <span className="delta-card-watermark-demo text-[8px] font-black text-red-400 uppercase tracking-widest">WZÓR</span>
+                  <Shield size={26} className="text-red-400/60 my-auto" />
+                  <span className="text-[9px] font-bold text-slate-400">INFERNO</span>
+                </div>
+                <div className="w-20 h-30 sm:w-26 sm:h-38 rounded-xl bg-gradient-to-b from-amber-950/80 via-[#161924] to-[#0a0d14] border-2 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.3)] z-10 transform scale-105 p-2 flex flex-col items-center justify-between">
+                  <span className="delta-card-watermark-demo text-[9px] font-black text-amber-300 uppercase tracking-widest">WZÓR 3D</span>
+                  <Sparkles size={30} className="text-amber-400 my-auto drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                  <span className="text-[9px] font-extrabold text-amber-300">DO ZDOBYCIA W PACZKACH</span>
+                </div>
+                <div className="w-18 h-28 sm:w-24 sm:h-34 rounded-xl bg-gradient-to-b from-purple-950/80 to-[#0e1017] border border-purple-500/40 shadow-lg transform rotate-6 p-1.5 flex flex-col items-center justify-between">
+                  <span className="delta-card-watermark-demo text-[8px] font-black text-purple-400 uppercase tracking-widest">WZÓR</span>
+                  <Award size={26} className="text-purple-400/60 my-auto" />
+                  <span className="text-[9px] font-bold text-slate-400">LEGEND</span>
+                </div>
+              </div>
+
+              <h3 className="text-lg sm:text-xl font-black text-slate-100 m-0">
+                Twój album czeka na pierwsze karty!
+              </h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
+                Zbuduj swój mistrzowski skład DELTA 2018 GM. Otwieraj paczki INFERNO, aby zdobyć unikalne karty klubowe z autografami i animacjami 3D!
+              </p>
+
+              <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                {unopenedPacks.length > 0 ? (
+                  <DeltaButton
+                    variant="primary"
+                    size="md"
+                    touchTarget={true}
+                    onClick={() => launchPackFromUnopened()}
+                    className="font-black text-xs"
+                  >
+                    <Gift size={16} />
+                    <span>OTWÓRZ PIERWSZĄ PACZKĘ ({unopenedPacks.length})</span>
+                  </DeltaButton>
+                ) : (
+                  <DeltaButton
+                    variant="gold"
+                    size="md"
+                    touchTarget={true}
+                    onClick={() => setActiveViewTab("shop")}
+                    className="font-black text-xs"
+                  >
+                    <ShoppingCart size={16} />
+                    <span>PRZEJDŹ DO SKLEPU PACZEK</span>
+                  </DeltaButton>
+                )}
+                <DeltaButton
+                  variant="outline"
+                  size="md"
+                  touchTarget={true}
+                  onClick={() => setShowDailySpin(true)}
+                  className="font-bold text-xs"
+                >
+                  <Sparkles size={16} className="text-amber-400" />
+                  <span>ZAKRĘĆ KOŁEM FORTUNY</span>
+                </DeltaButton>
+              </div>
             </div>
           ) : filteredGridCards.length === 0 ? (
-            <div className="delta-collection-empty">
-              <Search size={44} className="text-slate-500 mb-2" />
-              <h3>Brak kart spełniających wybrane kryteria</h3>
-              <p>Zmień filtry rzadkości, zawodnika lub wyszukiwane hasło.</p>
-              <button
-                type="button"
+            /* FILTER EMPTY STATE */
+            <div className="py-10 p-6 rounded-2xl bg-[#0e1119] border border-white/10 text-center flex flex-col items-center gap-2">
+              <Search size={36} className="text-slate-500" />
+              <strong className="text-sm font-black text-slate-200">Brak kart spełniających wybrane kryteria</strong>
+              <p className="text-xs text-slate-400 m-0">Zmień filtry rzadkości, zawodnika lub wyszukiwane hasło.</p>
+              <DeltaButton
+                variant="outline"
+                size="sm"
+                touchTarget={true}
+                className="mt-2 text-xs font-bold"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedPlayerFilter("all");
                   setSelectedRarityFilter("all");
-                  setSelectedTypeFilter("all");
                   setSelectedOwnershipFilter("all");
                 }}
-                className="delta-btn-reset-filters"
               >
                 Zresetuj wszystkie filtry
-              </button>
+              </DeltaButton>
             </div>
           ) : (
-            <div className="delta-cards-main-grid">
+            /* MAIN CARDS GRID */
+            <div className="delta-collection-cards-grid">
               {filteredGridCards.map(card => {
                 const isOwned = ownedCardsMap.has(card.id);
                 const userCard = ownedCardsMap.get(card.id) || null;
@@ -1459,15 +1259,11 @@ export default function DeltaCollectionAlbum({
                   <div
                     key={card.id}
                     onClick={() => {
-                      if (isOwned) {
-                        setInspectCard({ card, userCard });
-                      } else {
-                        setCinematicCardToUnlock(card);
-                      }
+                      setInspectCard({ card, userCard });
                     }}
-                    className={`delta-card-cell ${isOwned ? "is-owned" : "is-locked"}`}
+                    className={`delta-card-cell-v5 ${isOwned ? "is-owned" : "is-locked"}`}
                   >
-                    <div className="delta-card-cell-inner">
+                    <div className="relative w-full rounded-xl overflow-hidden">
                       <CollectibleCard3D
                         card={card}
                         userCard={userCard}
@@ -1478,47 +1274,48 @@ export default function DeltaCollectionAlbum({
                         layoutOverride={getLayoutForCard(card)}
                       />
 
-                      {/* Locked Frosted Glass Overlay */}
+                      {/* Locked Padlock Overlay */}
                       {!isOwned && (
-                        <div className="delta-grid-locked-shield">
-                          <Lock size={20} className="text-slate-300" />
-                          <span>ZABLOKOWANA</span>
+                        <div className="absolute inset-0 bg-[#07090e]/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center">
+                          <Lock size={20} className="text-amber-400 mb-1" />
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-200">NIEZDOBYTA</span>
                         </div>
                       )}
 
-                      {/* Top Badges */}
+                      {/* Featured ribbon */}
                       {isFeatured && (
-                        <div className="delta-featured-ribbon" title="Wyróżniona Karta">
-                          <Star size={11} className="fill-yellow-400 text-yellow-400" />
+                        <div className="absolute top-1.5 right-1.5 p-1 rounded-full bg-amber-400/90 text-slate-950 shadow-md">
+                          <Star size={11} className="fill-current" />
                         </div>
                       )}
 
+                      {/* Duplicate tag */}
                       {isOwned && userCard && userCard.duplicates_count > 0 && (
-                        <div className="delta-dup-tag">
+                        <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-amber-500/90 text-slate-950 font-black text-[9px] font-mono shadow-md">
                           x{userCard.duplicates_count + 1}
                         </div>
                       )}
                     </div>
 
-                    {/* Footer Info */}
-                    <div className="delta-card-cell-footer">
-                      <div className="delta-footer-pname">
+                    {/* Card Footer Info */}
+                    <div className="flex flex-col gap-1 pt-1 border-t border-white/5">
+                      <strong className="text-xs font-black text-slate-100 truncate">
                         {card.player?.display_name || card.card_name}
-                      </div>
-                      <div className="delta-footer-meta-row">
+                      </strong>
+                      <div className="flex items-center justify-between text-[10px]">
                         <span 
-                          className="delta-rarity-pill-xs"
+                          className="font-black px-1 py-0.2 rounded border uppercase tracking-wider text-[9px]"
                           style={{ color: tier.color, borderColor: tier.borderColor }}
                         >
                           {tier.label}
                         </span>
                         {isOwned ? (
-                          <span className="delta-status-owned">
-                            <CheckCircle2 size={11} className="text-green-400 inline mr-0.5" /> Posiadana
+                          <span className="flex items-center gap-0.5 text-emerald-400 font-bold text-[10px]">
+                            <CheckCircle2 size={11} /> Posiadana
                           </span>
                         ) : (
-                          <span className="delta-status-locked">
-                            <Lock size={11} className="text-slate-400 inline mr-0.5" /> Brak
+                          <span className="flex items-center gap-0.5 text-slate-400 font-medium text-[10px]">
+                            <Lock size={10} /> Brak
                           </span>
                         )}
                       </div>
@@ -1528,7 +1325,7 @@ export default function DeltaCollectionAlbum({
               })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* ========================================================================= */}
@@ -1547,104 +1344,60 @@ export default function DeltaCollectionAlbum({
             if (unopenedPacks.length > 0) {
               launchPackFromUnopened();
             } else {
-              setActiveViewTab("collection2");
-              showToast("Brak nieotwartych paczek — odbierz lub kup paczkę poniżej!");
+              setActiveViewTab("shop");
             }
           }}
-          onOpenSBC={() => setShowSBC(true)}
-          onOpenTradeHub={() => setShowTradeHub(true)}
-          onClaimPaniniReward={() => {
-            const collected = playerAlbums.filter(a => a.ownedCount > 0).length;
-            if (collected >= 10) {
-              setPaniniRewardClaimed(true);
-              setDeltaPoints(p => p + 500);
-              cardSound.playWalkoutFanfare();
-              alert("👑 GRATULACJE! Odblokowano nagrodę Mistrza Klaseru Rocznika 2018: +500 DP oraz Złotą Odznakę!");
-            } else {
-              alert(`Zbierz jeszcze ${10 - collected} zawodników, aby odblokować nagrodę mistrzowską (+500 DP)!`);
-            }
-          }}
-          getLayoutForCard={getLayoutForCard}
         />
       )}
 
       {/* ========================================================================= */}
-      {/* WIDOK: ROSTER OVERVIEW (ALBUMY ZAWODNIKÓW)                                */}
+      {/* WIDOK: PLAYER ALBUMS (CIRCULAR 3D CAROUSEL)                               */}
       {/* ========================================================================= */}
-      {!selectedAlbumPlayerId && activeViewTab === "roster" && (
-        <div className="v200-roster-overview-mode animate-fadeIn">
-          <div className="v104-roster-grid">
-            {playerAlbums.map(album => {
-              const representativeCard = album.topOwnedCard || album.cards[0];
-              const isRepLocked = !album.topOwnedCard;
-
-              return (
-                <div
-                  key={album.player.id}
-                  onClick={() => setSelectedAlbumPlayerId(album.player.id)}
-                  className="v104-player-showcase-card devil-card"
-                >
-                  <div className="v104-showcase-card-preview">
-                    <CollectibleCard3D
-                      card={representativeCard}
-                      userCard={album.topOwnedCard ? (ownedCardsMap.get(representativeCard.id) || null) : null}
-                      isLocked={isRepLocked}
-                      size="md"
-                      interactive={false}
-                      showFlip={false}
-                      layoutOverride={getLayoutForCard(representativeCard)}
-                    />
-                  </div>
-
-                  <div className="v104-showcase-info">
-                    <div className="v104-showcase-name-row">
-                      <h4>{album.player.display_name}</h4>
-                      <span className="v104-showcase-number">
-                        #{album.player.shirt_number || "GM"}
-                      </span>
-                    </div>
-
-                    <span className="v104-showcase-pos">
-                      {album.player.position || "ZAWODNIK DELTA"}
-                    </span>
-
-                    <div className="v104-showcase-progress">
-                      <div className="v104-showcase-bar-track">
-                        <i style={{ width: `${album.completionRate}%` }} />
-                      </div>
-                      <div className="v104-showcase-bar-text">
-                        <span>{album.ownedCount} / {album.cards.length} kart</span>
-                        <b>{album.completionRate}%</b>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="v104-showcase-open-btn"
-                    >
-                      OTWÓRZ KLASER <ChevronRight size={15} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+      {selectedAlbumPlayerId && currentAlbum && (
+        <div className="w-full space-y-4">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#0b0e15] border border-white/10">
+            <button
+              type="button"
+              onClick={() => setSelectedAlbumPlayerId(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 cursor-pointer min-h-[44px]"
+            >
+              <ArrowLeft size={15} />
+              <span>Wróć do wszystkich albumów</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-300">
+                Album: <strong className="text-amber-300">{currentAlbum.player.display_name}</strong>
+              </span>
+              <DeltaBadge variant="gold" size="sm">
+                {currentAlbum.ownedCount}/{currentAlbum.cards.length} KART
+              </DeltaBadge>
+            </div>
           </div>
+
+          <PlayerCardsCircular3DCarousel
+            cards={currentAlbum.cards}
+            ownedCardsMap={ownedCardsMap}
+            onInspectCard={(card, userCard) => setInspectCard({ card, userCard })}
+            onCinematicReveal={(card) => setCinematicCardToUnlock(card)}
+            getCardUnlockCondition={(c) => getCardUnlockCondition(c).condition}
+            layoutsMap={cardLayoutsMap}
+          />
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 6. SZCZEGÓŁ KARTY (PREMIUM MODAL ZE WSZYSTKIMI DANYMI)                    */}
+      {/* PODGLĄD POJEDYNCZEJ KARTY 3D (FAZA 2.2 INSPECT MODAL)                     */}
       {/* ========================================================================= */}
-      {inspectCard && typeof document !== "undefined" && createPortal(
+      {inspectCard && (
         <div 
-          className="delta-card-detail-backdrop"
+          className="delta-inspect-modal-backdrop"
           onClick={() => {
             setInspectCard(null);
             setInspectFlipped(false);
           }}
         >
           <div 
-            className="delta-card-detail-modal"
+            className="delta-inspect-modal-card p-4 sm:p-6"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Close Button */}
@@ -1653,180 +1406,139 @@ export default function DeltaCollectionAlbum({
                 setInspectCard(null);
                 setInspectFlipped(false);
               }}
-              className="delta-detail-close"
-              aria-label="Zamknij"
+              className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center z-20"
+              aria-label="Zamknij podgląd karty"
             >
-              <X size={22} />
+              <X size={20} />
             </button>
 
-            {/* Left Column: 3D Interactive Card Preview */}
-            <div className="delta-detail-card-column">
-              <CollectibleCard3D
-                card={inspectCard.card}
-                userCard={inspectCard.userCard}
-                isLocked={false}
-                size="xl"
-                interactive={true}
-                showFlip={true}
-                touchFlip={true}
-                isFlipped={inspectFlipped}
-                onFlipChange={setInspectFlipped}
-                layoutOverride={getLayoutForCard(inspectCard.card)}
-              />
-
-              <div className="delta-detail-flip-hint">
-                <span>✋ Chwyć kartę myszką/palcem i obracaj w 3D • Kliknij aby odwrócić</span>
-              </div>
-            </div>
-
-            {/* Right Column: Full Card Stats & Actions */}
-            <div className="delta-detail-info-column">
-              {/* Header Badges */}
-              <div className="delta-detail-badges-row">
-                <span 
-                  className="delta-detail-rarity-badge"
-                  style={{
-                    color: getRarityTier(inspectCard.card).textColor,
-                    background: getRarityTier(inspectCard.card).badgeBg,
-                    borderColor: getRarityTier(inspectCard.card).borderColor
-                  }}
-                >
-                  <Sparkles size={13} className="inline mr-1" />
-                  {getRarityTier(inspectCard.card).label}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* Left Column: 3D Interactive Card Preview */}
+              <div className="flex flex-col items-center justify-center gap-3">
+                <CollectibleCard3D
+                  card={inspectCard.card}
+                  userCard={inspectCard.userCard}
+                  isLocked={false}
+                  size="xl"
+                  interactive={true}
+                  showFlip={true}
+                  touchFlip={true}
+                  isFlipped={inspectFlipped}
+                  onFlipChange={setInspectFlipped}
+                  layoutOverride={getLayoutForCard(inspectCard.card)}
+                />
+                <span className="text-[11px] text-slate-400 font-medium text-center">
+                  ✋ Chwyć myszką/palcem, aby obracać w 3D • Kliknij kartę aby odwrócić
                 </span>
-
-                <span className="delta-detail-type-badge">
-                  {inspectCard.card.title || inspectCard.card.card_type || "KARTA KLUBOWA"}
-                </span>
-
-                {featuredCardId === inspectCard.card.id && (
-                  <span className="delta-detail-featured-badge">
-                    <Star size={12} className="fill-yellow-400 text-yellow-400 inline mr-1" />
-                    WYRÓŻNIONA
-                  </span>
-                )}
               </div>
 
-              {/* Player Name & Number */}
-              <h2 className="delta-detail-title">
-                {inspectCard.card.player?.display_name || inspectCard.card.card_name}
-              </h2>
-              <p className="delta-detail-subtitle">
-                Pozycja: <b>{inspectCard.card.player?.position || "ZAWODNIK DELTA"}</b> • Numer: <b>#{inspectCard.card.player?.shirt_number || "GM"}</b>
-              </p>
-
-              {/* Detailed Stats Grid */}
-              <div className="delta-detail-data-box">
-                <div className="delta-data-row">
-                  <span className="data-key">Status Posiadania:</span>
-                  <strong className="data-val text-green-400">
-                    <Check size={14} className="inline mr-1" />
-                    W POSIADANIU
-                  </strong>
-                </div>
-
-                <div className="delta-data-row">
-                  <span className="data-key">Liczba Egzemplarzy:</span>
-                  <strong className="data-val">
-                    {inspectCard.userCard 
-                      ? `${(inspectCard.userCard.duplicates_count || 0) + 1} szt. (1 unikalna + ${inspectCard.userCard.duplicates_count || 0} duplikaty)`
-                      : "1 sztuka"}
-                  </strong>
-                </div>
-
-                <div className="delta-data-row">
-                  <span className="data-key">Data Zdobycia:</span>
-                  <strong className="data-val">
-                    {inspectCard.userCard?.acquired_at 
-                      ? new Date(inspectCard.userCard.acquired_at).toLocaleDateString("pl-PL", { day: "2-digit", month: "long", year: "numeric" })
-                      : "Sezon 2026/27"}
-                  </strong>
-                </div>
-
-                <div className="delta-data-row">
-                  <span className="data-key">Powiązane Osiągnięcie:</span>
-                  <strong className="data-val text-yellow-300">
-                    {getCardUnlockCondition(inspectCard.card).achievement}
-                  </strong>
-                </div>
-
-                <div className="delta-data-row">
-                  <span className="data-key">Źródło Wypadania:</span>
-                  <strong className="data-val text-slate-300">
-                    {getCardUnlockCondition(inspectCard.card).packType}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="delta-detail-actions-group">
-                {/* 1. Ustaw jako wyróżnioną */}
-                <button
-                  type="button"
-                  onClick={() => handleSetFeaturedCard(inspectCard.card.id)}
-                  className={`delta-action-btn featured ${featuredCardId === inspectCard.card.id ? "active" : ""}`}
-                >
-                  <Star size={16} className={featuredCardId === inspectCard.card.id ? "fill-yellow-400" : ""} />
-                  <span>
-                    {featuredCardId === inspectCard.card.id ? "⭐ TWOJA WYRÓŻNIONA KARTA" : "USTAW JAKO WYRÓŻNIONĄ"}
-                  </span>
-                </button>
-
-                {/* 2. Profil Zawodnika */}
-                {inspectCard.card.player_id && onOpenPlayerProfile && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInspectCard(null);
-                      if (inspectCard.card.player_id) {
-                        onOpenPlayerProfile(inspectCard.card.player_id);
-                      }
+              {/* Right Column: Card Stats & Actions */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span 
+                    className="text-xs font-black px-2 py-0.5 rounded-lg border uppercase tracking-wider"
+                    style={{
+                      color: getRarityTier(inspectCard.card).textColor,
+                      background: getRarityTier(inspectCard.card).badgeBg,
+                      borderColor: getRarityTier(inspectCard.card).borderColor
                     }}
-                    className="delta-action-btn secondary"
                   >
-                    <User size={16} />
-                    <span>PROFIL ZAWODNIKA</span>
-                  </button>
-                )}
+                    <Sparkles size={12} className="inline mr-1" />
+                    {getRarityTier(inspectCard.card).label}
+                  </span>
+                  <DeltaBadge variant="default" size="sm">
+                    {inspectCard.card.title || inspectCard.card.card_type || "KARTA KLUBOWA"}
+                  </DeltaBadge>
+                  {featuredCardId === inspectCard.card.id && (
+                    <DeltaBadge variant="gold" size="sm">
+                      ⭐ WYRÓŻNIONA
+                    </DeltaBadge>
+                  )}
+                </div>
 
-                {/* 3. Flip button */}
-                <button
-                  type="button"
-                  onClick={() => setInspectFlipped(!inspectFlipped)}
-                  className="delta-action-btn outline"
-                >
-                  <RefreshCw size={15} />
-                  <span>{inspectFlipped ? "OBRÓĆ NA AWERS" : "OBRÓĆ NA REWERS"}</span>
-                </button>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-100 m-0">
+                    {inspectCard.card.player?.display_name || inspectCard.card.card_name}
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Pozycja: <strong className="text-slate-200">{inspectCard.card.player?.position || "Zawodnik DELTA"}</strong> • Numer: <strong className="text-slate-200">#{inspectCard.card.player?.shirt_number || "GM"}</strong>
+                  </p>
+                </div>
 
-                {/* 4. Podpisz kartę */}
-                <button
-                  type="button"
-                  onClick={() => setSignatureCard(inspectCard.card)}
-                  className="delta-action-btn signature"
-                >
-                  <PenTool size={15} />
-                  <span>PODPISZ KARTĘ</span>
-                </button>
+                {/* Details Breakdown */}
+                <div className="p-3 rounded-xl bg-black/40 border border-white/8 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Status w kolekcji:</span>
+                    {inspectCard.userCard ? (
+                      <strong className="text-emerald-400 flex items-center gap-1 font-bold">
+                        <Check size={14} /> W POSIADANIU
+                      </strong>
+                    ) : (
+                      <strong className="text-amber-400 flex items-center gap-1 font-bold">
+                        <Lock size={14} /> DO ZDOBYCIA
+                      </strong>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Liczba egzemplarzy:</span>
+                    <strong className="text-slate-200">
+                      {inspectCard.userCard ? `${(inspectCard.userCard.duplicates_count || 0) + 1} sztuk` : "0 (niezdobyta)"}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Źródło wypadania:</span>
+                    <strong className="text-amber-300">
+                      {getCardUnlockCondition(inspectCard.card).packType}
+                    </strong>
+                  </div>
+                </div>
 
-                {/* 5. Zablokuj przed SBC */}
-                {inspectCard.userCard && (
-                  <button
-                    type="button"
-                    onClick={() => handleToggleLockCard(inspectCard.userCard)}
-                    className={`delta-action-btn ${(inspectCard.userCard as any).is_locked ? "lock-danger" : "lock-safe"}`}
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-2 flex-wrap">
+                  <DeltaButton
+                    variant="gold"
+                    size="sm"
+                    touchTarget={true}
+                    onClick={() => handleSetFeaturedCard(inspectCard.card.id)}
+                    className="text-xs font-bold"
                   >
-                    {(inspectCard.userCard as any).is_locked ? <Lock size={15} /> : <Unlock size={15} />}
-                    <span>
-                      {(inspectCard.userCard as any).is_locked ? "KARTA ZABLOKOWANA (SBC)" : "ZABLOKUJ PRZED SBC"}
-                    </span>
-                  </button>
-                )}
+                    <Star size={14} />
+                    <span>{featuredCardId === inspectCard.card.id ? "WYRÓŻNIONA" : "USTAW JAKO WYRÓŻNIONĄ"}</span>
+                  </DeltaButton>
+
+                  <DeltaButton
+                    variant="outline"
+                    size="sm"
+                    touchTarget={true}
+                    onClick={() => setInspectFlipped(!inspectFlipped)}
+                    className="text-xs font-bold"
+                  >
+                    <RotateCw size={14} />
+                    <span>{inspectFlipped ? "AWERS" : "REWERS"}</span>
+                  </DeltaButton>
+
+                  {inspectCard.card.player_id && onOpenPlayerProfile && (
+                    <DeltaButton
+                      variant="secondary"
+                      size="sm"
+                      touchTarget={true}
+                      onClick={() => {
+                        setInspectCard(null);
+                        if (inspectCard.card.player_id) {
+                          onOpenPlayerProfile(inspectCard.card.player_id);
+                        }
+                      }}
+                      className="text-xs font-bold"
+                    >
+                      <User size={14} />
+                      <span>PROFIL</span>
+                    </DeltaButton>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       {/* ========================================================================= */}
@@ -1912,7 +1624,7 @@ export default function DeltaCollectionAlbum({
         />
       )}
 
-      {/* Pozostałe modale systemowe (Daily Spin, Mini-Games, SBC, Trade Hub, Card Battle, Squad Builder itp.) */}
+      {/* Pozostałe modale systemowe */}
       {showDailySpin && (
         <DailyInfernoSpin
           onClose={() => setShowDailySpin(false)}
@@ -2032,9 +1744,6 @@ export default function DeltaCollectionAlbum({
           }}
         />
       )}
-
-      {/* Safe bottom spacer for mobile navigation */}
-      <div className="delta-collection-bottom-spacer" />
     </section>
   );
 }

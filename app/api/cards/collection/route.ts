@@ -116,7 +116,13 @@ export async function GET() {
       const starterTypes = ["base", "matchday", "training_warrior", "goal_hunter", "mvp", "inferno"] as const;
       let cardNum = 1;
 
-      for (const p of activePlayers) {
+      const catalogPlayers = activePlayers.length > 0 ? activePlayers : [
+        { id: "p1", display_name: "RYSZARD RYBACKI", shirt_number: "7", position: "NAP", photo_path: "/assets/players/ryszard-gold.png" },
+        { id: "p2", display_name: "MATEUSZ KOWALCZYK", shirt_number: "10", position: "POM", photo_path: null },
+        { id: "p3", display_name: "ALEKSANDER ZIELIŃSKI", shirt_number: "1", position: "BRAM", photo_path: null }
+      ];
+
+      for (const p of catalogPlayers) {
         const isRyszard = (p.display_name || "").toLowerCase().includes("ryszard") &&
                           (p.display_name || "").toLowerCase().includes("rybacki");
 
