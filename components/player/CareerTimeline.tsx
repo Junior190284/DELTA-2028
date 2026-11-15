@@ -58,24 +58,40 @@ export function CareerTimeline({
 
   const timelineItems = useMemo<TimelineItem[]>(() => {
     const items: TimelineItem[] = [];
+    const todayStr = new Date().toISOString().slice(0, 10);
 
-    // 1. ZWERYFIKOWANE TRENINGI (Obecności)
+    // 1. TRENINGI (Oddzielenie zweryfikowanej obecności od deklaracji RSVP)
     trainingSessions.forEach(tr => {
       const att = trainingAttendance.find(
         a => a.training_id === tr.id && a.player_id === player.id
       );
-      const isPresent = att && (att.status === "present" || att.status === "yes");
+      if (!att) return;
 
-      if (isPresent) {
+      const isDatePastOrToday = tr.training_date && String(tr.training_date).slice(0, 10) <= todayStr;
+
+      if (att.status === "present" && isDatePastOrToday) {
+        // ZWERYFIKOWANA OBECNOŚĆ NA BOISKU -> +40 XP
         items.push({
           id: `tr-${tr.id}`,
           date: tr.training_date,
           type: "training",
           title: tr.title || "Trening zespołu",
-          subtitle: `${tr.start_time?.slice(0, 5) || "17:00"} • Trening techniczno-taktyczny DELTA`,
+          subtitle: `${tr.start_time?.slice(0, 5) || "17:00"} • Obecność potwierdzona przez trenera DELTA`,
           location: tr.location || "Boisko klubowe",
           xpEarned: 40,
           badge: "TRENING ZESPOŁU"
+        });
+      } else if (att.status === "yes") {
+        // DEKLARACJA RODZICA (RSVP) -> 0 XP (NIE PRZYZNAJE XP SPORTOWEGO)
+        items.push({
+          id: `tr-rsvp-${tr.id}`,
+          date: tr.training_date,
+          type: "training",
+          title: tr.title || "Trening zespołu",
+          subtitle: `${tr.start_time?.slice(0, 5) || "17:00"} • Zgłoszono gotowość (deklaracja rodzica • 0 XP)`,
+          location: tr.location || "Boisko klubowe",
+          xpEarned: 0,
+          badge: "DEKLARACJA RSVP"
         });
       }
     });
@@ -87,17 +103,22 @@ export function CareerTimeline({
         a => a.match_id === m.id && a.player_id === player.id
       );
       const playerEvents = events.filter(
-        e => e.match_id === m.id && (e.player_id === player.id || e.assist_player_id === player.id)
+        e => e.match_id === m.id && (
+          (e.player_id === player.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
+          (e.assist_player_id === player.id && e.event_type === "goal")
+        )
       );
 
-      const isParticipant = (att && (att.status === "present" || att.status === "yes")) || playerEvents.length > 0;
+      const hasPresentAtt = att && att.status === "present";
+      const hasVerifiedEvents = playerEvents.length > 0;
+      const isConfirmedParticipant = hasPresentAtt || hasVerifiedEvents;
 
-      if (isParticipant) {
+      if (isConfirmedParticipant) {
         const goalsCount = events.filter(
           e => e.match_id === m.id && e.player_id === player.id && e.event_type === "goal"
         ).length;
         const assistsCount = events.filter(
-          e => e.match_id === m.id && e.assist_player_id === player.id
+          e => e.match_id === m.id && e.assist_player_id === player.id && e.event_type === "goal"
         ).length;
 
         const isHome = (m.home_team || "").toLowerCase().includes("delta");
@@ -120,16 +141,55 @@ export function CareerTimeline({
           assists: assistsCount,
           matchRef: m
         });
+      } else if (att && att.status === "yes") {
+        // Deklaracja bez potwierdzonego udziału w rozegranym meczu -> 0 XP
+        items.push({
+          id: `m-rsvp-${m.id}`,
+          date: m.match_date,
+          type: "match",
+          title: `${m.home_team} vs ${m.away_team}`,
+          subtitle: `Deklaracja na mecz ligowy (brak wpisu w protokole meczowym • 0 XP)`,
+          location: m.venue || "Boisko ligowe",
+          xpEarned: 0,
+          badge: "DEKLARACJA RSVP",
+          matchRef: m
+        });
+      }
+    });
+
+    // 2B. NADCHODZĄCE MECZE Z DEKLARACJĄ RSVP -> 0 XP
+    const upcomingMatches = matches.filter(m => m.status === "scheduled" || m.status === "upcoming");
+    upcomingMatches.forEach(m => {
+      const att = matchAttendance.find(
+        a => a.match_id === m.id && a.player_id === player.id
+      );
+      if (att && att.status === "yes") {
+        items.push({
+          id: `m-upcoming-rsvp-${m.id}`,
+          date: m.match_date,
+          type: "match",
+          title: `${m.home_team} vs ${m.away_team}`,
+          subtitle: `Powołanie na mecz ligowy • Zgłoszono gotowość (oczekuje na rozegranie • 0 XP)`,
+          location: m.venue || "Boisko ligowe",
+          xpEarned: 0,
+          badge: "DEKLARACJA RSVP",
+          matchRef: m
+        });
       }
     });
 
     // 3. PRZEŁOMOWE MOMENTY I OSIĄGNIĘCIA
-    // A. Debiut w meczu
+    // A. Debiut w meczu (wyłącznie potwierdzony faktyczny występ)
     const sortedPlayed = [...playedMatches]
       .filter(m => {
         const att = matchAttendance.find(a => a.match_id === m.id && a.player_id === player.id);
-        const hasEv = events.some(e => e.match_id === m.id && e.player_id === player.id);
-        return (att && (att.status === "present" || att.status === "yes")) || hasEv;
+        const hasVerifiedEv = events.some(
+          e => e.match_id === m.id && (
+            (e.player_id === player.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
+            (e.assist_player_id === player.id && e.event_type === "goal")
+          )
+        );
+        return (att && att.status === "present") || hasVerifiedEv;
       })
       .sort((a, b) => a.match_date.localeCompare(b.match_date));
 
@@ -293,9 +353,9 @@ export function CareerTimeline({
                       </span>
                     </div>
 
-                    <div className="v7b-xp-gain-pill" title="Zdobyte punkty doświadczenia">
+                    <div className={`v7b-xp-gain-pill ${item.xpEarned === 0 ? "xp-zero" : ""}`} title="Zdobyte punkty doświadczenia">
                       <Sparkles size={12} />
-                      <span>+{item.xpEarned} XP</span>
+                      <span>{item.xpEarned > 0 ? `+${item.xpEarned} XP` : "0 XP (RSVP)"}</span>
                     </div>
                   </div>
 

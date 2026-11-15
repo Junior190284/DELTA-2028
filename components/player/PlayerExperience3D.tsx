@@ -393,14 +393,51 @@ export function PlayerExperience3D({
   const s: Stat = stats[activeChild.id] || { m: 0, starts: 0, captain: 0, g: 0, a: 0, mvp: 0 };
   const t: TrainingStat = trainingStats[activeChild.id] || { sessions: 0, goals: 0, assists: 0, ga: 0, attendanceStreak: 0, games: 0, wins: 0 };
 
-  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (Zasada nienaruszalna: +40 XP trening, +60 XP mecz)
-  const presentTrainings = localTrAttendance.filter(
-    a => a.player_id === activeChild.id && (a.status === "present" || a.status === "yes")
-  ).length;
+  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (V7F.1A Integrity: wyłącznie zweryfikowana obecność na boisku)
+  // 1. Treningi (+40 XP): wyłącznie status "present" zatwierdzony przez trenera na odbytej sesji (data <= dziś)
+  const presentTrainings = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const pastOrTodayTrainingIds = new Set(
+      (trainingSessions || [])
+        .filter(tr => tr?.training_date && String(tr.training_date).slice(0, 10) <= todayStr)
+        .map(tr => tr.id)
+    );
 
-  const presentMatches = localAttendance.filter(
-    a => a.player_id === activeChild.id && (a.status === "present" || a.status === "yes")
-  ).length;
+    return localTrAttendance.filter(a => {
+      if (a.player_id !== activeChild.id) return false;
+      if (a.status !== "present") return false;
+      // Jeśli lista sesji treningowych jest dostępna, weryfikujemy czy data minęła
+      if (trainingSessions && trainingSessions.length > 0) {
+        return pastOrTodayTrainingIds.has(a.training_id);
+      }
+      return true;
+    }).length;
+  }, [localTrAttendance, activeChild.id, trainingSessions]);
+
+  // 2. Mecze (+60 XP): wyłącznie rozegrane mecze ligowe (status === "played") z potwierdzonym udziałem:
+  //    (status === "present" od trenera LUB oficjalny wpis zawodnika w protokole match_events)
+  const presentMatches = useMemo(() => {
+    const played = (matches || []).filter(m => m.status === "played");
+    if (played.length === 0) return 0;
+
+    const verifiedMatchIds = new Set<string>();
+    played.forEach(m => {
+      const hasPresentAtt = localAttendance.some(
+        a => a.match_id === m.id && a.player_id === activeChild.id && a.status === "present"
+      );
+      const hasVerifiedEvent = (events || []).some(
+        e => e.match_id === m.id &&
+          ((e.player_id === activeChild.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
+           (e.assist_player_id === activeChild.id && e.event_type === "goal"))
+      );
+
+      if (hasPresentAtt || hasVerifiedEvent) {
+        verifiedMatchIds.add(m.id);
+      }
+    });
+
+    return verifiedMatchIds.size;
+  }, [matches, localAttendance, events, activeChild.id]);
 
   const individualAttendanceXp = (presentTrainings * 40) + (presentMatches * 60);
   const playerLevel = Math.max(1, Math.floor(individualAttendanceXp / 250) + 1);
