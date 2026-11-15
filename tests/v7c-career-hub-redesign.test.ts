@@ -11,20 +11,20 @@ test("V7C Player Career Hub Premium Redesign — CSS gap elimination and respons
 
   const css = fs.readFileSync(cssPath, "utf8");
 
-  // Likwidacja pustej przestrzeni nad profilem (negative margin compensation)
+  // Likwidacja pustej przestrzeni nad profilem (przyczyna usunięta u źródła, bez ujemnych marginesów)
   assert.ok(
-    css.includes("margin: -36px auto 0 !important") || css.includes("margin-top: -36px"),
-    "Must compensate hub-main padding with desktop negative top margin to eliminate gap"
+    css.includes("margin: 0 auto !important"),
+    "Must enforce clean margin: 0 auto !important without negative margin masking"
   );
   assert.ok(
-    css.includes("margin-top: -16px !important") || css.includes("margin-top: -16px"),
-    "Must compensate mobile padding with negative top margin"
+    !css.includes("margin: -36px"),
+    "Must NOT use negative margin hacks on container"
   );
 
-  // Stadionowy styl, czerwono-złote oświetlenie
+  // Stadionowy styl, czerwono-złote oświetlenie via pseudo-element
   assert.ok(
-    css.includes("radial-gradient") && (css.includes("#f6c952") || css.includes("rgba(246, 201, 82")),
-    "Must include crimson and gold ambient volumetric lighting"
+    css.includes(".v7b-hero-card::before") && css.includes("radial-gradient"),
+    "Must use ::before pseudo-element for hero volumetric lighting to prevent layout flow distortion"
   );
 
   // Przyklejony pasek zakładek (sticky header)
@@ -53,7 +53,7 @@ test("V7C Player Career Hub Premium Redesign — CSS gap elimination and respons
   assert.ok(css.includes("max-width: 1440px"), "Must support 1440px desktop container");
 });
 
-test("V7C Player Hero — Silhouette safety and Level calculation", () => {
+test("V7C Player Hero — Silhouette safety, Level, and 3D Card Preview", () => {
   const photoPath = path.join(rootDir, "components/PlayerPhoto.tsx");
   const hubPath = path.join(rootDir, "components/player/PlayerCareerHub.tsx");
 
@@ -83,37 +83,60 @@ test("V7C Player Hero — Silhouette safety and Level calculation", () => {
     hubCode.includes("POZIOM {playerLevel}"),
     "Hero must display calculated player level"
   );
+
+  // Podgląd karty INFERNO 3D w Hero i przycisk otwierający inspekcję 3D
+  assert.ok(
+    hubCode.includes("v7c-hero-3d-preview-box"),
+    "Hero must feature an INFERNO 3D card preview box"
+  );
+  assert.ok(
+    hubCode.includes("v7c-btn-inspect-3d") && hubCode.includes("PODGLĄD KARTY"),
+    "Hero must include button with 'PODGLĄD KARTY' fallback for unowned cards"
+  );
+  assert.ok(
+    hubCode.includes("Card3DEngine"),
+    "Hero must support 3D inspection modal via Card3DEngine"
+  );
 });
 
-test("V7C 5 Core Sections Structure and Polish", () => {
+test("V7C 5 Core Sections, 4-Stat Panel, Radar Fallback, and Next Objective", () => {
   const hubCode = fs.readFileSync(path.join(rootDir, "components/player/PlayerCareerHub.tsx"), "utf8");
   const timelineCode = fs.readFileSync(path.join(rootDir, "components/player/CareerTimeline.tsx"), "utf8");
   const cardsCode = fs.readFileSync(path.join(rootDir, "components/player/PlayerInfernoCards.tsx"), "utf8");
 
-  // 1. PRZEGLĄD (KPIs, Radar, 1-Click RSVP)
-  assert.ok(hubCode.includes("v7b-kpi-grid"), "Overview must have KPI grid layout");
-  assert.ok(hubCode.includes("v7b-overview-duo-grid"), "Overview must have duo grid layout");
-  assert.ok(hubCode.includes("v7b-rsvp-buttons"), "Overview must have 1-Click RSVP widget buttons");
-  assert.ok(hubCode.includes("PlayerSkillRadar"), "Overview must render PlayerSkillRadar");
+  // 1. PANEL 4 STATYSTYK BEZPOŚREDNIO POD HERO (Mecze, Treningi, Gole, Asysty)
+  assert.ok(hubCode.includes("v7c-quick-stats-strip"), "Must render 4-stat panel directly under hero");
+  assert.ok(hubCode.includes("MECZE LIGOWE") || hubCode.includes("MECZE"), "Panel must include matches");
+  assert.ok(hubCode.includes("TRENINGI"), "Panel must include trainings");
+  assert.ok(hubCode.includes("BRAMKI") || hubCode.includes("GOLE"), "Panel must include goals");
+  assert.ok(hubCode.includes("ASYSTY"), "Panel must include assists");
 
-  // 2. MOJA KARIERA (Timeline, milestones, empty state)
+  // 2. PRZEGLĄD (Skills Radar z fallbackiem "Brak oceny umiejętności", Następny cel, 1-Click RSVP)
+  assert.ok(hubCode.includes("v7b-overview-duo-grid"), "Overview must have duo grid layout");
+  assert.ok(hubCode.includes("Brak oceny umiejętności"), "Skills section must show friendly empty state when no stats exist");
+  assert.ok(hubCode.includes("PlayerSkillRadar"), "Overview must render PlayerSkillRadar when stats exist");
+  assert.ok(hubCode.includes("v7c-next-goal-panel") && hubCode.includes("NASTĘPNY CEL ROZWOJOWY"), "Overview must render next objective widget");
+  assert.ok(hubCode.includes("calculatePlayerAchievements"), "Next objective must be derived from calculatePlayerAchievements");
+  assert.ok(hubCode.includes("v7b-rsvp-buttons"), "Overview must have 1-Click RSVP widget buttons");
+
+  // 3. MOJA KARIERA (Timeline, milestones, empty state)
   assert.ok(timelineCode.includes("v7b-timeline-empty"), "CareerTimeline must include rich empty state");
   assert.ok(timelineCode.includes("v7b-timeline-filter-bar"), "CareerTimeline must have filter bar");
   assert.ok(timelineCode.includes("v7b-timeline-filter-btn"), "CareerTimeline must have filter buttons");
 
-  // 3. STATYSTYKI (Brak fikcyjnych danych, Grassroots)
+  // 4. STATYSTYKI (Brak fikcyjnych danych, Grassroots)
   assert.ok(hubCode.includes("v7b-stats-grid"), "Stats tab must have grid layout");
   assert.ok(hubCode.includes("v7b-stats-col-card"), "Stats tab must have clean statistical cards");
   assert.ok(hubCode.includes("ZASADY ROZWOJU MŁODEGO SPORTOWCA"), "Stats must feature Grassroots educational disclaimer");
 
-  // 4. OSIĄGNIĘCIA (Badges, categories, progress)
+  // 5. OSIĄGNIĘCIA (Badges, categories, progress)
   const achPath = path.join(rootDir, "components/AchievementsHub.tsx");
   const achCode = fs.readFileSync(achPath, "utf8");
   assert.ok(hubCode.includes("<AchievementsHub"), "CareerHub must render AchievementsHub in achievements tab");
   assert.ok(achCode.includes("v200-ach-category-tabs"), "Achievements must have category filter tabs");
   assert.ok(achCode.includes("v200-ach-banner"), "Achievements must have hero progress banner");
 
-  // 5. MOJE KARTY (Card3DEngine modal inspection, rarity)
+  // 6. MOJE KARTY (Card3DEngine modal inspection, rarity)
   assert.ok(cardsCode.includes("v7b-player-card-tile"), "Cards tab must render cards grid");
   assert.ok(cardsCode.includes("Card3DEngine"), "Cards tab must allow 3D inspection modal");
   assert.ok(cardsCode.includes("shirtNumber={player.shirt_number}"), "Cards tab must pass player shirtNumber to PlayerPhoto");

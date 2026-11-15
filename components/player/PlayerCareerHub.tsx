@@ -23,10 +23,16 @@ import {
   Clock, 
   ShieldCheck, 
   ChevronRight,
-  Info
+  Info,
+  Target,
+  RotateCw,
+  Eye,
+  Shield
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calculatePlayerAchievements } from "@/lib/achievements/engine";
+import { fromProductionCard } from "@/components/collection-3d/adapter";
+import { Card3DEngine } from "@/components/collection-3d/Card3DEngine";
 import PlayerPhoto from "@/components/PlayerPhoto";
 import PlayerSkillRadar from "@/components/PlayerSkillRadar";
 import AchievementsHub from "@/components/AchievementsHub";
@@ -312,6 +318,65 @@ export function PlayerCareerHub({
     return max;
   }, [matches, events, activeChild.id]);
 
+  // 3D Card inspection modal dla Hero
+  const [heroInspectedCard, setHeroInspectedCard] = useState<any | null>(null);
+  const [heroIsFlipped, setHeroIsFlipped] = useState(false);
+  const [heroAutoRotate, setHeroAutoRotate] = useState(false);
+
+  // Wyróżniona karta INFERNO zawodnika
+  const featuredCard = useMemo(() => {
+    const childCards = cards.filter(c => c.player_id === activeChild.id);
+    if (childCards.length > 0) {
+      const owned = childCards.find(c => userCards.some(uc => uc.card_id === c.id));
+      return owned || childCards[0];
+    }
+    return {
+      id: `card-base-${activeChild.id}`,
+      player_id: activeChild.id,
+      card_name: `${activeChild.display_name} — DELTA INFERNO`,
+      card_type: "base",
+      rarity: "inferno",
+      season: "2026/27",
+      glow_color: "#f6c952",
+      badge_color: "#ff202b"
+    };
+  }, [cards, userCards, activeChild]);
+
+  // Czy wyróżniona karta została zdobyta przez rodzica/zawodnika
+  const isFeaturedCardOwned = useMemo(() => {
+    return userCards.some(uc => uc.card_id === featuredCard.id);
+  }, [userCards, featuredCard]);
+
+  // Model 3D dla inspektora Hero
+  const heroCard3DData = useMemo(() => {
+    if (!heroInspectedCard) return null;
+    const enrichedCard = {
+      ...heroInspectedCard,
+      name: heroInspectedCard.card_name || heroInspectedCard.title || `${activeChild.display_name} — ${heroInspectedCard.card_type}`,
+      player: {
+        id: activeChild.id,
+        display_name: activeChild.display_name,
+        shirt_number: activeChild.shirt_number,
+        position: activeChild.position
+      }
+    };
+    return fromProductionCard(enrichedCard, {
+      ovr: Math.min(99, Math.max(78, 80 + Math.min(15, s.g + s.a + Math.floor(t.sessions / 3))))
+    });
+  }, [heroInspectedCard, activeChild, s.g, s.a, t.sessions]);
+
+  // Wszystkie osiągnięcia zawodnika i najbliższy cel
+  const playerAchievements = useMemo(() => {
+    return calculatePlayerAchievements(activeChild.id, stats, trainingStats, maxGoalsSingleMatch);
+  }, [activeChild.id, stats, trainingStats, maxGoalsSingleMatch]);
+
+  const nextObjective = useMemo(() => {
+    const inProgress = playerAchievements.filter(a => !a.isUnlocked && a.current > 0).sort((a, b) => b.percent - a.percent);
+    if (inProgress.length > 0) return inProgress[0];
+    const locked = playerAchievements.filter(a => !a.isUnlocked);
+    return locked[0] || null;
+  }, [playerAchievements]);
+
   // 1-Click RSVP na mecz
   const handleMatchRsvp = async (matchId: string, newStatus: "yes" | "no" | "maybe") => {
     setRsvpLoading(`match-${matchId}`);
@@ -566,7 +631,7 @@ export function PlayerCareerHub({
   };
 
   return (
-    <section className="section v7b-career-hub-container">
+    <section className="v7b-career-hub-container">
       {/* 1. PRZEŁĄCZNIK RODZEŃSTWA (dla rodziców z >1 dzieckiem) */}
       {children.length > 1 && (
         <div className="v7b-child-selector-bar">
@@ -585,9 +650,7 @@ export function PlayerCareerHub({
       )}
 
       {/* 2. KOMPAKTOWY FILMOWY HERO ZAWODNIKA */}
-      <div className="v7b-hero-card devil-card">
-        <div className="v7b-hero-glow-bg" />
-
+      <div className="v7b-hero-card">
         {/* Górny pasek statusu w Hero */}
         <div className="v7b-hero-top-strip">
           <div className="v7b-hero-badge-tag">
@@ -645,8 +708,32 @@ export function PlayerCareerHub({
             </p>
           </div>
 
-          {/* AKCJE HERO */}
-          <div className="v7b-hero-actions">
+          {/* AKCJE HERO & PODGLĄD KARTY 3D */}
+          <div className="v7c-hero-right-col">
+            <div className="v7c-hero-3d-preview-box">
+              <div className="v7c-mini-card-icon" title="DELTA INFERNO 3D">
+                <Flame size={16} className="text-amber-400" />
+                <span>3D</span>
+              </div>
+              <div className="v7c-mini-card-info">
+                <b>{isFeaturedCardOwned ? "KARTA W ALBUMIE" : "PODGLĄD KARTY"}</b>
+                <small>{featuredCard.rarity?.toUpperCase() || "INFERNO"} • {isFeaturedCardOwned ? "ZDOBYTA" : "ZABLOKOWANA"}</small>
+              </div>
+              <button
+                type="button"
+                className="v7c-btn-inspect-3d"
+                onClick={() => {
+                  setHeroInspectedCard(featuredCard);
+                  setHeroIsFlipped(false);
+                  setHeroAutoRotate(false);
+                }}
+                title={isFeaturedCardOwned ? "Zobacz zdobytą kartę 3D" : "Podgląd karty 3D"}
+              >
+                <Eye size={14} />
+                <span>{isFeaturedCardOwned ? "ZOBACZ KARTĘ 3D" : "PODGLĄD KARTY"}</span>
+              </button>
+            </div>
+
             <button
               type="button"
               className="v7b-btn-download-print"
@@ -661,7 +748,39 @@ export function PlayerCareerHub({
         </div>
       </div>
 
-      {/* 3. NAWIGACJA (5 ZAKŁADEK — STICKY BAR) */}
+      {/* 3. PANEL 4 STATYSTYK (Mecze, Treningi, Gole, Asysty) */}
+      <div className="v7c-quick-stats-strip">
+        <div className="v7c-stat-card">
+          <div className="v7c-stat-icon-wrap"><Trophy size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{s.m}</b>
+            <span>MECZE LIGOWE</span>
+          </div>
+        </div>
+        <div className="v7c-stat-card">
+          <div className="v7c-stat-icon-wrap"><Dumbbell size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{t.sessions}</b>
+            <span>TRENINGI</span>
+          </div>
+        </div>
+        <div className="v7c-stat-card gold">
+          <div className="v7c-stat-icon-wrap"><Flame size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{s.g}</b>
+            <span>BRAMKI</span>
+          </div>
+        </div>
+        <div className="v7c-stat-card crimson">
+          <div className="v7c-stat-icon-wrap"><Target size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{s.a}</b>
+            <span>ASYSTY</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. NAWIGACJA (5 ZAKŁADEK — STICKY BAR) */}
       <div className="v7b-nav-tabs-bar">
         <button
           type="button"
@@ -709,64 +828,94 @@ export function PlayerCareerHub({
         </button>
       </div>
 
-      {/* 4. ZAWARTOŚĆ ZAKŁADEK */}
+      {/* 5. ZAWARTOŚĆ ZAKŁADEK */}
 
       {/* TAB 1: PRZEGLĄD */}
       {activeTab === "overview" && (
         <div className="v7b-tab-content overview-content space-y-4">
-          {/* GŁÓWNE KPI DZIECKA */}
-          <div className="v7b-kpi-grid">
-            <div className="v7b-kpi-box">
-              <b>{s.m}</b>
-              <span>MECZE OFICJALNE</span>
-            </div>
-            <div className="v7b-kpi-box gold">
-              <b>{s.g + s.a}</b>
-              <span>GOLE + ASYSTY</span>
-            </div>
-            <div className="v7b-kpi-box crimson">
-              <b>{s.mvp}</b>
-              <span>TYTUŁY MVP</span>
-            </div>
-            <div className="v7b-kpi-box">
-              <b>{t.sessions}</b>
-              <span>TRENINGI</span>
-            </div>
-            <div className="v7b-kpi-box">
-              <b>{t.ga}</b>
-              <span>G+A TRENING</span>
-            </div>
-            <div className="v7b-kpi-box green">
-              <b>{t.attendanceStreak} 🔥</b>
-              <span>SERIA OBECNOŚCI</span>
-            </div>
-          </div>
-
-          {/* DUO GRID: RADAR UMIEJĘTNOŚCI + 1-CLICK RSVP */}
+          {/* DUO GRID: RADAR UMIEJĘTNOŚCI + CEL I 1-CLICK RSVP */}
           <div className="v7b-overview-duo-grid">
-            {/* LEWA: EA FC RADAR UMIEJĘTNOŚCI */}
-            <div className="v7b-card-panel devil-card">
-              <PlayerSkillRadar
-                playerName={activeChild.display_name}
-                position={activeChild.position}
-                stats={{
-                  matches: s.m,
-                  starts: s.starts,
-                  captain: s.captain,
-                  goals: s.g,
-                  assists: s.a,
-                  mvp: s.mvp,
-                  trainings: t.sessions,
-                  trainingGoals: t.goals,
-                  trainingAssists: t.assists,
-                  streak: t.attendanceStreak
-                }}
-              />
+            {/* LEWA: EA FC RADAR UMIEJĘTNOŚCI LUB STAN PUSTY */}
+            <div className="v7b-card-panel">
+              {s.m === 0 && t.sessions === 0 ? (
+                <div className="v7c-skills-empty-body">
+                  <div className="v7c-empty-radar-icon">
+                    <Shield size={32} />
+                  </div>
+                  <h4>Brak oceny umiejętności</h4>
+                  <p>
+                    Zawodnik nie posiada jeszcze rozegranych meczów ani zarejestrowanych zbiórek treningowych.
+                    Po zarejestrowaniu pierwszych obecności radar wygeneruje pełną analizę predyspozycji sportowych w stylu EA FC!
+                  </p>
+                </div>
+              ) : (
+                <PlayerSkillRadar
+                  playerName={activeChild.display_name}
+                  position={activeChild.position}
+                  stats={{
+                    matches: s.m,
+                    starts: s.starts,
+                    captain: s.captain,
+                    goals: s.g,
+                    assists: s.a,
+                    mvp: s.mvp,
+                    trainings: t.sessions,
+                    trainingGoals: t.goals,
+                    trainingAssists: t.assists,
+                    streak: t.attendanceStreak
+                  }}
+                />
+              )}
             </div>
 
-            {/* PRAWA: 1-CLICK RSVP */}
-            <div className="v7b-card-panel devil-card">
-              <div className="v7b-panel-heading">
+            {/* PRAWA: NASTĘPNY CEL + 1-CLICK RSVP */}
+            <div className="v7b-card-panel">
+              {/* NASTĘPNY CEL ROZWOJOWY */}
+              <div className="v7c-next-goal-panel">
+                <div className="v7b-panel-heading">
+                  <Target size={18} />
+                  <span>NASTĘPNY CEL ROZWOJOWY</span>
+                </div>
+                {nextObjective ? (
+                  <div className="v7c-next-goal-card">
+                    <div className="v7c-next-goal-head">
+                      <div className="v7c-goal-badge">
+                        <Award size={14} />
+                        <span>{nextObjective.definition.category.toUpperCase()}</span>
+                      </div>
+                      <span className="v7c-goal-rarity">{nextObjective.definition.rarity.toUpperCase()}</span>
+                    </div>
+                    <h4>{nextObjective.definition.name}</h4>
+                    <p>{nextObjective.definition.description}</p>
+                    <div className="v7c-goal-progress-wrap">
+                      <div className="v7c-goal-progress-bar">
+                        <div 
+                          className="v7c-goal-progress-fill" 
+                          style={{ width: `${Math.min(100, Math.max(8, nextObjective.percent))}%` }} 
+                        />
+                      </div>
+                      <div className="v7c-goal-progress-labels">
+                        <span>POSTĘP: <b>{nextObjective.current} / {nextObjective.target}</b></span>
+                        <b>{nextObjective.percent}%</b>
+                      </div>
+                    </div>
+                    {nextObjective.definition.rewardCardType && (
+                      <div className="v7c-goal-reward-note">
+                        <Sparkles size={12} />
+                        <span>Odblokowuje kartę: <b>{nextObjective.definition.rewardCardType.toUpperCase()}</b></span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="v7c-all-goals-complete">
+                    <Check size={18} />
+                    <span>Wszystkie wyznaczone cele osiągnięte! Gratulacje!</span>
+                  </div>
+                )}
+              </div>
+
+              {/* SZYBKI STATUS OBECNOŚCI (1-CLICK RSVP) */}
+              <div className="v7b-panel-heading mt-4">
                 <CalendarDays size={18} />
                 <span>SZYBKI STATUS OBECNOŚCI (1-CLICK RSVP)</span>
               </div>
@@ -1088,6 +1237,78 @@ export function PlayerCareerHub({
             stats={stats}
             trainingStats={trainingStats}
           />
+        </div>
+      )}
+
+      {/* 6. MODAL 3D CARD INSPECTOR DLA HERO */}
+      {heroInspectedCard && heroCard3DData && (
+        <div className="v7b-3d-modal-overlay" onClick={() => setHeroInspectedCard(null)}>
+          <div className="v7b-3d-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="v7b-3d-modal-header">
+              <div className="modal-title-wrap">
+                <Flame size={16} className="flame-icon text-amber-400" />
+                <span>PODGLĄD KARTY 3D • DELTA INFERNO</span>
+              </div>
+              <div className="modal-actions-wrap">
+                <button
+                  type="button"
+                  className={`modal-btn-ctrl ${heroIsFlipped ? "active" : ""}`}
+                  onClick={() => setHeroIsFlipped(!heroIsFlipped)}
+                  title="Obróć kartę"
+                >
+                  <RotateCw size={14} />
+                  <span>{heroIsFlipped ? "PRZÓD" : "TYŁ"}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`modal-btn-ctrl ${heroAutoRotate ? "active" : ""}`}
+                  onClick={() => setHeroAutoRotate(!heroAutoRotate)}
+                  title="Obrót 360"
+                >
+                  <Sparkles size={14} />
+                  <span>{heroAutoRotate ? "STOP" : "360°"}</span>
+                </button>
+                <button
+                  type="button"
+                  className="modal-btn-close"
+                  onClick={() => setHeroInspectedCard(null)}
+                  title="Zamknij"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div className="v7b-3d-scene-stage">
+              <Card3DEngine
+                data={heroCard3DData}
+                isFlipped={heroIsFlipped}
+                autoRotate={heroAutoRotate}
+                interactive={true}
+                enableHolo={true}
+                enableParallax={true}
+              />
+            </div>
+            <div className="v7b-modal-footer">
+              <div className="footer-status-pill">
+                {isFeaturedCardOwned ? (
+                  <span className="status-owned">
+                    <Check size={14} className="text-emerald-400" />
+                    <span>Oficjalna karta w Twoim albumie klubowym</span>
+                  </span>
+                ) : (
+                  <span className="status-unowned">
+                    <Eye size={14} className="text-amber-400" />
+                    <span>Podgląd karty — karta zablokowana (do zdobycia w paczkach DELTA INFERNO)</span>
+                  </span>
+                )}
+              </div>
+              <div className="footer-meta-chips">
+                <span>Rzadkość: <b>{heroInspectedCard.rarity?.toUpperCase() || "INFERNO"}</b></span>
+                <span>Typ: <b>{heroInspectedCard.card_type?.toUpperCase() || "BASE"}</b></span>
+                <span>Sezon: <b>{heroInspectedCard.season || "2026/27"}</b></span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </section>
