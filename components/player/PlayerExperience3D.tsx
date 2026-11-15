@@ -1258,7 +1258,7 @@ export function PlayerExperience3D({
       )}
 
       {/* 6. MODAL 3D CARD INSPECTOR DLA HERO */}
-      {heroInspectedCard && heroCard3DData && (
+      {heroInspectedCard && heroCard3DData && mounted && createPortal(
         <div className="v7b-modal-overlay" onClick={() => setHeroInspectedCard(null)}>
           <div className="v7b-modal-card-container devil-card" onClick={(e) => e.stopPropagation()}>
             <div className="v7b-modal-header">
@@ -1326,7 +1326,8 @@ export function PlayerExperience3D({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
