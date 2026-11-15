@@ -180,7 +180,7 @@ export function PlayerInfernoCards({
                 {/* PODGLĄD KARTY */}
                 <div className="v7b-card-preview-art">
                   <div className="v7b-card-portrait-wrap">
-                    <PlayerPhoto playerId={player.id} />
+                    <PlayerPhoto playerId={player.id} shirtNumber={player.shirt_number} />
                     {!isOwned && (
                       <div className="v7b-card-lock-overlay">
                         <Lock size={32} />

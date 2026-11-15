@@ -166,7 +166,7 @@ export function PlayerCareerHub({
       : children[0]?.id || ""
   );
 
-  // Aktywna zakładka: 5 zakładek zgodnie z projektem V7A / V7B
+  // Aktywna zakładka: 5 zakładek zgodnie z projektem V7C
   const [activeTab, setActiveTab] = useState<"overview" | "career" | "stats" | "achievements" | "cards">(initialTab);
 
   // Lokalne kopie obecności (do natychmiastowego optymistycznego UI)
@@ -248,12 +248,12 @@ export function PlayerCareerHub({
   // Aktywne dziecko
   const activeChild = children.find(c => c.id === selectedChildId) || children[0];
 
-  // Jeśli brak przypisanego dziecka — FAZA 10: Pusty stan dla rodzica
+  // Jeśli brak przypisanego dziecka — FAZA 10 / V7C: Pusty stan dla rodzica
   if (!children.length || !activeChild) {
     return (
       <section className="section v7b-career-hub-container">
         <div className="v7b-empty-state-card devil-card">
-          <UserCheck size={48} className="empty-icon text-yellow-400" />
+          <UserCheck size={48} className="text-yellow-400" />
           <h2>Strefa Rodzica • Moje Dziecko</h2>
           <p>
             Administrator lub trener nie przypisał jeszcze zawodnika do Twojego konta rodzica.
@@ -268,7 +268,7 @@ export function PlayerCareerHub({
   const s = stats[activeChild.id] || { m: 0, starts: 0, captain: 0, g: 0, a: 0, mvp: 0 };
   const t = trainingStats[activeChild.id] || { sessions: 0, goals: 0, assists: 0, ga: 0, attendanceStreak: 0, games: 0, wins: 0 };
 
-  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (Zgodnie z Fazą 1: transparentne rozdzielenie)
+  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (Zgodnie z zasadą: brak fikcyjnych XP)
   const presentTrainings = localTrAttendance.filter(
     a => a.player_id === activeChild.id && (a.status === "present" || a.status === "yes")
   ).length;
@@ -278,6 +278,7 @@ export function PlayerCareerHub({
   ).length;
 
   const individualAttendanceXp = (presentTrainings * 40) + (presentMatches * 60);
+  const playerLevel = Math.max(1, Math.floor(individualAttendanceXp / 250) + 1);
 
   // Duet chemii z zespołem
   const pair = chemistry.find(x => x.a.id === activeChild.id || x.b.id === activeChild.id);
@@ -583,9 +584,21 @@ export function PlayerCareerHub({
         </div>
       )}
 
-      {/* 2. PLAYER HERO 2.0 */}
+      {/* 2. KOMPAKTOWY FILMOWY HERO ZAWODNIKA */}
       <div className="v7b-hero-card devil-card">
         <div className="v7b-hero-glow-bg" />
+
+        {/* Górny pasek statusu w Hero */}
+        <div className="v7b-hero-top-strip">
+          <div className="v7b-hero-badge-tag">
+            <Sparkles size={12} />
+            <span>DELTA PLAYER 2.0 • 2018 GM</span>
+          </div>
+
+          <div className="v7b-hero-season-tag">
+            <span>SEZON 2026/27</span>
+          </div>
+        </div>
 
         <div className="v7b-hero-main-row">
           {/* TOŻSAMOŚĆ ZAWODNIKA */}
@@ -595,15 +608,14 @@ export function PlayerCareerHub({
               onClick={() => onOpenPlayer(activeChild)}
               title="Kliknij, aby otworzyć szczegóły"
             >
-              <PlayerPhoto playerId={activeChild.id} />
+              <PlayerPhoto 
+                playerId={activeChild.id} 
+                shirtNumber={activeChild.shirt_number}
+              />
               <span className="v7b-hero-shirt-num">#{activeChild.shirt_number || "-"}</span>
             </div>
 
             <div className="v7b-hero-meta">
-              <div className="v7b-hero-badge-tag">
-                <Sparkles size={12} />
-                <span>DELTA PLAYER 2.0 • 2018 GM</span>
-              </div>
               <h1>{activeChild.display_name}</h1>
               <p>
                 <img src="/teamlogos/gm.png" alt="Herb" className="v7b-hero-crest-mini" />
@@ -615,7 +627,7 @@ export function PlayerCareerHub({
           {/* PASEK INDYWIDUALNEGO XP SPORTOWEGO */}
           <div className="v7b-hero-xp-widget" title="Indywidualne punkty doświadczenia za faktyczne obecności na treningach i meczach">
             <div className="v7b-xp-header">
-              <span>XP ZAWODNIKA:</span>
+              <span>POZIOM {playerLevel} • XP ZAWODNIKA:</span>
               <b>
                 <Sparkles size={13} />
                 <span>{individualAttendanceXp} XP</span>
@@ -624,7 +636,7 @@ export function PlayerCareerHub({
             <div className="v7b-xp-track">
               <div 
                 className="v7b-xp-fill" 
-                style={{ width: `${Math.min(100, Math.max(10, (individualAttendanceXp % 500) / 5))}%` }}
+                style={{ width: `${Math.min(100, Math.max(12, (individualAttendanceXp % 250) / 2.5))}%` }}
               />
             </div>
             <p className="v7b-xp-subtext">
@@ -649,7 +661,7 @@ export function PlayerCareerHub({
         </div>
       </div>
 
-      {/* 3. NAWIGACJA (5 ZAKŁADEK) */}
+      {/* 3. NAWIGACJA (5 ZAKŁADEK — STICKY BAR) */}
       <div className="v7b-nav-tabs-bar">
         <button
           type="button"
@@ -701,7 +713,7 @@ export function PlayerCareerHub({
 
       {/* TAB 1: PRZEGLĄD */}
       {activeTab === "overview" && (
-        <div className="v7b-tab-content overview-content space-y-6">
+        <div className="v7b-tab-content overview-content space-y-4">
           {/* GŁÓWNE KPI DZIECKA */}
           <div className="v7b-kpi-grid">
             <div className="v7b-kpi-box">
@@ -758,7 +770,7 @@ export function PlayerCareerHub({
                 <CalendarDays size={18} />
                 <span>SZYBKI STATUS OBECNOŚCI (1-CLICK RSVP)</span>
               </div>
-              <p className="text-xs text-slate-400 mb-4">
+              <p className="text-xs text-slate-400 mb-3">
                 Zgłoś dyspozycyjność zawodnika na najbliższe zbiórki jednym kliknięciem:
               </p>
 
@@ -785,7 +797,7 @@ export function PlayerCareerHub({
                             className={`v7b-btn-rsvp yes ${rsvp === "yes" || rsvp === "present" ? "active" : ""}`}
                             onClick={() => handleMatchRsvp(m.id, "yes")}
                           >
-                            <Check size={13} />
+                            <Check size={14} />
                             <span>BĘDĘ</span>
                           </button>
                           <button
@@ -794,7 +806,7 @@ export function PlayerCareerHub({
                             className={`v7b-btn-rsvp no ${rsvp === "no" ? "active" : ""}`}
                             onClick={() => handleMatchRsvp(m.id, "no")}
                           >
-                            <X size={13} />
+                            <X size={14} />
                             <span>NIEOBECNY</span>
                           </button>
                           <button
@@ -803,7 +815,7 @@ export function PlayerCareerHub({
                             className={`v7b-btn-rsvp maybe ${rsvp === "maybe" ? "active" : ""}`}
                             onClick={() => handleMatchRsvp(m.id, "maybe")}
                           >
-                            <HelpCircle size={13} />
+                            <HelpCircle size={14} />
                             <span>DO POTWIERDZENIA</span>
                           </button>
                         </div>
@@ -838,7 +850,7 @@ export function PlayerCareerHub({
                             className={`v7b-btn-rsvp yes ${trRsvp === "present" || trRsvp === "yes" ? "active" : ""}`}
                             onClick={() => handleTrainingRsvp(tr.id, "yes")}
                           >
-                            <Check size={13} />
+                            <Check size={14} />
                             <span>BĘDĘ</span>
                           </button>
                           <button
@@ -847,7 +859,7 @@ export function PlayerCareerHub({
                             className={`v7b-btn-rsvp no ${trRsvp === "no" ? "active" : ""}`}
                             onClick={() => handleTrainingRsvp(tr.id, "no")}
                           >
-                            <X size={13} />
+                            <X size={14} />
                             <span>NIEOBECNY</span>
                           </button>
                           <button
@@ -856,7 +868,7 @@ export function PlayerCareerHub({
                             className={`v7b-btn-rsvp maybe ${trRsvp === "maybe" ? "active" : ""}`}
                             onClick={() => handleTrainingRsvp(tr.id, "maybe")}
                           >
-                            <HelpCircle size={13} />
+                            <HelpCircle size={14} />
                             <span>DO POTWIERDZENIA</span>
                           </button>
                         </div>
@@ -907,7 +919,7 @@ export function PlayerCareerHub({
               {/* CHEMIA Z PARTNEREM */}
               <div className="v7b-chem-duo-card">
                 <div className="v7b-chem-icon-wrap">
-                  <Zap size={22} />
+                  <Zap size={20} />
                 </div>
                 <div>
                   <small className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">NAJLEPSZY DUET BOISKOWY</small>
@@ -974,7 +986,7 @@ export function PlayerCareerHub({
 
       {/* TAB 3: STATYSTYKI */}
       {activeTab === "stats" && (
-        <div className="v7b-tab-content stats-content space-y-6">
+        <div className="v7b-tab-content stats-content space-y-4">
           <div className="v7b-stats-grid">
             {/* OFICJALNE MECZE */}
             <div className="v7b-stats-col-card devil-card">

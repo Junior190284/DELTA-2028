@@ -1,25 +1,73 @@
 "use client";
-import { useEffect, useState } from "react";
 
-export default function PlayerPhoto({playerId,className}:{playerId:string,className?:string}) {
-  const [url,setUrl]=useState<string|null>(null);
-  const [loaded,setLoaded]=useState(false);
+import React, { useEffect, useState } from "react";
+import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
 
-  useEffect(()=>{
+export interface PlayerPhotoProps {
+  playerId: string;
+  shirtNumber?: string | number | null;
+  className?: string;
+}
+
+export default function PlayerPhoto({
+  playerId,
+  shirtNumber,
+  className
+}: PlayerPhotoProps) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoaded(false);
+    setHasError(false);
+
     fetch(`/api/player-photo/${playerId}`)
-      .then(r=>r.json())
-      .then(d=>{ setUrl(d.url||null); setLoaded(true); })
-      .catch(()=>setLoaded(true));
-  },[playerId]);
+      .then(r => r.json())
+      .then(d => {
+        if (isMounted) {
+          setUrl(d.url || null);
+          setLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setLoaded(true);
+          setHasError(true);
+        }
+      });
 
-  if(url) return <img src={url} alt="" className={className || "player-photo"} />;
+    return () => {
+      isMounted = false;
+    };
+  }, [playerId]);
 
+  if (url && !hasError) {
+    return (
+      <img
+        src={url}
+        alt=""
+        className={className || "player-photo"}
+        onError={() => setHasError(true)}
+        loading="lazy"
+      />
+    );
+  }
+
+  // Bezpieczna neutralna sylwetka zamiast wizerunku obcego dziecka
   return (
     <div
-      className={(className || "player-photo") + " player-photo-fallback"}
-      style={{backgroundImage:"linear-gradient(180deg,rgba(5,7,10,.03),rgba(5,7,10,.22)),url('/assets/player-card.png')"}}
+      data-testid="player-photo-silhouette-fallback"
+      className={`${className || "player-photo"} relative overflow-hidden bg-slate-950 flex items-center justify-center`}
     >
-      <span className="v873-flares"/><span className="v873-embers"/><span className="v873-plate">MIEJSCE NA ZDJĘCIE</span>{!loaded && <span className="photo-loading">…</span>}
+      <NeutralPlayerSilhouette
+        shirtNumber={shirtNumber}
+        compact={true}
+        accentColor="#f6c952"
+        glowColor="rgba(246, 201, 82, 0.35)"
+      />
+      {!loaded && <span className="photo-loading absolute text-[10px] text-amber-400">…</span>}
     </div>
   );
 }
