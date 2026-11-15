@@ -613,12 +613,9 @@ export function PlayerExperience3D({
   // Główna zawartość profilu Player Experience
   const mainContent = (
     <div className="v7b-career-hub-container">
-      {/* SELEKTOR DZIECI (DLA RODZICA POSIADAJĄCEGO WIĘCEJ NIŻ JEDNO DZIECKO) */}
+      {/* 1. SELEKTOR DZIECI (DLA RODZICA POSIADAJĄCEGO WIĘCEJ NIŻ JEDNO DZIECKO) */}
       {isParentOfActivePlayer && children.length > 1 && (
         <div className="v7b-child-selector-bar">
-          <span className="v7b-selector-label">
-            <Shirt size={14} /> Wybierz zawodnika:
-          </span>
           {children.map(child => (
             <button
               key={child.id}
@@ -629,7 +626,7 @@ export function PlayerExperience3D({
                 if (onOpenPlayer) onOpenPlayer(child);
               }}
             >
-              <PlayerPhoto playerId={child.id} shirtNumber={child.shirt_number} className="w-5 h-5 rounded-full" />
+              <UserCheck size={16} />
               <span>{child.display_name}</span>
               {child.shirt_number ? <span className="shirt-badge">#{child.shirt_number}</span> : null}
             </button>
@@ -637,631 +634,669 @@ export function PlayerExperience3D({
         </div>
       )}
 
-      {/* PLAYER HERO V7C.2 — OFICJALNA KARTA PROFILOWA ZAWODNIKA */}
-      <section className="v7b-hero-card devil-card">
-        <div className="v7c-hero-content-grid">
-          {/* LEWA KOLUMNA: WIZERUNEK ZAWODNIKA (ZDJĘCIE LUB NEUTRALNA SYLWETKA) */}
-          <div className="v7b-hero-portrait-col">
-            <div className="v7b-portrait-wrapper">
+      {/* 2. KOMPAKTOWY FILMOWY HERO ZAWODNIKA */}
+      <div className="v7b-hero-card">
+        {/* Górny pasek statusu w Hero */}
+        <div className="v7b-hero-top-strip">
+          <div className="v7b-hero-badge-tag">
+            <Sparkles size={12} />
+            <span>DELTA PLAYER 2.0 • 2018 GM</span>
+          </div>
+
+          <div className="v7b-hero-season-tag">
+            <span>SEZON 2026/27</span>
+          </div>
+        </div>
+
+        <div className="v7b-hero-main-row">
+          {/* TOŻSAMOŚĆ ZAWODNIKA */}
+          <div className="v7b-hero-identity">
+            <div 
+              className="v7b-hero-avatar-wrap" 
+              onClick={() => onOpenPlayer && onOpenPlayer(activeChild)}
+              title="Kliknij, aby otworzyć szczegóły"
+            >
               <PlayerPhoto 
                 playerId={activeChild.id} 
-                shirtNumber={activeChild.shirt_number} 
-                className="v7b-portrait-img" 
+                shirtNumber={activeChild.shirt_number}
               />
-              {activeChild.shirt_number && (
-                <div className="v7b-portrait-number">
-                  #{activeChild.shirt_number}
-                </div>
-              )}
+              <span className="v7b-hero-shirt-num">#{activeChild.shirt_number || "DELTA"}</span>
+            </div>
+
+            <div className="v7b-hero-meta">
+              <h1>{activeChild.display_name}</h1>
+              <p>
+                <img src="/teamlogos/gm.png" alt="Herb" className="v7b-hero-crest-mini" />
+                <span>{activeChild.position || "Zawodnik"} • K.S. Delta Warszawa Górny Mokotów</span>
+              </p>
             </div>
           </div>
 
-          {/* ŚRODKOWA KOLUMNA: DANE SPORTOWE I POZIOM XP */}
-          <div className="v7b-hero-main-col">
-            <div className="v7b-hero-kicker-strip">
-              <span className="v7b-hero-badge">
-                <Flame size={13} />
-                DELTA 2018 GM
-              </span>
-              <span className="v7b-hero-pos-badge">
-                {activeChild.position || "Zawodnik"}
-              </span>
-              <span className="v7b-hero-level-badge">
-                POZIOM {playerLevel}
-              </span>
+          {/* PASEK INDYWIDUALNEGO XP SPORTOWEGO */}
+          <div className="v7b-hero-xp-widget" title="Indywidualne punkty doświadczenia za faktyczne obecności na treningach i meczach">
+            <div className="v7b-xp-header">
+              <span>POZIOM {playerLevel} • XP ZAWODNIKA:</span>
+              <b>
+                <Sparkles size={13} />
+                <span>{individualAttendanceXp} XP</span>
+              </b>
             </div>
-
-            <h1 className="v7b-hero-name">
-              {activeChild.display_name}
-            </h1>
-
-            <p className="v7b-hero-bio">
-              Oficjalny profil zawodnika K.S. Delta Warszawa • Rocznik 2018 Górny Mokotów
+            <div className="v7b-xp-track">
+              <div 
+                className="v7b-xp-fill" 
+                style={{ width: `${Math.min(100, Math.max(12, (individualAttendanceXp % 250) / 2.5))}%` }}
+              />
+            </div>
+            <p className="v7b-xp-subtext">
+              <Info size={12} />
+              <span>+40 XP/trening • +60 XP/mecz ligowy</span>
             </p>
-
-            {/* PASEK ROZWOJU XP (AUTORYTATYWNY Z FREKWENCJI) */}
-            <div className="v7b-xp-progress-block">
-              <div className="v7b-xp-progress-header">
-                <span className="v7b-xp-level-label">
-                  <Zap size={14} className="text-yellow-400" />
-                  Poziom sportowy {playerLevel}
-                </span>
-                <span className="v7b-xp-numbers">
-                  <b>{currentLvlXp}</b> / {neededLvlXp} XP do Poziomu {playerLevel + 1}
-                </span>
-              </div>
-              <div className="v7b-xp-track">
-                <div 
-                  className="v7b-xp-fill" 
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-
-            {/* PANEL 4 STATYSTYK BEZPOŚREDNIO POD HERO (Mecze, Treningi, Gole, Asysty) */}
-            <div className="v7c-quick-stats-strip">
-              <div className="v7c-quick-stat-box">
-                <span className="v7c-quick-stat-icon">⚽</span>
-                <div className="v7c-quick-stat-details">
-                  <small>MECZE LIGOWE</small>
-                  <b>{s.m}</b>
-                </div>
-              </div>
-              <div className="v7c-quick-stat-box">
-                <span className="v7c-quick-stat-icon">🏃</span>
-                <div className="v7c-quick-stat-details">
-                  <small>TRENINGI</small>
-                  <b>{t.sessions}</b>
-                </div>
-              </div>
-              <div className="v7c-quick-stat-box">
-                <span className="v7c-quick-stat-icon">🔥</span>
-                <div className="v7c-quick-stat-details">
-                  <small>BRAMKI</small>
-                  <b>{s.g}</b>
-                </div>
-              </div>
-              <div className="v7c-quick-stat-box">
-                <span className="v7c-quick-stat-icon">🎯</span>
-                <div className="v7c-quick-stat-details">
-                  <small>ASYSTY</small>
-                  <b>{s.a}</b>
-                </div>
-              </div>
-            </div>
-
-            {/* WIDGET NASTĘPNEGO CELU */}
-            {nextObjective && (
-              <div className="v7c-next-goal-panel">
-                <div className="v7c-next-goal-header">
-                  <span className="v7c-next-goal-kicker">
-                    <Target size={13} />
-                    NASTĘPNY CEL ROZWOJOWY
-                  </span>
-                  <span className="v7c-next-goal-progress-badge">
-                    {nextObjective.current} / {nextObjective.target}
-                  </span>
-                </div>
-                <div className="v7c-next-goal-body">
-                  <strong>{nextObjective.definition?.name || "Kolejny cel sportowy"}</strong>
-                  <p>{nextObjective.definition?.description || "Graj i trenuj regularnie, aby odblokować nowe odznaki."}</p>
-                </div>
-                <div className="v7c-next-goal-track">
-                  <div 
-                    className="v7c-next-goal-fill" 
-                    style={{ width: `${Math.min(100, Math.round((nextObjective.current / nextObjective.target) * 100))}%` }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* PRAWA KOLUMNA: MINIATURA KARTY INFERNO 3D I PRZYCISK INSPEKCJI */}
-          <div className="v7b-hero-card-col">
+          {/* AKCJE HERO & PODGLĄD KARTY 3D */}
+          <div className="v7c-hero-right-col">
             <div className="v7c-hero-3d-preview-box">
-              <div className="v7c-hero-card-art-wrap">
-                <div className="v7c-card-flame-glow" />
-                <PlayerPhoto 
-                  playerId={activeChild.id} 
-                  shirtNumber={activeChild.shirt_number} 
-                  className="v7c-card-preview-photo" 
-                />
-                <div className="v7c-card-preview-overlay">
-                  <span className="v7c-card-tier-label">INFERNO 3D</span>
-                  <strong>{activeChild.display_name}</strong>
-                  <small>Kolekcja 2026/27</small>
-                </div>
+              <div className="v7c-mini-card-icon" title="DELTA INFERNO 3D">
+                <Flame size={16} className="text-amber-400" />
+                <span>3D</span>
               </div>
-
-              <button 
-                type="button" 
+              <div className="v7c-mini-card-info">
+                <b>{isFeaturedCardOwned ? "KARTA W ALBUMIE" : "PODGLĄD KARTY"}</b>
+                <small>{featuredCard.rarity?.toUpperCase() || "INFERNO"} • {isFeaturedCardOwned ? "ZDOBYTA" : "ZABLOKOWANA"}</small>
+              </div>
+              <button
+                type="button"
                 className="v7c-btn-inspect-3d"
                 onClick={() => {
                   setHeroInspectedCard(featuredCard);
                   setHeroIsFlipped(false);
                   setHeroAutoRotate(false);
                 }}
+                title={isFeaturedCardOwned ? "Zobacz zdobytą kartę 3D" : "Podgląd karty 3D"}
               >
-                <Eye size={15} />
-                <span>{isFeaturedCardOwned ? "INSPEKCJA 3D (360°)" : "PODGLĄD KARTY"}</span>
-              </button>
-
-              <button 
-                type="button" 
-                className="v7b-btn-download-hero" 
-                onClick={handleDownloadPlayerCard} 
-                disabled={downloadingCard}
-              >
-                <Download size={14} />
-                <span>{downloadingCard ? "Generowanie..." : "Pobierz pamiątkową kartę A4"}</span>
+                <Eye size={14} />
+                <span>{isFeaturedCardOwned ? "ZOBACZ KARTĘ 3D" : "PODGLĄD KARTY"}</span>
               </button>
             </div>
+
+            <button
+              type="button"
+              className="v7b-btn-download-print"
+              disabled={downloadingCard}
+              onClick={handleDownloadPlayerCard}
+              title="Pobierz oficjalną kartę kolekcjonerską w formacie A4"
+            >
+              <Download size={14} />
+              <span>{downloadingCard ? "GENEROWANIE..." : "POBIERZ KARTĘ A4"}</span>
+            </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* GŁÓWNA BELKA 5 ZAKŁADEK (STICKY HEADER) */}
-      <nav className="v7b-career-tabs-bar" aria-label="Nawigacja profilu zawodnika">
-        <button 
-          type="button" 
-          className={`v7b-tab-btn ${activeTab === "overview" ? "active" : ""}`}
+      {/* 3. PANEL 4 STATYSTYK (Mecze, Treningi, Gole, Asysty) */}
+      <div className="v7c-quick-stats-strip">
+        <div className="v7c-stat-card">
+          <div className="v7c-stat-icon-wrap"><Trophy size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{s.m}</b>
+            <span>MECZE LIGOWE</span>
+          </div>
+        </div>
+        <div className="v7c-stat-card">
+          <div className="v7c-stat-icon-wrap"><Dumbbell size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{t.sessions}</b>
+            <span>TRENINGI</span>
+          </div>
+        </div>
+        <div className="v7c-stat-card gold">
+          <div className="v7c-stat-icon-wrap"><Flame size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{s.g}</b>
+            <span>BRAMKI</span>
+          </div>
+        </div>
+        <div className="v7c-stat-card crimson">
+          <div className="v7c-stat-icon-wrap"><Target size={18} /></div>
+          <div className="v7c-stat-body">
+            <b>{s.a}</b>
+            <span>ASYSTY</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. NAWIGACJA (5 ZAKŁADEK — STICKY BAR) */}
+      <div className="v7b-nav-tabs-bar">
+        <button
+          type="button"
+          className={`v7b-nav-tab-btn ${activeTab === "overview" ? "active" : ""}`}
           onClick={() => setActiveTab("overview")}
         >
-          <BarChart3 size={16} />
+          <Sparkles size={15} />
           <span>PRZEGLĄD</span>
         </button>
 
-        <button 
-          type="button" 
-          className={`v7b-tab-btn ${activeTab === "career" ? "active" : ""}`}
+        <button
+          type="button"
+          className={`v7b-nav-tab-btn ${activeTab === "career" ? "active" : ""}`}
           onClick={() => setActiveTab("career")}
         >
-          <Clock size={16} />
+          <Clock size={15} />
           <span>MOJA KARIERA</span>
         </button>
 
-        <button 
-          type="button" 
-          className={`v7b-tab-btn ${activeTab === "stats" ? "active" : ""}`}
+        <button
+          type="button"
+          className={`v7b-nav-tab-btn ${activeTab === "stats" ? "active" : ""}`}
           onClick={() => setActiveTab("stats")}
         >
-          <Trophy size={16} />
+          <BarChart3 size={15} />
           <span>STATYSTYKI</span>
         </button>
 
-        <button 
-          type="button" 
-          className={`v7b-tab-btn ${activeTab === "achievements" ? "active" : ""}`}
+        <button
+          type="button"
+          className={`v7b-nav-tab-btn ${activeTab === "achievements" ? "active" : ""}`}
           onClick={() => setActiveTab("achievements")}
         >
-          <Award size={16} />
+          <Award size={15} />
           <span>OSIĄGNIĘCIA</span>
         </button>
 
-        <button 
-          type="button" 
-          className={`v7b-tab-btn ${activeTab === "cards" ? "active" : ""}`}
+        <button
+          type="button"
+          className={`v7b-nav-tab-btn cards-tab ${activeTab === "cards" ? "active" : ""}`}
           onClick={() => setActiveTab("cards")}
         >
-          <Layers size={16} />
+          <Flame size={15} />
           <span>KARTY INFERNO</span>
         </button>
-      </nav>
+      </div>
 
-      {/* ZAWARTOŚĆ 5 ZAKŁADEK */}
-      <div className="v7b-tab-content-area">
-        {/* 1. PRZEGLĄD */}
-        {activeTab === "overview" && (
-          <div className="v7b-overview-section">
-            <div className="v7b-overview-duo-grid">
-              {/* RADAR UMIEJĘTNOŚCI (Z CZYSTYM STANEM PUSTYM DLA ZAWODNIKA BEZ STATYSTYK) */}
-              <div className="v7b-radar-column">
-                {(s.m > 0 || t.sessions > 0) ? (
-                  <PlayerSkillRadar 
-                    stats={{
-                      matches: s.m,
-                      starts: s.starts,
-                      captain: s.captain,
-                      goals: s.g,
-                      assists: s.a,
-                      mvp: s.mvp,
-                      trainings: t.sessions,
-                      trainingGoals: t.goals,
-                      trainingAssists: t.assists,
-                      streak: t.attendanceStreak
-                    }}
-                    playerName={activeChild.display_name}
-                    position={activeChild.position}
-                  />
+      {/* 5. ZAWARTOŚĆ ZAKŁADEK */}
+
+      {/* TAB 1: PRZEGLĄD */}
+      {activeTab === "overview" && (
+        <div className="v7b-tab-content overview-content space-y-4">
+          {/* DUO GRID: RADAR UMIEJĘTNOŚCI + CEL I 1-CLICK RSVP */}
+          <div className="v7b-overview-duo-grid">
+            {/* LEWA: EA FC RADAR UMIEJĘTNOŚCI LUB STAN PUSTY */}
+            <div className="v7b-card-panel">
+              {s.m === 0 && t.sessions === 0 ? (
+                <div className="v7c-skills-empty-body">
+                  <div className="v7c-empty-radar-icon">
+                    <Shield size={32} />
+                  </div>
+                  <h4>Brak oceny umiejętności</h4>
+                  <p>
+                    Zawodnik nie posiada jeszcze rozegranych meczów ani zarejestrowanych zbiórek treningowych.
+                    Po zarejestrowaniu pierwszych obecności radar wygeneruje pełną analizę predyspozycji sportowych w stylu EA FC!
+                  </p>
+                </div>
+              ) : (
+                <PlayerSkillRadar
+                  playerName={activeChild.display_name}
+                  position={activeChild.position}
+                  stats={{
+                    matches: s.m,
+                    starts: s.starts,
+                    captain: s.captain,
+                    goals: s.g,
+                    assists: s.a,
+                    mvp: s.mvp,
+                    trainings: t.sessions,
+                    trainingGoals: t.goals,
+                    trainingAssists: t.assists,
+                    streak: t.attendanceStreak
+                  }}
+                />
+              )}
+            </div>
+
+            {/* PRAWA: NASTĘPNY CEL + 1-CLICK RSVP */}
+            <div className="v7b-card-panel">
+              {/* NASTĘPNY CEL ROZWOJOWY */}
+              <div className="v7c-next-goal-panel">
+                <div className="v7b-panel-heading">
+                  <Target size={18} />
+                  <span>NASTĘPNY CEL ROZWOJOWY</span>
+                </div>
+                {nextObjective ? (
+                  <div className="v7c-next-goal-card">
+                    <div className="v7c-next-goal-head">
+                      <div className="v7c-goal-badge">
+                        <Award size={14} />
+                        <span>{(nextObjective.definition?.category || "OGÓLNY").toUpperCase()}</span>
+                      </div>
+                      <span className="v7c-goal-rarity">{(nextObjective.definition?.rarity || "COMMON").toUpperCase()}</span>
+                    </div>
+                    <h4>{nextObjective.definition?.name || "Kolejny cel"}</h4>
+                    <p>{nextObjective.definition?.description || "Graj i trenuj regularnie."}</p>
+                    <div className="v7c-goal-progress-wrap">
+                      <div className="v7c-goal-progress-bar">
+                        <div 
+                          className="v7c-goal-progress-fill" 
+                          style={{ width: `${Math.min(100, Math.max(8, nextObjective.percent))}%` }} 
+                        />
+                      </div>
+                      <div className="v7c-goal-progress-labels">
+                        <span>POSTĘP: <b>{nextObjective.current} / {nextObjective.target}</b></span>
+                        <b>{nextObjective.percent}%</b>
+                      </div>
+                    </div>
+                    {nextObjective.definition?.rewardCardType && (
+                      <div className="v7c-goal-reward-note">
+                        <Sparkles size={12} />
+                        <span>Odblokowuje kartę: <b>{nextObjective.definition.rewardCardType.toUpperCase()}</b></span>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="v7b-stats-empty-box devil-card">
-                    <Shield size={32} className="text-yellow-400" />
-                    <h4>Brak oceny umiejętności</h4>
-                    <p>Radar rozwoju zostanie aktywowany po zapisaniu pierwszych obecności na treningu lub w meczu ligowym.</p>
+                  <div className="v7c-all-goals-complete">
+                    <Check size={18} />
+                    <span>Wszystkie wyznaczone cele osiągnięte! Gratulacje!</span>
                   </div>
                 )}
               </div>
 
-              {/* PRAWA KOLUMNA: HARMONOGRAM I SZYBKIE RSVP (DLA POWIĄZANEGO RODZICA) */}
-              <div className="v7b-fixtures-column">
-                {isParentOfActivePlayer && (
-                  <div className="v7b-rsvp-card devil-card">
-                    <div className="v7b-rsvp-header">
-                      <div className="v7b-rsvp-title-wrap">
-                        <CalendarDays size={18} className="text-yellow-400" />
-                        <h3>Deklaracja obecności • Najbliższe wydarzenia</h3>
-                      </div>
-                      <span className="v7b-rsvp-secure-tag">
-                        <ShieldCheck size={12} /> Zabezpieczone RLS V6E
-                      </span>
-                    </div>
+              {/* SZYBKI STATUS OBECNOŚCI (1-CLICK RSVP) — DLA POWIĄZANEGO RODZICA */}
+              {isParentOfActivePlayer && (
+                <div className="v7b-parent-rsvp-zone">
+                  <div className="v7b-panel-heading mt-4">
+                    <CalendarDays size={18} />
+                    <span>SZYBKI STATUS OBECNOŚCI (1-CLICK RSVP)</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-3">
+                    Zgłoś dyspozycyjność zawodnika na najbliższe zbiórki jednym kliknięciem:
+                  </p>
 
-                    {/* NAJBLIŻSZY TRENING */}
-                    {upcomingTrainings.length > 0 ? (
-                      <div className="v7b-rsvp-event-item">
-                        <div className="v7b-rsvp-event-top">
-                          <span className="v7b-rsvp-type-badge training">TRENING</span>
-                          <span className="v7b-rsvp-date">{upcomingTrainings[0].training_date}</span>
-                        </div>
-                        <strong>{upcomingTrainings[0].title || "Trening ligowy rocznika 2018"}</strong>
-                        <p className="v7b-rsvp-loc">
-                          <MapPin size={12} /> {upcomingTrainings[0].location || "Boisko Mokotów"}
-                        </p>
-
-                        {/* STATUS I PRZYCISKI RSVP */}
-                        {(() => {
-                          const currentAtt = localTrAttendance.find(
-                            a => a.training_id === upcomingTrainings[0].id && a.player_id === activeChild.id
-                          );
-                          const isCoachPresent = currentAtt?.status === "present";
-                          const st = currentAtt?.status || "none";
-
-                          return (
-                            <div className="v7b-rsvp-actions-wrap">
-                              {isCoachPresent ? (
-                                <div className="v7b-coach-confirmed-badge">
-                                  <Check size={14} /> Trener zatwierdził faktyczną obecność
-                                </div>
-                              ) : (
-                                <div className="v7b-rsvp-buttons">
-                                  <button
-                                    type="button"
-                                    className={`v7b-rsvp-btn yes ${st === "yes" ? "active" : ""}`}
-                                    onClick={() => handleTrainingRsvp(upcomingTrainings[0].id, "yes")}
-                                    disabled={Boolean(rsvpLoading)}
-                                  >
-                                    <Check size={14} /> Będę
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={`v7b-rsvp-btn maybe ${st === "maybe" ? "active" : ""}`}
-                                    onClick={() => handleTrainingRsvp(upcomingTrainings[0].id, "maybe")}
-                                    disabled={Boolean(rsvpLoading)}
-                                  >
-                                    <HelpCircle size={14} /> Niepewne
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={`v7b-rsvp-btn no ${st === "no" ? "active" : ""}`}
-                                    onClick={() => handleTrainingRsvp(upcomingTrainings[0].id, "no")}
-                                    disabled={Boolean(rsvpLoading)}
-                                  >
-                                    <X size={14} /> Nieobecny
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    ) : null}
-
+                  <div className="v7b-rsvp-items">
                     {/* NAJBLIŻSZY MECZ */}
                     {upcomingMatches.length > 0 ? (
-                      <div className="v7b-rsvp-event-item">
-                        <div className="v7b-rsvp-event-top">
-                          <span className="v7b-rsvp-type-badge match">MECZ</span>
-                          <span className="v7b-rsvp-date">{upcomingMatches[0].match_date}</span>
-                        </div>
-                        <strong>{upcomingMatches[0].home_team} vs {upcomingMatches[0].away_team}</strong>
-                        <p className="v7b-rsvp-loc">
-                          <MapPin size={12} /> {upcomingMatches[0].venue || "Stadion Gospodarzy"}
-                        </p>
-
-                        {/* STATUS I PRZYCISKI RSVP MECZU */}
-                        {(() => {
-                          const currentAtt = localAttendance.find(
-                            a => a.match_id === upcomingMatches[0].id && a.player_id === activeChild.id
-                          );
-                          const isCoachPresent = currentAtt?.status === "present";
-                          const st = currentAtt?.status || "none";
-
-                          return (
-                            <div className="v7b-rsvp-actions-wrap">
-                              {isCoachPresent ? (
-                                <div className="v7b-coach-confirmed-badge">
-                                  <Check size={14} /> Trener zatwierdził faktyczną obecność
-                                </div>
-                              ) : (
-                                <div className="v7b-rsvp-buttons">
-                                  <button
-                                    type="button"
-                                    className={`v7b-rsvp-btn yes ${st === "yes" ? "active" : ""}`}
-                                    onClick={() => handleMatchRsvp(upcomingMatches[0].id, "yes")}
-                                    disabled={Boolean(rsvpLoading)}
-                                  >
-                                    <Check size={14} /> Będę
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={`v7b-rsvp-btn maybe ${st === "maybe" ? "active" : ""}`}
-                                    onClick={() => handleMatchRsvp(upcomingMatches[0].id, "maybe")}
-                                    disabled={Boolean(rsvpLoading)}
-                                  >
-                                    <HelpCircle size={14} /> Niepewne
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={`v7b-rsvp-btn no ${st === "no" ? "active" : ""}`}
-                                    onClick={() => handleMatchRsvp(upcomingMatches[0].id, "no")}
-                                    disabled={Boolean(rsvpLoading)}
-                                  >
-                                    <X size={14} /> Nieobecny
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-
-                {/* CHECKLISTA MECZOWA DLA RODZICA */}
-                {isParentOfActivePlayer && (
-                  <div className="v7b-checklist-card devil-card">
-                    <div className="v7b-checklist-header">
-                      <CheckSquare size={16} className="text-yellow-400" />
-                      <h4>Niezbędnik Młodego Piłkarza</h4>
-                    </div>
-                    <div className="v7b-checklist-grid">
-                      {CHECKLIST_ITEMS.map(item => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={`v7b-check-item ${checklist[item.id] ? "checked" : ""}`}
-                          onClick={() => handleToggleChecklist(item.id)}
-                        >
-                          <span className="check-icon">
-                            {checklist[item.id] ? <CheckSquare size={16} /> : <Square size={16} />}
-                          </span>
-                          <span className="check-label">
-                            {item.icon} {item.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* OSTATNIE ROZEGRANE MECZE */}
-                <div className="v7b-recent-matches-card devil-card">
-                  <div className="v7b-recent-header">
-                    <Trophy size={16} className="text-yellow-400" />
-                    <h4>Ostatnie oficjalne występy</h4>
-                  </div>
-                  {recentPlayedMatches.length > 0 ? (
-                    <div className="v7b-recent-matches-list">
-                      {recentPlayedMatches.map(m => {
-                        const mEvents = events.filter(e => e.match_id === m.id);
-                        const playerGoals = mEvents.filter(e => e.event_type === "goal" && e.player_id === activeChild.id).length;
-                        const playerAssists = mEvents.filter(e => e.event_type === "goal" && e.assist_player_id === activeChild.id).length;
+                      upcomingMatches.map(m => {
+                        const rsvp = localAttendance.find(a => a.match_id === m.id && a.player_id === activeChild.id)?.status || "";
+                        const isLoading = rsvpLoading === `match-${m.id}`;
 
                         return (
-                          <div 
-                            key={m.id} 
-                            className="v7b-recent-match-row"
-                            onClick={() => onOpenMatch && onOpenMatch(m, "summary")}
-                          >
-                            <span className="v7b-match-date">{m.match_date}</span>
-                            <strong className="v7b-match-teams">
-                              {m.home_team} {m.home_score ?? "–"} : {m.away_score ?? "–"} {m.away_team}
-                            </strong>
-                            <div className="v7b-match-player-stats">
-                              {playerGoals > 0 && <span className="stat-pill goals">⚽ {playerGoals}</span>}
-                              {playerAssists > 0 && <span className="stat-pill assists">🎯 {playerAssists}</span>}
+                          <div key={m.id} className="v7b-rsvp-block match-type">
+                            <div className="v7b-rsvp-block-top">
+                              <span className="v7b-rsvp-badge match">⚽ MECZ LIGOWY</span>
+                              <small>{new Date(m.match_date).toLocaleDateString("pl-PL")} • {m.match_time?.slice(0, 5) || "Godz. do ustalenia"}</small>
                             </div>
-                            <ChevronRight size={14} className="text-gray-500" />
+                            <h4>{m.home_team} vs {m.away_team}</h4>
+                            <p><MapPin size={12} /> {m.venue || "Boisko ligowe"}</p>
+
+                            <div className="v7b-rsvp-buttons-row v7b-rsvp-buttons">
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`v7b-btn-rsvp yes ${rsvp === "yes" || rsvp === "present" ? "active" : ""}`}
+                                onClick={() => handleMatchRsvp(m.id, "yes")}
+                              >
+                                <Check size={14} />
+                                <span>BĘDĘ</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`v7b-btn-rsvp no ${rsvp === "no" ? "active" : ""}`}
+                                onClick={() => handleMatchRsvp(m.id, "no")}
+                              >
+                                <X size={14} />
+                                <span>NIEOBECNY</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`v7b-btn-rsvp maybe ${rsvp === "maybe" ? "active" : ""}`}
+                                onClick={() => handleMatchRsvp(m.id, "maybe")}
+                              >
+                                <HelpCircle size={14} />
+                                <span>DO POTWIERDZENIA</span>
+                              </button>
+                            </div>
                           </div>
                         );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="v7b-empty-text">Brak zarejestrowanych meczów z udziałem zawodnika.</p>
+                      })
+                    ) : (
+                      <div className="p-3 rounded-lg bg-slate-900/50 text-xs text-slate-400">
+                        Brak zaplanowanych meczów ligowych w najbliższych dniach.
+                      </div>
+                    )}
+
+                    {/* NAJBLIŻSZY TRENING */}
+                    {upcomingTrainings.length > 0 && (
+                      upcomingTrainings.map(tr => {
+                        const trRsvp = localTrAttendance.find(a => a.training_id === tr.id && a.player_id === activeChild.id)?.status || "";
+                        const isLoading = rsvpLoading === `training-${tr.id}`;
+
+                        return (
+                          <div key={tr.id} className="v7b-rsvp-block training-type">
+                            <div className="v7b-rsvp-block-top">
+                              <span className="v7b-rsvp-badge training">🏃 TRENING ZESPOŁU</span>
+                              <small>{new Date(tr.training_date).toLocaleDateString("pl-PL")} • {tr.start_time?.slice(0, 5) || "17:00"}</small>
+                            </div>
+                            <h4>{tr.title || "Trening rocznika 2018 GM"}</h4>
+                            <p><MapPin size={12} /> {tr.location || "Boisko klubowe"}</p>
+
+                            <div className="v7b-rsvp-buttons-row v7b-rsvp-buttons">
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`v7b-btn-rsvp yes ${trRsvp === "present" || trRsvp === "yes" ? "active" : ""}`}
+                                onClick={() => handleTrainingRsvp(tr.id, "yes")}
+                              >
+                                <Check size={14} />
+                                <span>BĘDĘ</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`v7b-btn-rsvp no ${trRsvp === "no" ? "active" : ""}`}
+                                onClick={() => handleTrainingRsvp(tr.id, "no")}
+                              >
+                                <X size={14} />
+                                <span>NIEOBECNY</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`v7b-btn-rsvp maybe ${trRsvp === "maybe" ? "active" : ""}`}
+                                onClick={() => handleTrainingRsvp(tr.id, "maybe")}
+                              >
+                                <HelpCircle size={14} />
+                                <span>DO POTWIERDZENIA</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!isParentOfActivePlayer && (
+                <div className="v7b-squad-fixtures-zone">
+                  <div className="v7b-panel-heading mt-4">
+                    <CalendarDays size={18} />
+                    <span>HARMONOGRAM ZBIÓREK</span>
+                  </div>
+                  <div className="v7b-rsvp-items">
+                    {upcomingMatches.length > 0 ? (
+                      upcomingMatches.map(m => (
+                        <div key={m.id} className="v7b-rsvp-block match-type">
+                          <div className="v7b-rsvp-block-top">
+                            <span className="v7b-rsvp-badge match">⚽ MECZ LIGOWY</span>
+                            <small>{new Date(m.match_date).toLocaleDateString("pl-PL")}</small>
+                          </div>
+                          <h4>{m.home_team} vs {m.away_team}</h4>
+                          <p><MapPin size={12} /> {m.venue || "Boisko ligowe"}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 rounded-lg bg-slate-900/50 text-xs text-slate-400">
+                        Brak zaplanowanych meczów ligowych.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* FORMA, CHEMIA & PRZEDMECZOWA CHECKLISTA */}
+          <div className="v7b-overview-bottom-grid">
+            {/* FORMA MECZOWA I ZGRANIE */}
+            <div className="v7b-card-panel devil-card">
+              <div className="v7b-panel-heading">
+                <Zap size={18} />
+                <span>FORMA MECZOWA I ZGRANIE</span>
+              </div>
+
+              <div className="mb-4">
+                <span className="text-xs text-slate-400 font-bold block mb-2">OSTATNIE SPOTKANIA:</span>
+                <div className="v7b-form-bubble-row">
+                  {recentPlayedMatches.map(m => {
+                    const goalsInMatch = events.filter(e => e.match_id === m.id && e.player_id === activeChild.id && e.event_type === "goal").length;
+                    const isHome = m.home_team.toLowerCase().includes("delta");
+                    const deltaScore = isHome ? (m.home_score ?? 0) : (m.away_score ?? 0);
+                    const oppScore = isHome ? (m.away_score ?? 0) : (m.home_score ?? 0);
+                    const res = deltaScore > oppScore ? "W" : deltaScore === oppScore ? "R" : "P";
+
+                    return (
+                      <div 
+                        key={m.id} 
+                        className={`v7b-bubble-item res-${res.toLowerCase()}`}
+                        title={`${m.home_team} vs ${m.away_team} (${deltaScore}:${oppScore})`}
+                      >
+                        <span>{goalsInMatch > 0 ? `⚽${goalsInMatch}` : res}</span>
+                        <small>{new Date(m.match_date).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })}</small>
+                      </div>
+                    );
+                  })}
+                  {recentPlayedMatches.length === 0 && (
+                    <span className="text-xs text-slate-500">Brak rozegranych meczów w historii.</span>
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* 2. MOJA KARIERA (CHRONOLOGICZNA OŚ ROZWOJU) */}
-        {activeTab === "career" && (
-          <div className="v7b-career-timeline-tab">
-            <CareerTimeline 
-              player={activeChild}
-              matches={matches}
-              trainingSessions={trainingSessions}
-              matchAttendance={localAttendance}
-              trainingAttendance={localTrAttendance}
-              events={events}
-              stats={stats}
-              trainingStats={trainingStats}
-              onOpenMatch={onOpenMatch}
-            />
-          </div>
-        )}
-
-        {/* 3. STATYSTYKI SPORTOWE */}
-        {activeTab === "stats" && (
-          <div className="v7b-stats-section">
-            <div className="v7b-stats-grid">
-              {/* KARTA 1: MECZE MZPN */}
-              <div className="v7b-stats-col-card devil-card">
-                <div className="v7b-card-heading">
-                  <Trophy size={18} />
-                  <h3>Oficjalne mecze MZPN</h3>
+              {/* CHEMIA Z PARTNEREM */}
+              <div className="v7b-chem-duo-card">
+                <div className="v7b-chem-icon-wrap">
+                  <Zap size={20} />
                 </div>
-                <div className="v7b-kpis-vertical">
-                  <div className="v7b-kpi-item">
-                    <span>Mecze (Występy)</span>
-                    <b>{s.m}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Wyjściowa szóstka</span>
-                    <b>{s.starts}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Strzelone bramki</span>
-                    <b>{s.g}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Asysty ligowe</span>
-                    <b>{s.a}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Kapitan drużyny</span>
-                    <b>{s.captain}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Wyróżnienia MVP</span>
-                    <b>{s.mvp}</b>
-                  </div>
+                <div>
+                  <small className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">NAJLEPSZY DUET BOISKOWY</small>
+                  <b className="text-white text-sm">{partner ? partner.display_name : "Zgrany z całym zespołem"}</b>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {pair ? `${pair.score}% zgrania • ${pair.games} wspólnych gier treningowych` : "Wspólne gry na treningach budują formę meczową!"}
+                  </p>
                 </div>
-              </div>
-
-              {/* KARTA 2: TRENINGI I ROZWÓJ */}
-              <div className="v7b-stats-col-card devil-card">
-                <div className="v7b-card-heading">
-                  <Dumbbell size={18} />
-                  <h3>Treningi i rozwój</h3>
-                </div>
-                <div className="v7b-kpis-vertical">
-                  <div className="v7b-kpi-item">
-                    <span>Zaliczone treningi</span>
-                    <b>{t.sessions}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Aktualna seria (Streak)</span>
-                    <b>{t.attendanceStreak} z rzędu</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Gole na treningach</span>
-                    <b>{t.goals}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Asysty treningowe</span>
-                    <b>{t.assists}</b>
-                  </div>
-                  <div className="v7b-kpi-item">
-                    <span>Udział w małych grach</span>
-                    <b>{t.games}</b>
-                  </div>
-                </div>
-              </div>
-
-              {/* KARTA 3: DUETY I CHEMIA */}
-              <div className="v7b-stats-col-card devil-card">
-                <div className="v7b-card-heading">
-                  <Sparkles size={18} />
-                  <h3>Współpraca na boisku</h3>
-                </div>
-                {partner ? (
-                  <div className="v7b-chemistry-box">
-                    <div className="partner-avatar">
-                      <PlayerPhoto playerId={partner.id} shirtNumber={partner.shirt_number} className="w-16 h-16 rounded-full" />
-                    </div>
-                    <h4>Najczęstszy partner w grach:</h4>
-                    <strong>{partner.display_name}</strong>
-                    <p>{pair?.games || 0} wspólnych gier treningowych</p>
-                  </div>
-                ) : (
-                  <div className="v7b-chemistry-empty">
-                    <p>Duety zostaną wyliczone po zapisaniu składów gier wewnętrznych.</p>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* NOTA EDUKACYJNA GRASSROOTS */}
-            <div className="v7b-grassroots-disclaimer devil-card">
-              <Info size={18} className="text-yellow-400" />
-              <div>
-                <strong>ZASADY ROZWOJU MŁODEGO SPORTOWCA (GRASSROOTS)</strong>
-                <p>
-                  W piłce nożnej dziecięcej (rocznik 2018) statystyki służą wyłącznie monitorowaniu frekwencji
-                  oraz radości z gry. Mają charakter wyłącznie motywacyjny — nie prowadzimy negatywnej selekcji ani rankingów presyjnych. Najważniejsza jest regularność, uśmiech i zrównoważony rozwój każdego dziecka.
-                </p>
+            {/* PRZEDMECZOWA CHECKLISTA */}
+            <div className="v7b-card-panel devil-card v7b-checklist-card">
+              <div className="v7b-panel-heading">
+                <Shirt size={18} />
+                <span>PRZEDMECZOWA CHECKLISTA TORBY</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-3">
+                Sprawdź z dzieckiem przed wyjściem na mecz czy wszystko jest spakowane:
+              </p>
+
+              <div className="v7b-checklist-items">
+                {CHECKLIST_ITEMS.map(item => {
+                  const checked = !!checklist[item.id];
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={!isParentOfActivePlayer}
+                      className={`v7b-checklist-btn ${checked ? "is-checked" : ""}`}
+                      onClick={() => handleToggleChecklist(item.id)}
+                    >
+                      <span>{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {checked ? (
+                        <CheckSquare size={17} className="text-emerald-400" />
+                      ) : (
+                        <Square size={17} className="text-slate-500" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* 4. OSIĄGNIĘCIA */}
-        {activeTab === "achievements" && (
-          <div className="v7b-achievements-tab">
-            <AchievementsHub 
-              playerAchievements={playerAchievements}
-              playerName={activeChild.display_name}
-            />
+      {/* TAB 2: MOJA KARIERA (CareerTimeline) */}
+      {activeTab === "career" && (
+        <div className="v7b-tab-content career-content">
+          <CareerTimeline
+            player={activeChild}
+            matches={matches}
+            trainingSessions={trainingSessions}
+            matchAttendance={localAttendance}
+            trainingAttendance={localTrAttendance}
+            events={events}
+            stats={stats}
+            trainingStats={trainingStats}
+            onOpenMatch={(m) => onOpenMatch && onOpenMatch(m, "summary")}
+          />
+        </div>
+      )}
+
+      {/* TAB 3: STATYSTYKI */}
+      {activeTab === "stats" && (
+        <div className="v7b-tab-content stats-content space-y-4">
+          <div className="v7b-stats-grid">
+            {/* OFICJALNE MECZE */}
+            <div className="v7b-stats-col-card devil-card">
+              <div className="v7b-panel-heading">
+                <Trophy size={18} />
+                <span>MECZE OFICJALNE MZPN</span>
+              </div>
+
+              <div className="v7b-stats-table-row">
+                <span>Rozegrane mecze</span>
+                <b>{s.m}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Wyjściowy skład</span>
+                <b>{s.starts}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Mecze jako kapitan</span>
+                <b>{s.captain}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Bramki ligowe</span>
+                <b>{s.g}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Asysty ligowe</span>
+                <b>{s.a}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Wyróżnienia MVP</span>
+                <b>{s.mvp}</b>
+              </div>
+            </div>
+
+            {/* TRENING I ROZWÓJ */}
+            <div className="v7b-stats-col-card devil-card">
+              <div className="v7b-panel-heading">
+                <Dumbbell size={18} />
+                <span>TRENING I ROZWÓJ</span>
+              </div>
+
+              <div className="v7b-stats-table-row">
+                <span>Obecności na zbiórkach</span>
+                <b>{t.sessions}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Udział w grach wewnętrznych</span>
+                <b>{t.games}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Gole w grach treningowych</span>
+                <b>{t.goals}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Asysty treningowe</span>
+                <b>{t.assists}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Punkty kanadyjskie (G+A)</span>
+                <b>{t.ga}</b>
+              </div>
+              <div className="v7b-stats-table-row">
+                <span>Seria obecności</span>
+                <b>{t.attendanceStreak} z rzędu 🔥</b>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* 5. KARTY INFERNO */}
-        {activeTab === "cards" && (
-          <div className="v7b-inferno-cards-tab">
-            <PlayerInfernoCards 
-              player={activeChild}
-              cards={cards}
-              userCards={userCards}
-              stats={stats}
-              trainingStats={trainingStats}
-            />
+          {/* PEDAGOGICZNA KLAUZULA GRASSROOTS */}
+          <div className="v7b-pedagogical-disclaimer devil-card">
+            <ShieldCheck size={28} className="text-sky-400 flex-shrink-0" />
+            <p>
+              <strong>ZASADY ROZWOJU MŁODEGO SPORTOWCA (GRASSROOTS): </strong>
+              W kategorii wiekowej rocznika 2018 (skrzat / żak) piłka nożna to przede wszystkim pasja, radość z gry i odwaga na boisku.
+              W KS Delta Warszawa nie prowadzimy negatywnej selekcji. Wszystkie prezentowane statystyki mają charakter motywacyjny
+              i edukacyjny — służą do doceniania systematycznej pracy, regularnych obecności i wspólnego rozwoju z kolegami z drużyny!
+            </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* MODAL 3D CARD INSPECTION (HERO PREVIEW) */}
+      {/* TAB 4: OSIĄGNIĘCIA */}
+      {activeTab === "achievements" && (
+        <div className="v7b-tab-content achievements-content">
+          <AchievementsHub
+            playerAchievements={calculatePlayerAchievements(activeChild.id, stats, trainingStats, maxGoalsSingleMatch)}
+            playerName={activeChild.display_name}
+          />
+        </div>
+      )}
+
+      {/* TAB 5: MOJE KARTY */}
+      {activeTab === "cards" && (
+        <div className="v7b-tab-content cards-content">
+          <PlayerInfernoCards
+            player={activeChild}
+            cards={cards}
+            userCards={userCards}
+            stats={stats}
+            trainingStats={trainingStats}
+          />
+        </div>
+      )}
+
+      {/* 6. MODAL 3D CARD INSPECTOR DLA HERO */}
       {heroInspectedCard && heroCard3DData && (
         <div className="v7b-modal-overlay" onClick={() => setHeroInspectedCard(null)}>
-          <div className="v7b-modal-card-container devil-card" onClick={e => e.stopPropagation()}>
+          <div className="v7b-modal-card-container devil-card" onClick={(e) => e.stopPropagation()}>
             <div className="v7b-modal-header">
               <div className="modal-title-wrap">
-                <Flame size={16} className="flame-icon" />
-                <span>INSPEKCJA KARTY 3D • DELTA INFERNO</span>
+                <Flame size={16} className="flame-icon text-amber-400" />
+                <span>PODGLĄD KARTY 3D • DELTA INFERNO</span>
               </div>
               <div className="modal-actions-wrap">
                 <button
                   type="button"
-                  className="modal-tool-btn"
-                  onClick={() => setHeroIsFlipped(prev => !prev)}
+                  className={`modal-btn-ctrl ${heroIsFlipped ? "active" : ""}`}
+                  onClick={() => setHeroIsFlipped(!heroIsFlipped)}
+                  title="Obróć kartę"
                 >
                   <RotateCw size={14} />
-                  <span>OBRÓĆ KARTĘ</span>
+                  <span>{heroIsFlipped ? "PRZÓD" : "TYŁ"}</span>
                 </button>
                 <button
                   type="button"
-                  className="modal-close-btn"
+                  className={`modal-btn-ctrl ${heroAutoRotate ? "active" : ""}`}
+                  onClick={() => setHeroAutoRotate(!heroAutoRotate)}
+                  title="Obrót 360"
+                >
+                  <Sparkles size={14} />
+                  <span>{heroAutoRotate ? "STOP" : "360°"}</span>
+                </button>
+                <button
+                  type="button"
+                  className="modal-btn-close"
                   onClick={() => setHeroInspectedCard(null)}
+                  title="Zamknij"
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
-
-            <div className="v7b-modal-stage-wrap">
-              <Card3DEngine 
+            <div className="v7b-3d-scene-stage">
+              <Card3DEngine
                 data={heroCard3DData}
                 isFlipped={heroIsFlipped}
                 autoRotate={heroAutoRotate}
@@ -1270,13 +1305,33 @@ export function PlayerExperience3D({
                 enableParallax={true}
               />
             </div>
+            <div className="v7b-modal-footer">
+              <div className="footer-status-pill">
+                {isFeaturedCardOwned ? (
+                  <span className="status-owned">
+                    <Check size={14} className="text-emerald-400" />
+                    <span>Oficjalna karta w Twoim albumie klubowym</span>
+                  </span>
+                ) : (
+                  <span className="status-unowned">
+                    <Eye size={14} className="text-amber-400" />
+                    <span>Podgląd karty — karta zablokowana (do zdobycia w paczkach DELTA INFERNO)</span>
+                  </span>
+                )}
+              </div>
+              <div className="footer-meta-chips">
+                <span>Rzadkość: <b>{heroInspectedCard.rarity?.toUpperCase() || "INFERNO"}</b></span>
+                <span>Typ: <b>{heroInspectedCard.card_type?.toUpperCase() || "BASE"}</b></span>
+                <span>Sezon: <b>{heroInspectedCard.season || "2026/27"}</b></span>
+              </div>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 
-  // W trybie "modal" renderujemy pełnoekranowy stadion do document.body via Portal
+    // W trybie "modal" renderujemy pełnoekranowy stadion do document.body via Portal
   if (mode === "modal" && mounted) {
     if (!isOpen) return null;
 

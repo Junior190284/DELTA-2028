@@ -178,3 +178,113 @@ test("V7D.1 Navigation & 5 Core Sections Preserved", () => {
     "Stats tab must feature Grassroots educational disclaimer"
   );
 });
+
+test("V7D.3 Visual Regression Guards — Hero bounds, Silhouette containment, Tab Bar and Stat Cards", () => {
+  const expPath = path.join(rootDir, "components/player/PlayerExperience3D.tsx");
+  const cssPath = path.join(rootDir, "components/player/player-career-hub.css");
+
+  const expCode = fs.readFileSync(expPath, "utf8");
+  const cssCode = fs.readFileSync(cssPath, "utf8");
+
+  // 1. Ograniczenie sylwetki zawodnika do kontrolowanego kontenera 76x76px
+  assert.ok(
+    expCode.includes('className="v7b-hero-avatar-wrap"'),
+    "PlayerExperience3D must place PlayerPhoto inside .v7b-hero-avatar-wrap"
+  );
+  assert.ok(
+    !expCode.includes('className="v7b-portrait-wrapper"'),
+    "PlayerExperience3D must NOT contain unconstrained v7b-portrait-wrapper"
+  );
+  assert.ok(
+    cssCode.includes(".v7b-hero-avatar-wrap {") &&
+    cssCode.includes("width: 76px;") &&
+    cssCode.includes("height: 76px;") &&
+    cssCode.includes("overflow: hidden;"),
+    "CSS must strictly constrain .v7b-hero-avatar-wrap to 76x76px with overflow hidden"
+  );
+  assert.ok(
+    cssCode.includes(".v7b-hero-avatar-wrap [data-testid=\"neutral-player-silhouette\"]") &&
+    cssCode.includes("max-width: 76px !important") &&
+    cssCode.includes("max-height: 76px !important"),
+    "CSS must clamp silhouette SVG/div to max 76x76px"
+  );
+
+  // 2. Zwarta kompozycja Player Hero
+  assert.ok(
+    expCode.includes('className="v7b-hero-top-strip"') &&
+    expCode.includes('className="v7b-hero-main-row"') &&
+    expCode.includes('className="v7b-hero-identity"') &&
+    expCode.includes('className="v7b-hero-xp-widget"'),
+    "Hero must have proper 3-column row layout (identity, xp widget, 3d preview col)"
+  );
+  assert.ok(
+    !expCode.includes('className="v7c-hero-content-grid"'),
+    "Hero must NOT use regressed v7c-hero-content-grid"
+  );
+
+  // 3. Panel 4 statystyk z właściwym ostylowaniem kart
+  assert.ok(
+    expCode.includes('className="v7c-quick-stats-strip"') &&
+    expCode.includes('className="v7c-stat-card"'),
+    "Must use .v7c-quick-stats-strip with .v7c-stat-card"
+  );
+  assert.ok(
+    !expCode.includes('className="v7c-quick-stat-box"'),
+    "Must NOT use unstyled v7c-quick-stat-box"
+  );
+  assert.ok(
+    cssCode.includes(".v7c-quick-stats-strip {") &&
+    cssCode.includes("grid-template-columns: repeat(4, 1fr)"),
+    "CSS must define 4-column grid for desktop stats strip"
+  );
+
+  // 4. Belka 5 zakładek z ostylowaniem sticky i touch targets
+  assert.ok(
+    expCode.includes('className="v7b-nav-tabs-bar"') &&
+    expCode.includes('className={`v7b-nav-tab-btn'),
+    "Must use styled .v7b-nav-tabs-bar and .v7b-nav-tab-btn"
+  );
+  assert.ok(
+    !expCode.includes('className="v7b-career-tabs-bar"'),
+    "Must NOT use unstyled v7b-career-tabs-bar"
+  );
+  assert.ok(
+    cssCode.includes(".v7b-nav-tabs-bar {") &&
+    cssCode.includes("position: sticky;") &&
+    cssCode.includes("top: 60px;"),
+    "CSS must define sticky navigation bar with backdrop blur"
+  );
+
+  // 5. Ograniczenie wymiarów karty 3D w Hero i w modalu
+  assert.ok(
+    expCode.includes('className="v7c-hero-3d-preview-box"') &&
+    expCode.includes('className="v7c-mini-card-icon"'),
+    "Hero must feature compact .v7c-hero-3d-preview-box"
+  );
+  assert.ok(
+    cssCode.includes(".v7b-modal-card-container {") &&
+    cssCode.includes("max-width: 560px;"),
+    "3D inspector modal must have max-width constraint to prevent screen stretch"
+  );
+
+  // 6. V7D.4 Mobile responsiveness & modal containment (390px / 320px)
+  assert.ok(
+    cssCode.includes(".v7b-modal-overlay {") &&
+    cssCode.includes("overflow-y: auto;") &&
+    cssCode.includes("-webkit-overflow-scrolling: touch;"),
+    "Modal overlay must support safe vertical scroll on compact mobile screens"
+  );
+  assert.ok(
+    cssCode.includes(".v7b-modal-header {") &&
+    cssCode.includes("position: sticky;") &&
+    cssCode.includes("top: 0;"),
+    "Modal header with close button must remain sticky and permanently accessible"
+  );
+  assert.ok(
+    cssCode.includes("@media (max-width: 360px)") &&
+    cssCode.includes(".v7b-nav-tab-btn {") &&
+    cssCode.includes("min-width: 96px;") &&
+    cssCode.includes("flex-shrink: 0;"),
+    "Nav tabs on <=360px must maintain minimum tap width and horizontal scrollability without disappearing"
+  );
+});
