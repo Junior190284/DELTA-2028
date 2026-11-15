@@ -2545,3 +2545,838 @@
     display: none;
   }
 }
+
+
+/* ========================================================================= */
+/* 16. ETAP V7E.2: DYNAMIC STADIUM EXPERIENCE & FULLSCREEN PRESENTATION       */
+/* ========================================================================= */
+
+/* DYNAMIC STADIUM BACKGROUND IN HERO CARD */
+.v7e2-hero-stadium-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.v7e2-hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.v7e2-hero-bg-layer.active {
+  opacity: 0.28;
+}
+
+.v7e2-hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  filter: saturate(1.2) contrast(1.1);
+}
+
+/* DEMO STADIUM SWITCHER IN HERO CARD */
+.v7e2-hero-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(4, 6, 12, 0.75);
+  border: 1px solid rgba(246, 201, 82, 0.35);
+  border-radius: 999px;
+  padding: 3px 6px;
+  backdrop-filter: blur(8px);
+}
+
+.v7e2-hero-demo-tag {
+  font-size: 9px;
+  font-weight: 900;
+  color: #f6c952;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-right: 1px solid rgba(246, 201, 82, 0.25);
+  margin-right: 2px;
+}
+
+.v7e2-hero-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.v7e2-hero-switch-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.v7e2-hero-switch-btn.active {
+  background: linear-gradient(135deg, #e22e30 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(226, 46, 48, 0.5);
+}
+
+/* BUTTON "MOJA DROGA DO MISTRZOSTWA" */
+.v7e2-btn-road-to-mastery {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px; /* Accessible touch target */
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(226, 46, 48, 0.25) 0%, rgba(246, 201, 82, 0.2) 100%);
+  border: 1px solid rgba(246, 201, 82, 0.55);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.v7e2-btn-road-to-mastery:hover {
+  background: linear-gradient(135deg, rgba(226, 46, 48, 0.45) 0%, rgba(246, 201, 82, 0.35) 100%);
+  border-color: #f6c952;
+  box-shadow: 0 0 20px rgba(246, 201, 82, 0.4), 0 8px 24px rgba(226, 46, 48, 0.4);
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+/* FULLSCREEN PRESENTATION OVERLAY */
+.v7e2-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #04060c;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: v7eHeroEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* STADIUM BG CONTAINER */
+.v7e2-stadium-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.v7e2-stadium-bg-picture {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.v7e2-stadium-bg-picture.active {
+  opacity: 0.82;
+}
+
+.v7e2-stadium-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 65%;
+  filter: saturate(1.15) contrast(1.08);
+}
+
+.v7e2-stadium-vignette {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 50% 50%, rgba(4, 6, 12, 0.2) 0%, rgba(4, 6, 12, 0.85) 100%),
+    linear-gradient(180deg, rgba(4, 6, 12, 0.95) 0%, rgba(4, 6, 12, 0.3) 25%, rgba(4, 6, 12, 0.4) 75%, rgba(4, 6, 12, 0.95) 100%);
+}
+
+.v7e2-spotlight {
+  position: absolute;
+  top: -100px;
+  width: 400px;
+  height: 650px;
+  pointer-events: none;
+  filter: blur(48px);
+  opacity: 0.7;
+}
+
+.v7e2-spotlight.left {
+  left: -50px;
+  background: conic-gradient(from 145deg at 10% 0%, rgba(226, 46, 48, 0.45) 0deg, rgba(226, 46, 48, 0.1) 45deg, transparent 70deg);
+  animation: v7eSpotlightSweep 16s ease-in-out infinite alternate;
+}
+
+.v7e2-spotlight.right {
+  right: -50px;
+  background: conic-gradient(from 215deg at 90% 0%, rgba(246, 201, 82, 0.4) 0deg, rgba(246, 201, 82, 0.08) 45deg, transparent 70deg);
+  animation: v7eSpotlightSweep 18s ease-in-out infinite alternate-reverse;
+}
+
+.v7e2-pitch-ground-glow {
+  position: absolute;
+  bottom: 0;
+  left: 5%;
+  right: 5%;
+  height: 240px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.28) 0%, rgba(246, 201, 82, 0.15) 35%, transparent 70%);
+  filter: blur(28px);
+}
+
+.v7e2-ambient-mist {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(0deg, rgba(4, 6, 12, 0.95) 0%, rgba(4, 6, 12, 0.4) 60%, transparent 100%);
+  backdrop-filter: blur(2px);
+}
+
+.v7e2-watermark-num {
+  position: absolute;
+  right: 5%;
+  bottom: 5%;
+  font-size: clamp(140px, 18vw, 320px);
+  font-weight: 950;
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  color: #f6c952;
+  opacity: 0.06;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-varsity, 'Montserrat', 'Inter', sans-serif);
+}
+
+/* TOPBAR */
+.v7e2-topbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 28px;
+  background: rgba(4, 6, 12, 0.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(246, 201, 82, 0.3);
+  flex-wrap: wrap;
+}
+
+.v7e2-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.v7e2-topbar-crest {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.v7e2-topbar-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.v7e2-topbar-title span:first-child {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #f6c952;
+  text-transform: uppercase;
+}
+
+.v7e2-topbar-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+/* SWITCHER PILLS */
+.v7e2-switcher-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 12, 22, 0.85);
+  border: 1px solid rgba(246, 201, 82, 0.4);
+  border-radius: 999px;
+  padding: 4px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.v7e2-switcher-demo-tag {
+  font-size: 9px;
+  font-weight: 900;
+  color: #f6c952;
+  padding: 2px 8px;
+  letter-spacing: 0.1em;
+  border-right: 1px solid rgba(246, 201, 82, 0.25);
+}
+
+.v7e2-switcher-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.v7e2-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.v7e2-switcher-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.v7e2-switcher-btn.active {
+  background: linear-gradient(135deg, #e22e30 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(226, 46, 48, 0.6);
+}
+
+.v7e2-btn-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.v7e2-btn-close:hover {
+  background: rgba(226, 46, 48, 0.25);
+  border-color: #e22e30;
+  color: #ffffff;
+  transform: scale(1.02);
+}
+
+/* STAGE VIEWPORT (3 COLUMNS) */
+.v7e2-stage-viewport {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 24px;
+  padding: 24px 32px;
+  align-items: center;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* INFO CARD (LEFT) */
+.v7e2-stage-info-card {
+  background: rgba(8, 12, 22, 0.88);
+  border: 1px solid rgba(246, 201, 82, 0.3);
+  border-radius: 20px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  animation: v7eHeroEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.v7e2-info-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v7e2-info-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.v7e2-info-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+}
+
+.v7e2-info-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.v7e2-info-milestone-box,
+.v7e2-info-focus-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.v7e2-info-milestone-box b,
+.v7e2-info-focus-box b {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.v7e2-info-milestone-box span,
+.v7e2-info-focus-box span {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.v7e2-info-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.v7e2-stat-tile {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.v7e2-stat-tile b {
+  display: block;
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.v7e2-stat-tile span {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.v7e2-stat-tile.highlight b {
+  color: #f6c952;
+}
+
+.v7e2-stat-tile.highlight-red b {
+  color: #f87171;
+}
+
+/* ATHLETE STAGE (CENTER) */
+.v7e2-athlete-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  height: 100%;
+  min-height: 520px;
+}
+
+.v7e2-pedestal-light-ring {
+  position: absolute;
+  bottom: 20px;
+  width: 320px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(226, 46, 48, 0.5) 0%, rgba(246, 201, 82, 0.3) 45%, transparent 75%);
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.v7e2-athlete-cutout-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  max-height: 580px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 5;
+}
+
+.v7e2-athlete-img {
+  width: 100%;
+  height: 100%;
+  max-height: 560px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 36px rgba(226, 46, 48, 0.45)) drop-shadow(0 20px 45px rgba(0, 0, 0, 0.95));
+  animation: v7e2PlayerEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes v7e2PlayerEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.v7e2-jersey-dynamic-num {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-varsity, 'Montserrat', sans-serif);
+  font-size: clamp(26px, 3.5vw, 38px);
+  font-weight: 950;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: -0.04em;
+  pointer-events: none;
+  user-select: none;
+  z-index: 6;
+}
+
+.v7e2-athlete-podium-badge {
+  position: relative;
+  z-index: 7;
+  margin-top: -12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 12, 22, 0.94);
+  border: 1px solid rgba(246, 201, 82, 0.5);
+  padding: 6px 18px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.v7e2-podium-num {
+  font-size: 13px;
+  font-weight: 900;
+  color: #f6c952;
+}
+
+.v7e2-podium-divider {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.v7e2-podium-pos {
+  font-size: 11px;
+  font-weight: 800;
+  color: #e2e8f0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* PLAYER HUD CARD (RIGHT) */
+.v7e2-player-hud-card {
+  background: rgba(8, 12, 22, 0.88);
+  border: 1px solid rgba(246, 201, 82, 0.3);
+  border-radius: 20px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  animation: v7eHeroEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.v7e2-hud-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #e22e30;
+  text-transform: uppercase;
+}
+
+.v7e2-hud-name {
+  font-size: 24px;
+  font-weight: 950;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(246, 201, 82, 0.25);
+}
+
+.v7e2-hud-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.v7e2-hud-meta-dot {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.v7e2-hud-xp-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v7e2-hud-xp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.v7e2-hud-lvl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(226, 46, 48, 0.25);
+  border: 1px solid #e22e30;
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.v7e2-hud-xp-val {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #f6c952;
+}
+
+.v7e2-hud-xp-track {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v7e2-hud-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e22e30 0%, #f6c952 100%);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.v7e2-hud-xp-footer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.v7e2-current-stadium-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.v7e2-stadium-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ========================================================================= */
+/* V7E.2 RESPONSIVE BREAKPOINTS                                              */
+/* ========================================================================= */
+
+@media (min-width: 1920px) {
+  .v7e2-stage-viewport {
+    max-width: 1720px;
+    grid-template-columns: 380px 1fr 380px;
+    gap: 36px;
+    padding: 36px 48px;
+  }
+  .v7e2-athlete-stage {
+    min-height: 640px;
+  }
+  .v7e2-athlete-img {
+    max-height: 620px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .v7e2-stage-viewport {
+    grid-template-columns: 280px 1fr 280px;
+    gap: 16px;
+    padding: 18px 20px;
+  }
+  .v7e2-athlete-stage {
+    min-height: 440px;
+  }
+  .v7e2-athlete-img {
+    max-height: 420px;
+  }
+}
+
+@media (max-width: 768px) {
+  .v7e2-topbar {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .v7e2-stage-viewport {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 16px 14px 60px;
+  }
+  .v7e2-athlete-stage {
+    min-height: 380px;
+    order: 1;
+  }
+  .v7e2-athlete-img {
+    max-height: 360px;
+  }
+  .v7e2-stage-info-card {
+    order: 2;
+  }
+  .v7e2-player-hud-card {
+    order: 3;
+  }
+}
+
+@media (max-width: 480px) {
+  .v7e2-topbar {
+    padding: 10px 12px;
+  }
+  .v7e2-topbar-title span:first-child {
+    font-size: 12px;
+  }
+  .v7e2-topbar-sub {
+    font-size: 10px;
+  }
+  .v7e2-switcher-wrap {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .v7e2-switcher-pills {
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .v7e2-switcher-btn {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+  .v7e2-btn-close {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-height: 40px;
+  }
+  .v7e2-athlete-stage {
+    min-height: 320px;
+  }
+  .v7e2-athlete-img {
+    max-height: 300px;
+  }
+  .v7e2-jersey-dynamic-num {
+    font-size: 24px;
+    top: 40%;
+  }
+  .v7e2-hud-name {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .v7e2-topbar-crest {
+    width: 24px;
+    height: 24px;
+  }
+  .v7e2-topbar-title span:first-child {
+    font-size: 11px;
+  }
+  .v7e2-topbar-sub {
+    display: none;
+  }
+  .v7e2-athlete-stage {
+    min-height: 270px;
+  }
+  .v7e2-athlete-img {
+    max-height: 250px;
+  }
+  .v7e2-jersey-dynamic-num {
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v7e2-fullscreen-overlay,
+  .v7e2-stadium-bg-picture,
+  .v7e2-athlete-img,
+  .v7e2-stage-info-card,
+  .v7e2-player-hud-card,
+  .v7e2-spotlight {
+    animation: none !important;
+    transition: none !important;
+  }
+}

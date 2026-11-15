@@ -40,6 +40,7 @@ import PlayerSkillRadar from "@/components/PlayerSkillRadar";
 import AchievementsHub from "@/components/AchievementsHub";
 import CareerTimeline from "./CareerTimeline";
 import PlayerInfernoCards from "./PlayerInfernoCards";
+import DynamicStadiumExperience, { type StadiumVariant } from "./DynamicStadiumExperience";
 import "./player-career-hub.css";
 
 export interface Player {
@@ -441,6 +442,10 @@ export function PlayerExperience3D({
   const [heroIsFlipped, setHeroIsFlipped] = useState(false);
   const [heroAutoRotate, setHeroAutoRotate] = useState(false);
 
+  // Wariant stadionu V7E.2 (Tryb demo) oraz pełnoekranowa prezentacja
+  const [stadiumVariant, setStadiumVariant] = useState<StadiumVariant>("debiutant");
+  const [isFullscreenStadiumOpen, setIsFullscreenStadiumOpen] = useState(false);
+
   // Wyróżniona karta INFERNO zawodnika
   const featuredCard = useMemo(() => {
     const childCards = cards.filter(c => c.player_id === activeChild.id);
@@ -636,6 +641,22 @@ export function PlayerExperience3D({
 
       {/* 2. STADIUM HERO 4.0 — PEŁNOEKRANOWY FILMOWY HERO ZAWODNIKA */}
       <div className="v7b-hero-card v7e-stadium-hero">
+        {/* Dynamiczne tło stadionu V7E.2 */}
+        <div className="v7e2-hero-stadium-bg" aria-hidden="true">
+          <div className={`v7e2-hero-bg-layer ${stadiumVariant === "debiutant" ? "active" : ""}`}>
+            <picture>
+              <source srcSet="/assets/stadium-experience/stadium_debiutant.webp" type="image/webp" />
+              <img src="/assets/stadium-experience/stadium_debiutant.png" alt="" className="v7e2-hero-bg-img" />
+            </picture>
+          </div>
+          <div className={`v7e2-hero-bg-layer ${stadiumVariant === "mlody_talent" ? "active" : ""}`}>
+            <picture>
+              <source srcSet="/assets/stadium-experience/stadium_mlody_talent.webp" type="image/webp" />
+              <img src="/assets/stadium-experience/stadium_mlody_talent.png" alt="" className="v7e2-hero-bg-img" />
+            </picture>
+          </div>
+        </div>
+
         {/* Wielki znak wodny numeru w tle stadionu */}
         <div className="v7e-hero-watermark-num" aria-hidden="true">
           #{activeChild.shirt_number || "DELTA"}
@@ -669,6 +690,29 @@ export function PlayerExperience3D({
           </div>
 
           <div className="v7b-hero-season-tag v7e-hero-season-tag">
+            {/* Przełącznik stadionów V7E.2 (Tryb demo) */}
+            <div className="v7e2-hero-switcher" role="group" aria-label="Wybór wariantu stadionu (Tryb demo)">
+              <span className="v7e2-hero-demo-tag">DEMO</span>
+              <button
+                type="button"
+                className={`v7e2-hero-switch-btn ${stadiumVariant === "debiutant" ? "active" : ""}`}
+                onClick={() => setStadiumVariant("debiutant")}
+                title="Włącz stadion: Debiutant"
+                aria-pressed={stadiumVariant === "debiutant"}
+              >
+                DEBIUTANT
+              </button>
+              <button
+                type="button"
+                className={`v7e2-hero-switch-btn ${stadiumVariant === "mlody_talent" ? "active" : ""}`}
+                onClick={() => setStadiumVariant("mlody_talent")}
+                title="Włącz stadion: Młody Talent"
+                aria-pressed={stadiumVariant === "mlody_talent"}
+              >
+                MŁODY TALENT
+              </button>
+            </div>
+
             <span>SEZON 2026/27</span>
             {isParentOfActivePlayer ? (
               <span className="v7d-role-pill parent">STREFA RODZICA</span>
@@ -785,6 +829,17 @@ export function PlayerExperience3D({
             >
               <Download size={14} />
               <span>{downloadingCard ? "GENEROWANIE..." : "POBIERZ KARTĘ A4"}</span>
+            </button>
+
+            {/* Przycisk Moja Droga do Mistrzostwa V7E.2 */}
+            <button
+              type="button"
+              className="v7e2-btn-road-to-mastery"
+              onClick={() => setIsFullscreenStadiumOpen(true)}
+              title="Otwórz pełnoekranową prezentację stadionową: Moja Droga do Mistrzostwa"
+            >
+              <Trophy size={14} className="text-amber-400" />
+              <span>MOJA DROGA DO MISTRZOSTWA</span>
             </button>
           </div>
         </div>
@@ -1416,6 +1471,23 @@ export function PlayerExperience3D({
         </div>,
         document.body
       )}
+
+      {/* 8. PEŁNOEKRANOWA PREZENTACJA STADIONOWA V7E.2: MOJA DROGA DO MISTRZOSTWA */}
+      <DynamicStadiumExperience
+        player={activeChild}
+        level={playerLevel}
+        xp={individualAttendanceXp}
+        stats={{
+          matches: s.m,
+          trainings: t.sessions,
+          goals: s.g,
+          assists: s.a
+        }}
+        variant={stadiumVariant}
+        onVariantChange={setStadiumVariant}
+        isOpen={isFullscreenStadiumOpen}
+        onClose={() => setIsFullscreenStadiumOpen(false)}
+      />
     </div>
   );
 
