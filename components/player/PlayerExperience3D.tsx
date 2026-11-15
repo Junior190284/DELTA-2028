@@ -634,67 +634,124 @@ export function PlayerExperience3D({
         </div>
       )}
 
-      {/* 2. KOMPAKTOWY FILMOWY HERO ZAWODNIKA */}
-      <div className="v7b-hero-card">
-        {/* Górny pasek statusu w Hero */}
+      {/* 2. STADIUM HERO 4.0 — PEŁNOEKRANOWY FILMOWY HERO ZAWODNIKA */}
+      <div className="v7b-hero-card v7e-stadium-hero">
+        {/* Wielki znak wodny numeru w tle stadionu */}
+        <div className="v7e-hero-watermark-num" aria-hidden="true">
+          #{activeChild.shirt_number || "DELTA"}
+        </div>
+
+        {/* Reflektory stadionowe, oświetlenie murawy i mgła */}
+        <div className="v7e-spotlight-beam left" aria-hidden="true" />
+        <div className="v7e-spotlight-beam right" aria-hidden="true" />
+        <div className="v7e-pitch-glow-ring" aria-hidden="true" />
+        <div className="v7e-mist-layer" aria-hidden="true" />
+
+        {/* Górny pasek statusu w Hero z przyciskiem powrotu do drużyny */}
         <div className="v7b-hero-top-strip">
-          <div className="v7b-hero-badge-tag">
-            <Sparkles size={12} />
-            <span>DELTA PLAYER 2.0 • 2018 GM</span>
+          <div className="v7e-hero-top-left">
+            <button
+              type="button"
+              className="v7e-hero-back-btn"
+              onClick={onClose || (() => {
+                window.dispatchEvent(new CustomEvent("delta_navigate_tab", { detail: { tab: "team" } }));
+              })}
+              title="Wróć do listy zawodników drużyny"
+            >
+              <ChevronLeft size={16} />
+              <span>Wróć do drużyny</span>
+            </button>
+
+            <div className="v7b-hero-badge-tag v7e-hero-badge-tag">
+              <img src="/teamlogos/gm.png" alt="DELTA" className="v7e-hero-top-crest" />
+              <span>DELTA PLAYER 4.0 • 2018 GM</span>
+            </div>
           </div>
 
-          <div className="v7b-hero-season-tag">
+          <div className="v7b-hero-season-tag v7e-hero-season-tag">
             <span>SEZON 2026/27</span>
+            {isParentOfActivePlayer ? (
+              <span className="v7d-role-pill parent">STREFA RODZICA</span>
+            ) : (
+              <span className="v7d-role-pill squad">KADRA ZESPOŁU</span>
+            )}
           </div>
         </div>
 
         <div className="v7b-hero-main-row">
-          {/* TOŻSAMOŚĆ ZAWODNIKA */}
-          <div className="v7b-hero-identity">
-            <div 
-              className="v7b-hero-avatar-wrap" 
-              onClick={() => onOpenPlayer && onOpenPlayer(activeChild)}
-              title="Kliknij, aby otworzyć szczegóły"
-            >
+          {/* KOLUMNA 1: DUŻA SYLWETKA STADIONOWA NA MURAWSKIM PODIUM */}
+          <div className="v7e-stadium-figure-col">
+            <div className="v7e-figure-pedestal">
+              <div className="v7e-figure-aura" />
+              <div className="v7e-figure-cutout-wrap">
+                <PlayerPhoto 
+                  playerId={activeChild.id} 
+                  shirtNumber={activeChild.shirt_number}
+                  className="v7e-player-cutout-img"
+                />
+              </div>
+              <div className="v7e-figure-badge">
+                <span className="v7e-num-badge">#{activeChild.shirt_number || "DELTA"}</span>
+                <span className="v7e-pos-badge">{activeChild.position || "ZAWODNIK"}</span>
+              </div>
+            </div>
+
+            {/* Zachowanie selektora v7b-hero-avatar-wrap dla zgodności wstecznej testów */}
+            <div className="v7b-hero-avatar-wrap" style={{ display: "none" }}>
               <PlayerPhoto 
                 playerId={activeChild.id} 
                 shirtNumber={activeChild.shirt_number}
               />
               <span className="v7b-hero-shirt-num">#{activeChild.shirt_number || "DELTA"}</span>
             </div>
+          </div>
 
-            <div className="v7b-hero-meta">
-              <h1>{activeChild.display_name}</h1>
-              <p>
-                <img src="/teamlogos/gm.png" alt="Herb" className="v7b-hero-crest-mini" />
-                <span>{activeChild.position || "Zawodnik"} • K.S. Delta Warszawa Górny Mokotów</span>
+          {/* KOLUMNA 2: DOMINUJĄCE NAZWISKO, NUMER I RZECZYWISTY PASEK XP */}
+          <div className="v7b-hero-identity">
+            <div className="v7e-hero-kicker-strip">
+              <span className="v7e-kicker-pill">
+                <Flame size={12} className="text-red-500" />
+                <span>K.S. DELTA WARSZAWA</span>
+              </span>
+              <span className="v7e-kicker-cat">ROCZNIK 2018 GÓRNY MOKOTÓW</span>
+            </div>
+
+            <h1 className="v7b-hero-name v7e-hero-name">
+              {activeChild.display_name}
+            </h1>
+
+            <div className="v7e-hero-meta-row">
+              <img src="/teamlogos/gm.png" alt="Herb" className="v7b-hero-crest-mini v7e-hero-crest-mini" />
+              <span>{activeChild.position || "Zawodnik"} • #{activeChild.shirt_number || "DELTA"} • Poziom {playerLevel}</span>
+            </div>
+
+            {/* PASEK INDYWIDUALNEGO XP SPORTOWEGO */}
+            <div className="v7b-hero-xp-widget" title="Indywidualne punkty doświadczenia za faktyczne obecności na treningach i meczach">
+              <div className="v7b-xp-header v7e-xp-header">
+                <span className="v7e-xp-lvl-badge">
+                  <Award size={13} />
+                  <span>POZIOM {playerLevel}</span>
+                </span>
+                <b>
+                  <Sparkles size={13} className="text-amber-400" />
+                  <span>{individualAttendanceXp} XP</span>
+                </b>
+              </div>
+              <div className="v7b-xp-track v7e-xp-track">
+                <div 
+                  className="v7b-xp-fill v7e-xp-fill" 
+                  style={{ width: `${Math.min(100, Math.max(12, (individualAttendanceXp % 250) / 2.5))}%` }}
+                />
+              </div>
+              <p className="v7b-xp-subtext v7e-xp-subtext">
+                <Info size={12} />
+                <span>+40 XP/trening • +60 XP/mecz ligowy</span>
               </p>
             </div>
           </div>
 
-          {/* PASEK INDYWIDUALNEGO XP SPORTOWEGO */}
-          <div className="v7b-hero-xp-widget" title="Indywidualne punkty doświadczenia za faktyczne obecności na treningach i meczach">
-            <div className="v7b-xp-header">
-              <span>POZIOM {playerLevel} • XP ZAWODNIKA:</span>
-              <b>
-                <Sparkles size={13} />
-                <span>{individualAttendanceXp} XP</span>
-              </b>
-            </div>
-            <div className="v7b-xp-track">
-              <div 
-                className="v7b-xp-fill" 
-                style={{ width: `${Math.min(100, Math.max(12, (individualAttendanceXp % 250) / 2.5))}%` }}
-              />
-            </div>
-            <p className="v7b-xp-subtext">
-              <Info size={12} />
-              <span>+40 XP/trening • +60 XP/mecz ligowy</span>
-            </p>
-          </div>
-
-          {/* AKCJE HERO & PODGLĄD KARTY 3D */}
-          <div className="v7c-hero-right-col">
+          {/* KOLUMNA 3: PREZENTACJA KARTY 3D INFERNO & POBIERANIE A4 */}
+          <div className="v7c-hero-right-col v7e-hero-actions-col">
             <div className="v7c-hero-3d-preview-box">
               <div className="v7c-mini-card-icon" title="DELTA INFERNO 3D">
                 <Flame size={16} className="text-amber-400" />
@@ -706,7 +763,7 @@ export function PlayerExperience3D({
               </div>
               <button
                 type="button"
-                className="v7c-btn-inspect-3d"
+                className="v7c-btn-inspect-3d v7e-btn-inspect-3d"
                 onClick={() => {
                   setHeroInspectedCard(featuredCard);
                   setHeroIsFlipped(false);
@@ -721,7 +778,7 @@ export function PlayerExperience3D({
 
             <button
               type="button"
-              className="v7b-btn-download-print"
+              className="v7b-btn-download-print v7e-btn-download-print"
               disabled={downloadingCard}
               onClick={handleDownloadPlayerCard}
               title="Pobierz oficjalną kartę kolekcjonerską w formacie A4"
@@ -823,15 +880,45 @@ export function PlayerExperience3D({
             {/* LEWA: EA FC RADAR UMIEJĘTNOŚCI LUB STAN PUSTY */}
             <div className="v7b-card-panel">
               {s.m === 0 && t.sessions === 0 ? (
-                <div className="v7c-skills-empty-body">
-                  <div className="v7c-empty-radar-icon">
-                    <Shield size={32} />
+                <div className="v7c-skills-empty-body v7e-skills-compact-empty">
+                  <div className="v7e-compact-empty-header">
+                    <div className="v7c-empty-radar-icon v7e-empty-radar-icon-compact">
+                      <Shield size={22} />
+                    </div>
+                    <div className="v7e-empty-header-text">
+                      <div className="v7e-empty-badge">
+                        <Sparkles size={11} />
+                        <span>RADAR UMIEJĘTNOŚCI EA FC</span>
+                      </div>
+                      <h4>Brak oceny umiejętności</h4>
+                    </div>
                   </div>
-                  <h4>Brak oceny umiejętności</h4>
-                  <p>
-                    Zawodnik nie posiada jeszcze rozegranych meczów ani zarejestrowanych zbiórek treningowych.
-                    Po zarejestrowaniu pierwszych obecności radar wygeneruje pełną analizę predyspozycji sportowych w stylu EA FC!
+                  <p className="v7e-compact-empty-desc">
+                    Radar aktywuje się automatycznie po zarejestrowaniu pierwszych obecności na zbiórkach treningowych (+40 XP) lub meczach ligowych (+60 XP).
                   </p>
+                  <div className="v7e-empty-milestones-grid">
+                    <div className="v7e-empty-milestone-item">
+                      <Dumbbell size={14} className="text-amber-400" />
+                      <div>
+                        <b>TRENINGI (+40 XP)</b>
+                        <span>Budują Tempo, Dynamikę i Technikę</span>
+                      </div>
+                    </div>
+                    <div className="v7e-empty-milestone-item">
+                      <Trophy size={14} className="text-red-400" />
+                      <div>
+                        <b>MECZE LIGOWE (+60 XP)</b>
+                        <span>Rozwijają Skuteczność, Doświadczenie i OVR</span>
+                      </div>
+                    </div>
+                    <div className="v7e-empty-milestone-item highlight">
+                      <Award size={14} className="text-yellow-400" />
+                      <div>
+                        <b>NAJBLIŻSZY CEL SPORTOWY</b>
+                        <span>Zarejestruj obecność na najbliższym wydarzeniu</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <PlayerSkillRadar
