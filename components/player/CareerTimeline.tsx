@@ -102,6 +102,12 @@ export function CareerTimeline({
       const att = matchAttendance.find(
         a => a.match_id === m.id && a.player_id === player.id
       );
+
+      // KRYTYCZNA REGUŁA PRIORYTETU: 'absent' od trenera wyklucza mecz i XP
+      if (att && att.status === "absent") {
+        return;
+      }
+
       const playerEvents = events.filter(
         e => e.match_id === m.id && (
           (e.player_id === player.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
@@ -183,6 +189,7 @@ export function CareerTimeline({
     const sortedPlayed = [...playedMatches]
       .filter(m => {
         const att = matchAttendance.find(a => a.match_id === m.id && a.player_id === player.id);
+        if (att && att.status === "absent") return false;
         const hasVerifiedEv = events.some(
           e => e.match_id === m.id && (
             (e.player_id === player.id && (e.event_type === "goal" || e.event_type === "mvp")) ||

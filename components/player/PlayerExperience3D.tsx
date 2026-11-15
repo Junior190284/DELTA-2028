@@ -41,6 +41,12 @@ import AchievementsHub from "@/components/AchievementsHub";
 import CareerTimeline from "./CareerTimeline";
 import PlayerInfernoCards from "./PlayerInfernoCards";
 import DynamicStadiumExperience, { type StadiumVariant } from "./DynamicStadiumExperience";
+import { 
+  calculateStadiumProgression, 
+  type StadiumProgressionResult, 
+  STADIUM_TIERS, 
+  type StadiumTierId 
+} from "@/lib/stadium/progression";
 import "./player-career-hub.css";
 
 export interface Player {
@@ -393,8 +399,9 @@ export function PlayerExperience3D({
   const s: Stat = stats[activeChild.id] || { m: 0, starts: 0, captain: 0, g: 0, a: 0, mvp: 0 };
   const t: TrainingStat = trainingStats[activeChild.id] || { sessions: 0, goals: 0, assists: 0, ga: 0, attendanceStreak: 0, games: 0, wins: 0 };
 
-  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (V7F.1A Integrity: wyłącznie zweryfikowana obecność na boisku)
-  // 1. Treningi (+40 XP): wyłącznie status "present" zatwierdzony przez trenera na odbytej sesji (data <= dziś)
+  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (V7F.1B Integrity & Priority Rule)
+  // 1. Treningi (+40 XP): wyłącznie status "present" zatwierdzony przez trenera na odbytej sesji (data <= dziś).
+  //    Użycie Set<string> gwarantuje naliczenie dokładnie jeden raz na unikalną sesję.
   const presentTrainings = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const pastOrTodayTrainingIds = new Set(
@@ -403,28 +410,41 @@ export function PlayerExperience3D({
         .map(tr => tr.id)
     );
 
-    return localTrAttendance.filter(a => {
-      if (a.player_id !== activeChild.id) return false;
-      if (a.status !== "present") return false;
-      // Jeśli lista sesji treningowych jest dostępna, weryfikujemy czy data minęła
+    const verifiedTrainingIds = new Set<string>();
+    localTrAttendance.forEach(a => {
+      if (a.player_id !== activeChild.id) return;
+      if (a.status !== "present") return;
       if (trainingSessions && trainingSessions.length > 0) {
-        return pastOrTodayTrainingIds.has(a.training_id);
+        if (pastOrTodayTrainingIds.has(a.training_id)) {
+          verifiedTrainingIds.add(a.training_id);
+        }
+      } else {
+        verifiedTrainingIds.add(a.training_id);
       }
-      return true;
-    }).length;
+    });
+
+    return verifiedTrainingIds.size;
   }, [localTrAttendance, activeChild.id, trainingSessions]);
 
-  // 2. Mecze (+60 XP): wyłącznie rozegrane mecze ligowe (status === "played") z potwierdzonym udziałem:
-  //    (status === "present" od trenera LUB oficjalny wpis zawodnika w protokole match_events)
+  // 2. Mecze (+60 XP): wyłącznie rozegrane mecze ligowe (status === "played") z potwierdzonym udziałem.
+  //    REGUŁA PRIORYTETU: Wyraźna nieobecność od trenera (status === 'absent') ma bezwzględny priorytet
+  //    i wyklucza zaliczenie meczu, nawet w razie sprzecznego lub omyłkowego wpisu w match_events!
   const presentMatches = useMemo(() => {
     const played = (matches || []).filter(m => m.status === "played");
     if (played.length === 0) return 0;
 
     const verifiedMatchIds = new Set<string>();
     played.forEach(m => {
-      const hasPresentAtt = localAttendance.some(
-        a => a.match_id === m.id && a.player_id === activeChild.id && a.status === "present"
+      const att = localAttendance.find(
+        a => a.match_id === m.id && a.player_id === activeChild.id
       );
+
+      // KRYTYCZNA REGUŁA PRIORYTETU: 'absent' wyklucza przyznanie XP
+      if (att && att.status === "absent") {
+        return;
+      }
+
+      const hasPresentAtt = att && att.status === "present";
       const hasVerifiedEvent = (events || []).some(
         e => e.match_id === m.id &&
           ((e.player_id === activeChild.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
@@ -444,6 +464,12 @@ export function PlayerExperience3D({
   const currentLvlXp = individualAttendanceXp % 250;
   const neededLvlXp = 250;
   const progressPercent = Math.min(100, Math.round((currentLvlXp / neededLvlXp) * 100));
+
+  // SILNIK PROGRESJI STADIONOWEJ V7F.1B
+  const stadiumProgression: StadiumProgressionResult = useMemo(
+    () => calculateStadiumProgression(individualAttendanceXp),
+    [individualAttendanceXp]
+  );
 
   // Duet chemii z zespołem
   const pair = chemistry.find(x => x.a.id === activeChild.id || x.b.id === activeChild.id);
@@ -828,6 +854,41 @@ export function PlayerExperience3D({
                 <Info size={12} />
                 <span>+40 XP/trening • +60 XP/mecz ligowy</span>
               </p>
+
+              {/* V7F.1B WSKAŹNIK PROGRESJI STADIONOWEJ: MOJA DROGA DO MISTRZOSTWA */}
+              <div className="v7f-stadium-progression-widget" data-testid="stadium-progression-widget">
+                <div className="v7f-stadium-header">
+                  <div className="v7f-stadium-badge" style={{ borderColor: stadiumProgression.currentTier.accentColor }}>
+                    <Trophy size={12} style={{ color: stadiumProgression.currentTier.accentColor }} />
+                    <span>STADION: <b>{stadiumProgression.currentTier.name.toUpperCase()}</b></span>
+                  </div>
+                  <span className="v7f-stadium-xp-chip">
+                    {individualAttendanceXp} / {stadiumProgression.nextTier ? `${stadiumProgression.nextTier.minXp} XP` : "MAX"}
+                  </span>
+                </div>
+
+                <div className="v7f-stadium-track" title={`Postęp do stadionu ${stadiumProgression.nextTier?.name || "Mistrzowski"}: ${stadiumProgression.progressPercent}%`}>
+                  <div 
+                    className="v7f-stadium-fill"
+                    style={{ 
+                      width: `${stadiumProgression.progressPercent}%`,
+                      backgroundColor: stadiumProgression.currentTier.accentColor 
+                    }}
+                  />
+                </div>
+
+                <div className="v7f-stadium-footer">
+                  {stadiumProgression.nextTier ? (
+                    <span>
+                      Kolejny stadion: <b>{stadiumProgression.nextTier.name}</b> (brakuje <b>{stadiumProgression.remainingXp} XP</b>)
+                    </span>
+                  ) : (
+                    <span className="v7f-stadium-max-label">
+                      🏆 Osiągnięto najwyższy etap stadionowy: <b>Legenda DELTY</b>
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -868,15 +929,15 @@ export function PlayerExperience3D({
               <span>{downloadingCard ? "GENEROWANIE..." : "POBIERZ KARTĘ A4"}</span>
             </button>
 
-            {/* Przycisk Moja Droga do Mistrzostwa V7E.2 */}
+            {/* Przycisk Moja Droga do Mistrzostwa V7E.2 / V7F.1B */}
             <button
               type="button"
               className="v7e2-btn-road-to-mastery"
               onClick={() => setIsFullscreenStadiumOpen(true)}
-              title="Otwórz pełnoekranową prezentację stadionową: Moja Droga do Mistrzostwa"
+              title={`Otwórz prezentację stadionową: ${stadiumProgression.currentTier.name}`}
             >
               <Trophy size={14} className="text-amber-400" />
-              <span>MOJA DROGA DO MISTRZOSTWA</span>
+              <span>DROGA DO MISTRZOSTWA • {stadiumProgression.currentTier.name.toUpperCase()}</span>
             </button>
           </div>
         </div>
@@ -1509,11 +1570,12 @@ export function PlayerExperience3D({
         document.body
       )}
 
-      {/* 8. PEŁNOEKRANOWA PREZENTACJA STADIONOWA V7E.2: MOJA DROGA DO MISTRZOSTWA */}
+      {/* 8. PEŁNOEKRANOWA PREZENTACJA STADIONOWA V7E.2 / V7F.1B: MOJA DROGA DO MISTRZOSTWA */}
       <DynamicStadiumExperience
         player={activeChild}
         level={playerLevel}
         xp={individualAttendanceXp}
+        progression={stadiumProgression}
         stats={{
           matches: s.m,
           trainings: t.sessions,

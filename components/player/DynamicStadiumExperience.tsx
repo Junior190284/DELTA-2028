@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { 
   Sparkles, 
@@ -14,9 +14,17 @@ import {
   ChevronRight,
   Shield,
   Layers,
-  Compass
+  Compass,
+  Lock,
+  CheckCircle2
 } from "lucide-react";
 import type { Player } from "./PlayerExperience3D";
+import { 
+  calculateStadiumProgression, 
+  type StadiumProgressionResult, 
+  STADIUM_TIERS,
+  type StadiumTierConfig 
+} from "@/lib/stadium/progression";
 
 export type StadiumVariant = "debiutant" | "mlody_talent";
 
@@ -64,6 +72,7 @@ export interface DynamicStadiumExperienceProps {
   player: Player;
   level: number;
   xp: number;
+  progression?: StadiumProgressionResult;
   stats?: {
     matches: number;
     trainings: number;
@@ -80,6 +89,7 @@ export function DynamicStadiumExperience({
   player,
   level,
   xp,
+  progression,
   stats,
   variant,
   onVariantChange,
@@ -88,6 +98,12 @@ export function DynamicStadiumExperience({
 }: DynamicStadiumExperienceProps) {
   const [mounted, setMounted] = useState(false);
   const [activeVariant, setActiveVariant] = useState<StadiumVariant>(variant);
+  const [showPromotionBanner, setShowPromotionBanner] = useState(false);
+
+  const progressionResult: StadiumProgressionResult = useMemo(
+    () => progression || calculateStadiumProgression(xp),
+    [progression, xp]
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -96,6 +112,19 @@ export function DynamicStadiumExperience({
   useEffect(() => {
     setActiveVariant(variant);
   }, [variant]);
+
+  // Sprawdzenie jednorazowego wyświetlenia powiadomienia o awansie w bieżącej sesji
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const storageKey = `delta_stadium_tier_seen_${player.id}_${progressionResult.currentTier.id}`;
+      const seen = sessionStorage.getItem(storageKey);
+      if (!seen && progressionResult.currentTier.id !== "debiutant") {
+        setShowPromotionBanner(true);
+        sessionStorage.setItem(storageKey, "true");
+      }
+    } catch {}
+  }, [isOpen, player.id, progressionResult.currentTier.id]);
 
   // Handle escape key
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -223,6 +252,26 @@ export function DynamicStadiumExperience({
         </button>
       </div>
 
+      {/* LEKKI BANER CELEBRACJI AWANSU (V7F.1B - zgodny z prefers-reduced-motion, max 1 raz na sesję) */}
+      {showPromotionBanner && (
+        <div className="v7f-promotion-banner" role="status" aria-live="polite">
+          <div className="v7f-promotion-content">
+            <Sparkles size={16} className="text-amber-400" />
+            <span>
+              AWANS STADIONOWY! Osiągnięto etap: <b>{progressionResult.currentTier.name.toUpperCase()}</b> ({progressionResult.currentTier.minXp}+ XP)
+            </span>
+          </div>
+          <button 
+            type="button" 
+            className="v7f-promotion-close" 
+            onClick={() => setShowPromotionBanner(false)}
+            aria-label="Zamknij baner awansu"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* 3. GŁÓWNA SCENA STADIONOWA */}
       <div className="v7e2-stage-viewport">
         {/* LEWA STRONA: KARTA ETAPU ROZWOJU */}
@@ -275,6 +324,42 @@ export function DynamicStadiumExperience({
               </div>
             </div>
           )}
+
+          {/* V7F.1B ŚCIEŻKA PROGRESJI: 5 ETAPÓW STADIONOWYCH */}
+          <div className="v7f-stadium-pathway-card">
+            <div className="v7f-pathway-header">
+              <Layers size={13} className="text-amber-400" />
+              <span>DROGA DO MISTRZOSTWA (PROGI STADIONÓW)</span>
+            </div>
+            <div className="v7f-pathway-list">
+              {STADIUM_TIERS.map(tier => {
+                const isUnlocked = progressionResult.unlockedTierIds.includes(tier.id);
+                const isCurrent = progressionResult.currentTier.id === tier.id;
+
+                return (
+                  <div 
+                    key={tier.id}
+                    className={`v7f-pathway-item ${isCurrent ? "current" : ""} ${isUnlocked ? "unlocked" : "locked"}`}
+                  >
+                    <span className="v7f-pathway-icon">
+                      {isUnlocked ? "✓" : "🔒"}
+                    </span>
+                    <div className="v7f-pathway-details">
+                      <div className="v7f-pathway-line">
+                        <b>{tier.name}</b>
+                        <span className="v7f-pathway-xp">{tier.minXp} XP</span>
+                      </div>
+                      <small className="v7f-pathway-sub">
+                        {isUnlocked 
+                          ? (tier.hasGraphic ? "Scena odblokowana" : "Etap osiągnięty")
+                          : (tier.hasGraphic ? `Wymaga ${tier.minXp} XP` : `Wymaga ${tier.minXp} XP • W przygotowaniu`)}
+                      </small>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* ŚRODEK: POSTAĆ ZAWODNIKA NA PODIUM W CZERWONYM STROJU DELTY */}
@@ -350,6 +435,41 @@ export function DynamicStadiumExperience({
             <div className="v7e2-hud-xp-footer">
               <Info size={12} />
               <span>+40 XP/trening • +60 XP/mecz ligowy</span>
+            </div>
+          </div>
+
+          {/* V7F.1B WSKAŹNIK PROGRESJI DO NASTĘPNEGO STADIONU */}
+          <div className="v7e2-hud-stadium-progression-box" data-testid="hud-stadium-progression">
+            <div className="v7e2-hud-stadium-header">
+              <span className="v7e2-hud-stadium-tier-tag" style={{ borderColor: progressionResult.currentTier.accentColor }}>
+                <Trophy size={12} style={{ color: progressionResult.currentTier.accentColor }} />
+                <span>ETAP: <b>{progressionResult.currentTier.name.toUpperCase()}</b></span>
+              </span>
+              <span className="v7e2-hud-stadium-pct">
+                {progressionResult.progressPercent}%
+              </span>
+            </div>
+
+            <div className="v7e2-hud-stadium-track" title={`Postęp do stadionu ${progressionResult.nextTier?.name || "Mistrzowski"}: ${progressionResult.progressPercent}%`}>
+              <div 
+                className="v7e2-hud-stadium-fill" 
+                style={{ 
+                  width: `${progressionResult.progressPercent}%`,
+                  backgroundColor: progressionResult.currentTier.accentColor 
+                }}
+              />
+            </div>
+
+            <div className="v7e2-hud-stadium-footer">
+              {progressionResult.nextTier ? (
+                <span>
+                  Kolejny stadion: <b>{progressionResult.nextTier.name}</b> (brakuje <b>{progressionResult.remainingXp} XP</b>)
+                </span>
+              ) : (
+                <span className="text-amber-400 font-bold">
+                  🏆 Osiągnięto najwyższy laur stadionowy: Legenda DELTY
+                </span>
+              )}
             </div>
           </div>
 
