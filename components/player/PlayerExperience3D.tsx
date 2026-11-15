@@ -785,7 +785,7 @@ export function PlayerExperience3D({
           </div>
         </div>
 
-        <div className="v7b-hero-main-row">
+        <div className="v7b-hero-main-row v7e-hero-main-row">
           {/* KOLUMNA 1: DUŻA SYLWETKA STADIONOWA NA MURAWSKIM PODIUM */}
           <div className="v7e-stadium-figure-col">
             <div className="v7e-figure-pedestal">
@@ -814,7 +814,7 @@ export function PlayerExperience3D({
           </div>
 
           {/* KOLUMNA 2: DOMINUJĄCE NAZWISKO, NUMER I RZECZYWISTY PASEK XP */}
-          <div className="v7b-hero-identity">
+          <div className="v7b-hero-identity v7e-hero-center-col">
             <div className="v7e-hero-kicker-strip">
               <span className="v7e-kicker-pill">
                 <Flame size={12} className="text-red-500" />
