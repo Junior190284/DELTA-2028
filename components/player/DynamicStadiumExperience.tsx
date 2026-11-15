@@ -126,7 +126,11 @@ export function DynamicStadiumExperience({
   }
 
   const currentCfg = STADIUM_CONFIGS[activeVariant];
-  const shirtNumText = player.shirt_number ? String(player.shirt_number) : "DELTA";
+  const hasShirtNumber = Boolean(player.shirt_number && String(player.shirt_number).trim() !== "");
+  const rawShirtNumber = hasShirtNumber ? String(player.shirt_number).trim() : null;
+  const isSingleDigit = Boolean(rawShirtNumber && rawShirtNumber.length === 1);
+  const isDoubleDigit = Boolean(rawShirtNumber && rawShirtNumber.length === 2);
+  const podiumBadgeText = rawShirtNumber ? `#${rawShirtNumber}` : "#DELTA";
 
   const content = (
     <div 
@@ -164,9 +168,9 @@ export function DynamicStadiumExperience({
         <div className="v7e2-pitch-ground-glow" />
         <div className="v7e2-ambient-mist" />
 
-        {/* Wielki numer znaku wodnego */}
-        <div className="v7e2-watermark-num">
-          #{shirtNumText}
+        {/* Zmniejszony i stonowany numer znaku wodnego w tle */}
+        <div className="v7e2-watermark-num" aria-hidden="true">
+          {podiumBadgeText}
         </div>
       </div>
 
@@ -286,15 +290,21 @@ export function DynamicStadiumExperience({
               />
             </picture>
 
-            {/* Dynamiczny numer koszulki na stroju */}
-            <div className="v7e2-jersey-dynamic-num" aria-hidden="true">
-              {shirtNumText}
-            </div>
+            {/* Dynamiczny numer koszulki precyzyjnie na plecach czerwonej koszulki */}
+            {rawShirtNumber ? (
+              <div 
+                className={`v7e2-jersey-dynamic-num ${isSingleDigit ? "single-digit" : isDoubleDigit ? "double-digit" : "multi-digit"}`} 
+                aria-label={`Numer na plecach koszulki: ${rawShirtNumber}`}
+                data-testid="jersey-back-number"
+              >
+                {rawShirtNumber}
+              </div>
+            ) : null}
           </div>
 
           {/* Etykieta tożsamości na podium */}
           <div className="v7e2-athlete-podium-badge">
-            <span className="v7e2-podium-num">#{shirtNumText}</span>
+            <span className="v7e2-podium-num">{podiumBadgeText}</span>
             <span className="v7e2-podium-divider">•</span>
             <span className="v7e2-podium-pos">{player.position || "ZAWODNIK"}</span>
           </div>

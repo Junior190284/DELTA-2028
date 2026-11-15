@@ -151,3 +151,42 @@ test("V7E.2 CSS Styling, Animations and Accessibility", () => {
   assert.ok(cssCode.includes("@media (max-width: 480px)"), "Must support 390px mobile");
   assert.ok(cssCode.includes("@media (max-width: 360px)"), "Must support 320px mobile");
 });
+
+test("V7E.3 Stadium Visual Polish — Jersey Back Number, Subdued Watermark, and Athlete Glow", () => {
+  const cssPath = path.join(rootDir, "components/player/player-career-hub.css");
+  const compPath = path.join(rootDir, "components/player/DynamicStadiumExperience.tsx");
+
+  const cssCode = fs.readFileSync(cssPath, "utf8");
+  const compCode = fs.readFileSync(compPath, "utf8");
+
+  // 1. Jersey back number position (moved up from hips ~42% to back ~29.5%)
+  assert.ok(
+    cssCode.includes("top: 29.5%"),
+    "Jersey number must be positioned on the upper back (top: 29.5%)"
+  );
+  assert.ok(
+    compCode.includes("single-digit") && compCode.includes("double-digit"),
+    "DynamicStadiumExperience must support tailored styling for single and double digit shirt numbers"
+  );
+  assert.ok(
+    compCode.includes("rawShirtNumber ?"),
+    "When player has no shirt number, number on jersey must be safely omitted"
+  );
+
+  // 2. Subdued background watermark (reduced size and opacity)
+  assert.ok(
+    cssCode.includes("opacity: 0.035"),
+    "Watermark number opacity must be reduced to ~0.035 to avoid competing with athlete"
+  );
+
+  // 3. Athlete lighting & golden stadium rim glow
+  assert.ok(
+    cssCode.includes("brightness(1.12)") || cssCode.includes("brightness(1.1)"),
+    "Athlete image must be subtly brightened"
+  );
+  assert.ok(
+    cssCode.includes("rgba(246, 201, 82,"),
+    "Athlete and pedestal must feature golden stadium rim lighting"
+  );
+});
+

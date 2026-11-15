@@ -1921,22 +1921,22 @@
   }
 }
 
-/* GIANT WATERMARK SHIRT NUMBER IN THE BACKGROUND */
+/* DECORATIVE WATERMARK SHIRT NUMBER IN THE BACKGROUND (V7E.3 POLISHED) */
 .v7e-hero-watermark-num {
   position: absolute;
   right: 2%;
-  bottom: -15px;
-  font-size: clamp(120px, 16vw, 240px);
+  bottom: -6px;
+  font-size: clamp(70px, 9vw, 130px);
   font-weight: 950;
   line-height: 0.8;
   letter-spacing: -0.06em;
   color: #f6c952;
-  opacity: 0.07;
+  opacity: 0.035;
   pointer-events: none;
   user-select: none;
   z-index: 1;
   font-family: var(--font-varsity, 'Montserrat', 'Inter', -apple-system, sans-serif);
-  text-shadow: 0 0 40px rgba(246, 201, 82, 0.3);
+  text-shadow: 0 0 20px rgba(246, 201, 82, 0.15);
 }
 
 /* STADIUM DUAL SPOTLIGHT BEAMS */
@@ -2101,7 +2101,7 @@
   position: absolute;
   inset: 10%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(226, 46, 48, 0.45) 0%, rgba(246, 201, 82, 0.22) 50%, transparent 75%);
+  background: radial-gradient(circle, rgba(246, 201, 82, 0.4) 0%, rgba(226, 46, 48, 0.35) 50%, transparent 75%);
   filter: blur(28px);
   pointer-events: none;
   z-index: 1;
@@ -2125,7 +2125,7 @@
   max-width: 210px !important;
   max-height: 250px !important;
   object-fit: contain !important;
-  filter: drop-shadow(0 0 24px rgba(226, 46, 48, 0.4)) drop-shadow(0 14px 28px rgba(0, 0, 0, 0.95)) !important;
+  filter: brightness(1.1) drop-shadow(0 0 24px rgba(246, 201, 82, 0.4)) drop-shadow(0 0 32px rgba(226, 46, 48, 0.35)) drop-shadow(0 14px 28px rgba(0, 0, 0, 0.95)) !important;
   display: block;
 }
 
@@ -2751,14 +2751,14 @@
 
 .v7e2-watermark-num {
   position: absolute;
-  right: 5%;
-  bottom: 5%;
-  font-size: clamp(140px, 18vw, 320px);
+  right: 4%;
+  bottom: 4%;
+  font-size: clamp(80px, 10vw, 150px);
   font-weight: 950;
   line-height: 0.8;
   letter-spacing: -0.06em;
   color: #f6c952;
-  opacity: 0.06;
+  opacity: 0.035;
   pointer-events: none;
   user-select: none;
   font-family: var(--font-varsity, 'Montserrat', 'Inter', sans-serif);
@@ -3027,23 +3027,24 @@
 
 .v7e2-pedestal-light-ring {
   position: absolute;
-  bottom: 20px;
+  bottom: 15px;
   width: 320px;
   height: 90px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(226, 46, 48, 0.5) 0%, rgba(246, 201, 82, 0.3) 45%, transparent 75%);
+  background: radial-gradient(ellipse, rgba(246, 201, 82, 0.5) 0%, rgba(226, 46, 48, 0.35) 45%, transparent 75%);
   filter: blur(20px);
   pointer-events: none;
 }
 
 .v7e2-athlete-cutout-wrap {
   position: relative;
-  width: 100%;
-  max-width: 440px;
-  height: 100%;
-  max-height: 580px;
+  width: auto;
+  height: 560px;
+  max-height: calc(100vh - 220px);
+  aspect-ratio: 1024 / 1536;
+  margin: 0 auto;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   z-index: 5;
 }
@@ -3051,9 +3052,11 @@
 .v7e2-athlete-img {
   width: 100%;
   height: 100%;
-  max-height: 560px;
   object-fit: contain;
-  filter: drop-shadow(0 0 36px rgba(226, 46, 48, 0.45)) drop-shadow(0 20px 45px rgba(0, 0, 0, 0.95));
+  filter: brightness(1.12) contrast(1.06) 
+          drop-shadow(0 0 30px rgba(246, 201, 82, 0.45)) 
+          drop-shadow(0 0 45px rgba(226, 46, 48, 0.4)) 
+          drop-shadow(0 20px 45px rgba(0, 0, 0, 0.95));
   animation: v7e2PlayerEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -3070,18 +3073,36 @@
 
 .v7e2-jersey-dynamic-num {
   position: absolute;
-  top: 42%;
-  left: 50%;
+  top: 29.5%;
+  left: 49.5%;
   transform: translate(-50%, -50%);
-  font-family: var(--font-varsity, 'Montserrat', sans-serif);
-  font-size: clamp(26px, 3.5vw, 38px);
+  font-family: var(--font-varsity, 'Montserrat', 'Inter', sans-serif);
   font-weight: 950;
   color: #ffffff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
-  letter-spacing: -0.04em;
+  line-height: 1;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    0 0 2px rgba(0, 0, 0, 0.95);
   pointer-events: none;
   user-select: none;
   z-index: 6;
+  text-align: center;
+}
+
+.v7e2-jersey-dynamic-num.single-digit {
+  font-size: clamp(38px, 4.8vw, 54px);
+  letter-spacing: 0;
+}
+
+.v7e2-jersey-dynamic-num.double-digit {
+  font-size: clamp(30px, 4vw, 44px);
+  letter-spacing: -0.04em;
+}
+
+.v7e2-jersey-dynamic-num.multi-digit {
+  font-size: clamp(24px, 3.2vw, 34px);
+  letter-spacing: -0.06em;
 }
 
 .v7e2-athlete-podium-badge {
@@ -3274,8 +3295,8 @@
   .v7e2-athlete-stage {
     min-height: 440px;
   }
-  .v7e2-athlete-img {
-    max-height: 420px;
+  .v7e2-athlete-cutout-wrap {
+    height: 440px;
   }
 }
 
@@ -3290,11 +3311,17 @@
     padding: 16px 14px 60px;
   }
   .v7e2-athlete-stage {
-    min-height: 380px;
+    min-height: 400px;
     order: 1;
   }
-  .v7e2-athlete-img {
-    max-height: 360px;
+  .v7e2-athlete-cutout-wrap {
+    height: 380px;
+  }
+  .v7e2-jersey-dynamic-num.single-digit {
+    font-size: 38px;
+  }
+  .v7e2-jersey-dynamic-num.double-digit {
+    font-size: 32px;
   }
   .v7e2-stage-info-card {
     order: 2;
@@ -3333,14 +3360,19 @@
     min-height: 40px;
   }
   .v7e2-athlete-stage {
-    min-height: 320px;
+    min-height: 330px;
   }
-  .v7e2-athlete-img {
-    max-height: 300px;
+  .v7e2-athlete-cutout-wrap {
+    height: 310px;
   }
   .v7e2-jersey-dynamic-num {
-    font-size: 24px;
-    top: 40%;
+    top: 29.5%;
+  }
+  .v7e2-jersey-dynamic-num.single-digit {
+    font-size: 30px;
+  }
+  .v7e2-jersey-dynamic-num.double-digit {
+    font-size: 25px;
   }
   .v7e2-hud-name {
     font-size: 20px;
@@ -3359,13 +3391,19 @@
     display: none;
   }
   .v7e2-athlete-stage {
-    min-height: 270px;
+    min-height: 280px;
   }
-  .v7e2-athlete-img {
-    max-height: 250px;
+  .v7e2-athlete-cutout-wrap {
+    height: 260px;
   }
   .v7e2-jersey-dynamic-num {
-    font-size: 20px;
+    top: 29.5%;
+  }
+  .v7e2-jersey-dynamic-num.single-digit {
+    font-size: 25px;
+  }
+  .v7e2-jersey-dynamic-num.double-digit {
+    font-size: 21px;
   }
 }
 
