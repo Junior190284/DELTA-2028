@@ -1780,3 +1780,29 @@
     transform: none !important;
   }
 }
+
+/* 14. V7D.1 PLAYER EXPERIENCE 3.0 ROLE PILLS */
+.v7d-role-pill {
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.v7d-role-pill.parent {
+  background: rgba(246, 201, 82, 0.12);
+  border: 1px solid rgba(246, 201, 82, 0.35);
+  color: #f6c952;
+}
+
+.v7d-role-pill.squad {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.v112-player-page-view {
+  width: 100%;
+}

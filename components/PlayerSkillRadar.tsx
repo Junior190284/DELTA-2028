@@ -65,11 +65,19 @@ export default function PlayerSkillRadar({ stats, playerName, position }: SkillR
     ];
   }, [stats]);
 
-  // Obliczenie Overall Rating (OVR)
+  const hasStats = Boolean(
+    (stats.matches || 0) > 0 || 
+    (stats.trainings || 0) > 0 || 
+    (stats.goals || 0) > 0 || 
+    (stats.assists || 0) > 0
+  );
+
+  // Obliczenie Overall Rating (OVR) — eliminacja fikcyjnego 65 OVR dla zawodników bez aktywności
   const ovr = useMemo(() => {
+    if (!hasStats) return null;
     const avg = attributes.reduce((sum, a) => sum + a.val, 0) / attributes.length;
     return Math.round(avg);
-  }, [attributes]);
+  }, [attributes, hasStats]);
 
   // Styl gry na podstawie wiodącego atrybutu
   const playStyle = useMemo(() => {
@@ -128,17 +136,17 @@ export default function PlayerSkillRadar({ stats, playerName, position }: SkillR
             <span>RADAR UMIEJĘTNOŚCI</span>
           </div>
           <h3>ATRYBUTY MECZOWE & TRENINGOWE</h3>
-          <p>Profil motoryczno-piłkarski budowany na podstawie realnych statystyk z boiska.</p>
+          <p>{hasStats ? "Profil motoryczno-piłkarski budowany na podstawie realnych statystyk z boiska." : "Zawodnik przed pierwszym oficjalnym występem lub treningiem."}</p>
         </div>
 
         <div className="v200-ovr-card">
           <div className="v200-ovr-value">
-            <strong>{ovr}</strong>
-            <small>OVR</small>
+            <strong>{ovr !== null ? ovr : "—"}</strong>
+            <small>{ovr !== null ? "OVR" : "NOWY"}</small>
           </div>
           <div className="v200-playstyle-pill" style={{ borderColor: `${playStyle.color}66`, color: playStyle.color }}>
             <span style={{ backgroundColor: playStyle.color }} />
-            {playStyle.title}
+            {hasStats ? playStyle.title : "POCZĄTEK DROGI"}
           </div>
         </div>
       </div>

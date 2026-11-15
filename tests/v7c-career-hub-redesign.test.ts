@@ -55,7 +55,9 @@ test("V7C Player Career Hub Premium Redesign — CSS gap elimination and respons
 
 test("V7C Player Hero — Silhouette safety, Level, and 3D Card Preview", () => {
   const photoPath = path.join(rootDir, "components/PlayerPhoto.tsx");
-  const hubPath = path.join(rootDir, "components/player/PlayerCareerHub.tsx");
+  const hubPath = fs.existsSync(path.join(rootDir, "components/player/PlayerExperience3D.tsx"))
+    ? path.join(rootDir, "components/player/PlayerExperience3D.tsx")
+    : path.join(rootDir, "components/player/PlayerCareerHub.tsx");
 
   const photoCode = fs.readFileSync(photoPath, "utf8");
   const hubCode = fs.readFileSync(hubPath, "utf8");
@@ -100,7 +102,10 @@ test("V7C Player Hero — Silhouette safety, Level, and 3D Card Preview", () => 
 });
 
 test("V7C 5 Core Sections, 4-Stat Panel, Radar Fallback, and Next Objective", () => {
-  const hubCode = fs.readFileSync(path.join(rootDir, "components/player/PlayerCareerHub.tsx"), "utf8");
+  const hubFile = fs.existsSync(path.join(rootDir, "components/player/PlayerExperience3D.tsx"))
+    ? path.join(rootDir, "components/player/PlayerExperience3D.tsx")
+    : path.join(rootDir, "components/player/PlayerCareerHub.tsx");
+  const hubCode = fs.readFileSync(hubFile, "utf8");
   const timelineCode = fs.readFileSync(path.join(rootDir, "components/player/CareerTimeline.tsx"), "utf8");
   const cardsCode = fs.readFileSync(path.join(rootDir, "components/player/PlayerInfernoCards.tsx"), "utf8");
 
