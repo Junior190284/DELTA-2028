@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
 import {
   X,
   FastForward,
@@ -39,7 +40,14 @@ import { getCardVisualTheme } from "@/components/collection-3d/themes";
 import type { PackDrawnItem } from "@/lib/cards/packExperienceController";
 import { getRarityPresentation } from "@/lib/cards/rarityPresentation";
 import { cardSound } from "@/lib/cards/audio";
+import { mapPackResultToInferno3D } from "./infernoCardBridge";
+import type { InfernoPackCanvasHandle } from "./InfernoPackCanvas";
 import "./cinematic-pack.css";
+
+const InfernoPackCanvas = dynamic(
+  () => import("./InfernoPackCanvas"),
+  { ssr: false }
+);
 
 type UnifiedShowcaseEntry = {
   slotKey: string;
@@ -63,6 +71,7 @@ export interface CinematicPackExperienceProps {
   unopenedCount?: number;
   reducedMotion?: boolean;
   autoStart?: boolean;
+  enableInferno3DCanvas?: boolean;
 }
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -79,7 +88,8 @@ export default function CinematicPackExperience({
   openPackFetch,
   unopenedCount = 0,
   reducedMotion = false,
-  autoStart = false
+  autoStart = false,
+  enableInferno3DCanvas = false,
 }: CinematicPackExperienceProps) {
   const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -107,6 +117,14 @@ export default function CinematicPackExperience({
     () => result || mockResult || serverResult,
     [result, mockResult, serverResult]
   );
+
+  const [inferno3DFallback, setInferno3DFallback] = useState(false);
+  const infernoCanvasRef = useRef<InfernoPackCanvasHandle | null>(null);
+
+  const inferno3DPresentation = useMemo(() => {
+    if (!activeResult) return null;
+    return mapPackResultToInferno3D(activeResult);
+  }, [activeResult]);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -318,6 +336,17 @@ export default function CinematicPackExperience({
   const handleSkip = useCallback(() => {
     controller?.dispatch("SKIP");
   }, [controller]);
+
+  const handleInfernoCanvasComplete = useCallback(() => {
+    if (state?.phase && state.phase !== "SUMMARY" && state.phase !== "COMPLETE") {
+      controller?.dispatch("SKIP");
+    }
+  }, [controller, state?.phase]);
+
+  const handleInfernoCanvasError = useCallback((err: string) => {
+    console.warn("[CinematicPackExperience] 3D Canvas error, switching to safe fallback:", err);
+    setInferno3DFallback(true);
+  }, []);
 
   const handleClose = useCallback(() => {
     openRequestGenRef.current += 1;
@@ -549,7 +578,16 @@ export default function CinematicPackExperience({
       ? heroShowcase
       : null;
 
-  const isStadiumSceneActive = Boolean(isStadiumPhase && activeStageShowcase);
+  const is3DCanvasActive = Boolean(
+    enableInferno3DCanvas &&
+    !inferno3DFallback &&
+    inferno3DPresentation &&
+    state?.phase &&
+    state.phase !== "READY" &&
+    state.phase !== "SUMMARY" &&
+    state.phase !== "COMPLETE"
+  );
+  const isStadiumSceneActive = Boolean(isStadiumPhase && activeStageShowcase && !is3DCanvasActive);
   const isHeroReveal = activeStagePhase === "HERO_REVEAL";
   const isCardInteractive = activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL";
 
@@ -951,6 +989,34 @@ export default function CinematicPackExperience({
       )}
 
       {/* ===================================================================== */}
+      {/* 2B. INFERNO 3D THREE.JS ENGINE (PACK TEAR, MULTI-CARD FAN & HERO WALKOUT) */}
+      {/* ===================================================================== */}
+      {is3DCanvasActive && inferno3DPresentation && (
+        <div
+          data-testid="inferno-3d-canvas-container"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 2,
+            paddingTop: `${layoutMetrics.headerHeight}px`,
+            paddingBottom: `${layoutMetrics.footerHeight}px`,
+            boxSizing: "border-box"
+          }}
+        >
+          <InfernoPackCanvas
+            ref={infernoCanvasRef}
+            cards={inferno3DPresentation.cards}
+            heroCardId={inferno3DPresentation.heroCard?.id}
+            cardCount={inferno3DPresentation.totalCount as any}
+            autoPlay={true}
+            reducedMotion={effectiveReducedMotion}
+            onComplete={handleInfernoCanvasComplete}
+            onError={handleInfernoCanvasError}
+          />
+        </div>
+      )}
+
+      {/* ===================================================================== */}
       {/* 3. MAIN CONTENT (Driven purely by FSM Phase)                           */}
       {/* ===================================================================== */}
       <main className="v2-main">
@@ -1010,7 +1076,7 @@ export default function CinematicPackExperience({
         )}
 
         {/* PHASE B: OPENING (Fast, high-energy 1.1s tear burst) */}
-        {state?.phase === "OPENING" && (
+        {state?.phase === "OPENING" && !is3DCanvasActive && (
           <div className="v2-opening-stage cinematic-pack-perspective">
             <div className="v2-opening-aura" />
             <div className="v2-opening-ring" />
@@ -1026,7 +1092,7 @@ export default function CinematicPackExperience({
         )}
 
         {/* PHASE C: TRANSITION (Stealth blackout + tunnel sweep before stadium floodlights ignite) */}
-        {state?.phase === "TRANSITION" && (
+        {state?.phase === "TRANSITION" && !is3DCanvasActive && (
           <div className="v2-transition-overlay">
             <div className="v2-transition-streak" />
             <div className="v2-transition-flash cinematic-flash-burst" />
@@ -1133,7 +1199,7 @@ export default function CinematicPackExperience({
         </footer>
       )}
 
-      {state?.phase === "HERO_REVEAL" && heroShowcase && (
+      {state?.phase === "HERO_REVEAL" && !is3DCanvasActive && heroShowcase && (
         <footer ref={footerRef} data-testid="cinematic-pack-footer" className="v2-footer-hero">
           <div className="v2-hero-meta animate-fadeIn">
             {/* Badge & Duplicate Pill */}
@@ -1162,7 +1228,7 @@ export default function CinematicPackExperience({
         </footer>
       )}
 
-      {state?.phase === "CARD_REVEAL" && currentRevealShowcase && (
+      {state?.phase === "CARD_REVEAL" && !is3DCanvasActive && currentRevealShowcase && (
         <footer ref={footerRef} data-testid="cinematic-pack-footer" className="v2-footer-hero">
           <div className="v2-hero-meta animate-fadeIn">
             {/* Card Progress Counter + Series + Status Pill */}
