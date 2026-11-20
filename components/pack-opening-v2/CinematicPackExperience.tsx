@@ -614,13 +614,16 @@ export default function CinematicPackExperience({
   const stadiumFilmAvailable = Boolean(
     enableStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion &&
     !is3DCanvasActive && activeStageShowcase &&
-    (activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
+    (activeStagePhase === "TRANSITION" || activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
+  const isDesktopStadiumFilm = layoutMetrics.viewportWidth >= 768;
+  const filmCardEntranceAt = isDesktopStadiumFilm ? 7.05 : 9.65;
+  const filmCardFlipAt = isDesktopStadiumFilm ? 8.15 : 10.05;
   // Let the stadium establish itself before the real collectible emerges.
   // The film is not modified: only the actual 3D card's staging is choreographed.
-  const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - 9.65) / 1.4));
+  const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardEntranceAt) / 1.4));
   const stadiumFilmEntranceEase = stadiumFilmEntranceProgress * stadiumFilmEntranceProgress * (3 - 2 * stadiumFilmEntranceProgress);
-  const stadiumFilmFlipProgress = Math.max(0, Math.min(1, (stadiumFilmTime - 10.05) / 1.35));
+  const stadiumFilmFlipProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardFlipAt) / 1.35));
   const stadiumFilmYaw = activeStagePhase === "WALKOUT"
     ? 180 * (1 - stadiumFilmFlipProgress * stadiumFilmFlipProgress * (3 - 2 * stadiumFilmFlipProgress))
     : 0;
@@ -932,9 +935,10 @@ export default function CinematicPackExperience({
       {/* 2. CONTINUOUS 3D STADIUM ARENA (Unbroken across TRANSITION, WALKOUT, HERO_REVEAL, CARD_REVEAL) */}
       {/* ===================================================================== */}
       {enableStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !is3DCanvasActive && state && (
-        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden", opacity: stadiumFilmAvailable && stadiumFilmPlaying ? 1 : 0, pointerEvents: stadiumFilmAvailable && stadiumFilmPlaying ? "auto" : "none", transition: "opacity .6s ease" }}>
+        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden", opacity: stadiumFilmAvailable && stadiumFilmPlaying ? 1 : 0, pointerEvents: stadiumFilmAvailable && stadiumFilmPlaying ? "auto" : "none", transition: "opacity .85s ease", background: "url('/media/walkouts/delta-inferno-red-stadium.webp') center / cover no-repeat" }}>
           <StadiumFilmBackdrop
             playing={stadiumFilmAvailable}
+            desktop={isDesktopStadiumFilm}
             onPlaying={() => setStadiumFilmPlaying(true)}
             onTimeUpdate={setStadiumFilmTime}
             onEnded={() => {
@@ -945,7 +949,7 @@ export default function CinematicPackExperience({
               if (state.phase === "WALKOUT") controller?.dispatch("NEXT");
             }}
           />
-          {stadiumFilmAvailable && activeCardShowcase && (state.phase !== "WALKOUT" || stadiumFilmTime >= 9.65) && (
+          {stadiumFilmAvailable && activeCardShowcase && state.phase !== "TRANSITION" && (state.phase !== "WALKOUT" || stadiumFilmTime >= filmCardEntranceAt) && (
             <div
               data-testid="stadium-film-real-card"
               style={{

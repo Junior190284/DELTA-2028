@@ -683,7 +683,14 @@
   flex-direction: column;
   overflow: hidden;
   pointer-events: auto;
+  animation: v2SummarySeamlessEnter .55s ease-out both;
 }
+
+@keyframes v2SummarySeamlessEnter {
+  from { opacity: 0; filter: brightness(.65); }
+  to { opacity: 1; filter: brightness(1); }
+}
+.cinematic-v2-arena.is-reduced-motion .v2-summary-stage { animation: none; }
 
 .cinematic-v2-arena .v2-summary-scroll {
   flex: 1 1 0%;
