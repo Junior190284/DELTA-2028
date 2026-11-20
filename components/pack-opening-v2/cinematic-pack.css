@@ -1794,6 +1794,18 @@
 }
 
 /* Reduced-Motion Accessibility Overrides */
+.cinematic-v2-arena .inferno-card-reveal-halo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 25% 37% at 50% 53%, rgba(255, 190, 86, .18), transparent 85%),
+    radial-gradient(ellipse 48% 13% at 50% 76%, rgba(255, 49, 20, .55), transparent 90%),
+    radial-gradient(ellipse 75% 38% at 50% 92%, rgba(131, 5, 12, .26), transparent 90%);
+  mix-blend-mode: screen;
+  transition: opacity .18s linear;
+}
+
 .cinematic-v2-arena.is-reduced-motion .cinematic-pack-card,
 .cinematic-v2-arena.is-reduced-motion .cinematic-pack-shimmer,
 .cinematic-v2-arena.is-reduced-motion .cinematic-pack-tearing,

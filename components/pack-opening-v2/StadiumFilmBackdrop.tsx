@@ -38,7 +38,9 @@ export default function StadiumFilmBackdrop({
       ref={videoRef}
       // Until a true landscape shot is produced, preserve the actual moving footage.
       // The artificial zoom-pan desktop clip looked like a shaking still image.
-      src="/media/walkouts/delta-inferno-stadium-v2.mp4"
+      src={desktop
+        ? "/media/walkouts/delta-inferno-stadium-desktop-v2.mp4"
+        : "/media/walkouts/delta-inferno-stadium-v2.mp4"}
       muted
       playsInline
       preload="auto"

@@ -617,8 +617,8 @@ export default function CinematicPackExperience({
     (activeStagePhase === "TRANSITION" || activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
   const isDesktopStadiumFilm = layoutMetrics.viewportWidth >= 768;
-  const filmCardEntranceAt = 9.65;
-  const filmCardFlipAt = 10.05;
+  const filmCardEntranceAt = isDesktopStadiumFilm ? 8.7 : 9.65;
+  const filmCardFlipAt = isDesktopStadiumFilm ? 9.1 : 10.05;
   // Let the stadium establish itself before the real collectible emerges.
   // The film is not modified: only the actual 3D card's staging is choreographed.
   const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardEntranceAt) / 1.4));
@@ -969,13 +969,18 @@ export default function CinematicPackExperience({
                   }) 0%, transparent 100%)`
                 }}
               />
+              <div
+                aria-hidden="true"
+                className="inferno-card-reveal-halo"
+                style={{ opacity: state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1 }}
+              />
               <div style={{
                 transform: `translateY(${state.phase === "WALKOUT" ? (1 - stadiumFilmEntranceEase) * 65 : 0}px) scale(${
                   (stageCardScale * (state.phase === "WALKOUT" ? 0.68 + stadiumFilmEntranceEase * 0.32 : 1)).toFixed(4)
                 })`,
                 opacity: state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1,
                 transformOrigin: "center",
-                filter: "drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 25px rgba(252,171,53,.3))",
+                filter: "drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 32px rgba(247,73,28,.62))",
                 position: "relative"
               }}>
                 <Card3DEngine
