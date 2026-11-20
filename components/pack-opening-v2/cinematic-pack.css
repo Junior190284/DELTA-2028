@@ -983,6 +983,34 @@
 
 /* Live Open Loading, Inline Errors, Summary Card Interactive Preview */
 /* Film-preview prelude: a staged stadium entrance instead of a lone booster. */
+.cinematic-v2-arena .v2-cinematic-prelude-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, rgba(2, 3, 8, .2) 0%, rgba(2, 3, 8, .08) 40%, rgba(2, 3, 8, .42) 100%),
+    url('/media/walkouts/delta-inferno-tunnel-prelude.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: v2PreludeCameraPush 12s ease-out both;
+}
+
+.cinematic-v2-arena .v2-cinematic-prelude-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 26% 56% at 50% 49%, rgba(6, 4, 10, .48), transparent 100%),
+    linear-gradient(90deg, rgba(1, 2, 6, .22), transparent 25% 75%, rgba(1, 2, 6, .22));
+}
+
+@keyframes v2PreludeCameraPush {
+  from { transform: scale(1.025); }
+  to { transform: scale(1.09); }
+}
+
 .cinematic-v2-arena.has-stadium-film .v2-ready-stage,
 .cinematic-v2-arena.has-stadium-film .v2-opening-stage {
   max-width: 680px;
@@ -1065,8 +1093,8 @@
 .cinematic-v2-arena .v2-prelude-kicker span { color: #d63b25; padding: 0 8px; }
 
 .cinematic-v2-arena.has-stadium-film .v2-pack-box {
-  height: min(440px, 50dvh);
-  box-shadow: 0 30px 90px rgba(0,0,0,.85), 0 0 65px rgba(247, 85, 30, .36);
+  height: min(490px, 54dvh);
+  box-shadow: 0 32px 100px rgba(0,0,0,.9), 0 0 70px rgba(247, 85, 30, .38), 0 0 8px rgba(255, 225, 156, .45);
 }
 
 .cinematic-v2-arena.has-stadium-film .v2-ready-meta { margin-top: 24px; }
@@ -1155,12 +1183,13 @@
 }
 
 @media (max-width: 540px) {
-  .cinematic-v2-arena.has-stadium-film .v2-pack-box { height: min(350px, 43dvh); }
+  .cinematic-v2-arena.has-stadium-film .v2-pack-box { height: min(390px, 43dvh); }
   .cinematic-v2-arena .v2-prelude-kicker { letter-spacing: .12em; margin-bottom: 10px; }
-  .cinematic-v2-arena .v2-prelude-horizon { bottom: 8%; }
+  .cinematic-v2-arena .v2-cinematic-prelude-backdrop { background-position: center; }
 }
 
 .cinematic-v2-arena.is-reduced-motion .v2-premium-prelude *,
+.cinematic-v2-arena.is-reduced-motion .v2-cinematic-prelude-backdrop,
 .cinematic-v2-arena.is-reduced-motion .v2-cinematic-split-pack,
 .cinematic-v2-arena.is-reduced-motion .v2-cinematic-split-pack * {
   animation: none !important;

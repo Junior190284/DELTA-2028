@@ -818,6 +818,9 @@ export default function CinematicPackExperience({
       className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
       style={{ isolation: "isolate", backgroundColor: "#020408" }}
     >
+      {enableStadiumFilm && (currentPhase === "READY" || currentPhase === "OPENING") && (
+        <div className="v2-cinematic-prelude-backdrop" aria-hidden="true" />
+      )}
       {/* Dynamic Stadium Spotlights (strictly clipped so diagonal beams never create scroll overflow) */}
       <div
         aria-hidden="true"
@@ -1110,14 +1113,6 @@ export default function CinematicPackExperience({
         {/* PHASE A: READY (Centered 3D Floating Booster Pack) */}
         {currentPhase === "READY" && (
           <div className="v2-ready-stage cinematic-pack-perspective animate-fadeIn">
-            {enableStadiumFilm && (
-              <div className="v2-premium-prelude" aria-hidden="true">
-                <div className="v2-prelude-floodlights" />
-                <div className="v2-prelude-horizon" />
-                <div className="v2-prelude-floor" />
-                <div className="v2-prelude-ring" />
-              </div>
-            )}
             {enableStadiumFilm && <div className="v2-prelude-kicker">DELTA INFERNO <span>•</span> STADION CZEKA NA BOHATERA</div>}
             {/* 3D Booster Pack */}
             <div
