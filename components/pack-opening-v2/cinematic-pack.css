@@ -1094,7 +1094,70 @@
 
 .cinematic-v2-arena.has-stadium-film .v2-pack-box {
   height: min(490px, 54dvh);
-  box-shadow: 0 32px 100px rgba(0,0,0,.9), 0 0 70px rgba(247, 85, 30, .38), 0 0 8px rgba(255, 225, 156, .45);
+}
+
+.cinematic-v2-arena.has-transparent-inferno-pack .v2-pack-box {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  filter: drop-shadow(0 24px 28px rgba(0,0,0,.85)) drop-shadow(0 0 23px rgba(248,74,25,.28));
+}
+
+.cinematic-v2-arena.has-transparent-inferno-pack .v2-pack-img {
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.cinematic-v2-arena.has-transparent-inferno-pack .cinematic-pack-shimmer {
+  display: none;
+}
+
+/* Spotlight result: one featured pull, four supporting cards, not five miniatures. */
+@media (min-width: 850px) and (min-height: 650px) {
+  .cinematic-v2-arena.has-stadium-film .v2-summary-inner {
+    max-width: 1080px;
+  }
+  .cinematic-v2-arena.has-stadium-film .v2-summary-grid:has(> :nth-child(5)) {
+    display: grid;
+    grid-template-columns: minmax(230px, 1.35fr) repeat(2, minmax(145px, 1fr));
+    grid-template-rows: repeat(2, auto);
+    align-items: center;
+    gap: 20px;
+    max-width: 850px;
+    margin: 0 auto;
+  }
+  .cinematic-v2-arena.has-stadium-film .v2-summary-grid:has(> :nth-child(5)) .v2-summary-tile {
+    width: 100%;
+    max-width: 210px;
+    justify-self: center;
+  }
+  .cinematic-v2-arena.has-stadium-film .v2-summary-grid:has(> :nth-child(5)) .v2-summary-tile:first-child {
+    grid-row: span 2;
+    max-width: 305px;
+    filter: drop-shadow(0 0 27px rgba(239, 70, 33, .4));
+  }
+  .cinematic-v2-arena.has-stadium-film .v2-summary-grid:has(> :nth-child(5)) .v2-summary-tile:first-child::before {
+    content: '★ KARTA GŁÓWNA ★';
+    color: #f6cb7d;
+    font-size: 10px;
+    letter-spacing: .15em;
+    font-weight: 900;
+  }
+}
+
+.cinematic-v2-arena.has-stadium-film .v2-summary-stage {
+  background: radial-gradient(ellipse at 50% 34%, rgba(70, 19, 18, .36), transparent 64%);
+}
+
+.cinematic-v2-arena.has-stadium-film .v2-summary-tile-btn {
+  transition: transform .25s ease, filter .25s ease;
+}
+.cinematic-v2-arena.has-stadium-film .v2-summary-tile-btn:hover,
+.cinematic-v2-arena.has-stadium-film .v2-summary-tile-btn:focus-visible {
+  transform: translateY(-8px);
+  filter: drop-shadow(0 0 18px rgba(255, 174, 53, .44));
 }
 
 .cinematic-v2-arena.has-stadium-film .v2-ready-meta { margin-top: 24px; }

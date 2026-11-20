@@ -1,24 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 /** Isolated cinematic media layer; the opening controller remains the source of truth. */
 export default function StadiumFilmBackdrop({
+  playing,
+  onPlaying,
   onTimeUpdate,
   onEnded,
   onError,
 }: {
+  playing: boolean;
+  onPlaying: () => void;
   onTimeUpdate: (time: number) => void;
   onEnded: () => void;
   onError: () => void;
 }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (playing) {
+      void video.play().catch(() => onErrorRef.current());
+    } else {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }, [playing]);
+
   return (
     <video
+      ref={videoRef}
       src="/media/walkouts/delta-inferno-stadium-v2.mp4"
-      autoPlay
       muted
       playsInline
       preload="auto"
+      onPlaying={onPlaying}
       onTimeUpdate={(event) => onTimeUpdate(event.currentTarget.currentTime)}
       onEnded={onEnded}
       onError={onError}

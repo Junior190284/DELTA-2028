@@ -124,6 +124,7 @@ export default function CinematicPackExperience({
   const [inferno3DFallback, setInferno3DFallback] = useState(false);
   const [stadiumFilmFallback, setStadiumFilmFallback] = useState(false);
   const [stadiumFilmTime, setStadiumFilmTime] = useState(0);
+  const [stadiumFilmPlaying, setStadiumFilmPlaying] = useState(false);
 
   const infernoCanvasRef = useRef<InfernoPackCanvasHandle | null>(null);
 
@@ -151,6 +152,7 @@ export default function CinematicPackExperience({
     if (state?.phase === "READY") {
       setStadiumFilmTime(0);
       setStadiumFilmFallback(false);
+      setStadiumFilmPlaying(false);
     }
   }, [state?.phase, sessionKey]);
 
@@ -778,6 +780,9 @@ export default function CinematicPackExperience({
   const canSkip = state ? state.canSkip : false;
   const canClose = state ? state.canClose : true;
   const packImage = getPackImageUrl(pack.id, pack.theme);
+  const packDisplayImage = enableStadiumFilm && pack.theme === "inferno"
+    ? "/media/walkouts/delta-inferno-pack-cutout.webp"
+    : packImage;
   const totalEarnedPoints = activeResult?.total_delta_points_earned || 0;
   const isMobileViewport = viewportWidth <= 640;
   const activeStageRarityProfile = getRarityPresentation(
@@ -815,10 +820,10 @@ export default function CinematicPackExperience({
       data-phase={currentPhase}
       data-rarity={activeStageRarityProfile.tier}
       data-pack-theme={pack.theme}
-      className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
+      className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${enableStadiumFilm && pack.theme === "inferno" ? "has-transparent-inferno-pack" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
       style={{ isolation: "isolate", backgroundColor: "#020408" }}
     >
-      {enableStadiumFilm && (currentPhase === "READY" || currentPhase === "OPENING") && (
+      {enableStadiumFilm && (currentPhase === "READY" || currentPhase === "OPENING" || currentPhase === "TRANSITION" || currentPhase === "WALKOUT") && (
         <div className="v2-cinematic-prelude-backdrop" aria-hidden="true" />
       )}
       {/* Dynamic Stadium Spotlights (strictly clipped so diagonal beams never create scroll overflow) */}
@@ -911,9 +916,11 @@ export default function CinematicPackExperience({
       {/* ===================================================================== */}
       {/* 2. CONTINUOUS 3D STADIUM ARENA (Unbroken across TRANSITION, WALKOUT, HERO_REVEAL, CARD_REVEAL) */}
       {/* ===================================================================== */}
-      {stadiumFilmAvailable && activeStageShowcase && state && (
-        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden" }}>
+      {enableStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !is3DCanvasActive && state && (
+        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden", opacity: stadiumFilmAvailable && stadiumFilmPlaying ? 1 : 0, pointerEvents: stadiumFilmAvailable && stadiumFilmPlaying ? "auto" : "none", transition: "opacity .6s ease" }}>
           <StadiumFilmBackdrop
+            playing={stadiumFilmAvailable}
+            onPlaying={() => setStadiumFilmPlaying(true)}
             onTimeUpdate={setStadiumFilmTime}
             onEnded={() => {
               if (state.phase === "WALKOUT") controller?.dispatch("MEDIA_ENDED");
@@ -923,7 +930,7 @@ export default function CinematicPackExperience({
               if (state.phase === "WALKOUT") controller?.dispatch("NEXT");
             }}
           />
-          {activeCardShowcase && (state.phase !== "WALKOUT" || stadiumFilmTime >= 9.65) && (
+          {stadiumFilmAvailable && activeCardShowcase && (state.phase !== "WALKOUT" || stadiumFilmTime >= 9.65) && (
             <div
               data-testid="stadium-film-real-card"
               style={{
@@ -1120,7 +1127,7 @@ export default function CinematicPackExperience({
               style={{ cursor: isRequestingOpen ? "wait" : "pointer" }}
               className="v2-pack-box cinematic-pack-card"
             >
-              <img src={packImage} alt={pack.name} className="v2-pack-img" />
+              <img src={packDisplayImage} alt={pack.name} className="v2-pack-img" />
               {/* Foil Shimmer effect */}
               <div className="cinematic-pack-shimmer" />
 
@@ -1173,8 +1180,8 @@ export default function CinematicPackExperience({
             <div className="v2-opening-ring" />
             {enableStadiumFilm ? (
               <div className="v2-pack-box v2-cinematic-split-pack" role="img" aria-label={`Otwieranie paczki ${pack.name}`}>
-                <img src={packImage} alt="" className="v2-pack-img v2-split-upper" />
-                <img src={packImage} alt="" className="v2-pack-img v2-split-lower" />
+                <img src={packDisplayImage} alt="" className="v2-pack-img v2-split-upper" />
+                <img src={packDisplayImage} alt="" className="v2-pack-img v2-split-lower" />
                 <div className="v2-split-seam" />
                 <div className="v2-split-flare" />
               </div>
