@@ -1250,6 +1250,21 @@
   animation: v2PreviewPackTension 1.7s ease-in forwards;
 }
 
+/* Preserve the ready-stage layout during the tear: both pack images keep the
+   same center and dimensions while the foil splits. */
+.cinematic-v2-arena.has-stadium-film .v2-opening-layout-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+.cinematic-v2-arena.has-stadium-film .v2-opening-label {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
 .cinematic-v2-arena .v2-cinematic-split-pack .v2-pack-img {
   position: absolute;
   inset: 0;
