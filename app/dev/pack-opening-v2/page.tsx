@@ -341,6 +341,7 @@ export default function DevPackOpeningV2Page() {
       {/* Cinematic Modal Experience Mount */}
       {activePack && activeMockResult && (
         <CinematicPackExperience
+          enableStadiumFilm
           pack={activePack}
           mockResult={activeMockResult}
           sessionKey={launchNonce}

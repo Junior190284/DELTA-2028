@@ -42,6 +42,7 @@ import { getRarityPresentation } from "@/lib/cards/rarityPresentation";
 import { cardSound } from "@/lib/cards/audio";
 import { mapPackResultToInferno3D } from "./infernoCardBridge";
 import type { InfernoPackCanvasHandle } from "./InfernoPackCanvas";
+import StadiumFilmBackdrop from "./StadiumFilmBackdrop";
 import "./cinematic-pack.css";
 
 const InfernoPackCanvas = dynamic(
@@ -72,6 +73,7 @@ export interface CinematicPackExperienceProps {
   reducedMotion?: boolean;
   autoStart?: boolean;
   enableInferno3DCanvas?: boolean;
+  enableStadiumFilm?: boolean;
 }
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -90,6 +92,7 @@ export default function CinematicPackExperience({
   reducedMotion = false,
   autoStart = false,
   enableInferno3DCanvas = false,
+  enableStadiumFilm = false,
 }: CinematicPackExperienceProps) {
   const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -119,6 +122,9 @@ export default function CinematicPackExperience({
   );
 
   const [inferno3DFallback, setInferno3DFallback] = useState(false);
+  const [stadiumFilmFallback, setStadiumFilmFallback] = useState(false);
+  const [stadiumFilmTime, setStadiumFilmTime] = useState(0);
+
   const infernoCanvasRef = useRef<InfernoPackCanvasHandle | null>(null);
 
   const inferno3DPresentation = useMemo(() => {
@@ -140,6 +146,13 @@ export default function CinematicPackExperience({
   // 1. Initialize and cleanly dispose Central Controller FSM (React StrictMode safe)
   const [controller, setController] = useState<PackExperienceController | null>(null);
   const [state, setState] = useState<PackExperienceState | null>(null);
+
+  useEffect(() => {
+    if (state?.phase === "READY") {
+      setStadiumFilmTime(0);
+      setStadiumFilmFallback(false);
+    }
+  }, [state?.phase, sessionKey]);
 
   // Walkout 3D Card rotation state
   const [walkoutYaw, setWalkoutYaw] = useState<number>(180);
@@ -196,6 +209,9 @@ export default function CinematicPackExperience({
 
     const nextController = new PackExperienceController({
       result: activeResult,
+      timings: enableStadiumFilm && !effectiveReducedMotion
+        ? { walkoutInfernoMs: 11650, walkoutStandardMs: 11650 }
+        : undefined,
       reducedMotion: effectiveReducedMotion,
       initialMuted: isMutedLive,
       onAudioCue: (cue) => {
@@ -249,7 +265,7 @@ export default function CinematicPackExperience({
       unsubscribe();
       nextController.dispose();
     };
-  }, [activeResult, effectiveReducedMotion, sessionKey]);
+  }, [activeResult, effectiveReducedMotion, enableStadiumFilm, sessionKey]);
 
   const triggerLiveOpenPack = useCallback(async () => {
     if (isOpeningInFlightRef.current || activeResult) return;
@@ -588,6 +604,17 @@ export default function CinematicPackExperience({
     state.phase !== "COMPLETE"
   );
   const isStadiumSceneActive = Boolean(isStadiumPhase && activeStageShowcase && !is3DCanvasActive);
+  const stadiumFilmAvailable = Boolean(
+    enableStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion &&
+    !is3DCanvasActive && activeStageShowcase &&
+    (activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
+  );
+  // The film introduces the card at 9.75s: preserve the reverse until then,
+  // and perform the real Card3DEngine rotation during the golden-light climax.
+  const stadiumFilmFlipProgress = Math.max(0, Math.min(1, (stadiumFilmTime - 9.75) / 1.55));
+  const stadiumFilmYaw = activeStagePhase === "WALKOUT"
+    ? 180 * (1 - stadiumFilmFlipProgress * stadiumFilmFlipProgress * (3 - 2 * stadiumFilmFlipProgress))
+    : 0;
   const isHeroReveal = activeStagePhase === "HERO_REVEAL";
   const isCardInteractive = activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL";
 
@@ -879,7 +906,46 @@ export default function CinematicPackExperience({
       {/* ===================================================================== */}
       {/* 2. CONTINUOUS 3D STADIUM ARENA (Unbroken across TRANSITION, WALKOUT, HERO_REVEAL, CARD_REVEAL) */}
       {/* ===================================================================== */}
-      {isStadiumSceneActive && activeStageShowcase && state && (
+      {stadiumFilmAvailable && activeStageShowcase && state && (
+        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden" }}>
+          <StadiumFilmBackdrop
+            onTimeUpdate={setStadiumFilmTime}
+            onEnded={() => {
+              if (state.phase === "WALKOUT") controller?.dispatch("MEDIA_ENDED");
+            }}
+            onError={() => {
+              setStadiumFilmFallback(true);
+              if (state.phase === "WALKOUT") controller?.dispatch("NEXT");
+            }}
+          />
+          {activeCardShowcase && (state.phase !== "WALKOUT" || stadiumFilmTime >= 9.75) && (
+            <div
+              data-testid="stadium-film-real-card"
+              style={{
+                position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                paddingTop: `${headerHeight}px`, paddingBottom: `${footerHeight}px`, boxSizing: "border-box",
+                pointerEvents: isCardInteractive ? "auto" : "none"
+              }}
+            >
+              <div style={{ transform: `scale(${stageCardScale.toFixed(4)})`, transformOrigin: "center" }}>
+                <Card3DEngine
+                  key={activeCardShowcase.slotKey}
+                  data={activeCardShowcase.card3D}
+                  theme={activeCardShowcase.theme3D}
+                  yaw={stadiumFilmYaw}
+                  pitch={0}
+                  interactive={isCardInteractive}
+                  autoRotate={false}
+                  isRevealing={state.phase === "WALKOUT"}
+                  onRotationChange={(y, p) => { setWalkoutYaw(y); setWalkoutPitch(p); }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isStadiumSceneActive && !stadiumFilmAvailable && activeStageShowcase && state && (
         <div
           data-testid="cinematic-stadium-backdrop"
           style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: isCardInteractive ? "auto" : "none" }}
