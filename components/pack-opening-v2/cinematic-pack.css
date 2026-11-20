@@ -997,6 +997,79 @@
   animation: v2PreludeCameraPush 12s ease-out both;
 }
 
+/* Pack-specific stadium art: only the crimson INFERNO booster gets the flare arena. */
+.cinematic-v2-arena[data-pack-theme="inferno"] .v2-cinematic-prelude-backdrop {
+  background-image:
+    linear-gradient(180deg, rgba(8, 0, 2, .08), rgba(8, 0, 2, .14) 48%, rgba(8, 0, 2, .52)),
+    url('/media/walkouts/delta-inferno-red-stadium.webp');
+}
+
+.cinematic-v2-arena[data-pack-theme="inferno"] .v2-cinematic-prelude-backdrop::after {
+  background: radial-gradient(ellipse 24% 48% at 50% 52%, rgba(9, 0, 2, .35), transparent 100%);
+}
+
+/* Cinematic final pull: one readable hero card and a selectable five-card filmstrip. */
+.cinematic-v2-arena.has-stadium-film[data-pack-theme="inferno"] .v2-summary-stage {
+  background: linear-gradient(180deg, rgba(9, 1, 3, .47), rgba(4, 0, 2, .89)),
+    url('/media/walkouts/delta-inferno-red-stadium.webp') center / cover no-repeat;
+}
+.cinematic-v2-arena.has-stadium-film .v2-summary-inner { max-width: 1080px; }
+.cinematic-v2-arena .v2-summary-gallery {
+  width: 100%; display: flex; flex-direction: column; align-items: center;
+  gap: clamp(12px, 2vh, 22px); padding: 6px 8px 20px;
+}
+.cinematic-v2-arena .v2-summary-feature {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; width: 100%; animation: v2GalleryReveal .38s ease-out both;
+}
+.cinematic-v2-arena .v2-summary-feature::before {
+  content: ''; position: absolute; width: min(70vw, 520px); height: 88%;
+  top: 5%; left: 50%; transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(ellipse, rgba(255, 50, 21, .32), transparent 72%); filter: blur(15px);
+}
+.cinematic-v2-arena .v2-summary-feature-overline {
+  position: relative; font-size: 11px; font-weight: 900; letter-spacing: .2em;
+  color: #ffd2a5; text-transform: uppercase;
+}
+.cinematic-v2-arena .v2-summary-feature-overline span { color: #ff3929; padding: 0 8px; }
+.cinematic-v2-arena .v2-summary-feature-card {
+  position: relative; display: block; width: clamp(182px, 23vh, 270px);
+  aspect-ratio: 2/3; border: 0; padding: 0; border-radius: 14px; cursor: zoom-in;
+  filter: drop-shadow(0 0 22px rgba(255, 62, 24, .48)) drop-shadow(0 25px 22px rgba(0,0,0,.85));
+  transition: transform .2s ease;
+}
+.cinematic-v2-arena .v2-summary-feature-card:hover { transform: scale(1.035); }
+.cinematic-v2-arena .v2-summary-feature-name {
+  position: relative; color: #fff; font-size: clamp(17px, 2vw, 24px); font-weight: 950;
+  letter-spacing: .06em; text-transform: uppercase; text-shadow: 0 3px 18px #000;
+}
+.cinematic-v2-arena .v2-summary-feature-reward {
+  position: relative; color: #fbbf77; font-size: 10px; font-weight: 900; letter-spacing: .14em;
+}
+.cinematic-v2-arena .v2-summary-filmstrip {
+  display: flex; justify-content: center; gap: clamp(8px, 1.4vw, 18px);
+  width: 100%; max-width: 660px; padding: 9px 4px; overflow-x: auto;
+  scrollbar-width: thin; scrollbar-color: #9c2722 transparent;
+}
+.cinematic-v2-arena .v2-summary-filmstrip-item {
+  flex: 0 0 clamp(62px, 9vw, 98px); display: flex; flex-direction: column;
+  align-items: center; gap: 5px; padding: 7px 6px; border-radius: 12px;
+  border: 1px solid rgba(255, 150, 94, .2); background: rgba(8, 0, 3, .7);
+  opacity: .72; cursor: pointer; transition: .2s ease;
+}
+.cinematic-v2-arena .v2-summary-filmstrip-item.is-active {
+  opacity: 1; border-color: #fb923c; background: rgba(103, 12, 12, .77);
+  box-shadow: 0 0 24px rgba(239, 68, 26, .36); transform: translateY(-4px);
+}
+.cinematic-v2-arena .v2-summary-filmstrip-number { color: #fbc49b; font-size: 10px; font-weight: 900; }
+.cinematic-v2-arena .v2-summary-filmstrip-card { display: block; width: 100%; aspect-ratio: 2/3; }
+@keyframes v2GalleryReveal { from {opacity: .35; transform: translateY(10px) scale(.97)} to {opacity: 1; transform: none} }
+@media (max-width: 640px) {
+  .cinematic-v2-arena .v2-summary-feature-card { width: clamp(162px, 26vh, 225px); }
+  .cinematic-v2-arena .v2-summary-filmstrip { justify-content: safe center; }
+  .cinematic-v2-arena .v2-summary-filmstrip-item { flex-basis: 66px; }
+}
+
 .cinematic-v2-arena .v2-cinematic-prelude-backdrop::after {
   content: '';
   position: absolute;
@@ -1661,5 +1734,3 @@
     transition: opacity 0.18s ease !important;
   }
 }
-
-

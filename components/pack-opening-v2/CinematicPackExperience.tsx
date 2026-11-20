@@ -101,11 +101,16 @@ export default function CinematicPackExperience({
   const [openError, setOpenError] = useState<string | null>(null);
   const [isMutedLive, setIsMutedLive] = useState(false);
   const [inspectedSummaryCard, setInspectedSummaryCard] = useState<UnifiedShowcaseEntry | null>(null);
+  const [summaryFocusIndex, setSummaryFocusIndex] = useState(0);
   const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
 
   useEffect(() => {
     setIsPreviewFlipped(false);
   }, [inspectedSummaryCard]);
+
+  useEffect(() => {
+    setSummaryFocusIndex(0);
+  }, [sessionKey]);
 
   const isMountedRef = useRef(true);
   const isOpeningInFlightRef = useRef(false);
@@ -1242,7 +1247,34 @@ export default function CinematicPackExperience({
                   </div>
                 </div>
 
-                {/* Centered Cards Container (Unified DeltaCard miniatures + interactive 3D preview click) */}
+                {enableStadiumFilm && summaryShowcases.length > 0 ? (
+                  <div className="v2-summary-gallery" data-testid="inferno-summary-gallery">
+                    <div className="v2-summary-feature" key={summaryShowcases[Math.min(summaryFocusIndex, summaryShowcases.length - 1)].slotKey}>
+                      {(() => {
+                        const selected = summaryShowcases[Math.min(summaryFocusIndex, summaryShowcases.length - 1)];
+                        const rarity = getRarityPresentation(selected.item.card.rarity, selected.card3D.visualType);
+                        return (
+                          <>
+                            <div className="v2-summary-feature-overline">KARTA {summaryFocusIndex + 1} / {summaryShowcases.length} <span>•</span> {rarity.tier}</div>
+                            <button type="button" className="v2-summary-feature-card" aria-label={`Powiększ kartę 3D: ${selected.displayName}`} onClick={() => setInspectedSummaryCard(selected)}>
+                              <DeltaCard card={selected.miniCard} size="responsive" interactive={false} showFlip={false} className="w-full h-full pointer-events-none" />
+                            </button>
+                            <strong className="v2-summary-feature-name">{selected.displayName}</strong>
+                            <div className="v2-summary-feature-reward">{selected.item.is_duplicate ? `DUPLIKAT • +${selected.item.duplicate_points} DP` : "NOWA KARTA W KOLEKCJI"}</div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="v2-summary-filmstrip" role="group" aria-label="Wybierz kartę do obejrzenia">
+                      {summaryShowcases.map((entry, idx) => (
+                        <button key={entry.slotKey} type="button" className={`v2-summary-filmstrip-item ${idx === summaryFocusIndex ? "is-active" : ""}`} aria-pressed={idx === summaryFocusIndex} aria-label={`Pokaż kartę ${idx + 1}: ${entry.displayName}`} data-testid={`summary-card-${idx}`} onClick={() => { setSummaryFocusIndex(idx); try { cardSound.playFlip(); } catch {} }}>
+                          <span className="v2-summary-filmstrip-number">{String(idx + 1).padStart(2, "0")}</span>
+                          <span className="v2-summary-filmstrip-card"><DeltaCard card={entry.miniCard} size="responsive" interactive={false} showFlip={false} className="w-full h-full pointer-events-none" /></span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
                 <div className="v2-summary-grid">
                   {summaryShowcases.map((entry, idx) => {
                     const { slotKey, item, miniCard, displayName } = entry;
@@ -1285,6 +1317,7 @@ export default function CinematicPackExperience({
                     );
                   })}
                 </div>
+                )}
               </div>
             </div>
           </div>
