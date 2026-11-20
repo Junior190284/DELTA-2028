@@ -617,8 +617,8 @@ export default function CinematicPackExperience({
     (activeStagePhase === "TRANSITION" || activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
   const isDesktopStadiumFilm = layoutMetrics.viewportWidth >= 768;
-  const filmCardEntranceAt = isDesktopStadiumFilm ? 7.05 : 9.65;
-  const filmCardFlipAt = isDesktopStadiumFilm ? 8.15 : 10.05;
+  const filmCardEntranceAt = 9.65;
+  const filmCardFlipAt = 10.05;
   // Let the stadium establish itself before the real collectible emerges.
   // The film is not modified: only the actual 3D card's staging is choreographed.
   const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardEntranceAt) / 1.4));

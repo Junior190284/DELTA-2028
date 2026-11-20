@@ -36,9 +36,9 @@ export default function StadiumFilmBackdrop({
   return (
     <video
       ref={videoRef}
-      src={desktop
-        ? "/media/walkouts/delta-inferno-stadium-desktop-v1.mp4"
-        : "/media/walkouts/delta-inferno-stadium-v2.mp4"}
+      // Until a true landscape shot is produced, preserve the actual moving footage.
+      // The artificial zoom-pan desktop clip looked like a shaking still image.
+      src="/media/walkouts/delta-inferno-stadium-v2.mp4"
       muted
       playsInline
       preload="auto"
@@ -46,7 +46,7 @@ export default function StadiumFilmBackdrop({
       onTimeUpdate={(event) => onTimeUpdate(event.currentTarget.currentTime)}
       onEnded={onEnded}
       onError={onError}
-      style={{ width: "100%", height: "100%", objectFit: desktop ? "contain" : "cover", background: "#100303" }}
+      style={{ width: "100%", height: "100%", objectFit: desktop ? "contain" : "cover", background: "rgba(16, 3, 3, .28)" }}
     />
   );
 }
