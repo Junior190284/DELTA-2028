@@ -7,8 +7,9 @@ scratch/
 # Exclude local test suites from serverless upload
 tests/
 
-# Exclude database migration scripts and local SQL
-supabase/
+# Keep Supabase source modules (lib/supabase/) available to the build.
+# Migration scripts are small; excluding "supabase/" would also remove
+# runtime imports in some Vercel ignore matching contexts.
 
 # Exclude AI agent and IDE working configurations
 .agents/
