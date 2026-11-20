@@ -1256,6 +1256,10 @@
   visibility: hidden;
   pointer-events: none;
 }
+.cinematic-v2-arena.has-stadium-film .v2-opening-pack-count {
+  opacity: 0;
+  pointer-events: none;
+}
 .cinematic-v2-arena.has-stadium-film .v2-opening-label {
   position: absolute;
   bottom: 2px;
