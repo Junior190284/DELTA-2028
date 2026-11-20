@@ -982,6 +982,190 @@
 }
 
 /* Live Open Loading, Inline Errors, Summary Card Interactive Preview */
+/* Film-preview prelude: a staged stadium entrance instead of a lone booster. */
+.cinematic-v2-arena.has-stadium-film .v2-ready-stage,
+.cinematic-v2-arena.has-stadium-film .v2-opening-stage {
+  max-width: 680px;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.cinematic-v2-arena.has-stadium-film .v2-ready-stage > :not(.v2-premium-prelude),
+.cinematic-v2-arena.has-stadium-film .v2-opening-stage > :not(.v2-opening-aura):not(.v2-opening-ring) {
+  position: relative;
+  z-index: 2;
+}
+
+.cinematic-v2-arena .v2-premium-prelude {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cinematic-v2-arena .v2-prelude-floodlights {
+  position: absolute;
+  inset: -25% -55%;
+  background:
+    conic-gradient(from 164deg at 25% 5%, transparent 0deg, rgba(255, 199, 85, .24) 12deg, transparent 28deg),
+    conic-gradient(from 159deg at 75% 5%, transparent 0deg, rgba(255, 75, 40, .22) 12deg, transparent 28deg);
+  filter: blur(18px);
+  animation: v2PreviewLights 7s ease-in-out infinite alternate;
+}
+
+.cinematic-v2-arena .v2-prelude-horizon {
+  position: absolute;
+  left: -55%;
+  right: -55%;
+  bottom: 18%;
+  height: 28%;
+  opacity: .8;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 35px, rgba(255, 218, 142, .45) 36px 38px, transparent 40px 55px),
+    linear-gradient(0deg, transparent, rgba(90, 12, 14, .5));
+  mask-image: linear-gradient(0deg, transparent, #000 65%, transparent);
+}
+
+.cinematic-v2-arena .v2-prelude-floor {
+  position: absolute;
+  width: 145%;
+  left: -22.5%;
+  height: 65%;
+  bottom: -54%;
+  transform: perspective(430px) rotateX(66deg);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(245, 103, 33, .26), rgba(27, 4, 6, .15) 45%, transparent 70%);
+  border: 2px solid rgba(255, 185, 62, .24);
+  box-shadow: 0 0 90px rgba(242, 61, 30, .14);
+}
+
+.cinematic-v2-arena .v2-prelude-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(590px, 96vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(251, 191, 36, .16);
+  box-shadow: 0 0 48px rgba(240, 61, 20, .11), inset 0 0 55px rgba(235, 74, 20, .06);
+  animation: v2PreviewHalo 5s ease-in-out infinite;
+}
+
+.cinematic-v2-arena .v2-prelude-kicker {
+  font-size: clamp(9px, 1.15vw, 12px);
+  letter-spacing: .28em;
+  color: #f9be68;
+  font-weight: 800;
+  margin: 0 0 16px;
+  text-shadow: 0 0 24px rgba(255, 120, 37, .7);
+}
+
+.cinematic-v2-arena .v2-prelude-kicker span { color: #d63b25; padding: 0 8px; }
+
+.cinematic-v2-arena.has-stadium-film .v2-pack-box {
+  height: min(440px, 50dvh);
+  box-shadow: 0 30px 90px rgba(0,0,0,.85), 0 0 65px rgba(247, 85, 30, .36);
+}
+
+.cinematic-v2-arena.has-stadium-film .v2-ready-meta { margin-top: 24px; }
+.cinematic-v2-arena.has-stadium-film .v2-ready-title { letter-spacing: .13em; }
+
+/* The film-preview opening physically separates the two foil halves. */
+.cinematic-v2-arena .v2-cinematic-split-pack {
+  border: 0;
+  overflow: visible;
+  animation: v2PreviewPackTension 1.7s ease-in forwards;
+}
+
+.cinematic-v2-arena .v2-cinematic-split-pack .v2-pack-img {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  backface-visibility: hidden;
+}
+
+.cinematic-v2-arena .v2-split-upper {
+  clip-path: polygon(0 0, 100% 0, 100% 28%, 85% 27%, 72% 30%, 59% 27%, 45% 29%, 32% 27%, 18% 30%, 0 28%);
+  animation: v2PreviewTearUpper 1.7s cubic-bezier(.3,.05,.65,1) forwards;
+}
+
+.cinematic-v2-arena .v2-split-lower {
+  clip-path: polygon(0 28%, 18% 30%, 32% 27%, 45% 29%, 59% 27%, 72% 30%, 85% 27%, 100% 28%, 100% 100%, 0 100%);
+  animation: v2PreviewTearLower 1.7s cubic-bezier(.3,.05,.65,1) forwards;
+}
+
+.cinematic-v2-arena .v2-split-seam {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: 28%;
+  height: 3px;
+  transform-origin: left;
+  background: linear-gradient(90deg, transparent, #f8a83b 22%, white 53%, #f04a21 84%, transparent);
+  box-shadow: 0 0 16px rgba(255, 163, 52, .9);
+  animation: v2PreviewSeam 1.7s ease-in-out forwards;
+}
+
+.cinematic-v2-arena .v2-split-flare {
+  position: absolute;
+  z-index: 2;
+  inset: 10% -20% -10%;
+  background: radial-gradient(ellipse at 50% 31%, rgba(255, 241, 191, .88), rgba(248, 83, 28, .35) 24%, transparent 62%);
+  filter: blur(12px);
+  opacity: 0;
+  animation: v2PreviewFlare 1.7s ease-out forwards;
+}
+
+@keyframes v2PreviewLights {
+  from { opacity: .62; transform: translateX(-2%) rotate(-2deg); }
+  to { opacity: 1; transform: translateX(2%) rotate(2deg); }
+}
+@keyframes v2PreviewHalo {
+  0%, 100% { opacity: .55; scale: .97; }
+  50% { opacity: 1; scale: 1.03; }
+}
+@keyframes v2PreviewPackTension {
+  0%, 30% { transform: scale(1) rotate(0); }
+  50% { transform: scale(1.06) rotate(-.6deg); }
+  67% { transform: scale(1.08) rotate(.4deg); }
+  100% { transform: scale(1.13); }
+}
+@keyframes v2PreviewTearUpper {
+  0%, 48% { transform: translateY(0) rotate(0); opacity: 1; }
+  75% { transform: translateY(-18%) rotate(-4deg); opacity: 1; }
+  100% { transform: translateY(-43%) rotate(-12deg); opacity: 0; }
+}
+@keyframes v2PreviewTearLower {
+  0%, 48% { transform: translateY(0); opacity: 1; }
+  75% { transform: translateY(9%) rotate(1deg); opacity: 1; }
+  100% { transform: translateY(26%) rotate(3deg); opacity: 0; }
+}
+@keyframes v2PreviewSeam {
+  0%, 28% { transform: scaleX(0); opacity: 0; }
+  48%, 62% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes v2PreviewFlare {
+  0%, 40% { opacity: 0; transform: scale(.7); }
+  70% { opacity: .65; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+
+@media (max-width: 540px) {
+  .cinematic-v2-arena.has-stadium-film .v2-pack-box { height: min(350px, 43dvh); }
+  .cinematic-v2-arena .v2-prelude-kicker { letter-spacing: .12em; margin-bottom: 10px; }
+  .cinematic-v2-arena .v2-prelude-horizon { bottom: 8%; }
+}
+
+.cinematic-v2-arena.is-reduced-motion .v2-premium-prelude *,
+.cinematic-v2-arena.is-reduced-motion .v2-cinematic-split-pack,
+.cinematic-v2-arena.is-reduced-motion .v2-cinematic-split-pack * {
+  animation: none !important;
+}
+
 .cinematic-v2-arena .v2-primary-cta:disabled {
   opacity: 0.72;
   cursor: wait;
