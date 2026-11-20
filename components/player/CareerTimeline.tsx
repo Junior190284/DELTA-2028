@@ -14,6 +14,7 @@ import {
   Goal,
   CheckCircle2
 } from "lucide-react";
+import { isTrainingFinished } from "@/lib/stadium/xp-calculator.ts";
 
 export interface TimelineItem {
   id: string;
@@ -67,9 +68,9 @@ export function CareerTimeline({
       );
       if (!att) return;
 
-      const isDatePastOrToday = tr.training_date && String(tr.training_date).slice(0, 10) <= todayStr;
+      const isFinished = isTrainingFinished(tr);
 
-      if (att.status === "present" && isDatePastOrToday) {
+      if (att.status === "present" && isFinished) {
         // ZWERYFIKOWANA OBECNOŚĆ NA BOISKU -> +40 XP
         items.push({
           id: `tr-${tr.id}`,
@@ -116,8 +117,9 @@ export function CareerTimeline({
       );
 
       const hasPresentAtt = att && att.status === "present";
-      const hasVerifiedEvents = playerEvents.length > 0;
-      const isConfirmedParticipant = hasPresentAtt || hasVerifiedEvents;
+      // V7F.3B.2: Sam match_events NIE stanowi automatycznego potwierdzenia udziału;
+      // Wyłącznie obecność zatwierdzona statusem 'present' kwalifikuje do udziału i +60 XP
+      const isConfirmedParticipant = Boolean(hasPresentAtt);
 
       if (isConfirmedParticipant) {
         const goalsCount = events.filter(
@@ -190,13 +192,8 @@ export function CareerTimeline({
       .filter(m => {
         const att = matchAttendance.find(a => a.match_id === m.id && a.player_id === player.id);
         if (att && att.status === "absent") return false;
-        const hasVerifiedEv = events.some(
-          e => e.match_id === m.id && (
-            (e.player_id === player.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
-            (e.assist_player_id === player.id && e.event_type === "goal")
-          )
-        );
-        return (att && att.status === "present") || hasVerifiedEv;
+        // V7F.3B.2: Wyłącznie oficjalna obecność potwierdzona statusem 'present'
+        return Boolean(att && att.status === "present");
       })
       .sort((a, b) => a.match_date.localeCompare(b.match_date));
 

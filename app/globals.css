@@ -39255,11 +39255,11 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
    DELTA INFERNO — ETAP 5: NAVIGATION 2.0 + LIVE BAR + MORE SHEET
    ========================================================= */
 
-/* 1. DELTA LIVE BAR 2.0 (STICKY UNDER HEADER) */
+/* 1. DELTA LIVE BAR 2.0 (STICKY UNDER HEADER ON DESKTOP, IN-FLOW ON MOBILE) */
 .delta-sticky-live-bar {
   position: sticky;
-  top: 60px;
-  z-index: 80;
+  top: 64px;
+  z-index: 25;
   width: 100%;
   max-width: 1100px;
   margin: 0 auto 12px;
@@ -39267,6 +39267,16 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
   box-sizing: border-box;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .delta-sticky-live-bar {
+    position: relative;
+    top: auto;
+    z-index: 5;
+    margin: 6px auto 10px;
+    padding: 0 8px;
+  }
 }
 
 .delta-livebar-inner {
@@ -39404,16 +39414,18 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 4px 10px;
+  min-height: 44px;
+  padding: 6px 12px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #ffffff;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 900;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.15s ease;
+  touch-action: manipulation;
 }
 
 .delta-livebar-cta-btn:hover {
@@ -39421,22 +39433,36 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+.delta-livebar-cta-btn:focus-visible {
+  outline: 2px solid #f6c952;
+  outline-offset: 2px;
+}
+
 .delta-livebar-dismiss-btn {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   background: transparent;
   border: 0;
   color: #64748b;
   cursor: pointer;
   transition: all 0.15s ease;
+  touch-action: manipulation;
 }
 
 .delta-livebar-dismiss-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.delta-livebar-dismiss-btn:focus-visible {
+  outline: 2px solid #f6c952;
+  outline-offset: 2px;
 }
 
 /* 2. DELTA MORE MENU SHEET (10 KAFELKÓW PREMIUM) */
