@@ -84,7 +84,7 @@ export default function StadiumFilmBackdrop({
       src={theme === "legend"
         ? desktop
           ? "/media/walkouts/delta-legend-stadium-v2.mp4"
-          : "/media/walkouts/delta-legend-stadium-mobile-v1.mp4"
+          : "/media/walkouts/delta-legend-stadium-mobile-v2.mp4"
         : desktop
           ? "/media/walkouts/delta-inferno-stadium-desktop-v2.mp4"
           : "/media/walkouts/delta-inferno-stadium-v2.mp4"}

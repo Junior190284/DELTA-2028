@@ -135,14 +135,6 @@ export default function CinematicPackExperience({
   const [stadiumFilmFallback, setStadiumFilmFallback] = useState(false);
   const [stadiumFilmTime, setStadiumFilmTime] = useState(0);
   const [stadiumFilmPlaying, setStadiumFilmPlaying] = useState(false);
-  const [legendFilmReady, setLegendFilmReady] = useState(false);
-
-  useEffect(() => {
-    if (!hasMatchingStadiumFilm || pack.theme !== "legend" || legendFilmReady || stadiumFilmFallback) return;
-    // A slow or blocked download must not trap the user at the unopened pack.
-    const timeout = window.setTimeout(() => setStadiumFilmFallback(true), 20000);
-    return () => window.clearTimeout(timeout);
-  }, [hasMatchingStadiumFilm, pack.theme, legendFilmReady, stadiumFilmFallback]);
 
   const infernoCanvasRef = useRef<InfernoPackCanvasHandle | null>(null);
 
@@ -230,7 +222,7 @@ export default function CinematicPackExperience({
     const nextController = new PackExperienceController({
       result: activeResult,
       timings: enableStadiumFilm && !effectiveReducedMotion
-        ? { openingTearMs: 1700, transitionMs: 500, walkoutInfernoMs: hasMatchingStadiumFilm ? 11650 : 4200, walkoutStandardMs: hasMatchingStadiumFilm ? 11650 : 4200 }
+        ? { openingTearMs: 1700, transitionMs: 500, walkoutInfernoMs: hasMatchingStadiumFilm ? (pack.theme === "legend" ? 18000 : 11650) : 4200, walkoutStandardMs: hasMatchingStadiumFilm ? (pack.theme === "legend" ? 18000 : 11650) : 4200 }
         : undefined,
       reducedMotion: effectiveReducedMotion,
       initialMuted: isMutedLive,
@@ -285,7 +277,7 @@ export default function CinematicPackExperience({
       unsubscribe();
       nextController.dispose();
     };
-  }, [activeResult, effectiveReducedMotion, enableStadiumFilm, hasMatchingStadiumFilm, sessionKey]);
+  }, [activeResult, effectiveReducedMotion, enableStadiumFilm, hasMatchingStadiumFilm, pack.theme, sessionKey]);
 
   const triggerLiveOpenPack = useCallback(async () => {
     if (isOpeningInFlightRef.current || activeResult) return;
@@ -358,13 +350,12 @@ export default function CinematicPackExperience({
 
   // Helper safe dispatches
   const handlePlay = useCallback(() => {
-    if (pack.theme === "legend" && hasMatchingStadiumFilm && !effectiveReducedMotion && !stadiumFilmFallback && !legendFilmReady) return;
     if (controller) {
       controller.dispatch("PLAY");
       return;
     }
     void triggerLiveOpenPack();
-  }, [controller, triggerLiveOpenPack, pack.theme, hasMatchingStadiumFilm, effectiveReducedMotion, stadiumFilmFallback, legendFilmReady]);
+  }, [controller, triggerLiveOpenPack]);
 
   const handleNext = useCallback(() => {
     controller?.dispatch("NEXT");
@@ -421,7 +412,6 @@ export default function CinematicPackExperience({
   useEffect(() => {
     if (!autoStart) return;
     if (controller && state?.phase === "READY") {
-      if (pack.theme === "legend" && hasMatchingStadiumFilm && !effectiveReducedMotion && !stadiumFilmFallback && !legendFilmReady) return;
       controller.dispatch("PLAY");
       return;
     }
@@ -446,11 +436,7 @@ export default function CinematicPackExperience({
     sessionKey,
     pack.id,
     userUnopenedPackId,
-    triggerLiveOpenPack,
-    hasMatchingStadiumFilm,
-    effectiveReducedMotion,
-    stadiumFilmFallback,
-    legendFilmReady
+    triggerLiveOpenPack
   ]);
 
   // Move focus cleanly into dialog on open / re-open so Escape, Enter and Space don't trigger background buttons
@@ -1004,7 +990,6 @@ export default function CinematicPackExperience({
             playing={stadiumFilmAvailable}
             desktop={isDesktopStadiumFilm}
             theme={pack.theme === "legend" ? "legend" : "inferno"}
-            onReady={() => setLegendFilmReady(true)}
             onPlaying={() => setStadiumFilmPlaying(true)}
             onTimeUpdate={setStadiumFilmTime}
             onEnded={() => {
@@ -1215,7 +1200,7 @@ export default function CinematicPackExperience({
             {/* 3D Booster Pack */}
             <div
               onClick={isRequestingOpen ? undefined : handlePlay}
-              style={{ cursor: isRequestingOpen || (pack.theme === "legend" && !legendFilmReady && !stadiumFilmFallback && hasMatchingStadiumFilm) ? "wait" : "pointer" }}
+              style={{ cursor: isRequestingOpen ? "wait" : "pointer" }}
               className="v2-pack-box cinematic-pack-card"
             >
               <img src={packDisplayImage} alt={pack.name} className="v2-pack-img" />
@@ -1244,13 +1229,11 @@ export default function CinematicPackExperience({
             <button
               type="button"
               data-testid="cinematic-open-btn"
-              disabled={isRequestingOpen || (pack.theme === "legend" && hasMatchingStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !legendFilmReady)}
+              disabled={isRequestingOpen}
               onClick={handlePlay}
               className="v2-primary-cta"
             >
-              {pack.theme === "legend" && hasMatchingStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !legendFilmReady ? (
-                <><Loader2 size={18} color="#fde68a" className="v2-spin" /><span>PRZYGOTOWUJEMY FILM...</span></>
-              ) : isRequestingOpen ? (
+              {isRequestingOpen ? (
                 <>
                   <Loader2 size={18} color="#fde68a" className="v2-spin" />
                   <span>OTWIERANIE PACZKI...</span>
