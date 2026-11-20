@@ -1169,7 +1169,7 @@
   height: min(490px, 54dvh);
 }
 
-.cinematic-v2-arena.has-transparent-inferno-pack .v2-pack-box {
+.cinematic-v2-arena.has-transparent-pack .v2-pack-box {
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -1178,12 +1178,12 @@
   filter: drop-shadow(0 24px 28px rgba(0,0,0,.85)) drop-shadow(0 0 23px rgba(248,74,25,.28));
 }
 
-.cinematic-v2-arena.has-transparent-inferno-pack .v2-pack-img {
+.cinematic-v2-arena.has-transparent-pack .v2-pack-img {
   object-fit: contain;
   border-radius: 0;
 }
 
-.cinematic-v2-arena.has-transparent-inferno-pack .cinematic-pack-shimmer {
+.cinematic-v2-arena.has-transparent-pack .cinematic-pack-shimmer {
   display: none;
 }
 

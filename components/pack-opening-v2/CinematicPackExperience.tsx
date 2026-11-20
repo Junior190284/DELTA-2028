@@ -785,8 +785,10 @@ export default function CinematicPackExperience({
   const canSkip = state ? state.canSkip : false;
   const canClose = state ? state.canClose : true;
   const packImage = getPackImageUrl(pack.id, pack.theme);
-  const packDisplayImage = enableStadiumFilm && pack.theme === "inferno"
-    ? "/media/walkouts/delta-inferno-pack-cutout.webp"
+  const cutoutPackThemes = ["standard", "matchday", "gold", "inferno", "legend"];
+  const hasPackCutout = enableStadiumFilm && cutoutPackThemes.includes(pack.theme);
+  const packDisplayImage = hasPackCutout
+    ? `/media/walkouts/delta-${pack.theme}-pack-cutout.webp`
     : packImage;
   const packArenaCopy: Record<string, { kicker: string; subtitle: string }> = {
     standard: { kicker: "DELTA ACADEMY", subtitle: "TU ZACZYNAJĄ SIĘ LEGENDY" },
@@ -833,7 +835,7 @@ export default function CinematicPackExperience({
       data-phase={currentPhase}
       data-rarity={activeStageRarityProfile.tier}
       data-pack-theme={pack.theme}
-      className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${enableStadiumFilm && pack.theme === "inferno" ? "has-transparent-inferno-pack" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
+      className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${hasPackCutout ? "has-transparent-pack" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
       style={{ isolation: "isolate", backgroundColor: "#020408" }}
     >
       {enableStadiumFilm && (currentPhase === "READY" || currentPhase === "OPENING" || currentPhase === "TRANSITION" || currentPhase === "WALKOUT") && (
