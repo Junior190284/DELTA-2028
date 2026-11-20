@@ -788,6 +788,14 @@ export default function CinematicPackExperience({
   const packDisplayImage = enableStadiumFilm && pack.theme === "inferno"
     ? "/media/walkouts/delta-inferno-pack-cutout.webp"
     : packImage;
+  const packArenaCopy: Record<string, { kicker: string; subtitle: string }> = {
+    standard: { kicker: "DELTA ACADEMY", subtitle: "TU ZACZYNAJĄ SIĘ LEGENDY" },
+    matchday: { kicker: "DELTA MATCHDAY", subtitle: "DZISIAJ PISZEMY HISTORIĘ" },
+    gold: { kicker: "DELTA GOLD", subtitle: "SCENA NALEŻY DO MISTRZÓW" },
+    inferno: { kicker: "DELTA INFERNO", subtitle: "WEJDŹ DO OGNIA" },
+    legend: { kicker: "DELTA LEGEND", subtitle: "NARODZINY LEGENDY" }
+  };
+  const arenaCopy = packArenaCopy[pack.theme] || packArenaCopy.standard;
   const totalEarnedPoints = activeResult?.total_delta_points_earned || 0;
   const isMobileViewport = viewportWidth <= 640;
   const activeStageRarityProfile = getRarityPresentation(
@@ -1125,7 +1133,7 @@ export default function CinematicPackExperience({
         {/* PHASE A: READY (Centered 3D Floating Booster Pack) */}
         {currentPhase === "READY" && (
           <div className="v2-ready-stage cinematic-pack-perspective animate-fadeIn">
-            {enableStadiumFilm && <div className="v2-prelude-kicker">DELTA INFERNO <span>•</span> STADION CZEKA NA BOHATERA</div>}
+            {enableStadiumFilm && <div className="v2-prelude-kicker"><span className="v2-arena-kicker">{arenaCopy.kicker}</span><span className="v2-kicker-divider">//</span><span className="v2-arena-subtitle">{arenaCopy.subtitle}</span></div>}
             {/* 3D Booster Pack */}
             <div
               onClick={isRequestingOpen ? undefined : handlePlay}
