@@ -20,7 +20,9 @@ export default function StadiumFilmBackdrop({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onErrorRef = useRef(onError);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
   onErrorRef.current = onError;
+  onTimeUpdateRef.current = onTimeUpdate;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -32,6 +34,25 @@ export default function StadiumFilmBackdrop({
       video.currentTime = 0;
     }
   }, [playing, desktop]);
+
+  // The browser's `timeupdate` event is too sparse (often ~4 Hz) to drive
+  // a smooth 3D card reveal. Sample the actual video clock near its finale.
+  useEffect(() => {
+    if (!playing) return;
+    let frameId = 0;
+    let lastUpdate = 0;
+    const sampleVideoTime = (now: number) => {
+      const video = videoRef.current;
+      if (!video) return;
+      if (video.currentTime >= 7 && now - lastUpdate >= 32) {
+        onTimeUpdateRef.current(video.currentTime);
+        lastUpdate = now;
+      }
+      frameId = requestAnimationFrame(sampleVideoTime);
+    };
+    frameId = requestAnimationFrame(sampleVideoTime);
+    return () => cancelAnimationFrame(frameId);
+  }, [playing]);
 
   return (
     <video
