@@ -124,9 +124,8 @@ export default function CinematicPackExperience({
   const liveAutoStartHandledSessionRef = useRef<string | number | null>(null);
 
   const effectiveReducedMotion = reducedMotion || prefersReducedMotion;
-  // Only INFERNO has a completed cinematic film. Other packs retain their
-  // own themed 3D stage until matching films are delivered.
-  const hasMatchingStadiumFilm = enableStadiumFilm && pack.theme === "inferno";
+  // Only themes with matching footage use the film-backed card reveal.
+  const hasMatchingStadiumFilm = enableStadiumFilm && (pack.theme === "inferno" || pack.theme === "legend");
   const activeResult = useMemo(
     () => result || mockResult || serverResult,
     [result, mockResult, serverResult]
@@ -668,11 +667,11 @@ export default function CinematicPackExperience({
     (activeStagePhase === "TRANSITION" || activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
   const isDesktopStadiumFilm = layoutMetrics.viewportWidth >= 768;
-  const filmCardEntranceAt = isDesktopStadiumFilm ? 8.7 : 9.65;
-  const filmCardFlipAt = isDesktopStadiumFilm ? 9.1 : 10.05;
+  const filmCardEntranceAt = pack.theme === "legend" ? 7.8 : isDesktopStadiumFilm ? 8.7 : 9.65;
+  const filmCardFlipAt = pack.theme === "legend" ? 8.35 : isDesktopStadiumFilm ? 9.1 : 10.05;
   // Let the stadium establish itself before the real collectible emerges.
   // The film is not modified: only the actual 3D card's staging is choreographed.
-  const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardEntranceAt) / 1.4));
+  const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardEntranceAt) / (pack.theme === "legend" ? 1.1 : 1.4)));
   const stadiumFilmEntranceEase = stadiumFilmEntranceProgress * stadiumFilmEntranceProgress * (3 - 2 * stadiumFilmEntranceProgress);
   const stadiumFilmFlipProgress = Math.max(0, Math.min(1, (stadiumFilmTime - filmCardFlipAt) / 1.35));
   const stadiumFilmYaw = activeStagePhase === "WALKOUT"
@@ -986,10 +985,11 @@ export default function CinematicPackExperience({
       {/* 2. CONTINUOUS 3D STADIUM ARENA (Unbroken across TRANSITION, WALKOUT, HERO_REVEAL, CARD_REVEAL) */}
       {/* ===================================================================== */}
       {hasMatchingStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !is3DCanvasActive && state && (
-        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden", opacity: stadiumFilmAvailable && stadiumFilmPlaying ? 1 : 0, pointerEvents: stadiumFilmAvailable && stadiumFilmPlaying ? "auto" : "none", transition: "opacity .85s ease", background: "url('/media/walkouts/delta-inferno-red-stadium.webp') center / cover no-repeat" }}>
+        <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden", opacity: stadiumFilmAvailable && stadiumFilmPlaying ? 1 : 0, pointerEvents: stadiumFilmAvailable && stadiumFilmPlaying ? "auto" : "none", transition: "opacity .85s ease", background: `url('/media/walkouts/${pack.theme === "legend" ? "delta-legend-stadium.webp" : "delta-inferno-red-stadium.webp"}') center / cover no-repeat` }}>
           <StadiumFilmBackdrop
             playing={stadiumFilmAvailable}
             desktop={isDesktopStadiumFilm}
+            theme={pack.theme === "legend" ? "legend" : "inferno"}
             onPlaying={() => setStadiumFilmPlaying(true)}
             onTimeUpdate={setStadiumFilmTime}
             onEnded={() => {
@@ -1016,7 +1016,7 @@ export default function CinematicPackExperience({
                   inset: 0,
                   pointerEvents: "none",
                   background: `radial-gradient(ellipse 30% 53% at 50% 48%, rgba(8, 8, 15, ${
-                    (state.phase === "WALKOUT" ? stadiumFilmEntranceEase * 0.47 : 0.47).toFixed(3)
+                    (state.phase === "WALKOUT" ? stadiumFilmEntranceEase * (pack.theme === "legend" ? 0.2 : 0.47) : pack.theme === "legend" ? 0.2 : 0.47).toFixed(3)
                   }) 0%, transparent 100%)`
                 }}
               />
@@ -1032,7 +1032,7 @@ export default function CinematicPackExperience({
                 opacity: preparedCardAssets ? (state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1) : 0,
                 transition: "opacity 320ms ease-out",
                 transformOrigin: "center",
-                filter: "drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 32px rgba(247,73,28,.62))",
+                filter: `drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 32px ${pack.theme === "legend" ? "rgba(255,204,75,.62)" : "rgba(247,73,28,.62)"})`,
                 position: "relative"
               }}>
                 <Card3DEngine

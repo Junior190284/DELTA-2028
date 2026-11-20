@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from "react";
 export default function StadiumFilmBackdrop({
   playing,
   desktop,
+  theme,
   onPlaying,
   onTimeUpdate,
   onEnded,
@@ -13,6 +14,7 @@ export default function StadiumFilmBackdrop({
 }: {
   playing: boolean;
   desktop: boolean;
+  theme: "inferno" | "legend";
   onPlaying: () => void;
   onTimeUpdate: (time: number) => void;
   onEnded: () => void;
@@ -59,9 +61,11 @@ export default function StadiumFilmBackdrop({
       ref={videoRef}
       // Until a true landscape shot is produced, preserve the actual moving footage.
       // The artificial zoom-pan desktop clip looked like a shaking still image.
-      src={desktop
-        ? "/media/walkouts/delta-inferno-stadium-desktop-v2.mp4"
-        : "/media/walkouts/delta-inferno-stadium-v2.mp4"}
+      src={theme === "legend"
+        ? "/media/walkouts/delta-legend-stadium-v1.mp4"
+        : desktop
+          ? "/media/walkouts/delta-inferno-stadium-desktop-v2.mp4"
+          : "/media/walkouts/delta-inferno-stadium-v2.mp4"}
       muted
       playsInline
       preload="auto"
@@ -69,7 +73,7 @@ export default function StadiumFilmBackdrop({
       onTimeUpdate={(event) => onTimeUpdate(event.currentTarget.currentTime)}
       onEnded={onEnded}
       onError={onError}
-      style={{ width: "100%", height: "100%", objectFit: desktop ? "contain" : "cover", background: "rgba(16, 3, 3, .28)" }}
+      style={{ width: "100%", height: "100%", objectFit: theme === "legend" || desktop ? "contain" : "cover", background: theme === "legend" ? "#080313" : "rgba(16, 3, 3, .28)" }}
     />
   );
 }
