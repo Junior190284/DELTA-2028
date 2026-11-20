@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import CinematicPackExperience from "@/components/pack-opening-v2/CinematicPackExperience";
+import { preloadCinematicArtwork } from "@/components/pack-opening-v2/preloadCinematicArtwork";
 import DeltaCollectionAlbum from "@/components/DeltaCollectionAlbum";
 import { type PackDefinition, type PackOpeningResult, type CardDefinition } from "@/lib/cards/types";
 import { Sparkles, Flame, Play, Shield, Eye, Layers } from "lucide-react";
@@ -15,6 +16,7 @@ export default function DevPackOpeningV2Page() {
   const [autoStart, setAutoStart] = useState<boolean>(false);
 
   useEffect(() => {
+    preloadCinematicArtwork();
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("album") === "1") {
