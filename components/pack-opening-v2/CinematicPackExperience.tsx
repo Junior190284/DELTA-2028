@@ -609,9 +609,11 @@ export default function CinematicPackExperience({
     !is3DCanvasActive && activeStageShowcase &&
     (activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
-  // The film introduces the card at 9.75s: preserve the reverse until then,
-  // and perform the real Card3DEngine rotation during the golden-light climax.
-  const stadiumFilmFlipProgress = Math.max(0, Math.min(1, (stadiumFilmTime - 9.75) / 1.55));
+  // Let the stadium establish itself before the real collectible emerges.
+  // The film is not modified: only the actual 3D card's staging is choreographed.
+  const stadiumFilmEntranceProgress = Math.max(0, Math.min(1, (stadiumFilmTime - 9.65) / 1.4));
+  const stadiumFilmEntranceEase = stadiumFilmEntranceProgress * stadiumFilmEntranceProgress * (3 - 2 * stadiumFilmEntranceProgress);
+  const stadiumFilmFlipProgress = Math.max(0, Math.min(1, (stadiumFilmTime - 10.05) / 1.35));
   const stadiumFilmYaw = activeStagePhase === "WALKOUT"
     ? 180 * (1 - stadiumFilmFlipProgress * stadiumFilmFlipProgress * (3 - 2 * stadiumFilmFlipProgress))
     : 0;
@@ -643,7 +645,7 @@ export default function CinematicPackExperience({
   const horizontalMargin = viewportWidth < 640 ? 48 : 80;
   const usableWidth = Math.max(200, viewportWidth - horizontalMargin);
   const usableHeroHeight = Math.max(220, viewportHeight - headerHeight - effectiveBottomReserve - 24);
-  const maxAllowedScale = viewportWidth < 640 ? 0.98 : 1.08;
+  const maxAllowedScale = viewportWidth < 640 ? 0.98 : enableStadiumFilm ? 1.38 : 1.08;
   const climaxScale = Math.max(
     0.45,
     Math.min(usableWidth / baseCardWidth, usableHeroHeight / baseCardHeight, maxAllowedScale)
@@ -918,7 +920,7 @@ export default function CinematicPackExperience({
               if (state.phase === "WALKOUT") controller?.dispatch("NEXT");
             }}
           />
-          {activeCardShowcase && (state.phase !== "WALKOUT" || stadiumFilmTime >= 9.75) && (
+          {activeCardShowcase && (state.phase !== "WALKOUT" || stadiumFilmTime >= 9.65) && (
             <div
               data-testid="stadium-film-real-card"
               style={{
@@ -927,7 +929,26 @@ export default function CinematicPackExperience({
                 pointerEvents: isCardInteractive ? "auto" : "none"
               }}
             >
-              <div style={{ transform: `scale(${stageCardScale.toFixed(4)})`, transformOrigin: "center" }}>
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
+                  background: `radial-gradient(ellipse 30% 53% at 50% 48%, rgba(8, 8, 15, ${
+                    (state.phase === "WALKOUT" ? stadiumFilmEntranceEase * 0.47 : 0.47).toFixed(3)
+                  }) 0%, transparent 100%)`
+                }}
+              />
+              <div style={{
+                transform: `translateY(${state.phase === "WALKOUT" ? (1 - stadiumFilmEntranceEase) * 65 : 0}px) scale(${
+                  (stageCardScale * (state.phase === "WALKOUT" ? 0.68 + stadiumFilmEntranceEase * 0.32 : 1)).toFixed(4)
+                })`,
+                opacity: state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1,
+                transformOrigin: "center",
+                filter: "drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 25px rgba(252,171,53,.3))",
+                position: "relative"
+              }}>
                 <Card3DEngine
                   key={activeCardShowcase.slotKey}
                   data={activeCardShowcase.card3D}
