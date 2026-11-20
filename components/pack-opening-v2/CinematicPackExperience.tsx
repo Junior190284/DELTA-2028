@@ -41,6 +41,7 @@ import type { PackDrawnItem } from "@/lib/cards/packExperienceController";
 import { getRarityPresentation } from "@/lib/cards/rarityPresentation";
 import { cardSound } from "@/lib/cards/audio";
 import { mapPackResultToInferno3D } from "./infernoCardBridge";
+import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
 import type { InfernoPackCanvasHandle } from "./InfernoPackCanvas";
 import StadiumFilmBackdrop from "./StadiumFilmBackdrop";
 import "./cinematic-pack.css";
@@ -576,6 +577,51 @@ export default function CinematicPackExperience({
     );
   }, [state?.summaryCards, buildShowcaseEntry]);
 
+  const [preparedCardAssets, setPreparedCardAssets] = useState(false);
+  const cardAssetUrls = useMemo(() => {
+    const urls = new Set<string>();
+    for (const entry of summaryShowcases) {
+      const assets = entry.theme3D.assets;
+      [assets.frontBg, assets.backBg, assets.frameImg, assets.fxImg, assets.crestImg].forEach((url) => {
+        if (url) urls.add(url);
+      });
+      const photo = sanitizePlayerPhotoCandidate(
+        entry.card3D.imageUrl,
+        entry.card3D.fullDisplayName || entry.card3D.surname
+      );
+      if (photo) urls.add(photo);
+    }
+    return [...urls];
+  }, [summaryShowcases]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreparedCardAssets(cardAssetUrls.length === 0);
+    if (!cardAssetUrls.length) return;
+    const preload = (url: string) => new Promise<void>((resolve) => {
+      const image = new window.Image();
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        resolve();
+      };
+      const timeout = window.setTimeout(finish, 8000);
+      image.onload = () => {
+        if (typeof image.decode === "function") {
+          void image.decode().catch(() => undefined).then(finish);
+        } else finish();
+      };
+      image.onerror = finish; // A missing image uses the card's existing fallback.
+      image.src = url;
+    });
+    void Promise.all(cardAssetUrls.map(preload)).then(() => {
+      if (!cancelled) setPreparedCardAssets(true);
+    });
+    return () => { cancelled = true; };
+  }, [cardAssetUrls]);
+
   const currentRevealShowcase =
     state?.phase === "CARD_REVEAL" && revealShowcases.length > 0
       ? revealShowcases[state.currentRevealIndex] || null
@@ -978,7 +1024,8 @@ export default function CinematicPackExperience({
                 transform: `translateY(${state.phase === "WALKOUT" ? (1 - stadiumFilmEntranceEase) * 65 : 0}px) scale(${
                   (stageCardScale * (state.phase === "WALKOUT" ? 0.68 + stadiumFilmEntranceEase * 0.32 : 1)).toFixed(4)
                 })`,
-                opacity: state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1,
+                opacity: preparedCardAssets ? (state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1) : 0,
+                transition: "opacity 320ms ease-out",
                 transformOrigin: "center",
                 filter: "drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 32px rgba(247,73,28,.62))",
                 position: "relative"
@@ -1202,6 +1249,7 @@ export default function CinematicPackExperience({
           <div className="v2-opening-stage cinematic-pack-perspective">
             <div className="v2-opening-aura" />
             <div className="v2-opening-ring" />
+            {enableStadiumFilm && <div aria-hidden="true" className="v2-prelude-kicker v2-opening-layout-spacer"><span className="v2-arena-kicker">{arenaCopy.kicker}</span><span className="v2-kicker-divider">//</span><span className="v2-arena-subtitle">{arenaCopy.subtitle}</span></div>}
             {enableStadiumFilm ? (
               <div className="v2-pack-box v2-cinematic-split-pack" role="img" aria-label={`Otwieranie paczki ${pack.name}`}>
                 <img src={packDisplayImage} alt="" className="v2-pack-img v2-split-upper" />
@@ -1217,6 +1265,15 @@ export default function CinematicPackExperience({
                 <img src={packImage} alt={pack.name} className="v2-pack-img" />
                 <div className="cinematic-laser-cut" />
               </div>
+            )}
+            {enableStadiumFilm && (
+              <>
+                <div aria-hidden="true" className="v2-ready-meta v2-opening-layout-spacer">
+                  <h3 className="v2-ready-title">{pack.name}</h3>
+                  <p className="v2-ready-desc">{pack.description || "Otwórz paczkę, aby wylosować unikalne karty DELTA."}</p>
+                </div>
+                <div aria-hidden="true" className="v2-primary-cta v2-opening-layout-spacer"><Flame size={18} /><span>OTWÓRZ PACZKĘ</span><Sparkles size={16} /></div>
+              </>
             )}
             <div className="v2-opening-label">ROZRYWANIE OPAKOWANIA...</div>
           </div>
