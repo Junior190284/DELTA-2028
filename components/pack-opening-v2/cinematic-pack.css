@@ -1579,6 +1579,13 @@
 .cinematic-v2-arena.has-stadium-film .v2-cinematic-prelude-backdrop {
   background-image: linear-gradient(180deg, rgba(2,3,8,.13), rgba(2,3,8,.14) 40%, rgba(2,3,8,.5)), var(--arena-stadium-image);
 }
+/* Until matching films are ready, show each pack's own stadium instead of INFERNO. */
+.cinematic-v2-arena.has-stadium-film:not([data-pack-theme="inferno"]) .universal-stage-stands {
+  background: linear-gradient(180deg, rgba(2,3,8,.12), rgba(2,3,8,.36)), var(--arena-stadium-image) center / cover no-repeat;
+}
+.cinematic-v2-arena.has-stadium-film:not([data-pack-theme="inferno"]) .universal-stage-stadium-photo {
+  opacity: 0;
+}
 .cinematic-v2-arena.has-stadium-film .v2-summary-stage {
   background: linear-gradient(180deg, rgba(2,3,8,.55), rgba(2,3,8,.88)), var(--arena-stadium-image) center / cover no-repeat;
 }
