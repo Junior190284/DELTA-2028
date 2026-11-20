@@ -8,6 +8,7 @@ export default function StadiumFilmBackdrop({
   desktop,
   theme,
   onPlaying,
+  onReady,
   onTimeUpdate,
   onEnded,
   onError,
@@ -16,6 +17,7 @@ export default function StadiumFilmBackdrop({
   desktop: boolean;
   theme: "inferno" | "legend";
   onPlaying: () => void;
+  onReady?: () => void;
   onTimeUpdate: (time: number) => void;
   onEnded: () => void;
   onError: () => void;
@@ -23,8 +25,26 @@ export default function StadiumFilmBackdrop({
   const videoRef = useRef<HTMLVideoElement>(null);
   const onErrorRef = useRef(onError);
   const onTimeUpdateRef = useRef(onTimeUpdate);
+  const onReadyRef = useRef(onReady);
   onErrorRef.current = onError;
   onTimeUpdateRef.current = onTimeUpdate;
+  onReadyRef.current = onReady;
+
+  const reportBuffered = () => {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+    for (let i = 0; i < video.buffered.length; i += 1) {
+      if (video.buffered.start(i) <= 0.1 && video.buffered.end(i) >= video.duration - 0.2) {
+        onReadyRef.current?.();
+        return;
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Load the film while the unopened pack is still on screen.
+    videoRef.current?.load();
+  }, [theme, desktop]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -62,13 +82,16 @@ export default function StadiumFilmBackdrop({
       // Until a true landscape shot is produced, preserve the actual moving footage.
       // The artificial zoom-pan desktop clip looked like a shaking still image.
       src={theme === "legend"
-        ? "/media/walkouts/delta-legend-stadium-v1.mp4"
+        ? "/media/walkouts/delta-legend-stadium-v2.mp4"
         : desktop
           ? "/media/walkouts/delta-inferno-stadium-desktop-v2.mp4"
           : "/media/walkouts/delta-inferno-stadium-v2.mp4"}
       muted
       playsInline
       preload="auto"
+      onProgress={reportBuffered}
+      onCanPlayThrough={() => onReadyRef.current?.()}
+      onLoadedData={reportBuffered}
       onPlaying={onPlaying}
       onTimeUpdate={(event) => onTimeUpdate(event.currentTarget.currentTime)}
       onEnded={onEnded}
