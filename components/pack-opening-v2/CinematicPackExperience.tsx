@@ -1256,6 +1256,7 @@ export default function CinematicPackExperience({
                 <img src={packDisplayImage} alt="" className="v2-pack-img v2-split-lower" />
                 <div className="v2-split-seam" />
                 <div className="v2-split-flare" />
+                <div aria-hidden="true" className="v2-pack-count-pill v2-opening-pack-count">{pack.cards_count} KART</div>
               </div>
             ) : (
               <div
