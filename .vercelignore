@@ -1,0 +1,21 @@
+# Vercel Deployment Ignore
+# Exclude heavy offline documentation and raw backups
+docs/
+backup_prod_*/
+scratch/
+
+# Exclude local test suites from serverless upload
+tests/
+
+# Exclude database migration scripts and local SQL
+supabase/
+
+# Exclude AI agent and IDE working configurations
+.agents/
+.codex/
+.gemini/
+
+# Exclude raw 3D assets and video formats not used in web runtime
+*.blend
+*.blend1
+*.webm
