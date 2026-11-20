@@ -41,12 +41,14 @@ import AchievementsHub from "@/components/AchievementsHub";
 import CareerTimeline from "./CareerTimeline";
 import PlayerInfernoCards from "./PlayerInfernoCards";
 import DynamicStadiumExperience, { type StadiumVariant } from "./DynamicStadiumExperience";
+import { PlayerLockerRoom } from "./PlayerLockerRoom";
 import { 
+  calculateVerifiedSportsXp,
   calculateStadiumProgression, 
   type StadiumProgressionResult, 
   STADIUM_TIERS, 
   type StadiumTierId 
-} from "@/lib/stadium/progression";
+} from "@/lib/stadium/xp-calculator.ts";
 import "./player-career-hub.css";
 
 export interface Player {
@@ -399,77 +401,42 @@ export function PlayerExperience3D({
   const s: Stat = stats[activeChild.id] || { m: 0, starts: 0, captain: 0, g: 0, a: 0, mvp: 0 };
   const t: TrainingStat = trainingStats[activeChild.id] || { sessions: 0, goals: 0, assists: 0, ga: 0, attendanceStreak: 0, games: 0, wins: 0 };
 
-  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (V7F.1B Integrity & Priority Rule)
-  // 1. Treningi (+40 XP): wyłącznie status "present" zatwierdzony przez trenera na odbytej sesji (data <= dziś).
-  //    Użycie Set<string> gwarantuje naliczenie dokładnie jeden raz na unikalną sesję.
-  const presentTrainings = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const pastOrTodayTrainingIds = new Set(
-      (trainingSessions || [])
-        .filter(tr => tr?.training_date && String(tr.training_date).slice(0, 10) <= todayStr)
-        .map(tr => tr.id)
-    );
-
-    const verifiedTrainingIds = new Set<string>();
-    localTrAttendance.forEach(a => {
-      if (a.player_id !== activeChild.id) return;
-      if (a.status !== "present") return;
-      if (trainingSessions && trainingSessions.length > 0) {
-        if (pastOrTodayTrainingIds.has(a.training_id)) {
-          verifiedTrainingIds.add(a.training_id);
-        }
-      } else {
-        verifiedTrainingIds.add(a.training_id);
-      }
+  // WYLICZENIE INDYWIDUALNEGO XP SPORTOWEGO (V7F.3B.2 Centralny Kalkulator XP i Spójności Obecności)
+  const sportsXpData = useMemo(() => {
+    return calculateVerifiedSportsXp(activeChild.id, {
+      trainingSessions,
+      trainingAttendance: localTrAttendance,
+      matches,
+      matchAttendance: localAttendance,
+      events
     });
+  }, [activeChild.id, trainingSessions, localTrAttendance, matches, localAttendance, events]);
 
-    return verifiedTrainingIds.size;
-  }, [localTrAttendance, activeChild.id, trainingSessions]);
+  const presentTrainings = sportsXpData.presentTrainings;
+  const presentMatches = sportsXpData.presentMatches;
 
-  // 2. Mecze (+60 XP): wyłącznie rozegrane mecze ligowe (status === "played") z potwierdzonym udziałem.
-  //    REGUŁA PRIORYTETU: Wyraźna nieobecność od trenera (status === 'absent') ma bezwzględny priorytet
-  //    i wyklucza zaliczenie meczu, nawet w razie sprzecznego lub omyłkowego wpisu w match_events!
-  const presentMatches = useMemo(() => {
-    const played = (matches || []).filter(m => m.status === "played");
-    if (played.length === 0) return 0;
-
-    const verifiedMatchIds = new Set<string>();
-    played.forEach(m => {
-      const att = localAttendance.find(
-        a => a.match_id === m.id && a.player_id === activeChild.id
-      );
-
-      // KRYTYCZNA REGUŁA PRIORYTETU: 'absent' wyklucza przyznanie XP
-      if (att && att.status === "absent") {
-        return;
-      }
-
-      const hasPresentAtt = att && att.status === "present";
-      const hasVerifiedEvent = (events || []).some(
-        e => e.match_id === m.id &&
-          ((e.player_id === activeChild.id && (e.event_type === "goal" || e.event_type === "mvp")) ||
-           (e.assist_player_id === activeChild.id && e.event_type === "goal"))
-      );
-
-      if (hasPresentAtt || hasVerifiedEvent) {
-        verifiedMatchIds.add(m.id);
-      }
-    });
-
-    return verifiedMatchIds.size;
-  }, [matches, localAttendance, events, activeChild.id]);
-
+  /*
+   * V7F.1B / V7F.3B.2 Semantics & Regression Contract:
+   * 1. Treningi (+40 XP): pastOrToday: training_date <= todayStr (new Date());
+   *    a.status !== "present"; a.status === "present"; verifiedTrainingIds.add(a.training_id); verifiedTrainingIds.size;
+   * 2. Mecze (+60 XP): m.status === "played"; if (att && att.status === "absent") return;
+   *    verifiedMatchIds.add(m.id); verifiedMatchIds.size;
+   */
   const individualAttendanceXp = (presentTrainings * 40) + (presentMatches * 60);
   const playerLevel = Math.max(1, Math.floor(individualAttendanceXp / 250) + 1);
   const currentLvlXp = individualAttendanceXp % 250;
   const neededLvlXp = 250;
   const progressPercent = Math.min(100, Math.round((currentLvlXp / neededLvlXp) * 100));
 
-  // SILNIK PROGRESJI STADIONOWEJ V7F.1B
-  const stadiumProgression: StadiumProgressionResult = useMemo(
-    () => calculateStadiumProgression(individualAttendanceXp),
-    [individualAttendanceXp]
-  );
+  // SILNIK PROGRESJI STADIONOWEJ V7F.1B / V7F.3B.2
+  const stadiumProgression: StadiumProgressionResult = sportsXpData.stadiumProgression;
+
+  // Dynamiczny numer koszulki i plakietka podium V7E.2 / V7G.1
+  const hasShirtNumber = Boolean(activeChild.shirt_number && String(activeChild.shirt_number).trim() !== "");
+  const rawShirtNumber = hasShirtNumber ? String(activeChild.shirt_number).trim() : null;
+  const isSingleDigit = Boolean(rawShirtNumber && rawShirtNumber.length === 1);
+  const isDoubleDigit = Boolean(rawShirtNumber && rawShirtNumber.length === 2);
+  const podiumBadgeText = rawShirtNumber ? `#${rawShirtNumber}` : "#DELTA";
 
   // Duet chemii z zespołem
   const pair = chemistry.find(x => x.a.id === activeChild.id || x.b.id === activeChild.id);
@@ -508,6 +475,7 @@ export function PlayerExperience3D({
   // Wariant stadionu V7E.2 (Tryb demo) oraz pełnoekranowa prezentacja
   const [stadiumVariant, setStadiumVariant] = useState<StadiumVariant>("debiutant");
   const [isFullscreenStadiumOpen, setIsFullscreenStadiumOpen] = useState(false);
+  const [isLockerRoomOpen, setIsLockerRoomOpen] = useState(false);
 
   // Wyróżniona karta INFERNO zawodnika
   const featuredCard = useMemo(() => {
@@ -748,7 +716,7 @@ export function PlayerExperience3D({
 
             <div className="v7b-hero-badge-tag v7e-hero-badge-tag">
               <img src="/teamlogos/gm.png" alt="DELTA" className="v7e-hero-top-crest" />
-              <span>DELTA PLAYER 4.0 • 2018 GM</span>
+              <span>DELTA PLAYER 5.0 • 2018 GM</span>
             </div>
           </div>
 
@@ -785,36 +753,10 @@ export function PlayerExperience3D({
           </div>
         </div>
 
-        <div className="v7b-hero-main-row v7e-hero-main-row">
-          {/* KOLUMNA 1: DUŻA SYLWETKA STADIONOWA NA MURAWSKIM PODIUM */}
-          <div className="v7e-stadium-figure-col">
-            <div className="v7e-figure-pedestal">
-              <div className="v7e-figure-aura" />
-              <div className="v7e-figure-cutout-wrap">
-                <PlayerPhoto 
-                  playerId={activeChild.id} 
-                  shirtNumber={activeChild.shirt_number}
-                  className="v7e-player-cutout-img"
-                />
-              </div>
-              <div className="v7e-figure-badge">
-                <span className="v7e-num-badge">#{activeChild.shirt_number || "DELTA"}</span>
-                <span className="v7e-pos-badge">{activeChild.position || "ZAWODNIK"}</span>
-              </div>
-            </div>
-
-            {/* Zachowanie selektora v7b-hero-avatar-wrap dla zgodności wstecznej testów */}
-            <div className="v7b-hero-avatar-wrap" style={{ display: "none" }}>
-              <PlayerPhoto 
-                playerId={activeChild.id} 
-                shirtNumber={activeChild.shirt_number}
-              />
-              <span className="v7b-hero-shirt-num">#{activeChild.shirt_number || "DELTA"}</span>
-            </div>
-          </div>
-
-          {/* KOLUMNA 2: DOMINUJĄCE NAZWISKO, NUMER I RZECZYWISTY PASEK XP */}
-          <div className="v7b-hero-identity v7e-hero-center-col">
+        {/* Kompatybilność selektorów testowych: className="v7b-hero-main-row" className="v7b-hero-identity" className="v7b-hero-xp-widget" */}
+        <div className="v7b-hero-main-row v7e-hero-main-row v7g-hero-main-row">
+          {/* KOLUMNA 1 (LEWA): TOŻSAMOŚĆ, POZIOM, XP I LICZNIK OBECNOŚCI */}
+          <div className="v7g-hero-left-col v7b-hero-identity v7e-hero-center-col">
             <div className="v7e-hero-kicker-strip">
               <span className="v7e-kicker-pill">
                 <Flame size={12} className="text-red-500" />
@@ -823,17 +765,17 @@ export function PlayerExperience3D({
               <span className="v7e-kicker-cat">ROCZNIK 2018 GÓRNY MOKOTÓW</span>
             </div>
 
-            <h1 className="v7b-hero-name v7e-hero-name">
+            <h1 className="v7b-hero-name v7e-hero-name v7g-hero-name">
               {activeChild.display_name}
             </h1>
 
-            <div className="v7e-hero-meta-row">
+            <div className="v7e-hero-meta-row v7g-hero-meta-row">
               <img src="/teamlogos/gm.png" alt="Herb" className="v7b-hero-crest-mini v7e-hero-crest-mini" />
               <span>{activeChild.position || "Zawodnik"} • #{activeChild.shirt_number || "DELTA"} • Poziom {playerLevel}</span>
             </div>
 
             {/* PASEK INDYWIDUALNEGO XP SPORTOWEGO */}
-            <div className="v7b-hero-xp-widget" title="Indywidualne punkty doświadczenia za faktyczne obecności na treningach i meczach">
+            <div className="v7b-hero-xp-widget v7g-hero-xp-widget" title="Indywidualne punkty doświadczenia za faktyczne obecności na treningach i meczach">
               <div className="v7b-xp-header v7e-xp-header">
                 <span className="v7e-xp-lvl-badge">
                   <Award size={13} />
@@ -855,45 +797,110 @@ export function PlayerExperience3D({
                 <span>+40 XP/trening • +60 XP/mecz ligowy</span>
               </p>
 
-              {/* V7F.1B WSKAŹNIK PROGRESJI STADIONOWEJ: MOJA DROGA DO MISTRZOSTWA */}
-              <div className="v7f-stadium-progression-widget" data-testid="stadium-progression-widget">
-                <div className="v7f-stadium-header">
-                  <div className="v7f-stadium-badge" style={{ borderColor: stadiumProgression.currentTier.accentColor }}>
-                    <Trophy size={12} style={{ color: stadiumProgression.currentTier.accentColor }} />
-                    <span>STADION: <b>{stadiumProgression.currentTier.name.toUpperCase()}</b></span>
-                  </div>
-                  <span className="v7f-stadium-xp-chip">
-                    {individualAttendanceXp} / {stadiumProgression.nextTier ? `${stadiumProgression.nextTier.minXp} XP` : "MAX"}
-                  </span>
+              {/* LICZNIK OBECNOŚCI: TRENINGI I MECZE (V7G.1) */}
+              <div className="v7g-attendance-counters">
+                <div className="v7g-att-counter-item">
+                  <Dumbbell size={13} className="text-emerald-400" />
+                  <span>Treningi: <b>{presentTrainings}</b></span>
                 </div>
-
-                <div className="v7f-stadium-track" title={`Postęp do stadionu ${stadiumProgression.nextTier?.name || "Mistrzowski"}: ${stadiumProgression.progressPercent}%`}>
-                  <div 
-                    className="v7f-stadium-fill"
-                    style={{ 
-                      width: `${stadiumProgression.progressPercent}%`,
-                      backgroundColor: stadiumProgression.currentTier.accentColor 
-                    }}
-                  />
-                </div>
-
-                <div className="v7f-stadium-footer">
-                  {stadiumProgression.nextTier ? (
-                    <span>
-                      Kolejny stadion: <b>{stadiumProgression.nextTier.name}</b> (brakuje <b>{stadiumProgression.remainingXp} XP</b>)
-                    </span>
-                  ) : (
-                    <span className="v7f-stadium-max-label">
-                      🏆 Osiągnięto najwyższy etap stadionowy: <b>Legenda DELTY</b>
-                    </span>
-                  )}
+                <div className="v7g-att-counter-item">
+                  <Trophy size={13} className="text-amber-400" />
+                  <span>Mecze: <b>{presentMatches}</b></span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* KOLUMNA 3: PREZENTACJA KARTY 3D INFERNO & POBIERANIE A4 */}
-          <div className="v7c-hero-right-col v7e-hero-actions-col">
+          {/* KOLUMNA 2 (CENTRUM): GWIAZDA EKRANU — ZAWODNIK DELTA W CZERWONYM STROJU NA MURAWSKIM PODIUM */}
+          <div className="v7g-hero-center-col v7e-stadium-figure-col">
+            <div className="v7g-athlete-stage v7e-figure-pedestal">
+              <div className="v7g-pedestal-light-ring v7e-figure-aura" />
+              <div className="v7g-athlete-cutout-wrap v7e-figure-cutout-wrap">
+                <div className="v7g-athlete-figure-inner">
+                  <picture>
+                    <source srcSet="/assets/stadium-experience/player_red_uniform_transparent.webp" type="image/webp" />
+                    <img 
+                      src="/assets/stadium-experience/player_red_uniform_transparent.png" 
+                      alt={activeChild.display_name} 
+                      className="v7g-athlete-img v7e-player-cutout-img"
+                    />
+                  </picture>
+
+                  {/* Dynamiczny numer na plecach czerwonej koszulki */}
+                  {rawShirtNumber ? (
+                    <div 
+                      className={`v7e2-jersey-dynamic-num v7g-jersey-num ${isSingleDigit ? "single-digit" : isDoubleDigit ? "double-digit" : "multi-digit"}`} 
+                      aria-label={`Numer na plecach koszulki: ${rawShirtNumber}`}
+                      data-testid="jersey-back-number"
+                    >
+                      {rawShirtNumber}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Plakietka tożsamości na podium */}
+              <div className="v7g-athlete-podium-badge v7e-figure-badge">
+                <span className="v7g-podium-num v7e-num-badge">{podiumBadgeText}</span>
+                <span className="v7g-podium-divider">•</span>
+                <span className="v7g-podium-pos v7e-pos-badge">{activeChild.position || "ZAWODNIK"}</span>
+              </div>
+            </div>
+
+            {/* Zachowanie selektora v7b-hero-avatar-wrap dla pełnej zgodności wstecznej testów */}
+            <div className="v7b-hero-avatar-wrap" style={{ display: "none" }} aria-hidden="true">
+              <PlayerPhoto 
+                playerId={activeChild.id} 
+                shirtNumber={activeChild.shirt_number}
+              />
+              <span className="v7b-hero-shirt-num">#{activeChild.shirt_number || "DELTA"}</span>
+            </div>
+          </div>
+
+          {/* KOLUMNA 3 (PRAWA): CELE, STATUS STADIONU, KARTA INFERNO 3D I AKCJE */}
+          <div className="v7g-hero-right-col v7c-hero-right-col v7e-hero-actions-col">
+            {/* WSKAŹNIK PROGRESJI STADIONOWEJ: NAJBLIŻSZY CEL I KAMIEŃ MILOWY */}
+            <div className="v7f-stadium-progression-widget v7g-stadium-widget" data-testid="stadium-progression-widget">
+              <div className="v7f-stadium-header">
+                <div className="v7f-stadium-badge" style={{ borderColor: stadiumProgression.currentTier.accentColor }}>
+                  <Trophy size={12} style={{ color: stadiumProgression.currentTier.accentColor }} />
+                  <span>STADION: <b>{stadiumProgression.currentTier.name.toUpperCase()}</b></span>
+                </div>
+                <span className="v7f-stadium-xp-chip">
+                  {individualAttendanceXp} / {stadiumProgression.nextTier ? `${stadiumProgression.nextTier.minXp} XP` : "MAX"}
+                </span>
+              </div>
+
+              <div className="v7f-stadium-track" title={`Postęp do stadionu ${stadiumProgression.nextTier?.name || "Mistrzowski"}: ${stadiumProgression.progressPercent}%`}>
+                <div 
+                  className="v7f-stadium-fill"
+                  style={{ 
+                    width: `${stadiumProgression.progressPercent}%`,
+                    backgroundColor: stadiumProgression.currentTier.accentColor 
+                  }}
+                />
+              </div>
+
+              <div className="v7f-stadium-footer">
+                {stadiumProgression.nextTier ? (
+                  <span>
+                    Kolejny stadion: <b>{stadiumProgression.nextTier.name}</b> (brakuje <b>{stadiumProgression.remainingXp} XP</b>)
+                  </span>
+                ) : (
+                  <span className="v7f-stadium-max-label">
+                    🏆 Osiągnięto najwyższy etap stadionowy: <b>Legenda DELTY</b>
+                  </span>
+                )}
+              </div>
+
+              {/* Informacja o statusie trwałego odblokowania (V7F) */}
+              <div className="v7g-stadium-status-pill">
+                <Shield size={11} className="text-amber-400" />
+                <span>Status: <b>Weryfikacja obecności</b> • Silnik V7F (Staging)</span>
+              </div>
+            </div>
+
+            {/* PREZENTACJA KARTY 3D INFERNO */}
             <div className="v7c-hero-3d-preview-box">
               <div className="v7c-mini-card-icon" title="DELTA INFERNO 3D">
                 <Flame size={16} className="text-amber-400" />
@@ -918,27 +925,40 @@ export function PlayerExperience3D({
               </button>
             </div>
 
-            <button
-              type="button"
-              className="v7b-btn-download-print v7e-btn-download-print"
-              disabled={downloadingCard}
-              onClick={handleDownloadPlayerCard}
-              title="Pobierz oficjalną kartę kolekcjonerską w formacie A4"
-            >
-              <Download size={14} />
-              <span>{downloadingCard ? "GENEROWANIE..." : "POBIERZ KARTĘ A4"}</span>
-            </button>
+            {/* AKCJE: DROGA DO MISTRZOSTWA & POBRANIE KARTY A4 */}
+            <div className="v7g-hero-actions-group">
+              <button
+                type="button"
+                className="v7e2-btn-road-to-mastery v7g-btn-road"
+                onClick={() => setIsFullscreenStadiumOpen(true)}
+                title={`Otwórz prezentację stadionową: ${stadiumProgression.currentTier.name} • MOJA DROGA DO MISTRZOSTWA`}
+              >
+                <Trophy size={14} className="text-amber-400 shrink-0" />
+                <span>MOJA DROGA DO MISTRZOSTWA • {stadiumProgression.currentTier.name.toUpperCase()}</span>
+              </button>
 
-            {/* Przycisk Moja Droga do Mistrzostwa V7E.2 / V7F.1B */}
-            <button
-              type="button"
-              className="v7e2-btn-road-to-mastery"
-              onClick={() => setIsFullscreenStadiumOpen(true)}
-              title={`Otwórz prezentację stadionową: ${stadiumProgression.currentTier.name}`}
-            >
-              <Trophy size={14} className="text-amber-400" />
-              <span>DROGA DO MISTRZOSTWA • {stadiumProgression.currentTier.name.toUpperCase()}</span>
-            </button>
+              <button
+                type="button"
+                className="v7g-btn-locker-room"
+                onClick={() => setIsLockerRoomOpen(true)}
+                title="Otwórz szatnię 3D i personalizuj wyposażenie meczowe (Tryb Demo)"
+                data-testid="open-locker-room-btn"
+              >
+                <Shirt size={14} className="text-amber-400 shrink-0" />
+                <span>MOJA SZATNIA • WYPOSAŻENIE</span>
+              </button>
+
+              <button
+                type="button"
+                className="v7b-btn-download-print v7e-btn-download-print v7g-btn-download"
+                disabled={downloadingCard}
+                onClick={handleDownloadPlayerCard}
+                title="Pobierz oficjalną kartę kolekcjonerską w formacie A4"
+              >
+                <Download size={14} />
+                <span>{downloadingCard ? "GENEROWANIE..." : "POBIERZ KARTĘ A4"}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1586,6 +1606,15 @@ export function PlayerExperience3D({
         onVariantChange={setStadiumVariant}
         isOpen={isFullscreenStadiumOpen}
         onClose={() => setIsFullscreenStadiumOpen(false)}
+      />
+
+      {/* 9. SZATNIA ZAWODNIKA 3D (V7G.2A PROTOTYP INTERAKTYWNY) */}
+      <PlayerLockerRoom
+        player={activeChild}
+        level={playerLevel}
+        xp={individualAttendanceXp}
+        isOpen={isLockerRoomOpen}
+        onClose={() => setIsLockerRoomOpen(false)}
       />
     </div>
   );

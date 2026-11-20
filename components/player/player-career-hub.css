@@ -35,6 +35,7 @@
   .v7b-career-hub-container {
     margin: 0 auto !important;
     padding: 0 2px 110px !important;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 20px)) !important;
     gap: 12px;
   }
 }
@@ -3733,6 +3734,697 @@
   .v7f-stadium-fill,
   .v7e2-hud-stadium-fill,
   .v7f-promotion-banner {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =============================================================================
+   18. ETAP V7G.1: PLAYER HERO 5.0 — PREMIUM BROADCAST CAREER REDESIGN
+   ============================================================================= */
+
+/* 3-COLUMN BROADCAST DESKTOP LAYOUT (LEFT: IDENTITY/XP, CENTER: ATHLETE, RIGHT: OBJECTIVES/ACTIONS) */
+.v7g-hero-main-row {
+  display: grid;
+  grid-template-columns: minmax(290px, 1.05fr) minmax(360px, 1.25fr) minmax(310px, 1.1fr);
+  gap: 24px;
+  align-items: center;
+  position: relative;
+  z-index: 5;
+  width: 100%;
+}
+
+/* KOLUMNA 1 (LEWA): TOŻSAMOŚĆ, POZIOM, XP I LICZNIK OBECNOŚCI */
+.v7g-hero-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  z-index: 6;
+}
+
+.v7g-hero-name {
+  font-size: clamp(22px, 2.3vw, 34px);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 
+    0 2px 10px rgba(0, 0, 0, 0.9),
+    0 0 25px rgba(226, 46, 48, 0.35);
+  margin: 2px 0 6px 0;
+  line-height: 1.12;
+  overflow-wrap: break-word;
+  word-break: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.v7g-hero-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.v7g-hero-xp-widget {
+  background: rgba(10, 15, 29, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.v7g-attendance-counters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.v7g-att-counter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.v7g-att-counter-item b {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+/* KOLUMNA 2 (CENTRUM): GWIAZDA EKRANU — ZAWODNIK DELTA NA MURAWSKIM PODIUM */
+.v7g-hero-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  min-height: 420px;
+  z-index: 6;
+}
+
+.v7g-athlete-stage {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.v7g-pedestal-light-ring {
+  position: absolute;
+  bottom: 12px;
+  width: 260px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.45) 0%, rgba(246, 201, 82, 0.28) 45%, rgba(226, 46, 48, 0.18) 75%, transparent 90%);
+  filter: blur(5px);
+  box-shadow: 
+    0 0 35px rgba(16, 185, 129, 0.35),
+    0 0 18px rgba(246, 201, 82, 0.25);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.v7g-athlete-cutout-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: 390px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.v7g-athlete-figure-inner {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  line-height: 0;
+  max-height: 100%;
+}
+
+.v7g-athlete-stage .v7g-athlete-cutout-wrap img.v7g-athlete-img {
+  width: auto !important;
+  height: 380px !important;
+  max-width: 340px !important;
+  max-height: 380px !important;
+  object-fit: contain !important;
+  display: block !important;
+  filter: 
+    drop-shadow(0 15px 30px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 25px rgba(226, 46, 48, 0.4))
+    brightness(1.1) !important;
+  animation: v7gAthleteEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Precyzyjne pozycjonowanie numeru na plecach czerwonej koszulki */
+.v7g-athlete-figure-inner .v7g-jersey-num {
+  position: absolute;
+  top: 31%;
+  left: 49.5%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-varsity, 'Montserrat', 'Inter', sans-serif);
+  font-weight: 950;
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    0 0 2px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+  user-select: none;
+  z-index: 6;
+  text-align: center;
+}
+
+.v7g-athlete-podium-badge {
+  position: relative;
+  z-index: 7;
+  margin-top: -10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 12, 22, 0.94);
+  border: 1px solid rgba(246, 201, 82, 0.5);
+  padding: 5px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  font-family: var(--font-varsity, 'Montserrat', sans-serif);
+}
+
+.v7g-podium-num {
+  font-size: 13px;
+  font-weight: 900;
+  color: #f6c952;
+}
+
+.v7g-podium-divider {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+}
+
+.v7g-podium-pos {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+/* KOLUMNA 3 (PRAWA): CELE, STATUS STADIONU, KARTA INFERNO 3D I AKCJE */
+.v7g-hero-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 6;
+  min-width: 0;
+  padding-right: 2px;
+}
+
+.v7g-stadium-widget {
+  margin-top: 0;
+  background: rgba(10, 15, 29, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.v7g-stadium-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #e2e8f0;
+  background: rgba(246, 201, 82, 0.08);
+  border: 1px solid rgba(246, 201, 82, 0.25);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 6px;
+}
+
+.v7g-stadium-status-pill b {
+  color: #f6c952;
+}
+
+.v7g-hero-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.v7g-btn-road {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(226, 46, 48, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%);
+  border: 1px solid rgba(246, 201, 82, 0.5);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(10.5px, 0.85vw, 12px);
+  letter-spacing: 0.04em;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(226, 46, 48, 0.4);
+  touch-action: manipulation;
+  width: 100%;
+  padding: 11px 16px;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.v7g-btn-road:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(226, 46, 48, 0.55);
+  border-color: #f6c952;
+}
+
+.v7g-btn-download {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  width: 100%;
+  padding: 11px 16px;
+}
+
+.v7g-btn-download:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.v7g-btn-locker-room {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(24, 30, 48, 0.95) 0%, rgba(15, 20, 32, 0.95) 100%);
+  border: 1px solid rgba(246, 201, 82, 0.4);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(10.5px, 0.85vw, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  width: 100%;
+}
+
+.v7g-btn-locker-room:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(246, 201, 82, 0.3);
+  border-color: #f6c952;
+  background: linear-gradient(135deg, rgba(38, 48, 76, 0.95) 0%, rgba(22, 29, 48, 0.95) 100%);
+}
+
+.v7g-btn-road:focus-visible,
+.v7g-btn-download:focus-visible,
+.v7g-btn-locker-room:focus-visible,
+.v7c-btn-inspect-3d:focus-visible,
+.v7e-hero-back-btn:focus-visible,
+.v7e2-hero-switch-btn:focus-visible {
+  outline: 2px solid #f6c952;
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   RESPONSIVE ADAPTATIONS FOR PLAYER HERO 5.0 (V7G.1A MOBILE UX POLISH)
+   ============================================================================= */
+
+@media (max-width: 1024px) {
+  .v7g-hero-main-row {
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 16px;
+  }
+  .v7g-athlete-stage {
+    min-height: 360px;
+    height: 360px;
+  }
+  .v7g-athlete-cutout-wrap {
+    height: 330px;
+  }
+  .v7g-athlete-stage .v7g-athlete-cutout-wrap img.v7g-athlete-img {
+    height: 320px !important;
+    max-height: 320px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .v7e-stadium-hero {
+    padding: 12px 14px 16px !important;
+    gap: 10px !important;
+    border-radius: 18px;
+  }
+  .v7e-stadium-hero .v7b-hero-top-strip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .v7e-hero-top-left {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .v7e-hero-season-tag {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    font-size: 10px;
+  }
+  .v7g-hero-main-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .v7g-hero-center-col {
+    order: 1;
+    min-height: 215px;
+    margin: 0 auto;
+  }
+  .v7g-athlete-stage {
+    min-height: 215px;
+    height: 215px;
+    max-width: 220px;
+    margin: 0 auto;
+  }
+  .v7g-athlete-cutout-wrap {
+    height: 200px;
+    max-width: 190px;
+  }
+  .v7g-athlete-stage .v7g-athlete-cutout-wrap img.v7g-athlete-img {
+    height: 195px !important;
+    max-height: 195px !important;
+    width: auto;
+    object-fit: contain;
+  }
+  .v7g-athlete-figure-inner .v7g-jersey-num {
+    font-size: 20px;
+  }
+  .v7g-athlete-figure-inner .v7g-jersey-num.single-digit {
+    font-size: 24px;
+  }
+  .v7g-pedestal-light-ring {
+    width: 180px;
+    height: 42px;
+    bottom: 6px;
+  }
+  .v7g-athlete-podium-badge {
+    padding: 3px 10px;
+    font-size: 10.5px;
+    margin-top: 2px;
+  }
+  .v7g-hero-left-col {
+    order: 2;
+    gap: 4px;
+  }
+  .v7e-hero-kicker-strip {
+    margin-bottom: 0px;
+    font-size: 9.5px;
+  }
+  .v7g-hero-name {
+    font-size: clamp(19px, 5.2vw, 23px) !important;
+    line-height: 1.15;
+    margin: 2px 0 4px;
+  }
+  .v7g-hero-meta-row {
+    font-size: 11.5px;
+    margin-bottom: 6px;
+    gap: 6px;
+  }
+  .v7g-hero-xp-widget {
+    padding: 10px 12px;
+  }
+  .v7b-xp-header {
+    margin-bottom: 6px;
+  }
+  .v7e-xp-lvl-badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+  }
+  .v7b-xp-header b {
+    font-size: 12.5px;
+  }
+  .v7g-hero-right-col {
+    order: 3;
+    gap: 10px;
+  }
+  .v7g-btn-road,
+  .v7g-btn-locker-room,
+  .v7g-btn-download {
+    min-height: 44px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .v7e-stadium-hero {
+    padding: 10px 12px 14px !important;
+    gap: 8px !important;
+    border-radius: 16px;
+  }
+  .v7e-stadium-hero .v7b-hero-top-strip {
+    gap: 6px !important;
+  }
+  .v7e-hero-top-left {
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+  .v7e-hero-badge-tag {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+    white-space: nowrap !important;
+  }
+  .v7g-athlete-stage {
+    min-height: 195px;
+    height: 195px;
+    max-width: 200px;
+  }
+  .v7g-athlete-cutout-wrap {
+    height: 182px;
+  }
+  .v7g-athlete-stage .v7g-athlete-cutout-wrap img.v7g-athlete-img {
+    height: 178px !important;
+    max-height: 178px !important;
+  }
+  .v7g-athlete-figure-inner .v7g-jersey-num {
+    font-size: 18px;
+  }
+  .v7g-athlete-figure-inner .v7g-jersey-num.single-digit {
+    font-size: 22px;
+  }
+  .v7g-pedestal-light-ring {
+    width: 160px;
+    height: 38px;
+    bottom: 5px;
+  }
+  .v7e-hero-back-btn {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 11px;
+    white-space: nowrap !important;
+  }
+  .v7g-hero-name {
+    font-size: 21px !important;
+  }
+  .v7g-attendance-counters {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding-top: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .v7e-stadium-hero {
+    padding: 8px 8px 12px !important;
+    gap: 6px !important;
+  }
+  .v7e-stadium-hero .v7b-hero-top-strip {
+    gap: 4px !important;
+    margin-bottom: 2px !important;
+  }
+  .v7e-hero-top-left {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 5px !important;
+  }
+  .v7e-hero-back-btn {
+    min-height: 36px !important;
+    padding: 4px 8px !important;
+    font-size: 10.5px !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+  .v7e-hero-badge-tag {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 3px 6px !important;
+    font-size: 8.5px !important;
+    letter-spacing: 0.02em !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+  .v7e-hero-top-crest {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  .v7e-hero-season-tag {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    font-size: 8px !important;
+    gap: 3px !important;
+    min-height: 22px !important;
+  }
+  .v7e2-hero-switcher {
+    padding: 1px 3px !important;
+    gap: 2px !important;
+  }
+  .v7e2-hero-demo-tag {
+    font-size: 7px !important;
+    padding: 1px 3px !important;
+  }
+  .v7e2-hero-switch-btn {
+    font-size: 7.5px !important;
+    padding: 2px 4px !important;
+  }
+  .v7d-role-pill {
+    font-size: 7.5px !important;
+    padding: 1px 4px !important;
+    white-space: nowrap !important;
+  }
+  .v7g-hero-main-row {
+    gap: 6px !important;
+  }
+  .v7g-hero-center-col {
+    min-height: auto !important;
+    margin: 0 auto !important;
+  }
+  .v7g-athlete-stage {
+    min-height: 168px !important;
+    height: 168px !important;
+    max-width: 175px !important;
+    margin: 0 auto !important;
+  }
+  .v7g-athlete-cutout-wrap {
+    height: 156px !important;
+  }
+  .v7g-athlete-stage .v7g-athlete-cutout-wrap img.v7g-athlete-img {
+    height: 154px !important;
+    max-height: 154px !important;
+  }
+  .v7g-athlete-figure-inner .v7g-jersey-num {
+    font-size: 16px;
+  }
+  .v7g-athlete-figure-inner .v7g-jersey-num.single-digit {
+    font-size: 19px;
+  }
+  .v7g-pedestal-light-ring {
+    width: 140px;
+    height: 32px;
+    bottom: 4px;
+  }
+  .v7g-athlete-podium-badge {
+    padding: 2px 8px !important;
+    font-size: 9.5px !important;
+    margin-top: 2px !important;
+  }
+  .v7g-hero-left-col {
+    gap: 2px !important;
+  }
+  .v7e-hero-kicker-strip {
+    display: none !important;
+  }
+  .v7g-hero-name {
+    font-size: 18px !important;
+    line-height: 1.12 !important;
+    margin: 2px 0 2px !important;
+  }
+  .v7g-hero-meta-row {
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
+    gap: 4px !important;
+  }
+  .v7g-hero-xp-widget {
+    padding: 6px 10px !important;
+    margin-top: 2px !important;
+  }
+  .v7b-xp-header {
+    margin-bottom: 4px !important;
+  }
+  .v7e-xp-lvl-badge {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+  }
+  .v7b-xp-header b {
+    font-size: 11.5px !important;
+  }
+}
+
+/* ENTRANCE ANIMATION & ACCESSIBILITY */
+@keyframes v7gAthleteEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+    filter: brightness(0.6) blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: brightness(1.1) blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v7g-athlete-img {
     animation: none !important;
     transition: none !important;
   }

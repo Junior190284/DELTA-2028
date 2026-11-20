@@ -1,0 +1,947 @@
+/* =============================================================================
+   DELTA INFERNO — ETAP V7G.2A
+   PLAYER LOCKER ROOM 3D — CINEMATIC ACADEMY STYLES
+   ============================================================================= */
+
+/* FULLSCREEN OVERLAY PORTAL */
+.v7g-locker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at 50% 30%, #16080a 0%, #0a0c14 60%, #030407 100%);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-varsity, inherit);
+}
+
+/* TOP HEADER BAR */
+.v7g-locker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(9, 13, 22, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.v7g-locker-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.v7g-locker-crest {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(226, 46, 48, 0.6));
+}
+
+.v7g-locker-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.v7g-locker-title-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f6c952;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.v7g-locker-title {
+  font-size: 18px;
+  font-weight: 950;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.v7g-locker-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v7g-locker-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.v7g-locker-btn-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v7g-locker-btn-close:hover {
+  background: rgba(226, 46, 48, 0.25);
+  border-color: #e22e30;
+  color: #ffffff;
+}
+
+/* MAIN STAGE LAYOUT: SPLIT STUDIO VIEW (DESKTOP) */
+.v7g-locker-viewport {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(380px, 1.35fr) minmax(320px, 1fr);
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* =============================================================================
+   SCENE: CINEMATIC ACADEMY LOCKER (LEFT / CENTER COLUMN)
+   ============================================================================= */
+.v7g-locker-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, rgba(226, 46, 48, 0.12) 0%, transparent 65%);
+}
+
+/* Szafka zawodnika w tle */
+.v7g-locker-structure {
+  position: absolute;
+  top: 15px;
+  bottom: 25px;
+  width: 86%;
+  max-width: 440px;
+  background: linear-gradient(180deg, #181d27 0%, #0d111a 60%, #080a10 100%);
+  border-radius: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 2px 20px rgba(255, 255, 255, 0.04),
+    0 10px 40px rgba(0, 0, 0, 0.8),
+    0 0 50px rgba(226, 46, 48, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Listwa LED nad szafką */
+.v7g-locker-led-top {
+  height: 6px;
+  background: linear-gradient(90deg, #e22e30 0%, #f6c952 50%, #e22e30 100%);
+  box-shadow: 0 0 16px rgba(246, 201, 82, 0.8);
+}
+
+/* Tabliczka znamionowa z nazwiskiem i numerem */
+.v7g-locker-nameplate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.v7g-nameplate-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v7g-nameplate-crest {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.v7g-nameplate-name {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.v7g-nameplate-number {
+  font-size: 14px;
+  font-weight: 950;
+  color: #f6c952;
+  background: rgba(246, 201, 82, 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(246, 201, 82, 0.3);
+}
+
+/* Drewniana ławka szatni */
+.v7g-locker-bench {
+  margin-top: auto;
+  height: 38px;
+  background: linear-gradient(180deg, #2a221b 0%, #17130f 100%);
+  border-top: 3px solid #78350f;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.v7g-locker-bench::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0, 0, 0, 0.25) 40px, rgba(0, 0, 0, 0.25) 42px);
+}
+
+/* =============================================================================
+   AVATAR RENDERER (INTERAKTYWNY ZAWODNIK)
+   ============================================================================= */
+.v7g-avatar-renderer-root {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: grab;
+  user-select: none;
+  outline: none;
+}
+
+.v7g-avatar-renderer-root:focus-visible {
+  outline: 2px solid #f6c952;
+  outline-offset: 4px;
+}
+
+.v7g-avatar-renderer-root.dragging {
+  cursor: grabbing;
+}
+
+.v7g-avatar-stage-3d {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  transform-style: preserve-3d;
+  transition: transform 0.08s ease-out;
+}
+
+/* Cień podłogowy */
+.v7g-avatar-floor-shadow {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  width: 220px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.85) 0%, rgba(226, 46, 48, 0.3) 50%, transparent 80%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Kontener sylwetki */
+.v7g-avatar-cutout-container {
+  position: relative;
+  height: 390px;
+  max-height: 52vh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 3;
+}
+
+.v7g-avatar-body-img {
+  width: auto !important;
+  height: 100% !important;
+  max-height: 390px !important;
+  object-fit: contain !important;
+  display: block !important;
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.95)) brightness(1.08);
+  pointer-events: none;
+  transition: filter 0.25s ease;
+}
+
+/* Dynamiczny numer na plecach koszulki */
+.v7g-avatar-jersey-number {
+  position: absolute;
+  top: 31%;
+  left: 49.5%;
+  font-family: var(--font-varsity, "Impact", "Arial Black", sans-serif);
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  pointer-events: none;
+  z-index: 4;
+  line-height: 1;
+}
+
+/* Opaska kapitańska */
+.v7g-avatar-armband {
+  position: absolute;
+  top: 34%;
+  left: 38%;
+  background: linear-gradient(180deg, #f6c952 0%, #e22e30 100%);
+  border: 1px solid #ffffff;
+  border-radius: 4px;
+  padding: 1px 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.v7g-armband-c {
+  font-size: 9px;
+  font-weight: 950;
+  color: #000000;
+}
+
+/* Wskaźnik butów */
+.v7g-avatar-boots-glow {
+  position: absolute;
+  bottom: 6px;
+  width: 90px;
+  height: 14px;
+  border-radius: 10px;
+  opacity: 0.35;
+  filter: blur(4px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Piłka na podłodze */
+.v7g-avatar-ball-fixture {
+  position: absolute;
+  bottom: 14px;
+  right: 18%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.v7g-ball-sphere {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #cbd5e1 50%, #475569 90%);
+  border: 2px solid;
+  position: relative;
+  overflow: hidden;
+}
+
+.v7g-ball-pentagon {
+  position: absolute;
+  top: 30%;
+  left: 30%;
+  width: 12px;
+  height: 12px;
+  background: #0f172a;
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+.v7g-ball-shadow {
+  width: 28px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  filter: blur(2px);
+  margin-top: -3px;
+}
+
+/* Pasek kontrolek obrotu */
+.v7g-avatar-controls-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  background: rgba(9, 13, 22, 0.85);
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  z-index: 6;
+}
+
+.v7g-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.v7g-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.v7g-ctrl-btn.active {
+  background: rgba(226, 46, 48, 0.35);
+  border-color: #e22e30;
+  color: #ffffff;
+}
+
+.v7g-ctrl-btn.rotate-toggle.spinning {
+  background: rgba(246, 201, 82, 0.25);
+  border-color: #f6c952;
+  color: #f6c952;
+}
+
+.v7g-avatar-drag-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 6px;
+  z-index: 6;
+}
+
+/* =============================================================================
+   CATALOG PANEL (RIGHT COLUMN)
+   ============================================================================= */
+.v7g-locker-catalog-panel {
+  display: flex;
+  flex-direction: column;
+  background: rgba(11, 15, 26, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+}
+
+/* PASEK ZAKŁADEK KATEGORII (6 KATEGORII) */
+.v7g-locker-cat-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.v7g-locker-cat-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.v7g-cat-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.v7g-cat-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+.v7g-cat-tab-btn.active {
+  background: linear-gradient(135deg, rgba(226, 46, 48, 0.35) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: #e22e30;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(226, 46, 48, 0.3);
+}
+
+/* SIATKA PRZEDMIOTÓW */
+.v7g-locker-items-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.v7g-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 10px;
+}
+
+/* KARTA PRZEDMIOTU */
+.v7g-item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 24, 38, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+.v7g-item-card:hover {
+  background: rgba(25, 33, 52, 0.85);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.v7g-item-card.is-equipped {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.v7g-item-card.is-previewing {
+  border-color: #f6c952;
+  background: rgba(246, 201, 82, 0.14);
+  box-shadow: 0 0 16px rgba(246, 201, 82, 0.3);
+}
+
+.v7g-item-card.is-locked {
+  opacity: 0.65;
+  background: rgba(10, 14, 22, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.v7g-item-card.is-locked:hover {
+  opacity: 0.85;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.v7g-item-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.v7g-item-badge-pill {
+  font-size: 8px;
+  font-weight: 900;
+  padding: 2px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.v7g-item-badge-pill.standard {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.v7g-item-badge-pill.premium {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.v7g-item-badge-pill.inferno {
+  background: rgba(246, 201, 82, 0.2);
+  color: #f6c952;
+}
+
+.v7g-item-badge-pill.legend {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.v7g-item-status-icon {
+  display: flex;
+  align-items: center;
+}
+
+.v7g-item-icon-wrap {
+  width: 100%;
+  height: 55px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.v7g-item-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 26px;
+}
+
+.v7g-item-state-label {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.v7g-item-state-label.equipped {
+  color: #10b981;
+}
+
+.v7g-item-state-label.preview {
+  color: #f6c952;
+}
+
+.v7g-item-state-label.available {
+  color: #38bdf8;
+}
+
+.v7g-item-state-label.locked {
+  color: #f87171;
+}
+
+/* INSPEKCJA / DETALE WYBRANEGO PRZEDMIOTU */
+.v7g-item-inspect-drawer {
+  background: rgba(15, 20, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+
+.v7g-inspect-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.v7g-inspect-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.v7g-inspect-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 0 0 8px 0;
+}
+
+.v7g-inspect-locked-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #fca5a5;
+}
+
+.v7g-inspect-locked-box b {
+  color: #ffffff;
+}
+
+/* =============================================================================
+   BOTTOM ACTION BAR (ZASTOSUJ / ANULUJ)
+   ============================================================================= */
+.v7g-locker-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(8, 11, 18, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  z-index: 10;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.v7g-actions-status-text {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v7g-actions-status-text b {
+  color: #f6c952;
+}
+
+.v7g-actions-btns-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.v7g-btn-cancel-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.v7g-btn-cancel-preview:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.v7g-btn-apply-equipment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e22e30 0%, #b91c1c 100%);
+  border: 1px solid #ef4444;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(226, 46, 48, 0.4);
+}
+
+.v7g-btn-apply-equipment:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(226, 46, 48, 0.6);
+}
+
+.v7g-btn-apply-equipment:disabled,
+.v7g-btn-cancel-preview:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN (320px, 390px, 768px, 1440px)
+   ============================================================================= */
+
+@media (max-width: 900px) {
+  .v7g-locker-viewport {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    overflow-y: auto;
+  }
+
+  .v7g-locker-scene {
+    padding: 12px 14px;
+    min-height: 280px;
+  }
+
+  .v7g-locker-structure {
+    width: 95%;
+  }
+
+  .v7g-avatar-stage-3d {
+    height: 270px;
+  }
+
+  .v7g-avatar-cutout-container {
+    height: 235px;
+  }
+
+  .v7g-avatar-body-img {
+    max-height: 235px !important;
+  }
+
+  .v7g-avatar-jersey-number {
+    font-size: 18px;
+  }
+
+  .v7g-avatar-ball-fixture {
+    bottom: 8px;
+    right: 22%;
+  }
+
+  .v7g-ball-sphere {
+    width: 26px;
+    height: 26px;
+  }
+
+  .v7g-locker-catalog-panel {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .v7g-locker-items-container {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 480px) {
+  .v7g-locker-header {
+    padding: 10px 12px;
+  }
+
+  .v7g-locker-title {
+    font-size: 15px;
+  }
+
+  .v7g-locker-title-kicker {
+    font-size: 9px;
+  }
+
+  .v7g-locker-scene {
+    min-height: 250px;
+    padding: 8px 10px;
+  }
+
+  .v7g-avatar-stage-3d {
+    height: 235px;
+  }
+
+  .v7g-avatar-cutout-container {
+    height: 200px;
+  }
+
+  .v7g-avatar-body-img {
+    max-height: 200px !important;
+  }
+
+  .v7g-avatar-jersey-number {
+    font-size: 16px;
+  }
+
+  .v7g-items-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .v7g-locker-actions-bar {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 12px));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .v7g-actions-btns-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .v7g-locker-header {
+    padding: 8px 10px;
+  }
+
+  .v7g-locker-crest {
+    width: 24px;
+    height: 24px;
+  }
+
+  .v7g-locker-title {
+    font-size: 13.5px;
+  }
+
+  .v7g-locker-demo-badge {
+    display: none;
+  }
+
+  .v7g-locker-btn-close {
+    padding: 6px 10px;
+    min-height: 36px;
+    font-size: 11px;
+  }
+
+  .v7g-avatar-stage-3d {
+    height: 210px;
+  }
+
+  .v7g-avatar-cutout-container {
+    height: 180px;
+  }
+
+  .v7g-avatar-body-img {
+    max-height: 180px !important;
+  }
+
+  .v7g-avatar-jersey-number {
+    font-size: 15px;
+  }
+
+  .v7g-avatar-controls-strip {
+    padding: 2px 4px;
+    gap: 3px;
+  }
+
+  .v7g-ctrl-btn {
+    padding: 3px 6px;
+    font-size: 8.5px;
+  }
+
+  .v7g-cat-tab-btn {
+    padding: 6px 9px;
+    font-size: 9.5px;
+  }
+}
+
+/* PREFERS REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .v7g-avatar-stage-3d,
+  .v7g-avatar-body-img,
+  .v7g-item-card,
+  .v7g-btn-apply-equipment {
+    transition: none !important;
+    animation: none !important;
+  }
+}
