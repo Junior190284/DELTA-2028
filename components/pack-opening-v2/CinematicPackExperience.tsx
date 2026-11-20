@@ -210,7 +210,7 @@ export default function CinematicPackExperience({
     const nextController = new PackExperienceController({
       result: activeResult,
       timings: enableStadiumFilm && !effectiveReducedMotion
-        ? { walkoutInfernoMs: 11650, walkoutStandardMs: 11650 }
+        ? { openingTearMs: 1700, transitionMs: 500, walkoutInfernoMs: 11650, walkoutStandardMs: 11650 }
         : undefined,
       reducedMotion: effectiveReducedMotion,
       initialMuted: isMutedLive,
@@ -815,7 +815,7 @@ export default function CinematicPackExperience({
       data-phase={currentPhase}
       data-rarity={activeStageRarityProfile.tier}
       data-pack-theme={pack.theme}
-      className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
+      className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
       style={{ isolation: "isolate", backgroundColor: "#020408" }}
     >
       {/* Dynamic Stadium Spotlights (strictly clipped so diagonal beams never create scroll overflow) */}
@@ -1110,6 +1110,15 @@ export default function CinematicPackExperience({
         {/* PHASE A: READY (Centered 3D Floating Booster Pack) */}
         {currentPhase === "READY" && (
           <div className="v2-ready-stage cinematic-pack-perspective animate-fadeIn">
+            {enableStadiumFilm && (
+              <div className="v2-premium-prelude" aria-hidden="true">
+                <div className="v2-prelude-floodlights" />
+                <div className="v2-prelude-horizon" />
+                <div className="v2-prelude-floor" />
+                <div className="v2-prelude-ring" />
+              </div>
+            )}
+            {enableStadiumFilm && <div className="v2-prelude-kicker">DELTA INFERNO <span>•</span> STADION CZEKA NA BOHATERA</div>}
             {/* 3D Booster Pack */}
             <div
               onClick={isRequestingOpen ? undefined : handlePlay}
@@ -1167,13 +1176,22 @@ export default function CinematicPackExperience({
           <div className="v2-opening-stage cinematic-pack-perspective">
             <div className="v2-opening-aura" />
             <div className="v2-opening-ring" />
-            <div
-              className="v2-pack-box cinematic-pack-tearing"
-              style={{ boxShadow: "0 0 60px rgba(255,60,20,0.8)" }}
-            >
-              <img src={packImage} alt={pack.name} className="v2-pack-img" />
-              <div className="cinematic-laser-cut" />
-            </div>
+            {enableStadiumFilm ? (
+              <div className="v2-pack-box v2-cinematic-split-pack" role="img" aria-label={`Otwieranie paczki ${pack.name}`}>
+                <img src={packImage} alt="" className="v2-pack-img v2-split-upper" />
+                <img src={packImage} alt="" className="v2-pack-img v2-split-lower" />
+                <div className="v2-split-seam" />
+                <div className="v2-split-flare" />
+              </div>
+            ) : (
+              <div
+                className="v2-pack-box cinematic-pack-tearing"
+                style={{ boxShadow: "0 0 60px rgba(255,60,20,0.8)" }}
+              >
+                <img src={packImage} alt={pack.name} className="v2-pack-img" />
+                <div className="cinematic-laser-cut" />
+              </div>
+            )}
             <div className="v2-opening-label">ROZRYWANIE OPAKOWANIA...</div>
           </div>
         )}
