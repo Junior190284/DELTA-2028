@@ -44,6 +44,7 @@ import { mapPackResultToInferno3D } from "./infernoCardBridge";
 import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
 import type { InfernoPackCanvasHandle } from "./InfernoPackCanvas";
 import StadiumFilmBackdrop from "./StadiumFilmBackdrop";
+import { preloadCinematicArtwork } from "./preloadCinematicArtwork";
 import "./cinematic-pack.css";
 
 const InfernoPackCanvas = dynamic(
@@ -96,6 +97,7 @@ export default function CinematicPackExperience({
   enableStadiumFilm = false,
 }: CinematicPackExperienceProps) {
   const [mounted, setMounted] = useState(false);
+  useEffect(() => { preloadCinematicArtwork(); }, []);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [serverResult, setServerResult] = useState<PackOpeningResult | null>(null);
   const [isRequestingOpen, setIsRequestingOpen] = useState(false);
@@ -122,6 +124,9 @@ export default function CinematicPackExperience({
   const liveAutoStartHandledSessionRef = useRef<string | number | null>(null);
 
   const effectiveReducedMotion = reducedMotion || prefersReducedMotion;
+  // Only INFERNO has a completed cinematic film. Other packs retain their
+  // own themed 3D stage until matching films are delivered.
+  const hasMatchingStadiumFilm = enableStadiumFilm && pack.theme === "inferno";
   const activeResult = useMemo(
     () => result || mockResult || serverResult,
     [result, mockResult, serverResult]
@@ -218,7 +223,7 @@ export default function CinematicPackExperience({
     const nextController = new PackExperienceController({
       result: activeResult,
       timings: enableStadiumFilm && !effectiveReducedMotion
-        ? { openingTearMs: 1700, transitionMs: 500, walkoutInfernoMs: 11650, walkoutStandardMs: 11650 }
+        ? { openingTearMs: 1700, transitionMs: 500, walkoutInfernoMs: hasMatchingStadiumFilm ? 11650 : 4200, walkoutStandardMs: hasMatchingStadiumFilm ? 11650 : 4200 }
         : undefined,
       reducedMotion: effectiveReducedMotion,
       initialMuted: isMutedLive,
@@ -273,7 +278,7 @@ export default function CinematicPackExperience({
       unsubscribe();
       nextController.dispose();
     };
-  }, [activeResult, effectiveReducedMotion, enableStadiumFilm, sessionKey]);
+  }, [activeResult, effectiveReducedMotion, enableStadiumFilm, hasMatchingStadiumFilm, sessionKey]);
 
   const triggerLiveOpenPack = useCallback(async () => {
     if (isOpeningInFlightRef.current || activeResult) return;
@@ -658,7 +663,7 @@ export default function CinematicPackExperience({
   );
   const isStadiumSceneActive = Boolean(isStadiumPhase && activeStageShowcase && !is3DCanvasActive);
   const stadiumFilmAvailable = Boolean(
-    enableStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion &&
+    hasMatchingStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion &&
     !is3DCanvasActive && activeStageShowcase &&
     (activeStagePhase === "TRANSITION" || activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
@@ -980,7 +985,7 @@ export default function CinematicPackExperience({
       {/* ===================================================================== */}
       {/* 2. CONTINUOUS 3D STADIUM ARENA (Unbroken across TRANSITION, WALKOUT, HERO_REVEAL, CARD_REVEAL) */}
       {/* ===================================================================== */}
-      {enableStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !is3DCanvasActive && state && (
+      {hasMatchingStadiumFilm && !stadiumFilmFallback && !effectiveReducedMotion && !is3DCanvasActive && state && (
         <div data-testid="stadium-film-reveal" style={{ position: "absolute", inset: 0, zIndex: 1, overflow: "hidden", opacity: stadiumFilmAvailable && stadiumFilmPlaying ? 1 : 0, pointerEvents: stadiumFilmAvailable && stadiumFilmPlaying ? "auto" : "none", transition: "opacity .85s ease", background: "url('/media/walkouts/delta-inferno-red-stadium.webp') center / cover no-repeat" }}>
           <StadiumFilmBackdrop
             playing={stadiumFilmAvailable}
