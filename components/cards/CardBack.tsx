@@ -13,6 +13,12 @@ export interface CardBackProps {
   showFlip?: boolean;
   onFlip?: (e?: React.MouseEvent) => void;
   glarePos?: { x: number; y: number; opacity: number };
+  /**
+   * P12G.1: the back shown as a standalone, flat face (no rotateY(180deg) or
+   * backface-visibility). For safe 2D views where the back is the only rendered face.
+   * Default false, so existing behaviour is unchanged.
+   */
+  flat?: boolean;
 }
 
 export default function CardBack({
@@ -20,7 +26,8 @@ export default function CardBack({
   themeConfig,
   showFlip = true,
   onFlip,
-  glarePos
+  glarePos,
+  flat = false
 }: CardBackProps) {
   const backData = card.backData || {};
   const season = backData.season || "2026/27";
@@ -34,11 +41,15 @@ export default function CardBack({
   return (
     <div
       className="card-face-back absolute inset-0 w-full h-full rounded-[4cqw] overflow-hidden select-none"
-      style={{
-        transform: "rotateY(180deg)",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden"
-      }}
+      style={
+        flat
+          ? { transform: "none", backfaceVisibility: "visible", WebkitBackfaceVisibility: "visible" }
+          : {
+              transform: "rotateY(180deg)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
+            }
+      }
     >
       {/* 1. Background & Lighting */}
       <CardGlow themeConfig={themeConfig} isBack={true} />

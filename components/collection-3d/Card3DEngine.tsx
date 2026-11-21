@@ -7,6 +7,7 @@ import { getCardVisualTheme } from "./themes";
 import { getSpecialTitle, formatPlayerName } from "./specialTitles";
 import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
 import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
+import { faceForRotation, faceForFacingFactor, restingRotationAfterRelease } from "@/lib/cards/revealPresentation";
 import "./collection-3d.css";
 
 interface EmberData {
@@ -34,6 +35,7 @@ export function Card3DEngine({
   yaw: controlledYaw,
   pitch: controlledPitch,
   onRotationChange,
+  snapBackOnRelease = false,
   className = ""
 }: Card3DEngineProps) {
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -189,7 +191,19 @@ export function Card3DEngine({
     } catch {
       // safe fallback
     }
-  }, [isDragging]);
+    // P12G: in the final reveal the card must not stay edge-on or showing the back
+    // after a swipe. It returns to the front with the standard 0.85 s transition.
+    if (snapBackOnRelease) {
+      const rest = restingRotationAfterRelease();
+      if (controlledYaw !== undefined && onRotationChange) {
+        onRotationChange(rest.yaw, rest.pitch);
+      } else {
+        setInternalYaw(rest.yaw);
+        setInternalPitch(rest.pitch);
+        if (onRotationChange) onRotationChange(rest.yaw, rest.pitch);
+      }
+    }
+  }, [isDragging, snapBackOnRelease, controlledYaw, onRotationChange]);
 
   // Assets from theme
   const frontBgSrc = theme.assets.frontBg;
@@ -250,9 +264,9 @@ export function Card3DEngine({
   // face that is still visible and leave a black slab. Until the card has really
   // turned to the target side (m33 = cos(pitch)*cos(yaw), with a margin of ±60°),
   // both faces stay rendered and backface-visibility handles the hand-off.
-  const normalizedYaw = ((((effectiveYaw + 180) % 360) + 360) % 360) - 180;
-  const targetFace: "front" | "back" | "both" =
-    Math.abs(normalizedYaw) <= 60 ? "front" : Math.abs(normalizedYaw) >= 120 ? "back" : "both";
+  // P12G: shared logic (lib/cards/revealPresentation): includes pitch, thresholds ±60°.
+  const targetFaceRaw = faceForRotation(effectiveYaw, pitch);
+  const targetFace: "front" | "back" | "both" = targetFaceRaw === "edge" ? "both" : targetFaceRaw;
   const [settledFace, setSettledFace] = useState<"front" | "back" | "both">("both");
   useEffect(() => {
     setSettledFace((prev) => (prev === targetFace ? prev : "both"));
@@ -270,7 +284,7 @@ export function Card3DEngine({
       } catch {
         return; // unknown state: keep both faces rendered (safe)
       }
-      if ((targetFace === "front" && m33 >= 0.5) || (targetFace === "back" && m33 <= -0.5)) {
+      if (faceForFacingFactor(m33) === targetFace) {
         setSettledFace(targetFace);
         return;
       }

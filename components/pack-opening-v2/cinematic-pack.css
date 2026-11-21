@@ -1863,3 +1863,80 @@
     transition: opacity 0.18s ease !important;
   }
 }
+
+/* ==========================================================================
+   P12G — SAFE 2D CARD IN THE FINAL REVEAL (phones / touch / Reduced Motion)
+   No rotateY, preserve-3d or backface-visibility. The "flip" is 2D scaleX:
+   the back shrinks, then the front grows. At rest only the 2D front remains.
+   ========================================================================== */
+.cinematic-v2-arena .v2-safe-reveal {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  max-width: 100%;
+  border-radius: 14px;
+  /* the same drop-shadow as in the summary's 2D card */
+  filter: drop-shadow(0 0 22px rgba(255, 62, 24, .42)) drop-shadow(0 22px 22px rgba(0, 0, 0, .85));
+  touch-action: pan-y;
+}
+.cinematic-v2-arena .v2-safe-reveal-front,
+.cinematic-v2-arena .v2-safe-reveal-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.cinematic-v2-arena .v2-safe-reveal-back {
+  object-fit: cover;
+  border-radius: 14px;
+  pointer-events: none;
+  user-select: none;
+}
+.cinematic-v2-arena .v2-safe-reveal.is-flip .v2-safe-reveal-back {
+  animation: v2SafeRevealBackOut 0.32s cubic-bezier(0.55, 0, 0.75, 0.3) both;
+}
+.cinematic-v2-arena .v2-safe-reveal.is-flip .v2-safe-reveal-front {
+  animation: v2SafeRevealFrontIn 0.62s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+.cinematic-v2-arena .v2-safe-reveal.is-fade .v2-safe-reveal-front {
+  animation: v2SafeRevealFade 0.32s ease-out both;
+}
+@keyframes v2SafeRevealBackOut {
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+@keyframes v2SafeRevealFrontIn {
+  0%, 48% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+@keyframes v2SafeRevealFade {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.cinematic-v2-arena.is-reduced-motion .v2-safe-reveal-front,
+.cinematic-v2-arena.is-reduced-motion .v2-safe-reveal-back {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-v2-arena .v2-safe-reveal-front,
+  .cinematic-v2-arena .v2-safe-reveal-back {
+    animation: none !important;
+  }
+}
+
+/* P12G.1 — 2D summary preview (phones): the face swap uses a 2D scaleX animation */
+.cinematic-v2-arena .v2-safe-preview-card {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  max-width: 100%;
+  border-radius: 14px;
+  filter: drop-shadow(0 0 22px rgba(255, 62, 24, .42)) drop-shadow(0 22px 22px rgba(0, 0, 0, .85));
+  animation: v2SafePreviewTurn 0.34s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+@keyframes v2SafePreviewTurn {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+.cinematic-v2-arena.is-reduced-motion .v2-safe-preview-card { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-v2-arena .v2-safe-preview-card { animation: none !important; }
+}

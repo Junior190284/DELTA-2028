@@ -139,6 +139,8 @@ export interface Card3DEngineProps {
   yaw?: number;
   pitch?: number;
   onRotationChange?: (yaw: number, pitch: number) => void;
+  /** P12G: after the finger/mouse is lifted the card returns to the front (yaw 0, pitch 0). */
+  snapBackOnRelease?: boolean;
   className?: string;
   width?: number;
   height?: number;

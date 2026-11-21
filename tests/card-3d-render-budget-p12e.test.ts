@@ -10,13 +10,13 @@ const read = (p: string) => fs.readFileSync(path.join(root, p), "utf8");
 
 test("P12E: Card3DEngine renders only the face turned to the viewer", () => {
   const src = read("components/collection-3d/Card3DEngine.tsx");
-  assert.match(src, /normalizedYaw/, "visible face must be computed from the normalised yaw");
+  // P12G: the face decision lives in the shared lib/cards/revealPresentation (also covered by unit tests)
+  assert.match(src, /faceForRotation\(effectiveYaw, pitch\)/, "visible face must be computed from the normalised yaw");
   assert.match(src, /is-face-hidden/, "the face turned away must get the is-face-hidden class");
   assert.match(src, /data-visible-face=\{settledFace\}/, "card object must expose data-visible-face");
   // hiding follows the actually rendered transform (no timers that could get ahead of the animation)
   assert.match(src, /new window\.DOMMatrix\(t\)\.m33/);
-  assert.match(src, /m33 >= 0\.5/);
-  assert.match(src, /m33 <= -0\.5/);
+  assert.match(src, /faceForFacingFactor\(m33\) === targetFace/);
   assert.doesNotMatch(src, /isRevealing \? 1300 : 900/, "timer-based hiding was the source of the black slab");
 });
 

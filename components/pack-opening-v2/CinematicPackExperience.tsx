@@ -39,6 +39,17 @@ import type { PlayerCardData, CardVisualTheme } from "@/components/collection-3d
 import { getCardVisualTheme } from "@/components/collection-3d/themes";
 import type { PackDrawnItem } from "@/lib/cards/packExperienceController";
 import { getRarityPresentation } from "@/lib/cards/rarityPresentation";
+import { shouldUseSafe2DReveal, parseRevealForce, resolveRevealForce, isFinalRevealPhase, type RevealForce } from "@/lib/cards/revealPresentation";
+
+// P12G.1: the test switch ?cardReveal=2d|3d works only outside production (see resolveRevealForce).
+function readRevealForce(): RevealForce {
+  if (typeof window === "undefined") return null;
+  return resolveRevealForce(parseRevealForce(window.location.search), {
+    vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV ?? null,
+    host: window.location.hostname
+  });
+}
+import SafeRevealCard from "./SafeRevealCard";
 import { cardSound } from "@/lib/cards/audio";
 import { mapPackResultToInferno3D } from "./infernoCardBridge";
 import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
@@ -124,6 +135,41 @@ export default function CinematicPackExperience({
   const liveAutoStartHandledSessionRef = useRef<string | number | null>(null);
 
   const effectiveReducedMotion = reducedMotion || prefersReducedMotion;
+
+  // P12G: final reveal (HERO_REVEAL / CARD_REVEAL) on phones/touch/Reduced Motion uses the
+  // safe 2D card (the same one as the summary) instead of CSS 3D. The film turn
+  // (WALKOUT) stays 3D. ?cardReveal=2d|3d forces a mode (for tests).
+  const [revealEnv, setRevealEnv] = useState<{ coarse: boolean; width: number; force: RevealForce }>(() =>
+    typeof window === "undefined"
+      ? { coarse: false, width: 1024, force: null }
+      : {
+          coarse: typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches,
+          width: window.innerWidth,
+          force: readRevealForce()
+        }
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = typeof window.matchMedia === "function" ? window.matchMedia("(pointer: coarse)") : null;
+    const read = () => setRevealEnv({
+      coarse: Boolean(mq?.matches),
+      width: window.innerWidth,
+      force: readRevealForce()
+    });
+    read();
+    window.addEventListener("resize", read);
+    mq?.addEventListener?.("change", read);
+    return () => {
+      window.removeEventListener("resize", read);
+      mq?.removeEventListener?.("change", read);
+    };
+  }, []);
+  const useSafe2DReveal = shouldUseSafe2DReveal({
+    viewportWidth: revealEnv.width,
+    coarsePointer: revealEnv.coarse,
+    reducedMotion: effectiveReducedMotion,
+    force: revealEnv.force
+  });
   // Only themes with matching footage use the film-backed card reveal.
   const hasMatchingStadiumFilm = enableStadiumFilm && (pack.theme === "inferno" || pack.theme === "legend");
   const activeResult = useMemo(
@@ -1037,17 +1083,32 @@ export default function CinematicPackExperience({
                 // comes from .inferno-card-reveal-halo and the card's own edge-glow/shell.
                 position: "relative"
               }}>
-                <Card3DEngine
-                  key={activeCardShowcase.slotKey}
-                  data={activeCardShowcase.card3D}
-                  theme={activeCardShowcase.theme3D}
-                  yaw={state.phase === "WALKOUT" ? stadiumFilmYaw : walkoutYaw}
-                  pitch={state.phase === "WALKOUT" ? 0 : walkoutPitch}
-                  interactive={isCardInteractive}
-                  autoRotate={false}
-                  isRevealing={state.phase === "WALKOUT"}
-                  onRotationChange={(y, p) => { setWalkoutYaw(y); setWalkoutPitch(p); }}
-                />
+                {useSafe2DReveal && isFinalRevealPhase(state.phase) ? (
+                  // P12G: final reveal on phones = safe 2D card. HERO: short fade
+                  // (the card has already turned over the film), CARD_REVEAL: 2D flip.
+                  <SafeRevealCard
+                    key={`safe-${activeCardShowcase.slotKey}`}
+                    miniCard={activeCardShowcase.miniCard}
+                    backImageSrc={activeCardShowcase.theme3D.assets.backBg}
+                    displayName={activeCardShowcase.displayName}
+                    width={baseCardWidth}
+                    mode={state.phase === "HERO_REVEAL" ? "fade" : "flip"}
+                    reducedMotion={effectiveReducedMotion}
+                  />
+                ) : (
+                  <Card3DEngine
+                    key={activeCardShowcase.slotKey}
+                    data={activeCardShowcase.card3D}
+                    theme={activeCardShowcase.theme3D}
+                    yaw={state.phase === "WALKOUT" ? stadiumFilmYaw : walkoutYaw}
+                    pitch={state.phase === "WALKOUT" ? 0 : walkoutPitch}
+                    interactive={isCardInteractive}
+                    snapBackOnRelease={isCardInteractive}
+                    autoRotate={false}
+                    isRevealing={state.phase === "WALKOUT"}
+                    onRotationChange={(y, p) => { setWalkoutYaw(y); setWalkoutPitch(p); }}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -1113,14 +1174,21 @@ export default function CinematicPackExperience({
                         transformOrigin: "center center"
                       }}
                     >
-                      <Card3DEngine
-                        data={exitingCard.entry.card3D}
-                        theme={exitingCard.entry.theme3D}
-                        yaw={exitingCard.yaw}
-                        pitch={exitingCard.pitch}
-                        interactive={false}
-                        autoRotate={false}
-                      />
+                      {useSafe2DReveal ? (
+                        // P12G: on phones the outgoing card is 2D too (no 3D layers during the swap).
+                        <div data-testid="safe-reveal-exiting-card" style={{ width: `${baseCardWidth}px`, aspectRatio: "2 / 3" }}>
+                          <DeltaCard card={exitingCard.entry.miniCard} size="responsive" interactive={false} showFlip={false} staticFace="front" className="w-full h-full pointer-events-none" />
+                        </div>
+                      ) : (
+                        <Card3DEngine
+                          data={exitingCard.entry.card3D}
+                          theme={exitingCard.entry.theme3D}
+                          yaw={exitingCard.yaw}
+                          pitch={exitingCard.pitch}
+                          interactive={false}
+                          autoRotate={false}
+                        />
+                      )}
                     </div>
                   </div>
                 )}
@@ -1141,19 +1209,32 @@ export default function CinematicPackExperience({
                       key={activeCardShowcase.slotKey}
                       className={state.phase === "CARD_REVEAL" ? "v2-card-entering-anim" : undefined}
                     >
-                      <Card3DEngine
-                        data={activeCardShowcase.card3D}
-                        theme={activeCardShowcase.theme3D}
-                        yaw={walkoutYaw}
-                        pitch={walkoutPitch}
-                        interactive={isCardInteractive}
-                        autoRotate={false}
-                        isRevealing={state.phase === "WALKOUT"}
-                        onRotationChange={(y, p) => {
-                          setWalkoutYaw(y);
-                          setWalkoutPitch(p);
-                        }}
-                      />
+                      {useSafe2DReveal && isFinalRevealPhase(state.phase) ? (
+                        <SafeRevealCard
+                          key={`safe-${activeCardShowcase.slotKey}`}
+                          miniCard={activeCardShowcase.miniCard}
+                          backImageSrc={activeCardShowcase.theme3D.assets.backBg}
+                          displayName={activeCardShowcase.displayName}
+                          width={baseCardWidth}
+                          mode={state.phase === "HERO_REVEAL" ? "fade" : "flip"}
+                          reducedMotion={effectiveReducedMotion}
+                        />
+                      ) : (
+                        <Card3DEngine
+                          data={activeCardShowcase.card3D}
+                          theme={activeCardShowcase.theme3D}
+                          yaw={walkoutYaw}
+                          pitch={walkoutPitch}
+                          interactive={isCardInteractive}
+                          snapBackOnRelease={isCardInteractive}
+                          autoRotate={false}
+                          isRevealing={state.phase === "WALKOUT"}
+                          onRotationChange={(y, p) => {
+                            setWalkoutYaw(y);
+                            setWalkoutPitch(p);
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 )}
@@ -1516,14 +1597,14 @@ export default function CinematicPackExperience({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Podgląd 3D: ${inspectedSummaryCard.displayName}`}
+          aria-label={`${useSafe2DReveal ? "Podgląd karty" : "Podgląd 3D"}: ${inspectedSummaryCard.displayName}`}
           data-testid="summary-card-preview-modal"
           onClick={() => setInspectedSummaryCard(null)}
           className="v2-preview-backdrop"
         >
           <div className="v2-preview-header" onClick={(e) => e.stopPropagation()}>
             <span className="v2-preview-kicker">
-              PODGLĄD KARTY 3D • {inspectedSummaryCard.theme3D.displayName}
+              {useSafe2DReveal ? "PODGLĄD KARTY" : "PODGLĄD KARTY 3D"} • {inspectedSummaryCard.theme3D.displayName}
             </span>
             <div className="v2-preview-actions">
               <button
@@ -1556,14 +1637,39 @@ export default function CinematicPackExperience({
                 transformOrigin: "center center"
               }}
             >
-              <Card3DEngine
-                key={`preview-${inspectedSummaryCard.slotKey}`}
-                data={inspectedSummaryCard.card3D}
-                theme={inspectedSummaryCard.theme3D}
-                isFlipped={isPreviewFlipped}
-                interactive={true}
-                autoRotate={false}
-              />
+              {useSafe2DReveal ? (
+                // P12G.1: on phones/touch screens the preview is 2D: a single static face
+                // (front or back, chosen with the Rewers/Awers button), switched with a
+                // 2D scaleX animation. No preserve-3d / backface-visibility.
+                <div
+                  key={`preview2d-${inspectedSummaryCard.slotKey}-${isPreviewFlipped ? "back" : "front"}`}
+                  data-testid="summary-preview-card-2d"
+                  data-face={isPreviewFlipped ? "back" : "front"}
+                  className="v2-safe-preview-card"
+                  style={{ width: `${baseCardWidth}px` }}
+                >
+                  <DeltaCard
+                    card={inspectedSummaryCard.miniCard}
+                    size="responsive"
+                    interactive={false}
+                    showFlip={false}
+                    staticFace={isPreviewFlipped ? "back" : "front"}
+                    className="w-full h-full pointer-events-none"
+                  />
+                </div>
+              ) : (
+                <Card3DEngine
+                  key={`preview-${inspectedSummaryCard.slotKey}`}
+                  data={inspectedSummaryCard.card3D}
+                  theme={inspectedSummaryCard.theme3D}
+                  isFlipped={isPreviewFlipped}
+                  interactive={true}
+                  // P12G.1: after a drag the card returns to the side the user chose
+                  // (front, or back after "Rewers"); it does not stay edge-on.
+                  snapBackOnRelease={true}
+                  autoRotate={false}
+                />
+              )}
             </div>
           </div>
 
@@ -1582,7 +1688,9 @@ export default function CinematicPackExperience({
             </div>
             <h3 className="v2-hero-name">{inspectedSummaryCard.displayName}</h3>
             <span className="v2-summary-hint">
-              Przeciągnij kartę lub użyj przycisku Obróć, aby obejrzeć w 3D
+              {useSafe2DReveal
+                ? "Użyj przycisku Rewers / Awers, aby obejrzeć drugą stronę karty"
+                : "Przeciągnij kartę lub użyj przycisku Obróć, aby obejrzeć w 3D"}
             </span>
           </div>
         </div>
