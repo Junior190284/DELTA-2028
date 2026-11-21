@@ -36,6 +36,7 @@ import { calculatePlayerAchievements } from "@/lib/achievements/engine";
 import { fromProductionCard } from "@/components/collection-3d/adapter";
 import { Card3DEngine } from "@/components/collection-3d/Card3DEngine";
 import PlayerPhoto from "@/components/PlayerPhoto";
+import { lockBodyScroll } from "@/lib/ui/body-scroll-lock";
 import PlayerSkillRadar from "@/components/PlayerSkillRadar";
 import AchievementsHub from "@/components/AchievementsHub";
 import CareerTimeline from "./CareerTimeline";
@@ -253,27 +254,10 @@ export function PlayerExperience3D({
   const [activeTab, setActiveTab] = useState<"overview" | "career" | "stats" | "achievements" | "cards">(initialTab);
 
   // Blokada scrolla w trybie modalnym + obsługa klawisza Escape
+  // Uses safe reference-counted lockBodyScroll ensuring body.style.position = "fixed" and html.style.overflow = "hidden"
   useEffect(() => {
     if (mode !== "modal" || !isOpen) return;
-
-    const scrollY = window.scrollY;
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    const prevBodyPosition = body.style.position;
-    const prevBodyTop = body.style.top;
-    const prevBodyLeft = body.style.left;
-    const prevBodyRight = body.style.right;
-    const prevBodyWidth = body.style.width;
-
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
+    const unlock = lockBodyScroll();
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && onClose) {
@@ -283,14 +267,7 @@ export function PlayerExperience3D({
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-      body.style.position = prevBodyPosition;
-      body.style.top = prevBodyTop;
-      body.style.left = prevBodyLeft;
-      body.style.right = prevBodyRight;
-      body.style.width = prevBodyWidth;
-      window.scrollTo({ top: scrollY, left: 0, behavior: "auto" });
+      unlock();
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [mode, isOpen, onClose]);

@@ -31390,16 +31390,19 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: center !important;
-  padding: 1rem !important;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom)) 1rem !important;
   overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
 }
 
 .v200-squad-sheet {
   position: relative !important;
   width: 100% !important;
   max-width: 1100px !important;
+  margin: auto 0 !important;
   background: #070d1e !important;
   border: 1px solid rgba(245, 158, 11, 0.35) !important;
   border-radius: 20px !important;
@@ -31681,11 +31684,23 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
   padding: 1.2rem !important;
   overflow-y: auto !important;
   flex: 1 !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 @media (max-width: 960px) {
+  .v200-squad-overlay {
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.5rem max(0.75rem, env(safe-area-inset-bottom)) 0.5rem !important;
+  }
+  .v200-squad-sheet {
+    max-height: none !important;
+    margin: 0 auto !important;
+    border-radius: 16px !important;
+  }
   .v200-squad-arena-layout {
     grid-template-columns: 1fr !important;
+    overflow-y: visible !important;
+    padding: 0.85rem !important;
+    gap: 1rem !important;
   }
 }
 
@@ -32200,14 +32215,17 @@ div[role="dialog"] img[src*="/teamlogos/gm.png"],
   background: rgba(0, 0, 0, 0.8) !important;
   backdrop-filter: blur(8px) !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: center !important;
-  padding: 1rem !important;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom)) 1rem !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 .squad-drawer-panel {
   width: 100% !important;
   max-width: 680px !important;
+  margin: auto 0 !important;
   background: #0b1329 !important;
   border: 1px solid rgba(245, 158, 11, 0.35) !important;
   border-radius: 18px !important;
