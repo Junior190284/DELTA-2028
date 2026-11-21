@@ -50,6 +50,8 @@ function readRevealForce(): RevealForce {
   });
 }
 import SafeRevealCard from "./SafeRevealCard";
+import CinematicHoldBackdrop from "./CinematicHoldBackdrop";
+import { holdStage, shouldReleaseFilm } from "@/lib/cards/cinematicHold";
 import { cardSound } from "@/lib/cards/audio";
 import { mapPackResultToInferno3D } from "./infernoCardBridge";
 import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
@@ -204,11 +206,17 @@ export default function CinematicPackExperience({
   const [controller, setController] = useState<PackExperienceController | null>(null);
   const [state, setState] = useState<PackExperienceState | null>(null);
 
+  // P13A: Cinematic Hold, the film -> living background lifecycle.
+  const [stadiumFilmEnded, setStadiumFilmEnded] = useState(false);
+  const [holdOpaque, setHoldOpaque] = useState(false);
+
   useEffect(() => {
     if (state?.phase === "READY") {
       setStadiumFilmTime(0);
       setStadiumFilmFallback(false);
       setStadiumFilmPlaying(false);
+      setStadiumFilmEnded(false);
+      setHoldOpaque(false);
     }
   }, [state?.phase, sessionKey]);
 
@@ -712,6 +720,12 @@ export default function CinematicPackExperience({
     !is3DCanvasActive && activeStageShowcase &&
     (activeStagePhase === "TRANSITION" || activeStagePhase === "WALKOUT" || activeStagePhase === "HERO_REVEAL" || activeStagePhase === "CARD_REVEAL")
   );
+  // P13A: Cinematic Hold stage (off / intro / hold), see lib/cards/cinematicHold.
+  const cinematicHoldStage = holdStage({
+    phase: activeStagePhase,
+    hasFilm: stadiumFilmAvailable,
+    filmEnded: stadiumFilmEnded
+  });
   const isDesktopStadiumFilm = layoutMetrics.viewportWidth >= 768;
   const filmCardEntranceAt = pack.theme === "legend" ? 7.8 : isDesktopStadiumFilm ? 8.7 : 9.65;
   const filmCardFlipAt = pack.theme === "legend" ? 8.35 : isDesktopStadiumFilm ? 9.1 : 10.05;
@@ -1036,15 +1050,26 @@ export default function CinematicPackExperience({
             playing={stadiumFilmAvailable}
             desktop={isDesktopStadiumFilm}
             theme={pack.theme === "legend" ? "legend" : "inferno"}
+            released={shouldReleaseFilm({ filmEnded: stadiumFilmEnded, holdOpaque })}
             onPlaying={() => setStadiumFilmPlaying(true)}
             onTimeUpdate={setStadiumFilmTime}
             onEnded={() => {
+              // P13A: the film ended once; from now on the Cinematic Hold (living background) is shown.
+              setStadiumFilmEnded(true);
               if (state.phase === "WALKOUT") controller?.dispatch("MEDIA_ENDED");
             }}
             onError={() => {
               setStadiumFilmFallback(true);
               if (state.phase === "WALKOUT") controller?.dispatch("NEXT");
             }}
+          />
+          {/* P13A: Cinematic Hold, above the film and below the card. */}
+          <CinematicHoldBackdrop
+            theme={pack.theme === "legend" ? "legend" : "inferno"}
+            stage={cinematicHoldStage}
+            filmTime={stadiumFilmTime}
+            reducedMotion={effectiveReducedMotion}
+            onOpaque={() => setHoldOpaque(true)}
           />
           {stadiumFilmAvailable && activeCardShowcase && state.phase !== "TRANSITION" && (state.phase !== "WALKOUT" || stadiumFilmTime >= filmCardEntranceAt) && (
             <div

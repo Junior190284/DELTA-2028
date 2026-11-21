@@ -1940,3 +1940,125 @@
 @media (prefers-reduced-motion: reduce) {
   .cinematic-v2-arena .v2-safe-preview-card { animation: none !important; }
 }
+
+/* ==========================================================================
+   P13A — CINEMATIC HOLD: living background behind the revealed card
+   Above the intro film, below the card. Animations: opacity/transform only.
+   ========================================================================== */
+.cinematic-v2-arena .v2-hold {
+  position: absolute;
+  inset: 0;
+  /* 0, not 1: the card (stadium-film-real-card, z-index auto) comes later in the DOM and must stay ON TOP */
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition-property: opacity;
+  transition-timing-function: ease-out;
+  overflow: hidden;
+  background: #070308;
+}
+.cinematic-v2-arena .v2-hold.is-holding { opacity: 1; }
+.cinematic-v2-arena .v2-hold-still {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.cinematic-v2-arena .v2-hold-inferno .v2-hold-still { filter: brightness(.72) saturate(1.08); }
+.cinematic-v2-arena .v2-hold.v2-hold-legend .v2-hold-still { filter: brightness(.78); }
+
+/* INFERNO: inferno-bg.mp4 is landscape and has two bright pulses per loop, so it is
+   damped: screen blend + low opacity + vignette (the card stays the focus). */
+.cinematic-v2-arena .v2-hold-ambient-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 1.2s ease-out;
+}
+.cinematic-v2-arena .v2-hold-ambient-video.is-playing { opacity: .42; }
+
+.cinematic-v2-arena .v2-hold-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 46% 40% at 50% 48%, rgba(0, 0, 0, .34) 0%, transparent 70%),
+    radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .62) 100%);
+}
+
+/* LEGEND: golden beams (slow sway) + rising particles */
+.cinematic-v2-arena .v2-hold-legend-fx { position: absolute; inset: 0; }
+.cinematic-v2-arena .v2-hold-beam {
+  position: absolute;
+  top: -12%;
+  width: 34%;
+  height: 92%;
+  transform-origin: 50% 0%;
+  background: linear-gradient(180deg, rgba(255, 214, 120, .30) 0%, rgba(255, 196, 80, .10) 45%, transparent 78%);
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+  mix-blend-mode: screen;
+  opacity: .55;
+  will-change: transform, opacity;
+  animation: v2HoldBeamSway 11s ease-in-out infinite alternate;
+}
+.cinematic-v2-arena .v2-hold-beam.is-left { left: -6%; transform: rotate(-16deg); animation-duration: 12s; }
+.cinematic-v2-arena .v2-hold-beam.is-center { left: 33%; transform: rotate(0deg); animation-duration: 9.5s; animation-delay: -3s; opacity: .42; }
+.cinematic-v2-arena .v2-hold-beam.is-right { right: -6%; transform: rotate(16deg); animation-duration: 13s; animation-delay: -6s; }
+@keyframes v2HoldBeamSway {
+  0%   { transform: rotate(var(--beam-from, -6deg)); opacity: .32; }
+  50%  { opacity: .6; }
+  100% { transform: rotate(var(--beam-to, 6deg)); opacity: .4; }
+}
+.cinematic-v2-arena .v2-hold-beam.is-left  { --beam-from: -22deg; --beam-to: -10deg; }
+.cinematic-v2-arena .v2-hold-beam.is-center { --beam-from: -5deg; --beam-to: 5deg; }
+.cinematic-v2-arena .v2-hold-beam.is-right { --beam-from: 10deg; --beam-to: 22deg; }
+
+.cinematic-v2-arena .v2-hold-particles,
+.cinematic-v2-arena .v2-hold-embers { position: absolute; inset: 0; }
+.cinematic-v2-arena .v2-hold-particles i,
+.cinematic-v2-arena .v2-hold-embers i {
+  position: absolute;
+  bottom: -4%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6d6 0%, #ffd27a 45%, rgba(255, 190, 70, 0) 72%);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: v2HoldParticleRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.cinematic-v2-arena .v2-hold-embers i {
+  background: radial-gradient(circle, #fff1d0 0%, #ff8a3d 45%, rgba(255, 60, 20, 0) 72%);
+}
+@keyframes v2HoldParticleRise {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+  12%  { opacity: .9; }
+  80%  { opacity: .55; }
+  100% { transform: translate3d(var(--drift, 0px), -78vh, 0); opacity: 0; }
+}
+/* phones: fewer particles */
+@media (max-width: 640px) {
+  .cinematic-v2-arena .v2-hold-particles i:nth-child(n + 13),
+  .cinematic-v2-arena .v2-hold-embers i:nth-child(n + 9) { display: none; }
+}
+
+/* Reduced Motion: static background only */
+.cinematic-v2-arena .v2-hold.is-static .v2-hold-beam,
+.cinematic-v2-arena .v2-hold.is-static .v2-hold-particles i,
+.cinematic-v2-arena .v2-hold.is-static .v2-hold-embers i,
+.cinematic-v2-arena.is-reduced-motion .v2-hold-beam,
+.cinematic-v2-arena.is-reduced-motion .v2-hold-particles i,
+.cinematic-v2-arena.is-reduced-motion .v2-hold-embers i { animation: none !important; }
+.cinematic-v2-arena.is-reduced-motion .v2-hold-particles,
+.cinematic-v2-arena.is-reduced-motion .v2-hold-embers { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-v2-arena .v2-hold-beam,
+  .cinematic-v2-arena .v2-hold-particles i,
+  .cinematic-v2-arena .v2-hold-embers i { animation: none !important; }
+  .cinematic-v2-arena .v2-hold-particles,
+  .cinematic-v2-arena .v2-hold-embers { display: none; }
+}

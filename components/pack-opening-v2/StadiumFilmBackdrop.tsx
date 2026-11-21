@@ -12,7 +12,14 @@ export default function StadiumFilmBackdrop({
   onTimeUpdate,
   onEnded,
   onError,
+  released = false,
 }: {
+  /**
+   * P13A: the film has ended and the Cinematic Hold layer fully covers it, so unload the
+   * film (pause + remove src + load()). That frees the decoder: at most one video decodes
+   * at a time. A new session (released = false) loads the film again.
+   */
+  released?: boolean;
   playing: boolean;
   desktop: boolean;
   theme: "inferno" | "legend";
@@ -23,6 +30,8 @@ export default function StadiumFilmBackdrop({
   onError: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const releasedRef = useRef(released);
+  releasedRef.current = released;
   const onErrorRef = useRef(onError);
   const onTimeUpdateRef = useRef(onTimeUpdate);
   const onReadyRef = useRef(onReady);
@@ -43,24 +52,33 @@ export default function StadiumFilmBackdrop({
 
   useEffect(() => {
     // Load the film while the unopened pack is still on screen.
+    // P13A: also after released returns to false (a new session); in the released state there is no src.
     videoRef.current?.load();
-  }, [theme, desktop]);
+  }, [theme, desktop, released]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    if (released) {
+      // P13A: the film is not played again (no repeated explosion); the decoder is freed.
+      video.pause();
+      return;
+    }
     if (playing) {
+      // P13A: an ended film is never restarted (e.g. when the effect re-runs after a
+      // viewport change), so the explosion does not play again.
+      if (video.ended) return;
       void video.play().catch(() => onErrorRef.current());
     } else {
       video.pause();
       video.currentTime = 0;
     }
-  }, [playing, desktop]);
+  }, [playing, desktop, released]);
 
   // The browser's `timeupdate` event is too sparse (often ~4 Hz) to drive
   // a smooth 3D card reveal. Sample the actual video clock near its finale.
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || released) return;
     let frameId = 0;
     let lastUpdate = 0;
     const sampleVideoTime = (now: number) => {
@@ -74,14 +92,15 @@ export default function StadiumFilmBackdrop({
     };
     frameId = requestAnimationFrame(sampleVideoTime);
     return () => cancelAnimationFrame(frameId);
-  }, [playing]);
+  }, [playing, released]);
 
   return (
     <video
       ref={videoRef}
       // Until a true landscape shot is produced, preserve the actual moving footage.
       // The artificial zoom-pan desktop clip looked like a shaking still image.
-      src={theme === "legend"
+      // P13A: released, so no src (the load() effect above aborts and frees the decoder).
+      src={released ? undefined : theme === "legend"
         ? desktop
           ? "/media/walkouts/delta-legend-stadium-v2.mp4"
           : "/media/walkouts/delta-legend-stadium-mobile-v2.mp4"
@@ -97,7 +116,7 @@ export default function StadiumFilmBackdrop({
       onPlaying={onPlaying}
       onTimeUpdate={(event) => onTimeUpdate(event.currentTarget.currentTime)}
       onEnded={onEnded}
-      onError={onError}
+      onError={() => { if (!releasedRef.current) onError(); }}
       style={{ width: "100%", height: "100%", objectFit: desktop ? "contain" : "cover", background: theme === "legend" ? "#080313" : "rgba(16, 3, 3, .28)" }}
     />
   );
