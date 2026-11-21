@@ -1032,7 +1032,9 @@ export default function CinematicPackExperience({
                 opacity: state.phase === "WALKOUT" ? (preparedCardAssets ? stadiumFilmEntranceEase : 0) : 1,
                 transition: "opacity 320ms ease-out",
                 transformOrigin: "center",
-                filter: `drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 32px ${pack.theme === "legend" ? "rgba(255,204,75,.62)" : "rgba(247,73,28,.62)"})`,
+                // P12E: no filter: drop-shadow() over the whole 3D card. It forced the entire
+                // preserve-3d scene into an offscreen surface on every film frame. The glow
+                // comes from .inferno-card-reveal-halo and the card's own edge-glow/shell.
                 position: "relative"
               }}>
                 <Card3DEngine

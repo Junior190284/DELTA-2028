@@ -175,11 +175,12 @@ export default function NeutralPlayerSilhouette({
           gap: compact ? "2px" : "4px",
           padding: compact ? "6px 12px" : "8px 16px",
           borderRadius: "16px",
-          background: "rgba(10, 14, 24, 0.72)",
+          // P12E: no backdrop-filter. Inside a 3D-transformed card face it forces an extra
+          // compositor layer and on iOS WebKit it can render as a black box. A denser
+          // background gives the same legibility.
+          background: "rgba(10, 14, 24, 0.86)",
           border: `1.5px solid ${accentColor}`,
-          boxShadow: `0 0 18px ${glowColor}, inset 0 0 10px rgba(255, 255, 255, 0.08)`,
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)"
+          boxShadow: `0 0 18px ${glowColor}, inset 0 0 10px rgba(255, 255, 255, 0.08)`
         }}
       >
         {!crestFailed ? (

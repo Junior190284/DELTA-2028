@@ -606,33 +606,35 @@
   animation: v2CardSlideExit 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* P12E: the card animations are 2D only (opacity + translate/scale), with no filter:
+   blur() and no rotateY(). Previously "forwards" kept filter: blur(0px) on the
+   active card's wrapper for the whole CARD_REVEAL. A filter above a preserve-3d
+   scene forces the whole 3D card into an extra offscreen surface (more GPU memory
+   and the risk of a black card on the phone). The enter animation uses "backwards":
+   once it finishes the wrapper has no transform or filter left. */
 .cinematic-v2-arena .v2-card-entering-anim {
-  animation: v2CardSlideEnter 0.44s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: v2CardSlideEnter 0.44s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 @keyframes v2CardSlideExit {
   0% {
     opacity: 1;
-    transform: translateX(0) scale(1) rotateY(0deg);
-    filter: blur(0px);
+    transform: translateX(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateX(-48px) scale(0.84) rotateY(-18deg);
-    filter: blur(4px);
+    transform: translateX(-48px) scale(0.84);
   }
 }
 
 @keyframes v2CardSlideEnter {
   0% {
     opacity: 0;
-    transform: translateX(40px) scale(0.88) rotateY(14deg);
-    filter: blur(3px);
+    transform: translateX(40px) scale(0.88);
   }
   100% {
     opacity: 1;
-    transform: translateX(0) scale(1) rotateY(0deg);
-    filter: blur(0px);
+    transform: translateX(0) scale(1);
   }
 }
 

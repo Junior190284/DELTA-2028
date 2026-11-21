@@ -203,11 +203,35 @@ export function Card3DEngine({
   );
   const [playerImgError, setPlayerImgError] = useState(false);
   const [playerImgLoaded, setPlayerImgLoaded] = useState(false);
+  const [playerPhotoFadeDone, setPlayerPhotoFadeDone] = useState(false);
+  const playerImgRef = useRef<HTMLImageElement>(null);
+
+  // P12E: "loaded" means the photo is downloaded AND decoded (ready to paint). Before,
+  // onLoad removed the silhouette immediately while the photo was still at opacity 0
+  // (200 ms fade plus decoding a large PNG), so the card centre stayed EMPTY for a moment
+  // on every newly mounted card (WALKOUT/HERO/CARD_REVEAL). Now the silhouette and
+  // the photo crossfade: the silhouette is never removed before the photo becomes visible.
+  const markPlayerImgReady = useCallback((img: HTMLImageElement | null) => {
+    if (!img) return;
+    const done = () => setPlayerImgLoaded(true);
+    if (typeof img.decode === "function") {
+      img.decode().then(done, done);
+    } else {
+      done();
+    }
+  }, []);
 
   useEffect(() => {
     setPlayerImgError(false);
     setPlayerImgLoaded(false);
-  }, [safePlayerSrc]);
+    setPlayerPhotoFadeDone(false);
+    // An image already in the memory cache can finish before React attaches onLoad.
+    const img = playerImgRef.current;
+    if (img && img.complete) {
+      if (img.naturalWidth > 0) markPlayerImgReady(img);
+      else if (img.currentSrc) setPlayerImgError(true);
+    }
+  }, [safePlayerSrc, markPlayerImgReady]);
 
   const hasRealOvr = typeof data.ovr === "number" && Number.isFinite(data.ovr) && data.ovr > 0;
   const hasRealStats = Boolean(data.stats);
@@ -216,6 +240,48 @@ export function Card3DEngine({
 
   // Effective visual yaw including flipped state
   const effectiveYaw = yaw + (isFlipped ? 180 : 0);
+
+  // P12E: decide in JS which face points at the viewer instead of relying only on
+  // backface-visibility. The face turned away gets visibility:hidden, so the browser
+  // neither rasterises nor composites its layers.
+  // The decision follows the ACTUALLY RENDERED transform (computed style during the
+  // CSS transition), not the target state or a timer. In the film path yaw moves in
+  // steps on timeupdate and the transition lags behind, so a timer could hide the
+  // face that is still visible and leave a black slab. Until the card has really
+  // turned to the target side (m33 = cos(pitch)*cos(yaw), with a margin of ±60°),
+  // both faces stay rendered and backface-visibility handles the hand-off.
+  const normalizedYaw = ((((effectiveYaw + 180) % 360) + 360) % 360) - 180;
+  const targetFace: "front" | "back" | "both" =
+    Math.abs(normalizedYaw) <= 60 ? "front" : Math.abs(normalizedYaw) >= 120 ? "back" : "both";
+  const [settledFace, setSettledFace] = useState<"front" | "back" | "both">("both");
+  useEffect(() => {
+    setSettledFace((prev) => (prev === targetFace ? prev : "both"));
+    if (targetFace === "both") return;
+    const el = cardRef.current;
+    if (!el || typeof window === "undefined" || typeof window.DOMMatrix === "undefined") return;
+    let raf = 0;
+    let frames = 0;
+    const check = () => {
+      frames += 1;
+      let m33 = 0;
+      try {
+        const t = window.getComputedStyle(el).transform;
+        m33 = !t || t === "none" ? 1 : new window.DOMMatrix(t).m33;
+      } catch {
+        return; // unknown state: keep both faces rendered (safe)
+      }
+      if ((targetFace === "front" && m33 >= 0.5) || (targetFace === "back" && m33 <= -0.5)) {
+        setSettledFace(targetFace);
+        return;
+      }
+      // Give up after ~10 s (e.g. tab in the background): both faces stay visible, which is safe.
+      if (frames < 600) raf = window.requestAnimationFrame(check);
+    };
+    raf = window.requestAnimationFrame(check);
+    return () => window.cancelAnimationFrame(raf);
+  }, [targetFace]);
+  const frontHidden = settledFace === "back";
+  const backHidden = settledFace === "front";
 
   return (
     <div
@@ -236,6 +302,7 @@ export function Card3DEngine({
       <div
         ref={cardRef}
         className={`inferno-card-object ${isDragging ? "is-dragging" : ""} ${isRevealing ? "is-reveal-animating" : ""}`}
+        data-visible-face={settledFace}
         style={{
           transform: `rotateX(${pitch}deg) rotateY(${effectiveYaw}deg)`
         }}
@@ -247,7 +314,7 @@ export function Card3DEngine({
         <div className="inferno-edge-glow" />
 
         {/* ================= FRONT FACE ================= */}
-        <div className="inferno-card-face is-front">
+        <div className={`inferno-card-face is-front ${frontHidden ? "is-face-hidden" : ""}`} aria-hidden={frontHidden || undefined}>
           {/* Base artwork */}
           <img
             className="inferno-layer-img inferno-front-bg"
@@ -275,27 +342,42 @@ export function Card3DEngine({
           {/* Hero Athlete Silhouette Stage */}
           <div className="inferno-player-stage">
             <div className="inferno-player-slot">
-              {/* Immediate stable fallback silhouette (visible while photo is loading or absent) */}
-              {(!safePlayerSrc || playerImgError || !playerImgLoaded) && (
-                <NeutralPlayerSilhouette
-                  shirtNumber={data.shirtNumber}
-                  accentColor={theme.styling.fontAccentColor}
-                  glowColor={theme.styling.accentGlow}
-                  crestSrc={crestSrc}
-                />
+              {/* Fallback silhouette: visible while the photo is missing/loading; crossfades
+                  under the photo (P12E) and unmounts only after the photo's fade has finished. */}
+              {(!safePlayerSrc || playerImgError || !playerPhotoFadeDone) && (
+                <div
+                  data-testid="card3d-silhouette-layer"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    opacity: safePlayerSrc && !playerImgError && playerImgLoaded ? 0 : 1,
+                    transition: "opacity 220ms ease-out"
+                  }}
+                >
+                  <NeutralPlayerSilhouette
+                    shirtNumber={data.shirtNumber}
+                    accentColor={theme.styling.fontAccentColor}
+                    glowColor={theme.styling.accentGlow}
+                    crestSrc={crestSrc}
+                  />
+                </div>
               )}
 
               {/* Real Athlete Cutout Image: Mounted when safe src exists; reveals smoothly on load */}
               {safePlayerSrc && !playerImgError && (
                 <img
+                  ref={playerImgRef}
                   className="inferno-player-cutout-img"
                   src={safePlayerSrc}
                   alt={`Zawodnik ${data.surname}`}
                   loading="eager"
-                  onLoad={() => setPlayerImgLoaded(true)}
+                  onLoad={(e) => markPlayerImgReady(e.currentTarget)}
                   onError={() => {
                     setPlayerImgError(true);
                     setPlayerImgLoaded(false);
+                  }}
+                  onTransitionEnd={(e) => {
+                    if (e.propertyName === "opacity" && playerImgLoaded) setPlayerPhotoFadeDone(true);
                   }}
                   style={{
                     position: "absolute",
@@ -453,7 +535,7 @@ export function Card3DEngine({
         </div>
 
         {/* ================= BACK FACE (REWERS) ================= */}
-        <div className="inferno-card-face is-back">
+        <div className={`inferno-card-face is-back ${backHidden ? "is-face-hidden" : ""}`} aria-hidden={backHidden || undefined}>
           <img
             className="inferno-layer-img inferno-back-bg"
             src={backBgSrc}

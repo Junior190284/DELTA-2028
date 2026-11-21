@@ -213,16 +213,20 @@ test("Card 3D & Summary Visual Fallback (P12B): prevents blank/black card center
       /const \[playerImgLoaded,\s*setPlayerImgLoaded\]\s*=\s*useState\(false\)/,
       "Card3DEngine must track playerImgLoaded state"
     );
+    // P12E: the silhouette is shown immediately and stays mounted until the photo's fade
+    // finishes (crossfade). The photo counts as loaded only after img.decode(). Removing the
+    // silhouette on onLoad itself left an empty card centre for the length of the fade.
     assert.match(
       card3DCode,
-      /\(!safePlayerSrc\s*\|\|\s*playerImgError\s*\|\|\s*!playerImgLoaded\)\s*&&\s*\(\s*<NeutralPlayerSilhouette/,
-      "Card3DEngine must immediately show NeutralPlayerSilhouette while photo is in-flight"
+      /\(!safePlayerSrc\s*\|\|\s*playerImgError\s*\|\|\s*!playerPhotoFadeDone\)\s*&&\s*\(\s*<div\s+data-testid="card3d-silhouette-layer"[\s\S]{0,400}?<NeutralPlayerSilhouette/,
+      "Card3DEngine must immediately show NeutralPlayerSilhouette while photo is in-flight (and keep it until the photo fade ends)"
     );
     assert.match(
       card3DCode,
-      /onLoad=\{\(\)\s*=>\s*setPlayerImgLoaded\(true\)\}/,
-      "Card3DEngine must flip playerImgLoaded on successful image load"
+      /onLoad=\{\(e\)\s*=>\s*markPlayerImgReady\(e\.currentTarget\)\}/,
+      "Card3DEngine must flip playerImgLoaded on successful image load (after decode)"
     );
+    assert.match(card3DCode, /opacity:\s*playerImgLoaded \? 1 : 0/, "photo must reach opacity 1 once loaded");
 
     // InfernoCard3D progressive load assertions
     assert.match(

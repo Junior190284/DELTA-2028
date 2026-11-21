@@ -416,4 +416,47 @@
   }
 }
 
+/* ==========================================================================
+   P12E — RENDER-BUDGET-SAFE 3D CARD (Card3DEngine only)
+   Root cause: each translateZ() child inside a preserve-3d face became its own
+   3D compositor layer (≈37 layers / ≈190 MB of textures per card at DPR 3),
+   and the whole 3D scene was additionally wrapped in filter: drop-shadow(),
+   which forces an extra offscreen surface. Over the mobile GPU memory budget,
+   the browser stops rasterising some layers and the face's near-black
+   background (#09090d) shows through: a black or empty card.
+   ========================================================================== */
+
+/* The face turned away from the viewer (decided in Card3DEngine) is not rendered at all. */
+.collection-card-theme .inferno-card-face.is-face-hidden {
+  visibility: hidden;
+}
+
+/* Phones and touch devices: the card still rotates in 3D, but each face is a single
+   flat surface. Content stays visible; only the internal parallax depth is lost. */
+@media (max-width: 820px), (pointer: coarse) {
+  .collection-card-theme.inferno-scene-viewport {
+    filter: none;
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-card-face {
+    transform-style: flat;
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-card-face > * {
+    transform: none;
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-card-face > .inferno-back-watermark {
+    transform: scale(1.35);
+  }
+  /* The middle slab layer adds no visible depth at phone size: one fewer full-card layer. */
+  .collection-card-theme.inferno-scene-viewport .inferno-shell-1 {
+    display: none;
+  }
+  /* Replaces the viewport drop-shadow without a filter on the 3D container. */
+  .collection-card-theme.inferno-scene-viewport .inferno-shell-0 {
+    box-shadow: 0 26px 42px rgba(0, 0, 0, 0.72);
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-player-slot {
+    filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 12px rgba(255, 75, 40, 0.4));
+  }
+}
+
 
