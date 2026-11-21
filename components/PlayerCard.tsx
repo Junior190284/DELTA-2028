@@ -24,6 +24,7 @@ import {
   UserCard 
 } from "@/lib/cards/types";
 import { cardSound } from "@/lib/cards/audio";
+import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
 
 export interface PlayerCardProps {
   card?: CardDefinition;
@@ -299,6 +300,14 @@ export default function PlayerCard({
     return null; // Return null so other boys without photo display their personalized neon silhouette!
   }, [layout.photoUrl, card?.artwork_url, card?.card_name, playerObj, templateKey]);
 
+  const [cutoutLoaded, setCutoutLoaded] = useState(false);
+  const [cutoutError, setCutoutError] = useState(false);
+
+  useEffect(() => {
+    setCutoutLoaded(false);
+    setCutoutError(false);
+  }, [cutoutUrl]);
+
   // Digital Signature from local vault
   const [digitalSignature, setDigitalSignature] = useState<string | null>(null);
 
@@ -509,20 +518,43 @@ export default function PlayerCard({
                 <Lock size={32} className="text-slate-400 animate-pulse" />
                 <span>KARTA ZABLOKOWANA</span>
               </div>
-            ) : cutoutUrl ? (
+            ) : cutoutUrl && !cutoutError ? (
               <div 
                 className="v200-player-cutout-transform"
                 style={{
                   transform: `translate(${layout.translateX}%, ${layout.translateY}%) scale(${layout.scale}) rotate(${layout.rotate || 0}deg)`,
-                  filter: `brightness(${layout.brightness || 1}) contrast(${layout.contrast || 1})`
+                  filter: `brightness(${layout.brightness || 1}) contrast(${layout.contrast || 1})`,
+                  position: "relative",
+                  width: "100%",
+                  height: "100%"
                 }}
               >
+                {!cutoutLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <NeutralPlayerSilhouette
+                      shirtNumber={playerObj?.shirt_number}
+                      accentColor={config.color}
+                      glowColor={config.borderGlow}
+                      crestSrc="/teamlogos/gm.png"
+                      compact={size === "xs" || size === "sm"}
+                    />
+                  </div>
+                )}
                 <img 
                   src={cutoutUrl} 
                   alt={playerName}
                   className="v200-player-cutout-img"
                   loading="eager"
                   decoding="sync"
+                  onLoad={() => setCutoutLoaded(true)}
+                  onError={() => {
+                    setCutoutError(true);
+                    setCutoutLoaded(false);
+                  }}
+                  style={{
+                    opacity: cutoutLoaded ? 1 : 0,
+                    transition: "opacity 200ms ease-in"
+                  }}
                 />
               </div>
             ) : (
@@ -530,22 +562,21 @@ export default function PlayerCard({
               <div 
                 className="v200-player-cutout-transform"
                 style={{
-                  transform: `translate(${layout.translateX}%, ${layout.translateY}%) scale(${layout.scale}) rotate(${layout.rotate || 0}deg)`
+                  transform: `translate(${layout.translateX}%, ${layout.translateY}%) scale(${layout.scale}) rotate(${layout.rotate || 0}deg)`,
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
                 }}
               >
-                <div className={`v200-neon-silhouette theme-${templateKey}`}>
-                  <div className="v200-neon-body" />
-                  <div className="v200-neon-crest">
-                    <img 
-                      src="/teamlogos/gm.png" 
-                      alt="DELTA" 
-                      width={32}
-                      height={32}
-                      style={{ width: 32, height: 32, minWidth: 32, maxWidth: 32, minHeight: 32, maxHeight: 32, objectFit: "contain", flexShrink: 0 }}
-                    />
-                    <span>{playerObj?.shirt_number || "GM"}</span>
-                  </div>
-                </div>
+                <NeutralPlayerSilhouette
+                  shirtNumber={playerObj?.shirt_number}
+                  accentColor={config.color}
+                  glowColor={config.borderGlow}
+                  crestSrc="/teamlogos/gm.png"
+                  compact={size === "xs" || size === "sm"}
+                />
               </div>
             )}
           </div>

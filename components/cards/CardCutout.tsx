@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 import { DeltaCardTheme, DeltaThemeConfig } from "@/lib/cards/deltaCardModel";
 import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
 import { CardLayoutConfig } from "@/lib/cards/types";
+import NeutralPlayerSilhouette from "./NeutralPlayerSilhouette";
 
 export interface CardCutoutProps {
   playerName: string;
@@ -29,12 +30,14 @@ export default function CardCutout({
 }: CardCutoutProps) {
   const safePhotoUrl = sanitizePlayerPhotoCandidate(photoUrl, playerName);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const currentPhotoUrlRef = useRef<string | null | undefined>(safePhotoUrl);
 
   // Synchronize and reset imageError whenever photoUrl changes
   useEffect(() => {
     currentPhotoUrlRef.current = safePhotoUrl;
     setImageError(false);
+    setImageLoaded(false);
   }, [safePhotoUrl]);
 
   const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -96,7 +99,7 @@ export default function CardCutout({
     >
       {hasValidPhoto ? (
         <div
-          className="w-full h-full flex items-end justify-center transition-transform duration-300"
+          className="w-full h-full flex items-end justify-center transition-transform duration-300 relative"
           style={{
             width: "100%",
             height: "100%",
@@ -106,6 +109,18 @@ export default function CardCutout({
             filter: `brightness(${finalBrightness}) contrast(${finalContrast}) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85))`
           }}
         >
+          {/* Instant silhouette visible while photo is loading */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <NeutralPlayerSilhouette
+                shirtNumber={shirtNumber}
+                accentColor={themeConfig.fontAccentColor}
+                glowColor={themeConfig.accentGlow}
+                crestSrc="/teamlogos/gm.png"
+                compact={false}
+              />
+            </div>
+          )}
           <img
             src={safePhotoUrl!}
             alt={playerName}
@@ -116,46 +131,31 @@ export default function CardCutout({
               maxWidth: "100%",
               maxHeight: "100%",
               objectFit: "contain",
-              objectPosition: "center bottom"
+              objectPosition: "center bottom",
+              opacity: imageLoaded ? 1 : 0,
+              transition: "opacity 200ms ease-in"
             }}
             loading="eager"
             decoding="sync"
+            onLoad={() => setImageLoaded(true)}
             onError={handleImageError}
           />
         </div>
       ) : (
-        /* Fallback: High-Tech Neon Silhouette with Jersey Crest & Number */
+        /* Fallback: High-Tech Unified Neon Silhouette with Jersey Crest & Number */
         <div
-          className="w-full h-full flex flex-col items-center justify-center relative"
+          className="w-full h-full flex items-center justify-center relative"
           style={{
             transform: `translate(${finalTranslateX}%, ${finalTranslateY}%) scale(${finalScale})`
           }}
         >
-          {/* Radial Silhouette Glow */}
-          <div
-            className="absolute w-[36cqw] h-[36cqw] rounded-full filter blur-xl opacity-60 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle, ${themeConfig.accentGlow} 0%, transparent 70%)`
-            }}
+          <NeutralPlayerSilhouette
+            shirtNumber={shirtNumber}
+            accentColor={themeConfig.fontAccentColor}
+            glowColor={themeConfig.accentGlow}
+            crestSrc="/teamlogos/gm.png"
+            compact={false}
           />
-
-          {/* Stylized Silhouette Jersey Body */}
-          <div className="relative flex flex-col items-center justify-center z-10">
-            <img
-              src="/teamlogos/gm.png"
-              alt="DELTA"
-              className="w-[12cqw] h-[12cqw] object-contain filter drop-shadow(0 0 8px rgba(255,255,255,0.6)) mb-1"
-            />
-            <span
-              className="text-[6.5cqw] font-black tracking-tighter"
-              style={{
-                color: themeConfig.fontAccentColor,
-                textShadow: `0 0 12px ${themeConfig.accentGlow}, 0 2px 4px #000`
-              }}
-            >
-              {shirtNumber ? `#${shirtNumber}` : "GM"}
-            </span>
-          </div>
         </div>
       )}
     </div>

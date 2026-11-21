@@ -168,7 +168,7 @@ export default function PackDemoCenterPage() {
       },
       result: {
         cards: [
-          { card: createDemoCard("m_1", "matchday", "rare", "MATEUSZ KOWALCZYK (MATCHDAY)", false, "10"), is_duplicate: false, duplicate_points: 0 },
+          { card: createDemoCard("m_1", "matchday", "rare", "RYSZARD RYBACKI (MATCHDAY)", true, "7"), is_duplicate: false, duplicate_points: 0 },
           { card: createDemoCard("m_2", "training_warrior", "rare", "ALEKSANDER ZIELIŃSKI (WARRIOR)", false, "4"), is_duplicate: false, duplicate_points: 0 },
           { card: createDemoCard("m_3", "base", "common", "BARTOSZ WIŚNIEWSKI", false, "19"), is_duplicate: false, duplicate_points: 0 },
           { card: createDemoCard("m_4", "base", "common", "JAKUB KAMIŃSKI", false, "9"), is_duplicate: false, duplicate_points: 0 }

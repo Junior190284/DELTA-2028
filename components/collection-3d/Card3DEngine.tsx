@@ -202,9 +202,11 @@ export function Card3DEngine({
     data.fullDisplayName || data.surname
   );
   const [playerImgError, setPlayerImgError] = useState(false);
+  const [playerImgLoaded, setPlayerImgLoaded] = useState(false);
 
   useEffect(() => {
     setPlayerImgError(false);
+    setPlayerImgLoaded(false);
   }, [safePlayerSrc]);
 
   const hasRealOvr = typeof data.ovr === "number" && Number.isFinite(data.ovr) && data.ovr > 0;
@@ -262,26 +264,45 @@ export function Card3DEngine({
           {/* Hero Player Back Glow */}
           <div className="inferno-player-back-glow" />
 
-          {/* Refined Player Contact & Ambient Shadows */}
-          <div className="inferno-player-ambient-shadow" />
-          <div className="inferno-player-contact-shadow" />
+          {/* Refined Player Contact & Ambient Shadows (active only when real athlete cutout is loaded) */}
+          {safePlayerSrc && !playerImgError && playerImgLoaded && (
+            <>
+              <div className="inferno-player-ambient-shadow" />
+              <div className="inferno-player-contact-shadow" />
+            </>
+          )}
 
           {/* Hero Athlete Silhouette Stage */}
           <div className="inferno-player-stage">
             <div className="inferno-player-slot">
-              {safePlayerSrc && !playerImgError ? (
-                <img
-                  src={safePlayerSrc}
-                  alt={`Zawodnik ${data.surname}`}
-                  loading="eager"
-                  onError={() => setPlayerImgError(true)}
-                />
-              ) : (
+              {/* Immediate stable fallback silhouette (visible while photo is loading or absent) */}
+              {(!safePlayerSrc || playerImgError || !playerImgLoaded) && (
                 <NeutralPlayerSilhouette
                   shirtNumber={data.shirtNumber}
                   accentColor={theme.styling.fontAccentColor}
                   glowColor={theme.styling.accentGlow}
                   crestSrc={crestSrc}
+                />
+              )}
+
+              {/* Real Athlete Cutout Image: Mounted when safe src exists; reveals smoothly on load */}
+              {safePlayerSrc && !playerImgError && (
+                <img
+                  className="inferno-player-cutout-img"
+                  src={safePlayerSrc}
+                  alt={`Zawodnik ${data.surname}`}
+                  loading="eager"
+                  onLoad={() => setPlayerImgLoaded(true)}
+                  onError={() => {
+                    setPlayerImgError(true);
+                    setPlayerImgLoaded(false);
+                  }}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    opacity: playerImgLoaded ? 1 : 0,
+                    transition: "opacity 200ms ease-in"
+                  }}
                 />
               )}
             </div>

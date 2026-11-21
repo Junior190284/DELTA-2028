@@ -1029,7 +1029,7 @@ export default function CinematicPackExperience({
                 transform: `translateY(${state.phase === "WALKOUT" ? (1 - stadiumFilmEntranceEase) * 65 : 0}px) scale(${
                   (stageCardScale * (state.phase === "WALKOUT" ? 0.68 + stadiumFilmEntranceEase * 0.32 : 1)).toFixed(4)
                 })`,
-                opacity: preparedCardAssets ? (state.phase === "WALKOUT" ? stadiumFilmEntranceEase : 1) : 0,
+                opacity: state.phase === "WALKOUT" ? (preparedCardAssets ? stadiumFilmEntranceEase : 0) : 1,
                 transition: "opacity 320ms ease-out",
                 transformOrigin: "center",
                 filter: `drop-shadow(0 22px 34px rgba(0,0,0,.85)) drop-shadow(0 0 32px ${pack.theme === "legend" ? "rgba(255,204,75,.62)" : "rgba(247,73,28,.62)"})`,
@@ -1039,8 +1039,8 @@ export default function CinematicPackExperience({
                   key={activeCardShowcase.slotKey}
                   data={activeCardShowcase.card3D}
                   theme={activeCardShowcase.theme3D}
-                  yaw={stadiumFilmYaw}
-                  pitch={0}
+                  yaw={state.phase === "WALKOUT" ? stadiumFilmYaw : walkoutYaw}
+                  pitch={state.phase === "WALKOUT" ? 0 : walkoutPitch}
                   interactive={isCardInteractive}
                   autoRotate={false}
                   isRevealing={state.phase === "WALKOUT"}
