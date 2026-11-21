@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { 
   Sparkles, 
@@ -225,6 +226,21 @@ export default function DeltaCollectionAlbum({
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [videoHighlightCard, setVideoHighlightCard] = useState<CardDefinition | null>(null);
   const [signatureCard, setSignatureCard] = useState<CardDefinition | null>(null);
+  const [showPreviewDemoLink, setShowPreviewDemoLink] = useState(false);
+
+  // Strictly verify non-production environment before revealing demo hub link
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const isProduction =
+        hostname.includes("gm2018.pl") ||
+        hostname === "delta-2028.vercel.app" ||
+        process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+      if (!isProduction) {
+        setShowPreviewDemoLink(true);
+      }
+    }
+  }, []);
 
   // Load featured card from local storage
   useEffect(() => {
@@ -735,6 +751,21 @@ export default function DeltaCollectionAlbum({
               <span>KOŁO FORTUNY</span>
             </DeltaButton>
 
+            {/* Demo Pack Center Button (Strictly Non-Production) */}
+            {showPreviewDemoLink && (
+              <Link
+                href="/preview/pack-demo"
+                data-testid="link-pack-demo"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-red-500/20 border border-amber-500/40 hover:border-amber-400 text-amber-300 hover:text-white text-xs font-bold transition-all shadow-md group min-h-[44px]"
+                title="Otwórz centrum demonstracyjne paczek i animacji (Tryb DEMO)"
+              >
+                <Play size={13} className="text-amber-400 fill-amber-400 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">DEMO PACZEK</span>
+                <span className="sm:hidden">DEMO</span>
+                <span className="px-1 py-0.2 rounded bg-amber-500/30 text-[9px] font-mono text-amber-200 uppercase">PREVIEW</span>
+              </Link>
+            )}
+
             {/* Sync Rewards Button */}
             <button
               type="button"
@@ -824,6 +855,15 @@ export default function DeltaCollectionAlbum({
             <span className="text-[10px] text-slate-400 truncate">
               {unopenedPacks.length > 0 ? "Gotowe do otwarcia" : "Kup w sklepie za DP"}
             </span>
+            {unopenedPacks.length === 0 && showPreviewDemoLink && (
+              <Link
+                href="/preview/pack-demo"
+                className="mt-1 flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-[10px] font-black uppercase tracking-wide hover:bg-amber-500/25 transition-all text-center"
+              >
+                <Play size={10} className="fill-current" />
+                <span>Testuj paczki (DEMO)</span>
+              </Link>
+            )}
           </div>
 
           {/* Tile 4: Ostatnio Zdobyta */}
