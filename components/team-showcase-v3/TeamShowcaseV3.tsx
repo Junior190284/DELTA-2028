@@ -12,9 +12,17 @@
  *
  * Performance: 2D only (translate/scale), animations of transform/opacity, no video,
  * no libraries, no backdrop-filter. Reduced Motion: no intro, instant changes.
+ *
+ * P15E (why the intro was not seen): the CSS intro started at the first paint of the SSR HTML,
+ * while the crest (1.65 MB PNG) and the stadium arrived on mobile data only after 1.5–4 s — the crest
+ * animation (0.2–2.3 s) was over before the image existed, and the "stadium lights up" step played on
+ * black. The JS phase timer, meanwhile, started only at hydration (2–5 s later), so the two clocks
+ * diverged. Now: SSR = "boot" (dark stadium, nothing animated) -> after mount the light assets are
+ * preloaded (cap 1.2 s) -> the intro starts with ONE clock for CSS and JS. Replay = the same path.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { preload } from "react-dom";
 import NeutralPlayerSilhouette from "@/components/cards/NeutralPlayerSilhouette";
 import {
   cardLayout,
@@ -26,7 +34,17 @@ import {
   wrapIndex,
   type ShowcasePlayer,
 } from "@/lib/team/teamShowcase";
-import { INTRO_TIMELINE, SHOWCASE_VARIANTS, lightRigFor, type ShowcaseVariant } from "@/lib/team/teamShowcaseV3";
+import {
+  CALM_INTRO_MS,
+  INTRO_CREST_SRC,
+  INTRO_PRELOAD_CAP_MS,
+  INTRO_TIMELINE,
+  SHOWCASE_VARIANTS,
+  lightRigFor,
+  waitForImages,
+  type IntroPhase,
+  type ShowcaseVariant,
+} from "@/lib/team/teamShowcaseV3";
 import "./team-showcase-v3.css";
 
 export interface TeamShowcaseV3Props {
@@ -34,13 +52,16 @@ export interface TeamShowcaseV3Props {
   initialVariant: ShowcaseVariant;
 }
 
-const CREST = "/teamlogos/gm.png";
+const CREST = INTRO_CREST_SRC; // P15E: 44 KB instead of 1.65 MB (also in the silhouettes)
 const STADIUM: Record<ShowcaseVariant, string> = {
   champions: "/media/walkouts/delta-inferno-red-stadium.webp",
   stadium: "/media/walkouts/delta-gold-stadium.webp",
   ultimate: "/media/walkouts/delta-matchday-stadium.webp",
   barca: "/media/walkouts/delta-inferno-red-stadium.webp",
 };
+
+const reducedNow = () =>
+  typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -60,20 +81,56 @@ export default function TeamShowcaseV3({ players, initialVariant }: TeamShowcase
   const nav = showNavigation(count);
   const reduced = usePrefersReducedMotion();
   const [variant, setVariant] = useState<ShowcaseVariant>(initialVariant);
-  const [phase, setPhase] = useState<"intro" | "ready">("intro");
+  const variantRef = useRef(variant);
+  useEffect(() => { variantRef.current = variant; }, [variant]);
+  const [phase, setPhase] = useState<IntroPhase>("boot");
+  const [introRun, setIntroRun] = useState(0);
+  const [hydrated, setHydrated] = useState(false); // buttons work only after hydration -> shown only then
   const [active, setActive] = useState(0);
   const [slots, setSlots] = useState(1);
   const [failedPhotos, setFailedPhotos] = useState<Record<string, true>>({});
   const swipe = useRef<{ x: number; y: number; id: number } | null>(null);
   const suppressClick = useRef(false);
   const prevOffsets = useRef<Map<string, number>>(new Map());
+  const tookOver = useRef(false); // the user skipped / navigated during boot -> do not start the intro afterwards
 
-  // Intro: one-off; Reduced Motion = straight to "ready".
+  // P15E: preload hints in the SSR <head> (light crest + stadium), so the images race the JS bundle.
+  preload(CREST, { as: "image" });
+  preload(STADIUM[initialVariant], { as: "image" });
+
+  // Start (and restart) the intro from ONE clock: after mount, once the images are ready (max 1.2 s).
+  const startIntro = useCallback(async (opts: { wait: boolean; isCancelled?: () => boolean }) => {
+    if (opts.wait) {
+      const first = players[0];
+      const urls = [CREST, STADIUM[variantRef.current]];
+      if (first?.photo.kind === "static") urls.push(first.photo.url);
+      await waitForImages(urls, INTRO_PRELOAD_CAP_MS);
+      if (opts.isCancelled?.() || tookOver.current) return;
+    }
+    tookOver.current = false;
+    setActive(0);
+    setIntroRun((n) => n + 1);
+    setPhase("intro");
+  }, [players]);
+
+  // First visit: Reduced Motion = straight to "ready" (no movement); otherwise boot -> intro.
   useEffect(() => {
-    if (reduced) { setPhase("ready"); return; }
-    const t = window.setTimeout(() => setPhase("ready"), INTRO_TIMELINE.done);
+    let cancelled = false;
+    setHydrated(true);
+    if (reducedNow()) { setPhase("ready"); return; }
+    void startIntro({ wait: true, isCancelled: () => cancelled });
+    return () => { cancelled = true; };
+  }, [startIntro]);
+
+  // The end of the intro is timed from the moment the intro class is applied (same clock as the CSS).
+  useEffect(() => {
+    if (phase !== "intro") return;
+    const t = window.setTimeout(() => setPhase("ready"), reduced ? CALM_INTRO_MS : INTRO_TIMELINE.done);
     return () => window.clearTimeout(t);
-  }, [reduced]);
+  }, [phase, introRun, reduced]);
+
+  const skipIntro = useCallback(() => { tookOver.current = true; setPhase("ready"); }, []);
+  const replayIntro = useCallback(() => { void startIntro({ wait: false }); }, [startIntro]);
 
   useEffect(() => {
     const read = () => setSlots(sideSlots(window.innerWidth));
@@ -93,10 +150,11 @@ export default function TeamShowcaseV3({ players, initialVariant }: TeamShowcase
 
   const go = useCallback((step: number) => {
     if (!nav) return;
+    tookOver.current = true;
     setPhase("ready");
     setActive((a) => wrapIndex(a + step, count));
   }, [count, nav]);
-  const select = useCallback((i: number) => { setPhase("ready"); setActive(wrapIndex(i, count)); }, [count]);
+  const select = useCallback((i: number) => { tookOver.current = true; setPhase("ready"); setActive(wrapIndex(i, count)); }, [count]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!nav) return;
@@ -148,9 +206,10 @@ export default function TeamShowcaseV3({ players, initialVariant }: TeamShowcase
 
   return (
     <main
-      className={`dc-root ${phase === "intro" ? "is-intro" : "is-ready"} ${reduced ? "is-reduced" : ""}`}
+      className={`dc-root is-${phase} ${reduced ? "is-reduced" : ""}`}
       data-variant={variant}
       data-phase={phase}
+      data-intro-run={introRun}
       data-rig={rig.key}
       data-testid="team-showcase-v3"
       data-state="demo"
@@ -169,15 +228,21 @@ export default function TeamShowcaseV3({ players, initialVariant }: TeamShowcase
         <span key={`flare-${current.id}`} className="dc-flare" />
       </div>
 
-      {/* 2. DELTA crest in the intro */}
-      <div className="dc-crest-intro" aria-hidden="true">
+      {/* boot: dark stadium while the page hydrates and the intro images load */}
+      <div className="dc-boot" aria-hidden="true"><span className="dc-boot-line" /></div>
+
+      {/* 2. DELTA crest in the intro (keyed: every replay restarts its animation) */}
+      <div key={`crest-${introRun}`} className="dc-crest-intro" aria-hidden="true">
         <img src={CREST} alt="" />
       </div>
 
-      {/* 5. Giant typography behind the player (recommended / C) */}
-      <div key={`type-${current.id}`} className="dc-hero-type" aria-hidden="true">
+      {/* 5. Giant typography behind the player (recommended / C); a light sweep on every change */}
+      <div key={`type-${current.id}-${introRun}`} className="dc-hero-type" aria-hidden="true" data-testid="team-showcase-v3-hero-type">
         {current.shirtNumber && <span className="dc-hero-number">{current.shirtNumber}</span>}
-        <span className="dc-hero-surname">{current.lastName}</span>
+        <span className="dc-hero-surname-wrap">
+          <span className="dc-hero-surname">{current.lastName}</span>
+          <span className="dc-hero-sweep" />
+        </span>
       </div>
 
       <header className="dc-header">
@@ -258,7 +323,7 @@ export default function TeamShowcaseV3({ players, initialVariant }: TeamShowcase
       </section>
 
       {/* Selected player details */}
-      <section key={`info-${current.id}`} className="dc-info" aria-live="polite" data-testid="team-showcase-v3-info">
+      <section key={`info-${current.id}-${introRun}`} className="dc-info" aria-live="polite" data-testid="team-showcase-v3-info">
         {current.shirtNumber && <span className="dc-info-number">#{current.shirtNumber}</span>}
         <h2 className="dc-info-name" data-testid="team-showcase-v3-info-name">
           {current.firstName && <span>{current.firstName}</span>}
@@ -296,10 +361,14 @@ export default function TeamShowcaseV3({ players, initialVariant }: TeamShowcase
             </button>
           ))}
         </div>
+
+        <button type="button" className="dc-replay" onClick={replayIntro} disabled={phase !== "ready"} data-testid="team-showcase-v3-replay">
+          <span aria-hidden="true">↻</span> Obejrzyj intro ponownie
+        </button>
       </footer>
 
-      {phase === "intro" && (
-        <button type="button" className="dc-skip" onClick={() => setPhase("ready")} data-testid="team-showcase-v3-skip">Pomiń intro</button>
+      {phase !== "ready" && hydrated && (
+        <button type="button" className="dc-skip" onClick={skipIntro} data-testid="team-showcase-v3-skip">Pomiń intro ›</button>
       )}
     </main>
   );

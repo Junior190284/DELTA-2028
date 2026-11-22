@@ -4,7 +4,7 @@
  * - visual variants (A/B/C + the recommended "champions" blend),
  * - DEMO roster for the prototype (NO connection to the production children's database),
  * - "dynamic lights": colour and tilt of the beams depending on the selected player,
- * - intro timeline.
+ * - intro timeline (P15E: started after mount + asset preload, replayable).
  * The carousel geometry is reused from Team Showcase 2.0 (lib/team/teamShowcase).
  */
 import { buildRoster, type RosterPlayerRow, type ShowcasePlayer } from "./teamShowcase.ts";
@@ -49,17 +49,18 @@ const BASE_DEMO: RosterPlayerRow[] = [
   { id: "demo-p19", display_name: "Bartosz Wiśniewski", shirt_number: "19", position: "POM", active: true },
   { id: "demo-p22", display_name: "Filip Szymański", shirt_number: "22", position: null, active: true },
 ];
-const PLACEHOLDER_NAMES = ["Alfa", "Beta", "Gamma", "Epsilon", "Zeta", "Theta", "Jota", "Kappa", "Lambda", "Sigma", "Omega", "Orion", "Vega", "Atlas"];
+const PLACEHOLDER_NAMES = ["Alfa", "Beta", "Gamma", "Epsilon", "Zeta", "Theta", "Jota", "Kappa", "Lambda", "Sigma", "Omega", "Orion", "Vega", "Atlas",
+  "Nova", "Rigel", "Lyra", "Draco", "Polaris", "Kastor", "Altair", "Deneb", "Tytan"];
 const PLACEHOLDER_POS = ["BR", "OBR", "OBR", "POM", "NAP", null];
 
 export const DEMO_STATIC_PHOTOS_V3: Record<string, string> = {
   "demo-p7": "/assets/players/ryszard-rybacki.png",
 };
 
-export const DEMO_COUNT_OPTIONS = [1, 2, 3, 7, 18] as const;
-export const MAX_DEMO_PLAYERS = BASE_DEMO.length + PLACEHOLDER_NAMES.length; // 21
+export const DEMO_COUNT_OPTIONS = [1, 2, 3, 7, 18, 30] as const;
+export const MAX_DEMO_PLAYERS = BASE_DEMO.length + PLACEHOLDER_NAMES.length; // 30
 
-/** Size of the test roster (Preview only): ?count=1|2|7|18; default 7. */
+/** Size of the test roster (Preview only): ?count=1..30; default 7. */
 export function parseDemoCount(raw: string | string[] | null | undefined): number {
   const v = Number(Array.isArray(raw) ? raw[0] : raw);
   if (!Number.isFinite(v) || v < 0) return BASE_DEMO.length;
@@ -131,3 +132,38 @@ export const INTRO_TIMELINE = {
   sidesIn: 2300,
   done: 3100,
 } as const;
+
+/**
+ * P15E: light intro assets. The original crest (teamlogos/gm.png) weighs 1.65 MB — on mobile data it
+ * arrived only after its 2.1 s animation had already finished, so the crest was never seen.
+ * gm-crest.webp = the same crest, 384 px, ~44 KB.
+ */
+export const INTRO_CREST_SRC = "/teamlogos/gm-crest.webp";
+
+/** P15E: max time (ms) the intro waits for its images after mount — then it starts anyway. */
+export const INTRO_PRELOAD_CAP_MS = 1200;
+
+/** P15E: Reduced Motion replay — a static crest card (no movement) for this long, then the roster. */
+export const CALM_INTRO_MS = 1400;
+
+/** P15E: if JavaScript never starts, the CSS reveals the page by itself after this long (no blank screen). */
+export const BOOT_FALLBACK_MS = 6000;
+
+/** Phases: boot (SSR, dark stadium, waiting for hydration + images) -> intro -> ready. */
+export type IntroPhase = "boot" | "intro" | "ready";
+
+/** Wait for images (decode) with a hard cap — never blocks the intro for longer than capMs. */
+export function waitForImages(urls: string[], capMs: number = INTRO_PRELOAD_CAP_MS): Promise<"loaded" | "timeout"> {
+  if (typeof Image === "undefined" || urls.length === 0) return Promise.resolve("loaded");
+  const one = (src: string) => new Promise<void>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+    if (img.complete) resolve();
+  });
+  return Promise.race([
+    Promise.all(urls.map(one)).then(() => "loaded" as const),
+    new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), capMs)),
+  ]);
+}

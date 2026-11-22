@@ -116,7 +116,7 @@ test("P15B performance: no 3D, no video, no libraries; keyframes only transform/
   }
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /\.dc-root\.is-reduced \*/);
-  assert.match(comp, /if \(reduced\) \{ setPhase\("ready"\); return; \}/, "Reduced Motion skips the intro");
+  assert.match(comp, /if \(reducedNow\(\)\) \{ setPhase\("ready"\); return; \}/, "Reduced Motion skips the intro (P15E: read synchronously at mount)");
   const pkg = JSON.parse(read("package.json"));
   for (const heavy of ["framer-motion", "gsap", "swiper", "embla-carousel", "lottie-web"]) {
     assert.equal(Boolean({ ...pkg.dependencies, ...pkg.devDependencies }[heavy]), false, heavy);
