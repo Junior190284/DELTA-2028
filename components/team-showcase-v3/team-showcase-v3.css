@@ -1,0 +1,337 @@
+/* ==========================================================================
+   DELTA INFERNO — P15B: TEAM SHOWCASE 3.0 — DELTA CHAMPIONS (prototype)
+   One structure, four CSS skins: champions (recommended) / stadium (A) /
+   ultimate (B) / barca (C). Keyframe animations: transform/opacity only.
+   2D only (translate/scale/rotate), no 3D, no video, no backdrop-filter.
+   ========================================================================== */
+
+/* Smooth beam-colour transitions between players (graceful fallback: an instant change). */
+@property --dc-beam { syntax: "<color>"; inherits: true; initial-value: rgba(255, 214, 120, 0.34); }
+@property --dc-accent { syntax: "<color>"; inherits: true; initial-value: #f5c451; }
+@property --dc-tilt { syntax: "<angle>"; inherits: true; initial-value: 14deg; }
+
+.dc-root {
+  --dc-gold: #f5c451;
+  --dc-red: #dc2626;
+  --dc-ink: #04050a;
+  --dc-card-w: clamp(210px, 26vw, 320px);
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  overflow-x: clip;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  color: #fff;
+  background: var(--dc-ink);
+  transition: --dc-beam 0.9s ease, --dc-accent 0.9s ease, --dc-tilt 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- 1. Stadium ---------- */
+.dc-bg {
+  position: absolute; inset: 0; z-index: -5;
+  background-size: cover; background-position: center 32%;
+  opacity: 0.5;
+}
+.dc-bg-dim {
+  position: absolute; inset: 0; z-index: -4;
+  background: linear-gradient(180deg, rgba(4, 5, 10, 0.62) 0%, rgba(4, 5, 10, 0.3) 36%, rgba(4, 5, 10, 0.9) 80%, #04050a 100%); /* fallback */
+  background:
+    radial-gradient(ellipse 55% 42% at 50% 44%, color-mix(in srgb, var(--dc-accent) 14%, transparent) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(4, 5, 10, 0.62) 0%, rgba(4, 5, 10, 0.3) 36%, rgba(4, 5, 10, 0.9) 80%, #04050a 100%);
+}
+.dc-pitch-lines {
+  position: absolute; inset: auto 0 0 0; height: 38%; z-index: -3; opacity: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 12.5%),
+    linear-gradient(180deg, transparent, rgba(30, 90, 50, 0.18));
+  /* 2D only (no perspective/rotateX): flat lines, scaled horizontally */
+  transform-origin: 50% 100%;
+  transform: scaleX(1.4);
+}
+
+/* ---------- 3. Beams ---------- */
+.dc-lights { position: absolute; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; }
+.dc-beam {
+  position: absolute; top: -16%; width: 38%; height: 92%;
+  transform-origin: 50% 0%;
+  background: linear-gradient(180deg, var(--dc-beam) 0%, transparent 82%); /* fallback without color-mix */
+  background: linear-gradient(180deg, var(--dc-beam) 0%, color-mix(in srgb, var(--dc-beam) 30%, transparent) 48%, transparent 82%);
+  clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dc-beam.is-l { left: -9%; transform: rotate(calc(var(--dc-tilt) * -1)); }
+.dc-beam.is-c { left: 31%; transform: rotate(0deg); opacity: 0.6; }
+.dc-beam.is-r { right: -9%; transform: rotate(var(--dc-tilt)); }
+.dc-root.is-ready .dc-beam { animation: dcBeamBreathe 7s ease-in-out infinite alternate; }
+.dc-root.is-ready .dc-beam.is-c { animation-delay: -2.4s; }
+.dc-root.is-ready .dc-beam.is-r { animation-delay: -4.1s; }
+@keyframes dcBeamBreathe { 0% { opacity: 0.85; } 50% { opacity: 0.55; } 100% { opacity: 0.8; } }
+/* flash on every player change (keyed element) */
+.dc-flare {
+  position: absolute; left: 50%; top: 18%; width: 70vmin; height: 70vmin; margin-left: -35vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 120, 0.3) 0%, transparent 62%); /* fallback */
+  background: radial-gradient(circle, color-mix(in srgb, var(--dc-accent) 38%, transparent) 0%, transparent 62%);
+  opacity: 0; mix-blend-mode: screen;
+  animation: dcFlare 1.1s ease-out both;
+}
+@keyframes dcFlare { 0% { opacity: 0; transform: scale(0.6); } 25% { opacity: 0.85; } 100% { opacity: 0; transform: scale(1.25); } }
+
+/* ---------- 2. Crest in the intro ---------- */
+.dc-crest-intro { display: none; }
+.dc-root.is-intro .dc-crest-intro {
+  display: flex; position: absolute; inset: 0; z-index: 30; align-items: center; justify-content: center; pointer-events: none;
+}
+.dc-crest-intro img {
+  width: min(42vw, 220px); height: auto;
+  filter: drop-shadow(0 0 40px rgba(220, 38, 38, 0.7)) drop-shadow(0 0 80px rgba(245, 196, 81, 0.35));
+  animation: dcCrestIntro 2.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+@keyframes dcCrestIntro {
+  0%   { opacity: 0; transform: scale(0.55); }
+  22%  { opacity: 1; transform: scale(1); }
+  55%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 0; transform: translateY(-38vh) scale(0.22); }
+}
+
+/* ---------- 5. Giant typography (C / champions) ---------- */
+.dc-hero-type {
+  position: absolute; left: 0; right: 0; top: 13%; z-index: -1;
+  display: flex; flex-direction: column; align-items: center; line-height: 0.82;
+  pointer-events: none; overflow: hidden; white-space: nowrap;
+  animation: dcTypeIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dc-hero-number {
+  font-size: clamp(120px, 42vw, 360px); font-weight: 1000; letter-spacing: -0.04em;
+  color: transparent;
+  background: linear-gradient(180deg, rgba(245, 196, 81, 0.5), transparent 85%); /* fallback */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--dc-accent) 55%, transparent), transparent 85%);
+  -webkit-background-clip: text; background-clip: text;
+  opacity: 0.55;
+}
+.dc-hero-surname {
+  margin-top: -0.18em;
+  font-size: clamp(54px, 17vw, 210px); font-weight: 1000; text-transform: uppercase; letter-spacing: 0.02em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(245, 196, 81, 0.6); /* fallback */
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--dc-accent) 70%, transparent);
+  opacity: 0.8;
+}
+@keyframes dcTypeIn { 0% { opacity: 0; transform: translateX(6%) scale(0.96); } 100% { opacity: 1; transform: none; } }
+
+/* ---------- Header ---------- */
+.dc-header {
+  position: relative; z-index: 6;
+  display: flex; align-items: center; gap: 10px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 4px;
+}
+.dc-crest { width: 36px; height: 36px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.5)); }
+.dc-titles { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
+.dc-kicker { font-size: 9px; font-weight: 900; letter-spacing: 0.24em; color: var(--dc-gold); }
+.dc-title { margin: 2px 0 0; font-size: clamp(17px, 3vw, 26px); font-weight: 1000; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.dc-demo-pill {
+  margin-left: auto; flex: 0 0 auto;
+  font-size: 10px; font-weight: 900; letter-spacing: 0.16em; padding: 4px 10px; border-radius: 999px;
+  color: #fde68a; background: rgba(120, 53, 15, 0.5); border: 1px solid rgba(245, 196, 81, 0.55);
+}
+
+/* ---------- Stage / carousel ---------- */
+.dc-stage {
+  position: relative; z-index: 4;
+  flex: 0 0 auto; height: calc(var(--dc-card-w) * 1.5 + 26px); margin-top: auto;
+  outline: none; touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.dc-stage:focus-visible { box-shadow: inset 0 0 0 2px rgba(245, 196, 81, 0.55); }
+.dc-card {
+  position: absolute; top: 50%; left: 50%;
+  width: var(--dc-card-w); aspect-ratio: 2 / 3;
+  margin-left: calc(var(--dc-card-w) / -2); margin-top: calc(var(--dc-card-w) * -0.75);
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease-out;
+  will-change: transform; cursor: pointer;
+}
+.dc-card.is-active { cursor: default; }
+.dc-card.is-wrap { transition: none; }
+.dc-card.is-wrap .dc-card-inner { animation: dcWrapIn 0.38s ease-out both; }
+@keyframes dcWrapIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+.dc-card-inner { position: relative; width: 100%; height: 100%; border-radius: 18px; overflow: hidden; }
+.dc-card-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #19131b 0%, #0b0a10 62%, #06060a 100%); /* fallback */
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 36%, color-mix(in srgb, var(--dc-accent) 26%, transparent) 0%, transparent 70%),
+    linear-gradient(180deg, #19131b 0%, #0b0a10 62%, #06060a 100%);
+}
+.dc-card-frame { position: absolute; inset: 0; border-radius: inherit; border: 1px solid rgba(245, 196, 81, 0.3); pointer-events: none; }
+.dc-card.is-active .dc-card-frame { border-color: color-mix(in srgb, var(--dc-accent) 80%, white 0%); box-shadow: inset 0 0 22px color-mix(in srgb, var(--dc-accent) 25%, transparent); }
+.dc-card.is-active .dc-card-inner { box-shadow: 0 0 46px color-mix(in srgb, var(--dc-accent) 40%, transparent), 0 30px 60px rgba(0, 0, 0, 0.8); }
+.dc-photo {
+  position: absolute; left: 4%; right: 4%; top: 7%; height: 75%; width: 92%;
+  object-fit: contain; object-position: center bottom;
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.75));
+  pointer-events: none;
+}
+.dc-silhouette { position: absolute; left: 9%; right: 9%; top: 10%; height: 66%; pointer-events: none; opacity: 0.9; }
+.dc-card-number {
+  position: absolute; top: 10px; left: 12px;
+  font-size: clamp(22px, 4vw, 38px); font-weight: 1000; line-height: 1;
+  color: var(--dc-gold); text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+.dc-card-pos {
+  position: absolute; top: 14px; right: 10px;
+  font-size: 10px; font-weight: 950; letter-spacing: 0.12em; padding: 3px 7px; border-radius: 6px;
+  color: #1a1205; background: linear-gradient(180deg, #ffe08a, #e5a92e);
+}
+.dc-card-nameplate {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 12px; text-align: center;
+  display: flex; flex-direction: column; line-height: 1.05;
+  background: linear-gradient(180deg, transparent 0%, rgba(4, 5, 10, 0.86) 45%, rgba(4, 5, 10, 0.96) 100%);
+}
+.dc-card-first { font-size: 10px; font-weight: 800; letter-spacing: 0.16em; color: rgba(255, 255, 255, 0.72); text-transform: uppercase; }
+.dc-card-last { font-size: clamp(14px, 2.2vw, 21px); font-weight: 1000; letter-spacing: 0.06em; text-transform: uppercase; }
+.dc-soon {
+  position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); white-space: nowrap;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.14em; padding: 4px 8px; border-radius: 6px;
+  color: #fde68a; background: rgba(8, 8, 12, 0.85); border: 1px solid rgba(245, 196, 81, 0.45);
+}
+.dc-card.has-photo .dc-card-pos { top: 14px; }
+.dc-card-dim { position: absolute; inset: 0; background: #020205; pointer-events: none; transition: opacity 0.6s ease; }
+
+/* ---------- Info ---------- */
+.dc-info { position: relative; z-index: 6; text-align: center; padding: 6px 16px 4px; animation: dcInfoIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes dcInfoIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: none; } }
+.dc-info-number { display: block; font-size: 13px; font-weight: 950; letter-spacing: 0.22em; color: var(--dc-accent); }
+.dc-info-name { margin: 2px 0 6px; display: flex; flex-direction: column; line-height: 1; text-transform: uppercase; }
+.dc-info-name span { font-size: clamp(12px, 2vw, 17px); font-weight: 800; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.76); }
+.dc-info-name strong { font-size: clamp(30px, 7vw, 60px); font-weight: 1000; letter-spacing: 0.04em; text-shadow: 0 4px 24px rgba(0, 0, 0, 0.85), 0 0 34px color-mix(in srgb, var(--dc-accent) 35%, transparent); overflow-wrap: anywhere; }
+.dc-info-meta { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 24px; }
+.dc-pill { font-size: 10px; font-weight: 900; letter-spacing: 0.16em; padding: 5px 11px; border-radius: 999px; }
+.dc-pill.is-position { color: #1a1205; background: linear-gradient(180deg, #ffe08a, #e5a92e); }
+.dc-pill.is-soon { color: #fde68a; background: rgba(8, 8, 12, 0.72); border: 1px solid rgba(245, 196, 81, 0.45); }
+
+/* ---------- Footer: navigation + variants ---------- */
+.dc-footer { position: relative; z-index: 6; margin-top: auto; padding: 6px 12px max(14px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dc-controls { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.dc-controls.is-placeholder { min-height: 46px; }
+.dc-nav {
+  width: 46px; height: 46px; border-radius: 50%; font-size: 26px; line-height: 1; font-weight: 700; cursor: pointer;
+  color: #fff; background: rgba(255, 255, 255, 0.08); border: 1px solid color-mix(in srgb, var(--dc-accent) 55%, transparent);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.dc-nav:hover { background: color-mix(in srgb, var(--dc-accent) 20%, transparent); }
+.dc-nav:active { transform: scale(0.94); }
+.dc-nav:focus-visible, .dc-variant:focus-visible, .dc-skip:focus-visible { outline: 2px solid var(--dc-gold); outline-offset: 2px; }
+.dc-counter { min-width: 64px; text-align: center; font-size: 13px; font-weight: 900; letter-spacing: 0.14em; color: rgba(255, 255, 255, 0.82); }
+.dc-variants { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 100%; }
+.dc-variant {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 11px; border-radius: 999px; cursor: pointer;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.8); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.dc-variant b { color: var(--dc-gold); }
+.dc-variant.is-on { color: #1a1205; background: linear-gradient(180deg, #ffe08a, #e5a92e); border-color: transparent; }
+.dc-variant.is-on b { color: #1a1205; }
+.dc-skip {
+  position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 40;
+  min-height: 34px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+  font-size: 11px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.dc-empty { margin: auto; font-size: 18px; font-weight: 900; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); }
+
+/* ==========================================================================
+   INTRO (only .is-intro): stadium -> crest -> beams -> hero -> typography -> sides
+   ========================================================================== */
+.dc-root.is-intro .dc-bg { animation: dcBgIn 1.5s ease-out 0.9s both; }
+@keyframes dcBgIn { 0% { opacity: 0.08; } 100% { opacity: 0.5; } }
+.dc-root.is-intro .dc-beam { animation: dcBeamOn 0.8s steps(1, end) 1.1s both, dcBeamFade 0.5s ease-out 1.1s both; }
+.dc-root.is-intro .dc-beam.is-c { animation-delay: 1.25s, 1.25s; }
+.dc-root.is-intro .dc-beam.is-r { animation-delay: 1.18s, 1.18s; }
+@keyframes dcBeamOn { 0% { opacity: 0; } 20% { opacity: 0.9; } 35% { opacity: 0.15; } 55% { opacity: 0.85; } 100% { opacity: 0.85; } }
+@keyframes dcBeamFade { 0% { opacity: 0; } 100% { opacity: 0.85; } }
+.dc-root.is-intro .dc-header { animation: dcFadeIn 0.6s ease-out 1.5s both; }
+.dc-root.is-intro .dc-card.is-active .dc-card-inner { animation: dcHeroIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.5s both; }
+@keyframes dcHeroIn { 0% { opacity: 0; transform: translateY(70px) scale(0.84); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+.dc-root.is-intro .dc-hero-type { animation: dcTypeIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.9s both; }
+.dc-root.is-intro .dc-info { animation: dcInfoIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.95s both; }
+.dc-root.is-intro .dc-card.is-side .dc-card-inner { animation: dcSideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) calc(2.3s + var(--dc-side-delay, 0ms)) both; }
+@keyframes dcSideIn { 0% { opacity: 0; transform: translateY(24px) scale(0.92); } 100% { opacity: 1; transform: none; } }
+.dc-root.is-intro .dc-footer { animation: dcFadeIn 0.6s ease-out 2.5s both; }
+@keyframes dcFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+/* ==========================================================================
+   SKINS
+   ========================================================================== */
+/* --- A. Cinematic Stadium: portraits, strong beams, no giant typography --- */
+.dc-root[data-variant="stadium"] .dc-hero-type { display: none; }
+.dc-root[data-variant="stadium"] .dc-bg { opacity: 0.62; }
+.dc-root[data-variant="stadium"] .dc-beam { width: 44%; }
+.dc-root[data-variant="stadium"] .dc-card-inner { border-radius: 10px; }
+.dc-root[data-variant="stadium"] .dc-card-pos { display: none; }
+
+/* --- B. Ultimate Team: crest-shaped cards, gold frame, pitch lines --- */
+.dc-root[data-variant="ultimate"] .dc-hero-type { display: none; }
+.dc-root[data-variant="ultimate"] .dc-pitch-lines { opacity: 1; }
+.dc-root[data-variant="ultimate"] .dc-bg { opacity: 0.28; }
+.dc-root[data-variant="ultimate"] .dc-card-inner,
+.dc-root[data-variant="champions"] .dc-card.is-side .dc-card-inner {
+  border-radius: 0;
+  clip-path: polygon(8% 0, 92% 0, 100% 6%, 100% 84%, 50% 100%, 0 84%, 0 6%);
+  background: linear-gradient(160deg, #ffe7a3, #c8902a 40%, #7a4e12 70%, #f3c766);
+}
+.dc-root[data-variant="ultimate"] .dc-card-bg,
+.dc-root[data-variant="champions"] .dc-card.is-side .dc-card-bg {
+  inset: 3px;
+  clip-path: polygon(8% 0, 92% 0, 100% 6%, 100% 84%, 50% 100%, 0 84%, 0 6%);
+}
+.dc-root[data-variant="ultimate"] .dc-card-frame,
+.dc-root[data-variant="champions"] .dc-card.is-side .dc-card-frame { display: none; }
+.dc-root[data-variant="ultimate"] .dc-card-nameplate,
+.dc-root[data-variant="champions"] .dc-card.is-side .dc-card-nameplate { bottom: 14%; background: none; padding-bottom: 0; }
+.dc-root[data-variant="ultimate"] .dc-card-number { font-size: clamp(30px, 6vw, 54px); top: 8%; left: 10%; }
+.dc-root[data-variant="ultimate"] .dc-card-pos { top: calc(8% + clamp(32px, 6.2vw, 56px)); left: 10%; right: auto; }
+.dc-root[data-variant="ultimate"] .dc-soon { bottom: 32%; }
+.dc-root[data-variant="champions"] .dc-card.is-side .dc-soon { bottom: 34%; }
+
+/* --- C. Barcelona Showcase: typography is the hero, frameless player --- */
+.dc-root[data-variant="barca"] .dc-hero-type { top: 10%; }
+.dc-root[data-variant="barca"] .dc-hero-surname { -webkit-text-stroke-width: 2px; opacity: 0.95; }
+.dc-root[data-variant="barca"] .dc-hero-number { opacity: 0.75; }
+.dc-root[data-variant="barca"] .dc-card.is-active .dc-card-bg,
+.dc-root[data-variant="barca"] .dc-card.is-active .dc-card-frame { opacity: 0; }
+.dc-root[data-variant="barca"] .dc-card.is-active .dc-card-inner { box-shadow: none; overflow: visible; }
+.dc-root[data-variant="barca"] .dc-card.is-active .dc-card-nameplate { display: none; }
+.dc-root[data-variant="barca"] .dc-card.is-active .dc-photo { top: 0; height: 92%; }
+.dc-root[data-variant="barca"] .dc-card.is-active .dc-card-number { display: none; }
+.dc-root[data-variant="barca"] .dc-card.is-side .dc-card-inner { border-radius: 999px 999px 18px 18px; }
+
+/* --- ★ Champions (recommended): C typography + A stadium + B cards on the sides --- */
+.dc-root[data-variant="champions"] .dc-card.is-active .dc-card-inner { border-radius: 22px; }
+/* champions: the surname in the free band ABOVE the card (it is not covered), the large number faint behind the card */
+.dc-root[data-variant="champions"] .dc-hero-type { flex-direction: column-reverse; top: 7.5%; }
+.dc-root[data-variant="champions"] .dc-hero-surname { margin-top: 0; margin-bottom: -0.05em; opacity: 0.9; }
+.dc-root[data-variant="champions"] .dc-hero-number { opacity: 0.32; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 640px) {
+  .dc-root { --dc-card-w: min(60vw, 240px); }
+  .dc-variant span { display: none; }       /* letters only: no horizontal scroll */
+  .dc-variant { min-width: 40px; justify-content: center; }
+  .dc-beam.is-l, .dc-beam.is-r { width: 56%; }
+}
+@media (min-width: 641px) and (max-width: 900px) { .dc-variant span { font-size: 10px; } }
+@media (max-height: 700px) {
+  .dc-root { --dc-card-w: min(48vw, 200px); }
+  .dc-info-name strong { font-size: clamp(24px, 6vw, 40px); }
+}
+
+/* ---------- Reduced Motion: no intro, no movement ---------- */
+.dc-root.is-reduced *, .dc-root.is-reduced *::before, .dc-root.is-reduced *::after { animation: none !important; transition: none !important; }
+.dc-root.is-reduced { transition: none; }
+.dc-root.is-reduced .dc-crest-intro, .dc-root.is-reduced .dc-flare { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .dc-root, .dc-root *, .dc-root *::before, .dc-root *::after { animation: none !important; transition: none !important; }
+  .dc-crest-intro, .dc-flare, .dc-skip { display: none !important; }
+}
