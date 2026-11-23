@@ -1,0 +1,268 @@
+/* ============================================================================
+   DELTA INFERNO — Dashboard UI 4.0 Variants (Sport, Collector, Hybrid Elite)
+   High-contrast, Dark Sport Premium Mobile Experience
+   ============================================================================ */
+
+/* Common Athletic Tokens */
+:root {
+  --delta-navy-bg: #050B14;
+  --delta-navy-surface: #0A1120;
+  --delta-navy-card: #0F172A;
+  --delta-navy-border: rgba(255, 255, 255, 0.08);
+  --delta-blue: #0284C7;
+  --delta-blue-light: #38BDF8;
+  --delta-blue-glow: rgba(56, 189, 248, 0.18);
+  --delta-gold: #D4AF37;
+  --delta-gold-light: #F59E0B;
+  --delta-gold-glow: rgba(245, 158, 11, 0.2);
+  --delta-inferno-flame: #EF4444;
+  --delta-text-primary: #F8FAFC;
+  --delta-text-secondary: #94A3B8;
+  --delta-text-muted: #64748B;
+}
+
+/* Base Wrapper for all variants */
+.variant-shell {
+  min-height: 100vh;
+  background-color: var(--delta-navy-bg);
+  color: var(--delta-text-primary);
+  font-family: inherit;
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+}
+
+/* Tabular Numbers for Timers, XP and Stats */
+.delta-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Touch-ready Action Buttons (>= 44px) */
+.delta-btn-action {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: none;
+}
+
+.delta-btn-primary {
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px var(--delta-blue-glow);
+}
+.delta-btn-primary:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.delta-btn-gold {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: #0A1120;
+  box-shadow: 0 4px 16px var(--delta-gold-glow);
+}
+.delta-btn-gold:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.delta-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--delta-text-primary);
+  border: 1px solid var(--delta-navy-border);
+}
+.delta-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* ============================================================================
+   VARIANT A — DELTA SPORT (Matchday Center & Pro Club Hub)
+   ============================================================================ */
+.sport-hero-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.6) 0%, rgba(5, 11, 20, 0.95) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.sport-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 25%;
+  opacity: 0.28;
+  filter: saturate(1.2) contrast(1.1);
+  pointer-events: none;
+}
+
+.sport-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sport-lineup-pill {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  transition: all 0.2s ease;
+}
+.sport-lineup-pill:hover {
+  border-color: var(--delta-blue);
+  background: rgba(2, 132, 199, 0.1);
+}
+
+/* ============================================================================
+   VARIANT B — DELTA COLLECTOR (Hero Card Showcase & Binder Vault)
+   ============================================================================ */
+.collector-card-container {
+  perspective: 1000px;
+}
+
+.collector-signature-card {
+  position: relative;
+  width: 100%;
+  max-width: 290px;
+  height: 420px;
+  margin: 0 auto;
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, #182234 0%, #0c121e 100%);
+  border: 2px solid #F59E0B;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(245, 158, 11, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.collector-signature-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75), 0 0 32px rgba(245, 158, 11, 0.4);
+}
+
+.collector-foil-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.collector-rarity-inferno {
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+  color: #FFFFFF;
+}
+
+.collector-rarity-gold {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: #0F172A;
+}
+
+.collector-rarity-legend {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+  color: #FFFFFF;
+}
+
+.collector-album-shelf {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+/* ============================================================================
+   VARIANT C — DELTA HYBRID ELITE (Asymmetric Dual-Pillar Sport Luxury)
+   ============================================================================ */
+.hybrid-passport-header {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(10, 17, 32, 0.9) 0%, rgba(5, 11, 20, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.hybrid-stadium-top {
+  height: 140px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hybrid-metric-chip {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.875rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hybrid-split-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .hybrid-split-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}
+
+/* Empty / Unavailable visual states in clean flat style */
+.delta-state-empty {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.delta-state-unavailable {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  opacity: 0.7;
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,192 @@
+/* ============================================================================
+   DELTA ELITE 4.1 — Visual Redesign CSS
+   Premium Athletic Football Mobile App & Digital Collectibles Hub
+   ============================================================================ */
+
+:root {
+  --e41-navy-bg: #050B14;
+  --e41-navy-surface: #091122;
+  --e41-navy-card: #0E172C;
+  --e41-navy-card-border: rgba(255, 255, 255, 0.08);
+  --e41-blue-primary: #0284C7;
+  --e41-blue-light: #38BDF8;
+  --e41-blue-glow: rgba(56, 189, 248, 0.22);
+  --e41-gold: #F59E0B;
+  --e41-gold-dark: #D4AF37;
+  --e41-gold-glow: rgba(245, 158, 11, 0.22);
+  --e41-text-primary: #F8FAFC;
+  --e41-text-secondary: #94A3B8;
+  --e41-text-muted: #64748B;
+}
+
+.e41-root {
+  min-height: 100vh;
+  background-color: var(--e41-navy-bg);
+  color: var(--e41-text-primary);
+  font-family: inherit;
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+}
+
+/* Subtle stadium illumination (soft radial floodlight from top center) */
+.e41-stadium-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  height: 480px;
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.12) 0%, rgba(5, 11, 20, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Tabular numbers for countdown, timers, scores, XP */
+.e41-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Hero Event Card (Single Dominant Glowing Section on First Screen) */
+.e41-match-hero {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(14, 23, 44, 0.95) 0%, rgba(7, 13, 24, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65), 0 0 28px rgba(56, 189, 248, 0.14);
+}
+
+.e41-match-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 30%;
+  opacity: 0.18;
+  filter: saturate(1.2) contrast(1.1);
+  pointer-events: none;
+}
+
+/* Action button (minimum 48px height) */
+.e41-btn-action {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: none;
+}
+
+.e41-btn-primary {
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px var(--e41-blue-glow);
+}
+.e41-btn-primary:hover {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+.e41-btn-gold {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: #050B14;
+  font-weight: 800;
+  box-shadow: 0 4px 16px var(--e41-gold-glow);
+}
+.e41-btn-gold:hover {
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Discreet floating QA pill in bottom corner */
+.e41-qa-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #94A3B8;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+.e41-qa-toggle:hover {
+  color: #F8FAFC;
+  border-color: #38BDF8;
+}
+
+/* Card Showcase Box */
+.e41-card-showcase-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+/* Flat Clean News Wire */
+.e41-news-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 0.875rem;
+  background: rgba(14, 23, 44, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+.e41-news-row:hover {
+  background: rgba(14, 23, 44, 0.9);
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+/* Responsive Two-Column Layout Grid for Desktop */
+.e41-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .e41-layout-grid {
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .e41-col-left {
+    grid-column: 1 / span 7;
+  }
+  .e41-col-right {
+    grid-column: 8 / span 5;
+  }
+}
+
+/* Reduced Motion Safety */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
