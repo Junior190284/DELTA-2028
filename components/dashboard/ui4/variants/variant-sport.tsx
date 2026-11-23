@@ -117,10 +117,10 @@ export function VariantSport({ model }: VariantProps) {
                     </div>
                     <div>
                       <div className="text-[11px] font-bold uppercase text-sky-400">Gospodarz</div>
-                      <div className="text-base sm:text-lg font-black tracking-tight text-white">
-                        DELTA WARSZAWA
+                      <div className="text-base sm:text-lg font-black tracking-tight text-white uppercase truncate max-w-full">
+                        {profile.teamName || "DELTA WARSZAWA"}
                       </div>
-                      <div className="text-xs text-slate-400">Rocznik 2018 (U-14)</div>
+                      <div className="text-xs text-slate-400">Zespół Gospodarzy</div>
                     </div>
                   </div>
 
@@ -128,26 +128,20 @@ export function VariantSport({ model }: VariantProps) {
                   <div className="col-span-1 flex flex-col items-center">
                     <div className="text-xs font-black text-amber-400 tracking-wider">VS</div>
                     <div className="text-base sm:text-xl font-black delta-num text-white">11:30</div>
-                    <div className="text-[10px] text-slate-400 uppercase font-semibold">SOBOTA</div>
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">DZIEŃ MECZOWY</div>
                   </div>
 
                   {/* Away Team (Opponent) */}
                   <div className="col-span-3 flex flex-col items-center sm:flex-row-reverse sm:text-right gap-3">
-                    <div className="w-14 h-14 rounded-xl bg-slate-900 border border-slate-700/80 p-2 flex items-center justify-center shrink-0 shadow-lg">
-                      <Image
-                        src="/teamlogos/ursus.png"
-                        alt="Ursus"
-                        width={44}
-                        height={44}
-                        className="object-contain"
-                      />
+                    <div className="w-14 h-14 rounded-xl bg-slate-900 border border-slate-700/80 p-2 flex items-center justify-center shrink-0 shadow-lg text-slate-400">
+                      <Shield className="w-8 h-8" />
                     </div>
                     <div>
                       <div className="text-[11px] font-bold uppercase text-slate-400">Gość</div>
-                      <div className="text-base sm:text-lg font-black tracking-tight text-white">
-                        KS URSUS
+                      <div className="text-base sm:text-lg font-black tracking-tight text-white uppercase truncate max-w-full">
+                        {nextAction.data?.opponent || "DRUŻYNA RYVALA"}
                       </div>
-                      <div className="text-xs text-slate-400">Warszawa U-14</div>
+                      <div className="text-xs text-slate-400">Zespół Gości</div>
                     </div>
                   </div>
                 </div>
@@ -156,15 +150,42 @@ export function VariantSport({ model }: VariantProps) {
                 <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
-                    <span className="truncate">Stadion Główny DELTA (Boisko A)</span>
+                    <span className="truncate">{nextAction.data?.location || "Obiekt klubowy DELTA"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Zbiórka: 10:15 w szatni</span>
+                    <span>Zbiórka: 45 min przed meczem</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Strój: Komplet Granatowy</span>
+                    <span>Status: Zaplanowany</span>
+                  </div>
+                </div>
+
+                {/* Dominant Hero CTA Button (Only when event available) */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmed(!confirmed)}
+                    className={`delta-btn-action w-full sm:w-auto ${
+                      confirmed
+                        ? "bg-emerald-700 text-white shadow-lg shadow-emerald-950/40"
+                        : "delta-btn-primary"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>
+                      {confirmed
+                        ? "SYMULACJA: OBECNOŚĆ ZAZNACZONA LOKALNIE ✓"
+                        : "SYMULACJA: POTWIERDŹ OBECNOŚĆ [TRYB DEMO]"}
+                    </span>
+                  </button>
+
+                  <div className="text-xs text-slate-400 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-sky-400" />
+                    <span>
+                      {confirmed ? "15 z 16" : "14 z 16"} zawodników w podglądzie
+                    </span>
                   </div>
                 </div>
               </div>
@@ -172,37 +193,14 @@ export function VariantSport({ model }: VariantProps) {
               <div className="delta-state-empty">
                 <Calendar className="w-8 h-8 mx-auto text-slate-500 mb-2" />
                 <p className="text-sm font-semibold text-slate-300">Brak zaplanowanych meczów ligowych w tym tygodniu</p>
-                <p className="text-xs text-slate-500 mt-1">Sprawdź harmonogram treningowy poniżej</p>
+                <p className="text-xs text-slate-500 mt-1">Harmonogram pojawi się po zatwierdzeniu przez trenera</p>
               </div>
             ) : (
               <div className="delta-state-unavailable">
                 <AlertCircle className="w-6 h-6 text-slate-500 mb-1" />
-                <p className="text-sm font-semibold text-slate-400">Terminarz meczowy jest w trakcie aktualizacji</p>
+                <p className="text-sm font-semibold text-slate-400">Terminarz meczowy jest zastrzeżony dla Twojego profilu</p>
               </div>
             )}
-
-            {/* Dominant Hero CTA Button */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setConfirmed(!confirmed)}
-                className={`delta-btn-action w-full sm:w-auto ${
-                  confirmed
-                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-950/40"
-                    : "delta-btn-primary"
-                }`}
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                <span>{confirmed ? "OBECNOŚĆ ZGŁOSZONA ✓" : "POTWIERDŹ OBECNOŚĆ NA MECZ"}</span>
-              </button>
-
-              <div className="text-xs text-slate-400 flex items-center gap-2">
-                <Users className="w-4 h-4 text-sky-400" />
-                <span>
-                  {confirmed ? "15 z 16" : "14 z 16"} zawodników potwierdziło obecność
-                </span>
-              </div>
-            </div>
           </div>
         </section>
 

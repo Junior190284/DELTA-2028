@@ -61,21 +61,21 @@ test("Dashboard UI 4.0 Hybrid Elite — Architecture & Styling Verification", as
 
   await t.test("4. Model adapter safely maps elite player fixtures without mutations", () => {
     const input: DashboardUI4AdapterInput = {
-      profile: { id: "p1", role: "player", display_name: "Ryszard Rybacki" },
+      profile: { id: "p1", role: "player", display_name: "Zawodnik Alfa" },
       access: { canViewCollection: true, canViewAchievements: true, canViewTeamShowcase: true, canViewClubCommunications: true },
-      players: [{ id: "p1", display_name: "Ryszard Rybacki", shirt_number: 7, position: "NAP" }],
-      nextMatch: { id: "m1", title: "DELTA vs Rywale", starts_at: "2026-12-05T12:00:00Z" },
+      players: [{ id: "p1", display_name: "Zawodnik Alfa", shirt_number: null, position: null }],
+      nextMatch: { id: "m1", title: "Drużyna Testowa vs Rywale", starts_at: "2026-12-05T12:00:00Z" },
       gameProfile: {
         currentXP: 2450,
         seasonXP: 1120,
-        levelInfo: { level: 12, currentLevelXP: 350, nextLevelXP: 600, progressPercent: 58, title: "Kapitan Elity" },
+        levelInfo: { level: 12, currentLevelXP: 350, nextLevelXP: 600, progressPercent: 58, title: "Zawodnik Elity" },
         activityStreak: 7,
         maxStreak: 14,
         unopenedPacks: 3
       },
-      allCards: [{ id: "c1", name: "Ryszard Inferno", rarity: "inferno" }],
-      userCards: [{ id: "uc1", card_definition_id: "c1", quantity: 1, card_definition: { id: "c1", name: "Ryszard Inferno", rarity: "inferno" } }],
-      achievements: [{ achievement_id: "a1", isUnlocked: true, achievement: { id: "a1", name: "Snajper" } }],
+      allCards: [{ id: "c1", name: "Karta Alfa Inferno", rarity: "inferno" }],
+      userCards: [{ id: "uc1", card_definition_id: "c1", quantity: 1, card_definition: { id: "c1", name: "Karta Alfa Inferno", rarity: "inferno" } }],
+      achievements: [{ achievement_id: "a1", isUnlocked: true, achievement: { id: "a1", name: "Aktywny Uczestnik" } }],
       news: [{ id: "n1", title: "Finał Turnieju", urgent: true }]
     };
 
@@ -83,12 +83,12 @@ test("Dashboard UI 4.0 Hybrid Elite — Architecture & Styling Verification", as
 
     assert.equal(model.profile.actorKind, "player");
     assert.equal(model.profile.player.status, "available");
-    assert.equal(model.profile.player.data?.displayName, "Ryszard Rybacki");
-    assert.equal(model.profile.player.data?.shirtNumber, 7);
+    assert.equal(model.profile.player.data?.displayName, "Zawodnik Alfa");
+    assert.equal(model.profile.player.data?.shirtNumber, null);
     assert.equal(model.nextAction.status, "available");
     assert.equal(model.nextAction.data?.kind, "match");
     assert.equal(model.progress.data?.level, 12);
-    assert.equal(model.progress.data?.title, "Kapitan Elity");
+    assert.equal(model.progress.data?.title, "Zawodnik Elity");
     assert.equal(model.recentCards.data?.length, 1);
     assert.equal(model.recentCards.data?.[0]?.rarity, "inferno");
     assert.equal(model.albumProgress.data?.unopenedPacks, 3);

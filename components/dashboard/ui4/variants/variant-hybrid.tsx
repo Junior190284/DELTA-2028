@@ -128,7 +128,7 @@ export function VariantHybrid({ model }: VariantProps) {
                         />
                       </div>
                       <div>
-                        <div className="text-sm font-black text-white">DELTA WARSZAWA</div>
+                        <div className="text-sm font-black text-white">{profile.teamName || "DELTA WARSZAWA"}</div>
                         <div className="text-[10px] text-slate-400">Gospodarz</div>
                       </div>
                     </div>
@@ -140,24 +140,20 @@ export function VariantHybrid({ model }: VariantProps) {
 
                     <div className="flex items-center gap-2.5 text-right">
                       <div>
-                        <div className="text-sm font-black text-white">KS URSUS</div>
+                        <div className="text-sm font-black text-white truncate max-w-[120px]">
+                          {nextAction.data?.opponent || "DRUŻYNA RYVALA"}
+                        </div>
                         <div className="text-[10px] text-slate-400">Gość</div>
                       </div>
-                      <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 p-1 flex items-center justify-center">
-                        <Image
-                          src="/teamlogos/ursus.png"
-                          alt="Ursus"
-                          width={32}
-                          height={32}
-                          className="object-contain"
-                        />
+                      <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 p-1 flex items-center justify-center text-slate-400">
+                        <Shield className="w-6 h-6" />
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
                     <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                    <span className="truncate">Stadion Główny DELTA (Boisko A) · Zbiórka 10:15</span>
+                    <span className="truncate">{nextAction.data?.location || "Obiekt klubowy DELTA"}</span>
                   </div>
                 </div>
 
@@ -167,12 +163,16 @@ export function VariantHybrid({ model }: VariantProps) {
                     onClick={() => setConfirmed(!confirmed)}
                     className={`delta-btn-action w-full ${
                       confirmed
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-950/40"
+                        ? "bg-emerald-700 text-white shadow-lg shadow-emerald-950/40"
                         : "delta-btn-primary"
                     }`}
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{confirmed ? "OBECNOŚĆ POTWIERDZONA ✓" : "POTWIERDŹ OBECNOŚĆ"}</span>
+                    <span>
+                      {confirmed
+                        ? "SYMULACJA: OBECNOŚĆ ZAZNACZONA LOKALNIE ✓"
+                        : "SYMULACJA: POTWIERDŹ OBECNOŚĆ [TRYB DEMO]"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -199,27 +199,27 @@ export function VariantHybrid({ model }: VariantProps) {
                         height={36}
                         className="object-contain"
                       />
-                      <span className="text-[9px] font-black text-amber-400 mt-1 delta-num">#{shirtNumber}</span>
+                      <span className="text-[9px] font-black text-amber-400 mt-1 delta-num">#{shirtNumber || "—"}</span>
                     </div>
 
                     <div className="min-w-0">
                       <div className="text-sm font-black text-white truncate">{playerName}</div>
                       <div className="text-xs text-amber-400 font-semibold">INFERNO ULTRA 2026/27</div>
                       <div className="text-[11px] text-slate-400 mt-1">
-                        Album: <strong className="text-white delta-num">{albumData?.owned ?? 48}</strong> z {albumData?.total ?? 64} kart
+                        Album: <strong className="text-white delta-num">{albumData ? `${albumData.owned} z ${albumData.total}` : "—"}</strong> kart
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-3">
                     <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-                      <span>Poziom {levelData?.level ?? 12} ({levelData?.title ?? "Kapitan Elity"})</span>
-                      <span className="text-sky-400 font-bold delta-num">{levelData?.progressPercent ?? 58}%</span>
+                      <span>Poziom {levelData ? levelData.level : "—"} ({levelData?.title || "Rozwój"})</span>
+                      <span className="text-sky-400 font-bold delta-num">{levelData ? `${levelData.progressPercent}%` : "—"}</span>
                     </div>
                     <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden p-0.5 border border-slate-800">
                       <div
                         className="bg-gradient-to-r from-sky-500 to-amber-400 h-full rounded-full"
-                        style={{ width: `${levelData?.progressPercent ?? 58}%` }}
+                        style={{ width: `${levelData ? levelData.progressPercent : 0}%` }}
                       />
                     </div>
                   </div>
@@ -231,7 +231,7 @@ export function VariantHybrid({ model }: VariantProps) {
                     className="delta-btn-action delta-btn-gold w-full text-xs font-black shadow-md flex items-center justify-center gap-1.5"
                   >
                     <Sparkles className="w-4 h-4" />
-                    <span>OTWÓRZ PACZKĘ ({albumData?.unopenedPacks ?? 3})</span>
+                    <span>OTWÓRZ PACZKĘ ({albumData ? albumData.unopenedPacks : 0})</span>
                   </Link>
                 </div>
               </div>
@@ -243,10 +243,14 @@ export function VariantHybrid({ model }: VariantProps) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="hybrid-metric-chip">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Frekwencja
+              Seria Aktywności
             </span>
-            <span className="text-lg font-black text-emerald-400 delta-num">94%</span>
-            <span className="text-[10px] text-slate-500">15/16 treningów</span>
+            <span className="text-lg font-black text-emerald-400 delta-num">
+              {levelData ? `${levelData.activityStreak} DNI` : "—"}
+            </span>
+            <span className="text-[10px] text-slate-500">
+              {levelData ? `Maksymalna seria: ${levelData.maxStreak} dni` : "Brak danych"}
+            </span>
           </div>
 
           <div className="hybrid-metric-chip">
@@ -254,9 +258,11 @@ export function VariantHybrid({ model }: VariantProps) {
               Sezonowe XP
             </span>
             <span className="text-lg font-black text-sky-400 delta-num">
-              {levelData?.seasonXP ?? 1120} XP
+              {levelData ? `${levelData.seasonXP} XP` : "—"}
             </span>
-            <span className="text-[10px] text-slate-500">Kolejny poziom za 250 XP</span>
+            <span className="text-[10px] text-slate-500">
+              {levelData ? `Poziom ${levelData.level}` : "Brak danych"}
+            </span>
           </div>
 
           <div className="hybrid-metric-chip">
@@ -264,19 +270,23 @@ export function VariantHybrid({ model }: VariantProps) {
               Kolekcja Albumu
             </span>
             <span className="text-lg font-black text-amber-400 delta-num">
-              {albumData?.percent ?? 75}%
+              {albumData ? `${albumData.percent}%` : "—"}
             </span>
-            <span className="text-[10px] text-slate-500">{albumData?.owned ?? 48} z 64 kart</span>
+            <span className="text-[10px] text-slate-500">
+              {albumData ? `${albumData.owned} z ${albumData.total} kart` : "Brak danych"}
+            </span>
           </div>
 
           <div className="hybrid-metric-chip">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Seria Aktywności
+              Skarbiec Paczek
             </span>
-            <span className="text-lg font-black text-orange-400 delta-num">
-              {levelData?.activityStreak ?? 7} DNI
+            <span className="text-lg font-black text-purple-400 delta-num">
+              {albumData ? albumData.unopenedPacks : "—"}
             </span>
-            <span className="text-[10px] text-slate-500">Rekord: 14 dni</span>
+            <span className="text-[10px] text-slate-500">
+              {albumData && albumData.unopenedPacks > 0 ? "Gotowe do otwarcia" : "Brak paczek"}
+            </span>
           </div>
         </div>
 

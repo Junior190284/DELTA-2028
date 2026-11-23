@@ -142,38 +142,45 @@ export function VariantCollector({ model }: VariantProps) {
 
             {/* Big Unopened Pack Action Button */}
             <div className="mt-6 w-full max-w-sm">
-              <Link
-                href="/preview/pack-demo"
-                className="delta-btn-action delta-btn-gold w-full text-sm font-extrabold shadow-xl flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>OTWÓRZ NOWĄ PACZKĘ ({albumData?.unopenedPacks ?? 3} DOSTĘPNE)</span>
-              </Link>
+              {albumData && albumData.unopenedPacks > 0 ? (
+                <Link
+                  href="/preview/pack-demo"
+                  className="delta-btn-action delta-btn-gold w-full text-sm font-extrabold shadow-xl flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>OTWÓRZ NOWĄ PACZKĘ ({albumData.unopenedPacks} DOSTĘPNE)</span>
+                </Link>
+              ) : (
+                <div className="w-full py-2.5 px-4 rounded-xl bg-slate-900 border border-slate-800 text-center text-slate-400 font-bold text-xs">
+                  BRAK NOWYCH PACZEK DO OTWARCIA
+                </div>
+              )}
             </div>
 
             {/* Key Collection Metrics Grid */}
             <div className="mt-6 w-full max-w-lg grid grid-cols-3 gap-3">
               <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
                 <div className="text-2xl font-black text-white delta-num">
-                  {albumData?.owned ?? 48} <span className="text-xs text-slate-400 font-normal">/ {albumData?.total ?? 64}</span>
+                  {albumData ? albumData.owned : "—"} <span className="text-xs text-slate-400 font-normal">/ {albumData ? albumData.total : "—"}</span>
                 </div>
                 <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mt-0.5">
-                  Karty w Albumie ({albumData?.percent ?? 75}%)
+                  Karty w Albumie {albumData ? `(${albumData.percent}%)` : ""}
                 </div>
               </div>
 
               <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
                 <div className="text-2xl font-black text-white delta-num">
-                  {levelData?.level ?? 12}
+                  {levelData ? levelData.level : "—"}
                 </div>
                 <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wide mt-0.5">
-                  Poziom ({levelData?.currentXP ?? 2450} XP)
+                  Poziom {levelData ? `(${levelData.currentXP} XP)` : ""}
                 </div>
               </div>
 
               <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
                 <div className="text-2xl font-black text-white delta-num">
-                  {levelData?.activityStreak ?? 7} <span className="text-xs text-slate-400 font-normal">DNI</span>
+                  {levelData ? `${levelData.activityStreak} ` : "—"}
+                  {levelData && <span className="text-xs text-slate-400 font-normal">DNI</span>}
                 </div>
                 <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5">
                   Seria Aktywności
@@ -284,15 +291,21 @@ export function VariantCollector({ model }: VariantProps) {
         </section>
 
         {/* 5. SUBTLE MATCHDAY STATUS CHIP */}
-        <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs text-slate-300">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-sky-400" />
-            <span>Mecz: DELTA vs KS Ursus (Sobota 11:30)</span>
+        {nextAction.status === "available" && nextAction.data ? (
+          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs text-slate-300">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-sky-400" />
+              <span>Mecz: {nextAction.data.title}</span>
+            </div>
+            <span className="text-amber-400 font-bold flex items-center gap-1 text-[11px]">
+              [TRYB DEMO — SYMULACJA]
+            </span>
           </div>
-          <span className="text-emerald-400 font-bold flex items-center gap-1">
-            Obecność zgłoszona ✓
-          </span>
-        </div>
+        ) : (
+          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs text-slate-500">
+            <span>Harmonogram: {nextAction.status === "empty" ? "Brak zaplanowanych meczów" : "Dostęp zastrzeżony"}</span>
+          </div>
+        )}
       </main>
     </div>
   );

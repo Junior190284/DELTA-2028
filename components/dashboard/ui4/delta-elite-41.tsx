@@ -31,6 +31,7 @@ interface DeltaElite41Props {
 
 export function DeltaElite41({ model }: DeltaElite41Props) {
   const [confirmed, setConfirmed] = useState(false);
+  const [showNotificationNotice, setShowNotificationNotice] = useState(false);
 
   const {
     profile,
@@ -51,23 +52,29 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
   const levelData = progress.data;
   const albumData = albumProgress.data;
 
-  // Safe player card model for DeltaCard
+  // Safe player card model for DeltaCard (Neutral test persona, zero fabricated stats)
   const eliteCardModel = {
-    id: "card-ryszard-inferno",
-    playerId: "demo-player-ryszard",
+    id: "card-demo-alpha",
+    playerId: profile.player.data?.id || "demo-player-alpha",
     playerName: playerName.toUpperCase(),
-    shirtNumber: shirtNumber !== null ? String(shirtNumber) : "7",
-    position: position || "NAP",
+    shirtNumber: shirtNumber !== null ? String(shirtNumber) : "",
+    position: position || "ZAWODNIK",
     cardType: "INFERNO" as const,
     rarity: "inferno" as const,
-    playerImage: null, // Uses NeutralPlayerSilhouette with Delta crest safely
-    stats: [
-      { key: "matches", label: "Mecze", value: 14 },
-      { key: "goals", label: "Gole", value: 9 },
-      { key: "trainings", label: "Treningi", value: 28 },
-      { key: "attendance", label: "Frekwencja", value: "94%" }
-    ]
+    playerImage: null // Uses NeutralPlayerSilhouette with Delta crest safely
   };
+
+  // Dynamic event date and logistics mapping
+  const startsAt = nextAction.data?.startsAt ? new Date(nextAction.data.startsAt) : null;
+  const matchTime = startsAt && !isNaN(startsAt.getTime())
+    ? startsAt.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })
+    : "11:30";
+  const matchDay = startsAt && !isNaN(startsAt.getTime())
+    ? startsAt.toLocaleDateString("pl-PL", { weekday: "long" }).toUpperCase()
+    : "SOBOTA";
+  const homeTeam = profile.teamName || "DELTA WARSZAWA";
+  const opponentTeam = nextAction.data?.opponent || "DRUŻYNA RYVALA";
+  const matchLocation = nextAction.data?.location || "Obiekt klubowy DELTA";
 
   return (
     <div className="e41-root pb-20">
@@ -102,9 +109,9 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                 {isRestricted ? (
                   <span className="text-slate-500">Konto z ograniczonym dostępem</span>
                 ) : isParent ? (
-                  <span>Podopieczny: <strong className="text-slate-200">{playerName} #{shirtNumber ?? 7}</strong> · U-9</span>
+                  <span>Podopieczny: <strong className="text-slate-200">{playerName}</strong>{shirtNumber !== null ? ` #${shirtNumber}` : ""} · {profile.teamName ?? "Drużyna"}</span>
                 ) : (
-                  <span>#{shirtNumber ?? 7} · Kapitan · Rocznik 2018 (U-9)</span>
+                  <span>{shirtNumber !== null ? `#${shirtNumber} · ` : ""}{profile.teamName ?? "Drużyna Testowa"}</span>
                 )}
               </div>
             </div>
@@ -116,7 +123,7 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
               <Link
                 href="/preview/pack-demo"
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-black hover:bg-amber-500/25 transition shadow-sm e41-num"
-                title="Dostępne paczki"
+                title="Dostępne paczki demonstracyjne"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>{albumData.unopenedPacks ?? 0} PACZKI</span>
@@ -125,14 +132,29 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
 
             <button
               type="button"
+              onClick={() => setShowNotificationNotice(prev => !prev)}
               className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-white hover:border-slate-700 transition relative"
-              title="Powiadomienia klubowe"
+              title="Powiadomienia klubowe (Tryb demonstracyjny)"
             >
               <Bell className="w-4 h-4" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400" />
             </button>
           </div>
         </div>
+
+        {/* Demo Notification Notice Banner */}
+        {showNotificationNotice && (
+          <div className="max-w-md lg:max-w-5xl mx-auto mt-2 px-3 py-2 bg-slate-900/90 border border-amber-400/40 rounded-xl text-center text-xs text-amber-300 flex items-center justify-between">
+            <span>ℹ Powiadomienia (Tryb demonstracyjny): Brak nowych powiadomień w środowisku podglądu.</span>
+            <button
+              type="button"
+              onClick={() => setShowNotificationNotice(false)}
+              className="text-slate-400 hover:text-white text-xs px-2 py-0.5 rounded"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </header>
 
       {/* ===================================================================== */}
@@ -187,7 +209,7 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
               <>
                 <div className="bg-slate-950/75 border border-slate-800/90 rounded-xl p-3 backdrop-blur-md">
                   <div className="grid grid-cols-7 items-center text-center gap-1.5">
-                    {/* Home Team (Delta) */}
+                    {/* Home Team */}
                     <div className="col-span-3 flex flex-col items-center">
                       <div className="w-11 h-11 rounded-xl bg-slate-900 border border-amber-500/40 p-1 flex items-center justify-center mb-1 shadow-md">
                         <Image
@@ -198,29 +220,27 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                           className="object-contain"
                         />
                       </div>
-                      <div className="text-xs font-black text-white leading-tight">DELTA WARSZAWA</div>
+                      <div className="text-xs font-black text-white leading-tight uppercase truncate max-w-full">
+                        {homeTeam}
+                      </div>
                       <div className="text-[9px] text-sky-400 font-bold uppercase">Gospodarz</div>
                     </div>
 
                     {/* VS / Kickoff Time */}
                     <div className="col-span-1 flex flex-col items-center">
                       <div className="text-[10px] font-black text-amber-400 tracking-wider">VS</div>
-                      <div className="text-sm font-black text-white e41-num mt-0.5">11:30</div>
-                      <div className="text-[8px] text-slate-400 uppercase font-bold">SOBOTA</div>
+                      <div className="text-sm font-black text-white e41-num mt-0.5">{matchTime}</div>
+                      <div className="text-[8px] text-slate-400 uppercase font-bold">{matchDay}</div>
                     </div>
 
                     {/* Away Team (Opponent) */}
                     <div className="col-span-3 flex flex-col items-center">
-                      <div className="w-11 h-11 rounded-xl bg-slate-900 border border-slate-700/80 p-1 flex items-center justify-center mb-1 shadow-md">
-                        <Image
-                          src="/teamlogos/ursus.png"
-                          alt="Ursus"
-                          width={34}
-                          height={34}
-                          className="object-contain"
-                        />
+                      <div className="w-11 h-11 rounded-xl bg-slate-900 border border-slate-700/80 p-1 flex items-center justify-center mb-1 shadow-md text-slate-300">
+                        <Shield className="w-6 h-6 text-slate-400" />
                       </div>
-                      <div className="text-xs font-black text-white leading-tight">KS URSUS</div>
+                      <div className="text-xs font-black text-white leading-tight uppercase truncate max-w-full">
+                        {opponentTeam}
+                      </div>
                       <div className="text-[9px] text-slate-400 font-bold uppercase">Gość</div>
                     </div>
                   </div>
@@ -229,16 +249,16 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                   <div className="mt-2.5 pt-2 border-t border-slate-800/80 space-y-1 text-xs text-slate-300">
                     <div className="flex items-center gap-1.5 text-[11px]">
                       <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                      <span className="truncate">Stadion Główny DELTA (Boisko A)</span>
+                      <span className="truncate">{matchLocation}</span>
                     </div>
                     <div className="flex items-center justify-between text-[10px] text-slate-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-amber-400" />
-                        <span>Zbiórka: 10:15 w szatni</span>
+                        <span>Zbiórka: 45 min przed meczem</span>
                       </span>
                       <span className="flex items-center gap-1">
                         <Shield className="w-3 h-3 text-emerald-400" />
-                        <span>Strój: Granatowy</span>
+                        <span>Status: Zaplanowany</span>
                       </span>
                     </div>
                   </div>
@@ -251,7 +271,7 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                     onClick={() => setConfirmed(!confirmed)}
                     className={`e41-btn-action w-full min-h-[44px] py-2.5 px-4 text-xs ${
                       confirmed
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-950/40"
+                        ? "bg-emerald-700 text-white shadow-lg shadow-emerald-950/40"
                         : "e41-btn-primary"
                     }`}
                   >
@@ -259,18 +279,28 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                     <span>
                       {isParent
                         ? confirmed
-                          ? "OBECNOŚĆ PODOPIECZNEGO POTWIERDZONA ✓"
-                          : "POTWIERDŹ OBECNOŚĆ PODOPIECZNEGO"
+                          ? "SYMULACJA: OBECNOŚĆ PODOPIECZNEGO ZAZNACZONA ✓"
+                          : "SYMULACJA: POTWIERDŹ OBECNOŚĆ PODOPIECZNEGO"
                         : confirmed
-                        ? "OBECNOŚĆ POTWIERDZONA ✓"
-                        : "POTWIERDŹ OBECNOŚĆ NA MECZ"}
+                        ? "SYMULACJA: OBECNOŚĆ ZAZNACZONA LOKALNIE ✓"
+                        : "SYMULACJA: POTWIERDŹ OBECNOŚĆ NA MECZ"}
                     </span>
                   </button>
+
+                  <div className="text-center text-[10px] text-amber-400 font-bold tracking-wide">
+                    [TRYB DEMO — SYMULACJA LOKALNA, BRAK ZAPISU W BAZIE DANYCH]
+                  </div>
+
+                  {confirmed && (
+                    <div className="text-center text-[10px] text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 rounded-lg py-1 px-2">
+                      ℹ Symulacja interfejsu: Brak rzeczywistego zapisu w bazie danych Supabase.
+                    </div>
+                  )}
 
                   <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-1.5">
                     <Users className="w-3 h-3 text-sky-400" />
                     <span>
-                      {confirmed ? "15 z 16" : "14 z 16"} zawodników potwierdziło obecność
+                      {confirmed ? "15 z 16" : "14 z 16"} zawodników w podglądzie listy
                     </span>
                   </div>
                 </div>
@@ -327,10 +357,10 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                   <DeltaCard
                     card={eliteCardModel}
                     player={{
-                      id: "demo-player-ryszard",
+                      id: profile.player.data?.id || "demo-player-alpha",
                       display_name: playerName,
-                      shirt_number: shirtNumber !== null ? String(shirtNumber) : "7",
-                      position: position || "NAP"
+                      shirt_number: shirtNumber !== null ? String(shirtNumber) : null,
+                      position: position || null
                     }}
                     themeOverride="INFERNO"
                     size="responsive"
@@ -455,14 +485,18 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                       <Award className="w-3.5 h-3.5 text-amber-400" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-black text-white truncate">Snajper Miesiąca</div>
-                      <div className="text-[9px] text-amber-400 font-bold">9 goli w sezonie U-9</div>
+                      <div className="text-xs font-black text-white truncate">
+                        {recentAchievements.data?.[0]?.name ?? "Odznaka Zaangażowania"}
+                      </div>
+                      <div className="text-[9px] text-amber-400 font-bold truncate">
+                        {recentAchievements.data?.[0]?.description ?? "Aktywny udział w treningach"}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="mt-2 pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
                   <span>Seria: <strong className="text-emerald-400 e41-num">{levelData.activityStreak} dni</strong></span>
-                  <span className="text-slate-500">Frekwencja: 94%</span>
+                  <span>Maks: <strong className="text-slate-300 e41-num">{levelData.maxStreak} dni</strong></span>
                 </div>
               </div>
             </section>

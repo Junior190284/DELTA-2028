@@ -23,8 +23,8 @@ import {
 } from "@/components/dashboard/ui4";
 
 // ============================================================================
-// SYNTHETIC DEMO FIXTURES (100% SAFE — ZERO DB MUTATIONS)
-// Rocznik 2018 w sezonie 2026/27 to kategoria U-9 (Żaki)
+// SYNTHETIC DEMO FIXTURES (100% SAFE — ZERO PII, ZERO DB MUTATIONS)
+// Wyłącznie neutralne persony testowe: Zawodnik Alfa, Zawodnik Beta, Opiekun Demo
 // ============================================================================
 
 const fullAccess = {
@@ -36,25 +36,22 @@ const fullAccess = {
 
 const elitePlayerFixture: DashboardUI4AdapterInput = {
   profile: {
-    id: "demo-player-ryszard",
+    id: "demo-player-alpha",
     role: "player",
-    display_name: "Ryszard Rybacki"
+    display_name: "Zawodnik Alfa"
   },
-  teamName: "DELTA 2018 (U-9)",
+  teamName: "Drużyna Testowa",
   access: fullAccess,
   players: [
-    { id: "demo-player-ryszard", display_name: "Ryszard Rybacki", shirt_number: 7, position: "NAP", active: true },
-    { id: "p-2", display_name: "Mateusz Kowalczyk", shirt_number: 10, position: "POM", active: true },
-    { id: "p-3", display_name: "Aleksander Zieliński", shirt_number: 4, position: "OBR", active: true },
-    { id: "p-4", display_name: "Bartosz Wiśniewski", shirt_number: 19, position: "POM", active: true },
-    { id: "p-5", display_name: "Jakub Kamiński", shirt_number: 9, position: "NAP", active: true }
+    { id: "demo-player-alpha", display_name: "Zawodnik Alfa", shirt_number: null, position: null, active: true },
+    { id: "demo-player-beta", display_name: "Zawodnik Beta", shirt_number: null, position: null, active: true }
   ],
   nextMatch: {
-    id: "match-derby",
-    title: "DELTA WARSZAWA vs KS URSUS",
+    id: "demo-match-1",
+    title: "Drużyna Testowa vs Drużyna Rywala",
     starts_at: new Date(Date.now() + 2 * 24 * 3600 * 1000 + 4 * 3600 * 1000).toISOString(),
-    location: "Stadion Główny DELTA Arena (Boisko A)",
-    opponent: "KS URSUS Warszawa U-9"
+    location: "Centrum Treningowe (Boisko Testowe)",
+    opponent: "Drużyna Rywala"
   },
   nextMatchCountdown: "ZA 2 DNI 4 GODZ",
   gameProfile: {
@@ -65,19 +62,17 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       currentLevelXP: 350,
       nextLevelXP: 600,
       progressPercent: 58,
-      title: "Kapitan Elity"
+      title: "Zawodnik Elity"
     },
     activityStreak: 7,
     maxStreak: 14,
     unopenedPacks: 3
   },
   allCards: [
-    { id: "c-1", name: "Ryszard Rybacki (Inferno Ultra)", rarity: "inferno" },
-    { id: "c-2", name: "Ryszard Rybacki (Ikona Klubu)", rarity: "legendary" },
-    { id: "c-3", name: "Ryszard Rybacki (Matchday Hero)", rarity: "rare" },
-    { id: "c-4", name: "Mateusz Kowalczyk (Gold Master)", rarity: "rare" },
-    { id: "c-5", name: "Aleksander Zieliński (Warrior)", rarity: "rare" },
-    { id: "c-6", name: "Karta Bazowa 2026/27", rarity: "common" }
+    { id: "c-1", name: "Karta Kolekcjonerska Alfa (Inferno)", rarity: "inferno" },
+    { id: "c-2", name: "Karta Kolekcjonerska Alfa (Złota)", rarity: "legendary" },
+    { id: "c-3", name: "Karta Kolekcjonerska Beta (Srebrna)", rarity: "rare" },
+    { id: "c-4", name: "Karta Bazowa Testowa", rarity: "common" }
   ],
   userCards: [
     {
@@ -87,9 +82,9 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       acquired_at: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
       card_definition: {
         id: "c-1",
-        name: "Ryszard Rybacki (INFERNO)",
+        name: "Karta Kolekcjonerska Alfa (Inferno)",
         rarity: "inferno",
-        player: { id: "demo-player-ryszard", display_name: "Ryszard Rybacki" }
+        player: { id: "demo-player-alpha", display_name: "Zawodnik Alfa" }
       }
     },
     {
@@ -99,9 +94,9 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       acquired_at: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
       card_definition: {
         id: "c-2",
-        name: "Ryszard Rybacki (IKONA)",
+        name: "Karta Kolekcjonerska Alfa (Złota)",
         rarity: "legendary",
-        player: { id: "demo-player-ryszard", display_name: "Ryszard Rybacki" }
+        player: { id: "demo-player-alpha", display_name: "Zawodnik Alfa" }
       }
     },
     {
@@ -111,9 +106,9 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       acquired_at: new Date(Date.now() - 3600 * 1000 * 48).toISOString(),
       card_definition: {
         id: "c-3",
-        name: "Ryszard Rybacki (MATCHDAY)",
+        name: "Karta Kolekcjonerska Beta (Srebrna)",
         rarity: "rare",
-        player: { id: "demo-player-ryszard", display_name: "Ryszard Rybacki" }
+        player: { id: "demo-player-beta", display_name: "Zawodnik Beta" }
       }
     }
   ],
@@ -124,8 +119,8 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       unlockedAt: new Date(Date.now() - 3600 * 1000 * 12).toISOString(),
       achievement: {
         id: "ach-1",
-        name: "Snajper Derbów",
-        description: "Zdobycie 3 bramek w oficjalnym meczu ligowym DELTA."
+        name: "Aktywny Uczestnik",
+        description: "Udział w demonstracyjnym cyklu aktywności klubu."
       }
     },
     {
@@ -134,8 +129,8 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       unlockedAt: new Date(Date.now() - 3600 * 1000 * 72).toISOString(),
       achievement: {
         id: "ach-2",
-        name: "Mistrzowska Frekwencja",
-        description: "100% obecności na treningach w bieżącym miesiącu."
+        name: "Wzorowa Obecność",
+        description: "Potwierdzona obecność na sesjach testowych."
       }
     },
     {
@@ -144,23 +139,23 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
       unlockedAt: new Date(Date.now() - 3600 * 1000 * 120).toISOString(),
       achievement: {
         id: "ach-3",
-        name: "Inferno Legend",
-        description: "Odblokowanie karty o statusie INFERNO w paczce."
+        name: "Kolekcjoner Kart",
+        description: "Odblokowanie karty demonstracyjnej."
       }
     }
   ],
   news: [
     {
       id: "news-1",
-      title: "Wielki Finał Turnieju o Puchar DELTA 2026",
-      summary: "W najbliższą sobotę na Stadionie Głównym odbędzie się finał rozgrywek młodzieżowych.",
+      title: "Harmonogram sesji demonstracyjnych",
+      summary: "Aktualny plan prezentacji modułów i weryfikacji ergonomii interfejsu.",
       published_at: new Date(Date.now() - 3600 * 1000 * 6).toISOString(),
       urgent: true
     },
     {
       id: "news-2",
-      title: "Nowa kolekcja kart DELTA INFERNO w aplikacji",
-      summary: "Sprawdź nowe karty 3D, animacje walkoutu oraz limitowane edycje zawodników.",
+      title: "Prezentacja kart kolekcji DELTA INFERNO",
+      summary: "Wersja demonstracyjna nowego silnika prezentacji kart i osiągnięć.",
       published_at: new Date(Date.now() - 3600 * 1000 * 28).toISOString(),
       urgent: false
     }
@@ -168,8 +163,8 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
   clubUpdates: [
     {
       id: "upd-1",
-      title: "Zmiana godziny zbiórki na mecz wyjazdowy",
-      summary: "Autokar wyjeżdża z klubu punktualnie o godz. 08:30 spod bramy nr 2.",
+      title: "Informacja techniczna: Środowisko testowe",
+      summary: "Wszystkie prezentowane dane mają charakter syntetyczny i demonstracyjny.",
       published_at: new Date(Date.now() - 3600 * 1000 * 18).toISOString(),
       urgent: true
     }
@@ -181,18 +176,18 @@ const parentFixture: DashboardUI4AdapterInput = {
   profile: {
     id: "demo-parent-1",
     role: "parent",
-    display_name: "Tomasz Rybacki (Rodzic)"
+    display_name: "Opiekun Demo"
   },
-  parentPlayerIds: ["demo-player-ryszard"]
+  parentPlayerIds: ["demo-player-alpha"]
 };
 
 const emptyFixture: DashboardUI4AdapterInput = {
   profile: {
     id: "demo-new-user",
     role: "player",
-    display_name: "Nowy Zawodnik"
+    display_name: "Zawodnik Beta"
   },
-  teamName: "Akademia DELTA — Grupa Naborowa",
+  teamName: "Drużyna Testowa",
   access: fullAccess,
   players: [],
   nextMatch: null,
@@ -205,7 +200,7 @@ const emptyFixture: DashboardUI4AdapterInput = {
       currentLevelXP: 0,
       nextLevelXP: 100,
       progressPercent: 0,
-      title: "Nowicjusz"
+      title: "Początkujący"
     },
     activityStreak: 0,
     maxStreak: 0,
@@ -222,8 +217,9 @@ const restrictedFixture: DashboardUI4AdapterInput = {
   profile: {
     id: "demo-restricted-user",
     role: "user",
-    display_name: "Gość / Ograniczony Dostęp"
+    display_name: "Użytkownik Ograniczony"
   },
+  teamName: null,
   access: {
     canViewCollection: false,
     canViewAchievements: false,
@@ -400,7 +396,7 @@ function DashboardUI4PreviewContent() {
                       : "bg-slate-900/80 text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  Kapitan Elity
+                  Zawodnik Alfa
                 </button>
                 <button
                   type="button"
@@ -411,7 +407,7 @@ function DashboardUI4PreviewContent() {
                       : "bg-slate-900/80 text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  Profil Rodzica
+                  Opiekun Demo
                 </button>
                 <button
                   type="button"
