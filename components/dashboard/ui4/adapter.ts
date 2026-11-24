@@ -9,7 +9,8 @@ const playerSummary = (player: PlayerInput): PlayerSummary => ({
   shirtNumber: player.shirt_number ?? null, position: player.position ?? null,
 });
 const cardDefinition = (card: UserCardInput) => card.card_definition ?? card.card ?? null;
-const cardDefinitionId = (card: UserCardInput) => card.card_definition_id ?? cardDefinition(card)?.id ?? null;
+const cardDefinitionId = (card: UserCardInput) => card.card_id ?? card.card_definition_id ?? cardDefinition(card)?.id ?? null;
+const cardCopies = (card: UserCardInput) => card.quantity ?? (card.duplicates_count !== undefined && card.duplicates_count !== null ? card.duplicates_count + 1 : 1);
 const finite = (value?: number | null) => Number.isFinite(value) ? Number(value) : 0;
 
 function recentCard(card: UserCardInput): RecentCard | null {
@@ -48,11 +49,14 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
   const actorKind = input.profile.role === "parent" ? "parent" : input.profile.role === "player" ? "player"
     : input.profile.role === "admin" || input.profile.role === "coach" ? "staff" : "user";
   const linkedIds = new Set(input.parentPlayerIds ?? []);
-  const linkedPlayer = actorKind === "parent" ? input.players?.find(p => linkedIds.has(p.id))
-    : actorKind === "player" ? input.players?.find(p => p.id === input.profile.id) : undefined;
+  const linkedPlayer = actorKind === "parent"
+    ? input.players?.find(p => linkedIds.has(p.id))
+    : actorKind === "player"
+    ? input.players?.find(p => (linkedIds.size > 0 ? linkedIds.has(p.id) : p.id === input.profile.id))
+    : input.players?.find(p => linkedIds.has(p.id));
   const profilePlayer = linkedPlayer ? available(playerSummary(linkedPlayer))
     : input.players === undefined ? unavailable<PlayerSummary>("not_loaded")
-    : actorKind === "parent" ? unavailable<PlayerSummary>("no_linked_player") : empty<PlayerSummary>(null as never);
+    : actorKind === "parent" || actorKind === "player" ? unavailable<PlayerSummary>("no_linked_player") : empty<PlayerSummary>(null as never);
 
   let nextAction: DashboardUI4Model["nextAction"];
   if (input.nextMatch === undefined && input.nextTraining === undefined) nextAction = unavailable("not_loaded");
@@ -89,18 +93,21 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
     const cards = [...input.userCards].sort((a,b) => timestamp(b.acquired_at ?? b.created_at) - timestamp(a.acquired_at ?? a.created_at))
       .map(recentCard).filter((card): card is RecentCard => card !== null).slice(0, 3);
     recentCards = cards.length ? available(cards) : empty([]);
+    const unopenedPacks = input.unopenedPacksCount !== undefined
+      ? finite(input.unopenedPacksCount)
+      : finite(input.gameProfile?.unopenedPacks);
     if (input.allCards === undefined) albumProgress = unavailable("not_loaded");
-    else if (!input.allCards.length) albumProgress = empty({ owned: 0, total: 0, percent: 0, duplicates: 0, unopenedPacks: finite(input.gameProfile?.unopenedPacks) });
+    else if (!input.allCards.length) albumProgress = empty({ owned: 0, total: 0, percent: 0, duplicates: 0, unopenedPacks });
     else {
       const definitions = new Set(input.allCards.map(card => card.id));
       const ownedIds = new Set<string>(); let copies = 0;
       for (const card of input.userCards) {
         const id = cardDefinitionId(card); if (!id || !definitions.has(id)) continue;
-        ownedIds.add(id); copies += Math.max(1, finite(card.quantity));
+        ownedIds.add(id); copies += Math.max(1, cardCopies(card));
       }
       const owned = ownedIds.size; const total = definitions.size;
       albumProgress = available({ owned, total, percent: Math.round(owned / total * 100),
-        duplicates: Math.max(0, copies - owned), unopenedPacks: finite(input.gameProfile?.unopenedPacks) });
+        duplicates: Math.max(0, copies - owned), unopenedPacks });
     }
   }
 

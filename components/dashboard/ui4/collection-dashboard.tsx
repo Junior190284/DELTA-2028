@@ -310,30 +310,73 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {[
-                      { name: "Zawodnik Alfa", role: "NAPASTNIK", rarity: "INFERNO", num: "#007", glow: "border-red-500/50 bg-red-950/20 text-red-400" },
-                      { name: "Zawodnik Beta", role: "POMOCNIK", rarity: "GOLD", num: "#012", glow: "border-amber-500/50 bg-amber-950/20 text-amber-400" },
-                      { name: "Zawodnik Gamma", role: "OBROŃCA", rarity: "SILVER", num: "#024", glow: "border-slate-400/40 bg-slate-800/30 text-slate-300" },
-                      { name: "Zawodnik Delta", role: "BRAMKARZ", rarity: "GOLD", num: "#001", glow: "border-amber-500/50 bg-amber-950/20 text-amber-400" }
-                    ].map((card, i) => (
-                      <div
-                        key={i}
-                        className={`p-3 rounded-2xl border ${card.glow} flex flex-col items-center text-center transition hover:scale-105 shadow-md backdrop-blur-sm`}
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center p-1 mb-1.5 shadow">
-                          <Image
-                            src="/teamlogos/gm.png"
-                            alt="Crest"
-                            width={32}
-                            height={32}
-                            className="object-contain"
-                          />
-                        </div>
-                        <div className="text-xs font-black text-white truncate max-w-full">{card.name}</div>
-                        <div className="text-[10px] text-slate-400 font-semibold">{card.role}</div>
-                        <span className="text-[9px] font-black mt-0.5 e41-num">{card.rarity} · {card.num}</span>
+                    {recentCards.status === "available" && recentCards.data && recentCards.data.length > 0 ? (
+                      recentCards.data.map((card, i) => {
+                        const rarity = (card.rarity || "COMMON").toUpperCase();
+                        const glow =
+                          rarity === "INFERNO"
+                            ? "border-red-500/50 bg-red-950/20 text-red-400"
+                            : rarity === "GOLD"
+                            ? "border-amber-500/50 bg-amber-950/20 text-amber-400"
+                            : rarity === "SILVER"
+                            ? "border-slate-400/40 bg-slate-800/30 text-slate-300"
+                            : "border-slate-700 bg-slate-900/40 text-slate-400";
+                        return (
+                          <div
+                            key={card.userCardId || i}
+                            className={`p-3 rounded-2xl border ${glow} flex flex-col items-center text-center transition hover:scale-105 shadow-md backdrop-blur-sm`}
+                          >
+                            <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center p-1 mb-1.5 shadow">
+                              <Image
+                                src="/teamlogos/gm.png"
+                                alt="Crest"
+                                width={32}
+                                height={32}
+                                className="object-contain"
+                              />
+                            </div>
+                            <div className="text-xs font-black text-white truncate max-w-full">{card.name}</div>
+                            <div className="text-[10px] text-slate-400 font-semibold truncate max-w-full">
+                              {card.playerName || "ZAWODNIK"}
+                            </div>
+                            <span className="text-[9px] font-black mt-0.5 e41-num">{rarity}</span>
+                          </div>
+                        );
+                      })
+                    ) : recentCards.status === "empty" ? (
+                      <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
+                        Brak jeszcze kart w kolekcji — otwórz pierwszą paczkę!
                       </div>
-                    ))}
+                    ) : recentCards.status === "unavailable" ? (
+                      <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
+                        Kolekcja kart niedostępna dla tego profilu.
+                      </div>
+                    ) : (
+                      [
+                        { name: "Zawodnik Alfa", role: "NAPASTNIK", rarity: "INFERNO", num: "#007", glow: "border-red-500/50 bg-red-950/20 text-red-400" },
+                        { name: "Zawodnik Beta", role: "POMOCNIK", rarity: "GOLD", num: "#012", glow: "border-amber-500/50 bg-amber-950/20 text-amber-400" },
+                        { name: "Zawodnik Gamma", role: "OBROŃCA", rarity: "SILVER", num: "#024", glow: "border-slate-400/40 bg-slate-800/30 text-slate-300" },
+                        { name: "Zawodnik Delta", role: "BRAMKARZ", rarity: "GOLD", num: "#001", glow: "border-amber-500/50 bg-amber-950/20 text-amber-400" }
+                      ].map((card, i) => (
+                        <div
+                          key={i}
+                          className={`p-3 rounded-2xl border ${card.glow} flex flex-col items-center text-center transition hover:scale-105 shadow-md backdrop-blur-sm`}
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center p-1 mb-1.5 shadow">
+                            <Image
+                              src="/teamlogos/gm.png"
+                              alt="Crest"
+                              width={32}
+                              height={32}
+                              className="object-contain"
+                            />
+                          </div>
+                          <div className="text-xs font-black text-white truncate max-w-full">{card.name}</div>
+                          <div className="text-[10px] text-slate-400 font-semibold">{card.role}</div>
+                          <span className="text-[9px] font-black mt-0.5 e41-num">{card.rarity} · {card.num}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </section>
 

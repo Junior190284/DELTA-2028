@@ -64,9 +64,15 @@ export type CardDefinitionInput = {
   image_url?: string | null; artwork_url?: string | null; player?: PlayerInput | null;
 };
 export type UserCardInput = {
-  id: string; card_definition_id?: string | null; quantity?: number | null;
-  acquired_at?: string | null; created_at?: string | null;
-  card_definition?: CardDefinitionInput | null; card?: CardDefinitionInput | null;
+  id: string;
+  card_id?: string | null;
+  card_definition_id?: string | null;
+  quantity?: number | null;
+  duplicates_count?: number | null;
+  acquired_at?: string | null;
+  created_at?: string | null;
+  card_definition?: CardDefinitionInput | null;
+  card?: CardDefinitionInput | null;
 };
 export type AchievementInput = {
   id?: string; achievement_id?: string; name?: string | null; title?: string | null;
@@ -84,5 +90,6 @@ export interface DashboardUI4AdapterInput {
   nextMatch?: EventInput | null; nextMatchCountdown?: string | null;
   nextTraining?: { session: EventInput; start?: string | null; countdown?: string | null } | null;
   gameProfile?: GameProfileInput | null; allCards?: CardDefinitionInput[]; userCards?: UserCardInput[];
+  unopenedPacksCount?: number;
   achievements?: AchievementInput[]; news?: CommunicationInput[]; clubUpdates?: CommunicationInput[];
 }

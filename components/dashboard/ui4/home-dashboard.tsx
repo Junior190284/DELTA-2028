@@ -473,20 +473,34 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                           </div>
                         </div>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="pt-2 border-t border-slate-800/70 text-center py-2">
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          Statystyki poziomu i XP: Oczekuje na integrację (Etap P2)
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Integrated Badges & Achievements */}
-                  <div className="pt-2 border-t border-slate-800/70 flex items-center gap-1.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold">
-                      <Star className="w-3 h-3 text-amber-400" />
-                      <span>Aktywny Uczestnik (7 dni)</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-300 text-[10px] font-bold">
-                      <Zap className="w-3 h-3 text-sky-400" />
-                      <span>Mistrz Treningu</span>
-                    </span>
-                  </div>
+                  {recentAchievements.status === "available" && recentAchievements.data && recentAchievements.data.length > 0 ? (
+                    <div className="pt-2 border-t border-slate-800/70 flex items-center gap-1.5 flex-wrap">
+                      {recentAchievements.data.map((ach) => (
+                        <span key={ach.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold">
+                          <Star className="w-3 h-3 text-amber-400" />
+                          <span>{ach.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : recentAchievements.status === "available" ? (
+                    <div className="pt-2 border-t border-slate-800/70 text-[10px] text-slate-500">
+                      Brak odblokowanych odznak
+                    </div>
+                  ) : (
+                    <div className="pt-2 border-t border-slate-800/70 text-[10px] text-slate-500">
+                      Odznaki i osiągnięcia: Oczekuje na integrację (Etap P2)
+                    </div>
+                  )}
                 </div>
 
                 {/* 3B. COMPACT COLLECTION SHORTCUT (Zero-Overlap Mini DeltaCard) */}
@@ -510,27 +524,33 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                     </Link>
                   </div>
 
-                  {albumProgress.status === "available" && recentCards.status === "available" ? (
+                  {albumProgress.status === "available" ? (
                     <div className="space-y-2.5">
                       {/* Compact Card Thumbnail + Progress Summary with Clear Separation */}
                       <div className="flex items-center gap-3">
                         <div className="w-[72px] shrink-0 flex items-center justify-center p-1 rounded-xl bg-slate-950/80 border border-slate-800">
-                          <DeltaCard
-                            card={eliteCardModel}
-                            size="xs"
-                            interactive={false}
-                            showFlip={false}
-                            className="mx-auto drop-shadow-md"
-                          />
+                          {recentCards.status === "available" && recentCards.data && recentCards.data.length > 0 ? (
+                            <DeltaCard
+                              card={eliteCardModel}
+                              size="xs"
+                              interactive={false}
+                              showFlip={false}
+                              className="mx-auto drop-shadow-md"
+                            />
+                          ) : (
+                            <div className="w-12 h-16 rounded-lg bg-slate-900 border border-dashed border-amber-500/40 flex items-center justify-center text-amber-400">
+                              <Sparkles className="w-5 h-5" />
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="text-xs font-black text-white">Album Klubowy</div>
                           <div className="text-xs font-extrabold text-amber-400 e41-num">
-                            75% UKOŃCZENIA
+                            {albumData ? `${albumData.percent}% UKOŃCZENIA` : "—"}
                           </div>
                           <div className="text-[11px] text-slate-300">
-                            Zdobyte: <strong className="text-white">3 z 4</strong> kart
+                            Zdobyte: <strong className="text-white">{albumData ? `${albumData.owned} z ${albumData.total}` : "—"}</strong> kart
                           </div>
                           <div className="text-[10px] text-slate-400">
                             Paczki: <strong className="text-amber-400 font-bold">{albumData?.unopenedPacks ?? 0} do otwarcia</strong>
@@ -549,7 +569,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                     </div>
                   ) : (
                     <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-center text-xs text-slate-500">
-                      Kolekcja kart jest zastrzeżona dla Twojego profilu.
+                      Kolekcja kart i album INFERNO: Niedostępne dla tego konta
                     </div>
                   )}
                 </section>
