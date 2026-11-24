@@ -34,6 +34,29 @@ export type RecentCard = {
   userCardId: string; definitionId: string; name: string; rarity: string | null;
   playerName: string | null; acquiredAt: string | null; artworkUrl: string | null;
 };
+export type CollectionCardCategory = "base" | "matchday" | "special";
+export type CollectionCard = {
+  id: string;
+  cardId: string;
+  name: string;
+  title: string;
+  rarity: string | null;
+  cardType: string | null;
+  category: CollectionCardCategory;
+  cardNumber: number | null;
+  season: string | null;
+  playerName: string | null;
+  playerShirtNumber: string | number | null;
+  playerPosition: string | null;
+  playerPhotoUrl: string | null;
+  artworkUrl: string | null;
+  artworkPose: string | null;
+  frameTheme: string | null;
+  acquiredAt: string | null;
+  duplicatesCount: number;
+  quantity: number;
+  isFavorite: boolean;
+};
 export type SeriesProgress = {
   id: string;
   name: string;
@@ -79,6 +102,7 @@ export interface DashboardUI4Model {
   nextAction: Section<NextAction>;
   progress: Section<LevelProgress>;
   recentCards: Section<RecentCard[]>;
+  collectionCards?: Section<CollectionCard[]>;
   albumProgress: Section<AlbumProgress>;
   recentAchievements: Section<RecentAchievement[]>;
   teamShowcase: Section<TeamShowcaseSummary>;
@@ -105,7 +129,9 @@ export type GameProfileInput = {
 };
 export type CardDefinitionInput = {
   id: string; name?: string | null; title?: string | null; rarity?: string | null; card_type?: string | null;
-  image_url?: string | null; artwork_url?: string | null; player?: PlayerInput | null;
+  image_url?: string | null; artwork_url?: string | null; artwork_pose?: string | null;
+  frame_theme?: string | null; card_number?: number | string | null; season?: string | null;
+  player?: (PlayerInput & { photo_path?: string | null }) | null;
 };
 export type UserCardInput = {
   id: string;
@@ -113,6 +139,8 @@ export type UserCardInput = {
   card_definition_id?: string | null;
   quantity?: number | null;
   duplicates_count?: number | null;
+  is_favorite?: boolean | null;
+  is_locked?: boolean | null;
   acquired_at?: string | null;
   created_at?: string | null;
   card_definition?: CardDefinitionInput | null;

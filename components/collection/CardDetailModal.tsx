@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { 
   X, 
   RotateCw, 
@@ -38,19 +38,63 @@ export default function CardDetailModal({
 }: CardDetailModalProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
 
   // Reset flipped state when card changes
   useEffect(() => {
     setIsFlipped(false);
   }, [card?.id]);
 
-  // Handle ESC key press
+  // Save active element when modal opens and restore focus when it closes
+  useEffect(() => {
+    if (isOpen) {
+      lastActiveElementRef.current = document.activeElement as HTMLElement | null;
+      const timer = setTimeout(() => {
+        closeButtonRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else if (lastActiveElementRef.current) {
+      lastActiveElementRef.current.focus();
+      lastActiveElementRef.current = null;
+    }
+  }, [isOpen]);
+
+  // Handle ESC key press and Tab key focus trap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      if (!isOpen) return;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && modalContainerRef.current) {
+        const focusable = modalContainerRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const firstElement = focusable[0];
+        const lastElement = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
@@ -72,7 +116,7 @@ export default function CardDetailModal({
     if (!card) return;
     onSetFeatured?.(card.id);
     cardSound?.playPurchase?.();
-    showToast("👑 Ustawiono jako wyróżnioną kartę");
+    showToast(isFeatured ? "Usunięto z wyróżnionych" : "⭐ Ustawiono jako ulubioną");
   };
 
   if (!isOpen || !card) return null;
@@ -88,11 +132,12 @@ export default function CardDetailModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="card-detail-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn motion-reduce:animate-none"
       onClick={onClose}
     >
       {/* Modal Container */}
       <div
+        ref={modalContainerRef}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-3xl bg-slate-900 border border-white/15 p-6 md:p-8 shadow-2xl flex flex-col md:flex-row items-center gap-8 text-white select-none"
         style={{
@@ -101,6 +146,7 @@ export default function CardDetailModal({
       >
         {/* Close Button */}
         <button
+          ref={closeButtonRef}
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer z-30"
           aria-label="Zamknij modal"
@@ -250,7 +296,7 @@ export default function CardDetailModal({
 
         {/* Toast Notification */}
         {toastMessage && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-slate-950/90 border border-amber-400/40 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md animate-bounce">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-slate-950/90 border border-amber-400/40 text-xs font-bold text-amber-300 shadow-2xl backdrop-blur-md animate-bounce motion-reduce:animate-none">
             {toastMessage}
           </div>
         )}

@@ -1,4 +1,28 @@
-import type { AchievementInput, ClubCommunication, CommunicationInput, DashboardUI4AdapterInput, DashboardUI4Model, PlayerInput, PlayerSummary, RecentAchievement, RecentCard, Section, SeriesProgress, UserCardInput } from "./types.ts";
+import type { AchievementInput, ClubCommunication, CollectionCard, CollectionCardCategory, CommunicationInput, DashboardUI4AdapterInput, DashboardUI4Model, PlayerInput, PlayerSummary, RecentAchievement, RecentCard, Section, SeriesProgress, UserCardInput } from "./types.ts";
+
+export function classifyCardCategory(cardType?: string | null, rarity?: string | null): CollectionCardCategory {
+  const ct = (cardType || "").toLowerCase();
+  const r = (rarity || "").toLowerCase();
+
+  if (
+    ct.includes("inferno") ||
+    ct.includes("training") ||
+    ct.includes("goal") ||
+    ct.includes("mvp") ||
+    ct.includes("legend") ||
+    r === "inferno" ||
+    r === "legendary" ||
+    r === "epic"
+  ) {
+    return "special";
+  }
+
+  if (ct.includes("matchday") || r === "matchday" || r === "rare") {
+    return "matchday";
+  }
+
+  return "base";
+}
 
 const available = <T>(data: T): Section<T> => ({ status: "available", data });
 const empty = <T>(data: T): Section<T> => ({ status: "empty", data });
@@ -115,41 +139,74 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
   }
 
   let recentCards: DashboardUI4Model["recentCards"];
+  let collectionCards: DashboardUI4Model["collectionCards"];
   let albumProgress: DashboardUI4Model["albumProgress"];
   if (!input.access.canViewCollection) {
-    recentCards = unavailable("not_authorized"); albumProgress = unavailable("not_authorized");
+    recentCards = unavailable("not_authorized");
+    collectionCards = unavailable("not_authorized");
+    albumProgress = unavailable("not_authorized");
   } else if (input.userCards === undefined) {
-    recentCards = unavailable("not_loaded"); albumProgress = unavailable("not_loaded");
+    recentCards = unavailable("not_loaded");
+    collectionCards = unavailable("not_loaded");
+    albumProgress = unavailable("not_loaded");
   } else {
-    const cards = [...input.userCards].sort((a,b) => timestamp(b.acquired_at ?? b.created_at) - timestamp(a.acquired_at ?? a.created_at))
-      .map(recentCard).filter((card): card is RecentCard => card !== null).slice(0, 4);
+    const sortedUserCards = [...input.userCards].sort(
+      (a, b) => timestamp(b.acquired_at ?? b.created_at) - timestamp(a.acquired_at ?? a.created_at)
+    );
+    const cards = sortedUserCards
+      .map(recentCard)
+      .filter((card): card is RecentCard => card !== null)
+      .slice(0, 4);
     recentCards = cards.length ? available(cards) : empty([]);
-    const unopenedPacks = input.unopenedPacksCount !== undefined
-      ? finite(input.unopenedPacksCount)
-      : finite(input.gameProfile?.unopenedPacks);
 
     const validDefinitions = input.allCards !== undefined ? new Set(input.allCards.map(c => c.id)) : null;
+    const mappedCollection: CollectionCard[] = [];
     const ownedIds = new Set<string>();
     let copies = 0;
     let baseCount = 0;
     let matchdayCount = 0;
-    let infernoCount = 0;
+    let specialCount = 0;
 
-    for (const card of input.userCards) {
+    for (const card of sortedUserCards) {
+      const def = cardDefinition(card);
       const id = cardDefinitionId(card);
       if (!id || (validDefinitions && !validDefinitions.has(id))) continue;
+
+      const dupCount = typeof card.duplicates_count === "number" ? card.duplicates_count : 0;
+      const quantity = Math.max(1, cardCopies(card));
+      const category = classifyCardCategory(def?.card_type, def?.rarity);
+
+      mappedCollection.push({
+        id: card.id,
+        cardId: id,
+        name: def?.name?.trim() || def?.title?.trim() || "Karta",
+        title: def?.title?.trim() || def?.name?.trim() || "DELTA",
+        rarity: def?.rarity ?? null,
+        cardType: def?.card_type ?? null,
+        category,
+        cardNumber: typeof def?.card_number === "number" ? def.card_number : null,
+        season: def?.season ?? "2026/27",
+        playerName: def?.player?.display_name?.trim() || def?.player?.name?.trim() || null,
+        playerShirtNumber: def?.player?.shirt_number ?? null,
+        playerPosition: def?.player?.position ?? null,
+        playerPhotoUrl: def?.player?.photo_path ?? null,
+        artworkUrl: def?.artwork_url ?? def?.image_url ?? null,
+        artworkPose: def?.artwork_pose ?? null,
+        frameTheme: def?.frame_theme ?? null,
+        acquiredAt: card.acquired_at ?? card.created_at ?? null,
+        duplicatesCount: dupCount,
+        quantity,
+        isFavorite: card.is_favorite === true
+      });
+
       const isNew = !ownedIds.has(id);
       ownedIds.add(id);
-      copies += Math.max(1, cardCopies(card));
+      copies += quantity;
 
       if (isNew) {
-        const def = cardDefinition(card);
-        const cardType = (def?.card_type || "").toLowerCase();
-        const rarity = (def?.rarity || "").toLowerCase();
-
-        if (cardType.includes("inferno") || rarity === "inferno" || rarity === "legendary") {
-          infernoCount++;
-        } else if (cardType.includes("matchday") || rarity === "rare" || rarity === "epic" || rarity === "matchday") {
+        if (category === "special") {
+          specialCount++;
+        } else if (category === "matchday") {
           matchdayCount++;
         } else {
           baseCount++;
@@ -157,12 +214,18 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
       }
     }
 
+    collectionCards = mappedCollection.length ? available(mappedCollection) : empty([]);
+
+    const unopenedPacks = input.unopenedPacksCount !== undefined
+      ? finite(input.unopenedPacksCount)
+      : finite(input.gameProfile?.unopenedPacks);
+
     const owned = ownedIds.size;
     const duplicates = Math.max(0, copies - owned);
     const series: SeriesProgress[] = [
       { id: "base", name: "Karty Podstawowe (Base)", category: "base", owned: baseCount, total: null, percent: null },
       { id: "matchday", name: "Karty Meczowe (Matchday)", category: "matchday", owned: matchdayCount, total: null, percent: null },
-      { id: "inferno", name: "Karty Specjalne (Inferno)", category: "inferno", owned: infernoCount, total: null, percent: null }
+      { id: "inferno", name: "Karty Specjalne (Inferno)", category: "inferno", owned: specialCount, total: null, percent: null }
     ];
 
     if (input.allCards === undefined && input.userCards === undefined) {
@@ -215,6 +278,6 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
   return {
     profile: { accountId: input.profile.id, actorKind, displayName: input.profile.display_name?.trim() || "Użytkownik",
       teamName: input.teamName ?? null, player: profilePlayer },
-    nextAction, progress, recentCards, albumProgress, recentAchievements, teamShowcase, clubCommunications,
+    nextAction, progress, recentCards, collectionCards, albumProgress, recentAchievements, teamShowcase, clubCommunications,
   };
 }

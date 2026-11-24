@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -17,15 +17,139 @@ import {
   Lock,
   Clock,
   Star,
-  CheckCircle2
+  CheckCircle2,
+  Copy
 } from "lucide-react";
 import DeltaCard from "@/components/cards/DeltaCard";
-import type { DashboardUI4Model } from "./types";
+import CardDetailModal from "@/components/collection/CardDetailModal";
+import CollectionFilterBar, { FilterState } from "@/components/collection/CollectionFilterBar";
+import type { DashboardUI4Model, CollectionCard } from "./types";
 import { DeltaDesktopSidebar } from "./delta-desktop-sidebar";
 import { DeltaMobileBottomNav } from "./delta-mobile-nav";
+import {
+  DeltaCardModel,
+  DELTA_THEME_CONFIGS,
+  resolveDeltaCardTheme
+} from "@/lib/cards/deltaCardModel";
 
 interface CollectionDashboardProps {
   model: DashboardUI4Model;
+}
+
+export type CollectionTab = "all" | "base" | "matchday" | "special" | "duplicates";
+
+export function toDeltaCardModel(card: CollectionCard): DeltaCardModel {
+  const theme = resolveDeltaCardTheme(card.cardType, card.rarity, card.frameTheme);
+  const themeConfig = DELTA_THEME_CONFIGS[theme];
+  return {
+    id: card.id,
+    playerId: card.cardId,
+    playerName: (card.playerName || card.name || "ZAWODNIK DELTA").toUpperCase(),
+    shirtNumber:
+      card.playerShirtNumber !== null && card.playerShirtNumber !== undefined
+        ? String(card.playerShirtNumber)
+        : card.cardNumber !== null && card.cardNumber !== undefined
+        ? String(card.cardNumber)
+        : null,
+    position: card.playerPosition,
+    playerImage: card.playerPhotoUrl || card.artworkUrl || null,
+    cardType: theme,
+    rarity: (card.rarity || "common").toLowerCase() as any,
+    frameTheme: card.frameTheme,
+    artworkPose: card.artworkPose,
+    duplicatesCount: card.duplicatesCount,
+    isFavorite: card.isFavorite,
+    obtainedAt: card.acquiredAt,
+    isOwned: true,
+    isLocked: false,
+    backData: {
+      season: card.season || "2026/27",
+      seriesName: themeConfig.label,
+      seriesCode: themeConfig.seriesCode,
+      cardId: `${themeConfig.seriesCode}-${String(card.cardNumber || 1).padStart(3, "0")}`,
+      obtainedAt: card.acquiredAt,
+      sourceReason: null,
+      lore: null,
+      milestoneBadge: null
+    }
+  };
+}
+
+export function filterAndSortCollectionCards(
+  allCards: CollectionCard[],
+  activeTab: CollectionTab,
+  filters: FilterState
+): CollectionCard[] {
+  let list = [...allCards];
+
+  // 1. Category Tab Filter
+  if (activeTab === "base") {
+    list = list.filter(c => c.category === "base");
+  } else if (activeTab === "matchday") {
+    list = list.filter(c => c.category === "matchday");
+  } else if (activeTab === "special") {
+    list = list.filter(c => c.category === "special");
+  } else if (activeTab === "duplicates") {
+    list = list.filter(c => c.duplicatesCount > 0 || c.quantity > 1);
+  }
+
+  // 2. Search Filter
+  if (filters.search && filters.search.trim()) {
+    const q = filters.search.toLowerCase().trim();
+    list = list.filter(c =>
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.playerName && c.playerName.toLowerCase().includes(q)) ||
+      (c.playerShirtNumber !== null && String(c.playerShirtNumber).includes(q)) ||
+      (c.cardNumber !== null && String(c.cardNumber).includes(q)) ||
+      (c.cardType && c.cardType.toLowerCase().includes(q))
+    );
+  }
+
+  // 3. Rarity Filter
+  if (filters.rarity && filters.rarity !== "all") {
+    list = list.filter(c => (c.rarity || "").toLowerCase() === filters.rarity.toLowerCase());
+  }
+
+  // 4. Player Filter
+  if (filters.player && filters.player !== "all") {
+    list = list.filter(c => c.cardId === filters.player);
+  }
+
+  // 5. Card Type / Theme Filter
+  if (filters.cardType && filters.cardType !== "all") {
+    list = list.filter(c => (c.cardType || "").toUpperCase() === filters.cardType.toUpperCase());
+  }
+
+  // 6. Sort
+  const rarityRank: Record<string, number> = {
+    inferno: 5,
+    legendary: 4,
+    epic: 3,
+    rare: 2,
+    common: 1
+  };
+
+  list.sort((a, b) => {
+    if (filters.sort === "rarity") {
+      const rankA = rarityRank[(a.rarity || "").toLowerCase()] || 0;
+      const rankB = rarityRank[(b.rarity || "").toLowerCase()] || 0;
+      if (rankB !== rankA) return rankB - rankA;
+    } else if (filters.sort === "player") {
+      const comp = (a.playerName || "").localeCompare(b.playerName || "", "pl");
+      if (comp !== 0) return comp;
+    } else if (filters.sort === "duplicates") {
+      const comp = (b.duplicatesCount || 0) - (a.duplicatesCount || 0);
+      if (comp !== 0) return comp;
+    } else if (filters.sort === "card_type") {
+      const comp = (a.cardType || "").localeCompare(b.cardType || "");
+      if (comp !== 0) return comp;
+    }
+
+    // Default: newest by acquiredAt
+    return (b.acquiredAt || "").localeCompare(a.acquiredAt || "");
+  });
+
+  return list;
 }
 
 function formatUnlockedBadgeCount(status: string, count: number): string {
@@ -42,10 +166,79 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
     profile,
     progress,
     recentCards,
+    collectionCards,
     albumProgress,
     recentAchievements,
     nextAction
   } = model;
+
+  const [activeTab, setActiveTab] = useState<CollectionTab>("all");
+  const [selectedCard, setSelectedCard] = useState<DeltaCardModel | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [favoriteCardId, setFavoriteCardId] = useState<string | null>(null);
+
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    status: "all",
+    player: "all",
+    cardType: "all",
+    rarity: "all",
+    sort: "newest"
+  });
+
+  const allCards = useMemo<CollectionCard[]>(() => {
+    if (collectionCards?.status === "available" && Array.isArray(collectionCards.data)) {
+      return collectionCards.data;
+    }
+    return [];
+  }, [collectionCards]);
+
+  const playersList = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of allCards) {
+      if (c.playerName) {
+        map.set(c.cardId, c.playerName);
+      }
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [allCards]);
+
+  const tabCounts = useMemo(() => {
+    return {
+      all: allCards.length,
+      base: allCards.filter(c => c.category === "base").length,
+      matchday: allCards.filter(c => c.category === "matchday").length,
+      special: allCards.filter(c => c.category === "special").length,
+      duplicates: allCards.filter(c => c.duplicatesCount > 0 || c.quantity > 1).length
+    };
+  }, [allCards]);
+
+  const filteredAndSortedCards = useMemo(() => {
+    return filterAndSortCollectionCards(allCards, activeTab, filters);
+  }, [allCards, activeTab, filters]);
+
+  const handleCardClick = (card: CollectionCard) => {
+    setSelectedCard(toDeltaCardModel(card));
+    setIsDetailModalOpen(true);
+  };
+
+  const handleToggleFavorite = (cardId: string, currentFav: boolean) => {
+    if (selectedCard && selectedCard.id === cardId) {
+      setSelectedCard({ ...selectedCard, isFavorite: !currentFav });
+    }
+  };
+
+  const handleSetFavorite = (cardId: string) => {
+    setFavoriteCardId(prev => (prev === cardId ? null : cardId));
+  };
+
+  const tabs: { id: CollectionTab; label: string; count: number }[] = [
+    { id: "all", label: "Wszystkie", count: tabCounts.all },
+    { id: "base", label: "Podstawowe", count: tabCounts.base },
+    { id: "matchday", label: "Meczowe", count: tabCounts.matchday },
+    { id: "special", label: "Specjalne", count: tabCounts.special },
+    { id: "duplicates", label: "Duplikaty", count: tabCounts.duplicates }
+  ];
 
   const isParent = profile.actorKind === "parent";
   const isRestricted = profile.player.status === "unavailable";
@@ -133,13 +326,10 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                   <span className="sm:hidden">PULPIT</span>
                 </Link>
 
-                <Link
-                  href="/preview/pack-demo"
-                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-black hover:bg-amber-500/30 transition shadow-sm e41-num focus-visible:ring-2 focus-visible:ring-amber-400"
-                >
+                <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-black shadow-sm e41-num">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{albumData?.unopenedPacks ?? 3} PACZKI</span>
-                </Link>
+                  <span>{albumData?.unopenedPacks ?? 0} {albumData?.unopenedPacks === 1 ? "PACZKA" : "PACZEK"}</span>
+                </div>
               </div>
             </div>
           </header>
@@ -204,16 +394,13 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                       </span>
                     </div>
 
-                    {/* Big Action Button: Open New Pack */}
+                    {/* Big Action Button: Pack Vault Status */}
                     <div className="mt-3 w-full">
                       {albumData && albumData.unopenedPacks > 0 ? (
-                        <Link
-                          href="/preview/pack-demo"
-                          className="e41-btn-action e41-btn-gold w-full min-h-[46px] text-xs sm:text-sm font-black shadow-lg flex items-center justify-center gap-2"
-                        >
-                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
-                          <span>OTWÓRZ NOWĄ PACZKĘ ({albumData.unopenedPacks} DOSTĘPNE)</span>
-                        </Link>
+                        <div className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-center text-amber-300 font-bold text-xs flex items-center justify-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-400" />
+                          <span>DOSTĘPNE PACZKI W SKARBCU: {albumData.unopenedPacks}</span>
+                        </div>
                       ) : (
                         <div className="w-full py-2.5 px-4 rounded-xl bg-slate-900 border border-slate-800 text-center text-slate-400 font-bold text-xs">
                           BRAK NOWYCH PACZEK DO OTWARCIA
@@ -328,10 +515,20 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                             : rarity === "SILVER"
                             ? "border-slate-400/40 bg-slate-800/30 text-slate-300"
                             : "border-slate-700 bg-slate-900/40 text-slate-400";
+                        const matching = allCards.find(c => c.id === card.userCardId || c.cardId === card.definitionId);
                         return (
                           <div
                             key={card.userCardId || i}
-                            className={`p-3 rounded-2xl border ${glow} flex flex-col items-center text-center transition hover:scale-105 shadow-md backdrop-blur-sm`}
+                            role={matching ? "button" : undefined}
+                            tabIndex={matching ? 0 : undefined}
+                            onClick={() => matching && handleCardClick(matching)}
+                            onKeyDown={(e) => {
+                              if (matching && (e.key === "Enter" || e.key === " ")) {
+                                e.preventDefault();
+                                handleCardClick(matching);
+                              }
+                            }}
+                            className={`p-3 rounded-2xl border ${glow} flex flex-col items-center text-center transition hover:scale-105 shadow-md backdrop-blur-sm ${matching ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400" : ""}`}
                           >
                             <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center p-1 mb-1.5 shadow">
                               <Image
@@ -365,6 +562,207 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
               </div>
 
             </div>
+
+            {/* ----------------------------------------------------------------- */}
+            {/* SECTION 2: FULL COLLECTION ALBUM & CATEGORY TABS                */}
+            {/* ----------------------------------------------------------------- */}
+            <section
+              data-testid="e41-full-album-section"
+              className="mt-6 bg-slate-900/65 border border-slate-800/85 rounded-3xl p-4 sm:p-6 backdrop-blur-md shadow-2xl relative overflow-hidden"
+            >
+              {/* Header and Title */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-black text-white tracking-wide flex items-center gap-2">
+                      <span>Pełny Album Kart Kolekcjonerskich</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold uppercase">
+                        2D Premium
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      Rzeczywiście posiadane karty przypisane do Twojego konta · Sezon 2026/27
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status indicator */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-bold text-slate-300">
+                    Posiadane: <strong className="text-amber-400 e41-num">{allCards.length}</strong> unikalnych
+                  </span>
+                  {tabCounts.duplicates > 0 && (
+                    <span className="px-3 py-1 rounded-xl bg-sky-950/50 border border-sky-500/30 text-xs font-bold text-sky-300">
+                      Duplikaty: <strong className="text-sky-400 e41-num">{tabCounts.duplicates}</strong> kart
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Navigation Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 mb-4 -mx-1 px-1">
+                {tabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      data-testid={`tab-${tab.id}`}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-2 border ${
+                        isActive
+                          ? "bg-gradient-to-r from-amber-500/25 to-amber-600/15 border-amber-500/60 text-amber-300 shadow-md shadow-amber-950/40"
+                          : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-black e41-num ${
+                          isActive
+                            ? "bg-amber-400 text-slate-950"
+                            : "bg-slate-800 text-slate-400"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Filter Bar (Search, Rarity, Sort, Reset) */}
+              <div className="mb-5">
+                <CollectionFilterBar
+                  filters={filters}
+                  onChange={setFilters}
+                  playersList={playersList}
+                  totalResultsCount={filteredAndSortedCards.length}
+                  hideStatusTabs={true}
+                />
+              </div>
+
+              {/* Grid of Owned Cards */}
+              {collectionCards?.status === "available" && filteredAndSortedCards.length > 0 ? (
+                <div
+                  data-testid="e41-album-grid"
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 items-start"
+                >
+                  {filteredAndSortedCards.map((card) => {
+                    const cardModel = toDeltaCardModel(card);
+                    const isFavorite = favoriteCardId === card.id || favoriteCardId === card.cardId;
+                    return (
+                      <div
+                        key={card.id}
+                        data-testid={`card-item-${card.id}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Karta ${card.name}, ${card.quantity} ${card.quantity === 1 ? "egzemplarz" : "egzemplarze"}${isFavorite ? " (ulubiona w tej sesji)" : ""}. Naciśnij Enter lub kliknij, aby otworzyć szczegóły.`}
+                        onClick={() => handleCardClick(card)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleCardClick(card);
+                          }
+                        }}
+                        className="group relative flex flex-col items-center bg-slate-950/40 border border-slate-800/80 hover:border-amber-500/60 rounded-2xl p-2.5 sm:p-3 transition-all duration-200 hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:transform-none shadow-md hover:shadow-amber-950/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      >
+                        {/* Favorite Card Ribbon (Session only) */}
+                        {isFavorite && (
+                          <div className="absolute -top-2.5 z-30 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] tracking-wider uppercase shadow-lg flex items-center gap-1 motion-reduce:animate-none">
+                            <span>⭐</span>
+                            <span>ULUBIONA</span>
+                          </div>
+                        )}
+
+                        {/* 2:3 Card Container */}
+                        <div className="w-full relative aspect-[2/3] max-w-[220px]">
+                          <DeltaCard
+                            card={cardModel}
+                            size="responsive"
+                            interactive={true}
+                            showFlip={false}
+                          />
+                        </div>
+
+                        {/* Card Meta & Copies indicator */}
+                        <div className="w-full mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                          {card.quantity > 1 ? (
+                            <span
+                              className="px-2 py-0.5 rounded-full font-black text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/40 e41-num"
+                              title={`Posiadasz ${card.quantity} egzemplarze tej karty`}
+                            >
+                              x{card.quantity} ({card.duplicatesCount} {card.duplicatesCount === 1 ? "duplikat" : "duplikaty"})
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-slate-900 text-slate-400 border border-slate-800">
+                              1 egzemplarz
+                            </span>
+                          )}
+
+                          <span className="text-[9px] font-bold uppercase text-slate-500 truncate max-w-[45%]">
+                            {card.category === "base"
+                              ? "Podstawowa"
+                              : card.category === "matchday"
+                              ? "Meczowa"
+                              : "Specjalna"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : collectionCards?.status === "available" && filteredAndSortedCards.length === 0 ? (
+                <div className="py-12 px-4 rounded-2xl bg-slate-950/40 border border-slate-800 text-center space-y-3">
+                  <Layers className="w-8 h-8 mx-auto text-slate-600" />
+                  <div className="text-sm font-bold text-slate-300">
+                    Brak kart spełniających wybrane kryteria
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Spróbuj zmienić wyszukiwaną frazę lub zresetować filtry rzadkości i serii.
+                  </div>
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        search: "",
+                        status: "all",
+                        player: "all",
+                        cardType: "all",
+                        rarity: "all",
+                        sort: "newest"
+                      });
+                      setActiveTab("all");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-300 border border-amber-500/30 transition shadow cursor-pointer"
+                  >
+                    Zresetuj filtry
+                  </button>
+                </div>
+              ) : collectionCards?.status === "empty" ? (
+                <div className="py-12 px-4 rounded-2xl bg-slate-950/40 border border-slate-800 text-center space-y-2">
+                  <Sparkles className="w-8 h-8 mx-auto text-amber-500/60" />
+                  <div className="text-sm font-bold text-slate-300">
+                    Brak kart w Twojej kolekcji
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Twoja kolekcja kart jest obecnie pusta. Karty są zdobywane za mecze, treningi i wydarzenia klubowe.
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 px-4 rounded-2xl bg-slate-950/40 border border-slate-800 text-center space-y-2">
+                  <Lock className="w-8 h-8 mx-auto text-amber-500/60" />
+                  <div className="text-sm font-bold text-slate-300">
+                    Kolekcja kart jest zastrzeżona
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {collectionCards?.reason === "not_authorized"
+                      ? "Brak autoryzacji do podglądu kolekcji tego konta."
+                      : "Dane kolekcji nie zostały jeszcze załadowane."}
+                  </div>
+                </div>
+              )}
+            </section>
 
             {/* ----------------------------------------------------------------- */}
             {/* ROW 2: SECONDARY WORKSPACE (Badges & Trophies vs Match Pack Radar)*/}
@@ -482,6 +880,16 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
           <DeltaMobileBottomNav
             unopenedPacks={albumData?.unopenedPacks ?? 0}
             activeItem="collection"
+          />
+
+          {/* Card Detail Inspection Modal */}
+          <CardDetailModal
+            card={selectedCard}
+            isOpen={isDetailModalOpen}
+            onClose={() => setIsDetailModalOpen(false)}
+            onToggleFavorite={handleToggleFavorite}
+            onSetFeatured={handleSetFavorite}
+            isFeatured={selectedCard ? (favoriteCardId === selectedCard.id || favoriteCardId === selectedCard.playerId) : false}
           />
         </div>
       </div>

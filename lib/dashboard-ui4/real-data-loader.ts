@@ -638,6 +638,8 @@ export async function loadRealDashboardUI4Data(
             card_name,
             title,
             rarity,
+            card_type,
+            season,
             artwork_url,
             artwork_pose,
             frame_theme,
@@ -691,6 +693,8 @@ export async function loadRealDashboardUI4Data(
           id: String(uc.id),
           card_id: String(uc.card_id),
           duplicates_count: typeof uc.duplicates_count === "number" ? uc.duplicates_count : 0,
+          is_favorite: uc.is_favorite === true,
+          is_locked: uc.is_locked === true,
           acquired_at: uc.acquired_at ?? null,
           card_definition: def ? {
             id: String(def.id),
@@ -699,12 +703,17 @@ export async function loadRealDashboardUI4Data(
             rarity: def.rarity ?? null,
             card_type: def.card_type ?? null,
             artwork_url: def.artwork_url ?? null,
+            artwork_pose: def.artwork_pose ?? null,
+            frame_theme: def.frame_theme ?? null,
+            card_number: def.card_number ?? null,
+            season: def.season ?? null,
             image_url: def.artwork_url ?? null,
             player: def.player ? {
               id: String(def.player.id),
               display_name: def.player.display_name,
               shirt_number: def.player.shirt_number,
-              position: def.player.position
+              position: def.player.position,
+              photo_path: def.player.photo_path
             } : null
           } : null
         };

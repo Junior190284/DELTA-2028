@@ -34,13 +34,15 @@ export interface CollectionFilterBarProps {
   onChange: (filters: FilterState) => void;
   playersList: { id: string; name: string }[];
   totalResultsCount: number;
+  hideStatusTabs?: boolean;
 }
 
 export default function CollectionFilterBar({
   filters,
   onChange,
   playersList,
-  totalResultsCount
+  totalResultsCount,
+  hideStatusTabs = false
 }: CollectionFilterBarProps) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
@@ -121,28 +123,45 @@ export default function CollectionFilterBar({
         </div>
 
         {/* Status Filter Chips (Desktop) */}
-        <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/80 border border-white/5 overflow-x-auto">
-          {statusTabs.map((tab) => {
-            const isActive = filters.status === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleUpdate({ status: tab.id })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  isActive
-                    ? "bg-amber-500 text-slate-950 shadow-md scale-100"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {!hideStatusTabs && (
+          <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/80 border border-white/5 overflow-x-auto">
+            {statusTabs.map((tab) => {
+              const isActive = filters.status === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleUpdate({ status: tab.id })}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? "bg-amber-500 text-slate-950 shadow-md scale-100"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Quick Dropdowns & Mobile Filter Toggle */}
         <div className="flex items-center gap-2">
+          {/* Rarity Select (when status tabs are hidden) */}
+          {hideStatusTabs && (
+            <select
+              data-testid="filter-rarity-select"
+              value={filters.rarity}
+              onChange={(e) => handleUpdate({ rarity: e.target.value })}
+              className="max-sm:hidden px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs font-semibold text-slate-200 focus:outline-none focus:border-amber-400 cursor-pointer"
+              aria-label="Filtruj rzadkość"
+            >
+              {rarities.map((r) => (
+                <option key={r.id} value={r.id}>{r.label}</option>
+              ))}
+            </select>
+          )}
+
           {/* Player Dropdown (Desktop) */}
           <select
             value={filters.player}
@@ -192,25 +211,27 @@ export default function CollectionFilterBar({
       </div>
 
       {/* Mobile Status Chips (on small screens) */}
-      <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-1">
-        {statusTabs.map((tab) => {
-          const isActive = filters.status === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleUpdate({ status: tab.id })}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                isActive
-                  ? "bg-amber-500 text-slate-950 shadow-md"
-                  : "bg-slate-900 border border-white/10 text-slate-400"
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {!hideStatusTabs && (
+        <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-1">
+          {statusTabs.map((tab) => {
+            const isActive = filters.status === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleUpdate({ status: tab.id })}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                  isActive
+                    ? "bg-amber-500 text-slate-950 shadow-md"
+                    : "bg-slate-900 border border-white/10 text-slate-400"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Results Counter & Active Filters Tagline */}
       <div className="flex items-center justify-between text-xs text-slate-400 px-1">
