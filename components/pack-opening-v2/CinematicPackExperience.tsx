@@ -388,13 +388,7 @@ export default function CinematicPackExperience({
 
       if (err instanceof LivePackOpenError && err.code === "ALREADY_OPENED") {
         attemptIdempotencyKeyRef.current = null;
-        if (userUnopenedPackId) {
-          dispatchPackOpened({
-            pack_type_id: pack.id,
-            consumed_pack_id: userUnopenedPackId,
-            timestamp: Date.now()
-          });
-        }
+        // Reconcile state authoritatively from server without unilateral client deletion (consumed_pack_id: userUnopenedPackId)
         dispatchCollectionUpdated("already_opened_reconciliation", userUnopenedPackId);
         setOpenError(err.message);
       } else {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -31,6 +31,7 @@ import DeltaCard from "@/components/cards/DeltaCard";
 import type { DashboardUI4Model } from "./types";
 import { DeltaDesktopSidebar } from "./delta-desktop-sidebar";
 import { DeltaMobileBottomNav } from "./delta-mobile-nav";
+import { subscribeCardEvents } from "@/lib/cards/cardSync";
 
 interface HomeDashboardProps {
   model: DashboardUI4Model;
@@ -123,6 +124,33 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
   const levelData = progress.data;
   const albumData = albumProgress.data;
 
+  // Real-time synchronization of unopened packs across views
+  const [unopenedPacksCount, setUnopenedPacksCount] = useState(
+    albumData?.unopenedPacks ?? 0
+  );
+
+  useEffect(() => {
+    setUnopenedPacksCount(albumData?.unopenedPacks ?? 0);
+  }, [albumData?.unopenedPacks]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeCardEvents({
+      onPackOpened: (payload) => {
+        if (typeof payload.remaining_unopened_packs_count === "number" && Number.isFinite(payload.remaining_unopened_packs_count)) {
+          setUnopenedPacksCount(Math.max(0, Math.floor(payload.remaining_unopened_packs_count)));
+        } else {
+          setUnopenedPacksCount(prev => Math.max(0, prev - 1));
+        }
+      },
+      onCollectionUpdated: (payload) => {
+        if (typeof payload.remaining_unopened_packs_count === "number" && Number.isFinite(payload.remaining_unopened_packs_count)) {
+          setUnopenedPacksCount(Math.max(0, Math.floor(payload.remaining_unopened_packs_count)));
+        }
+      }
+    });
+    return unsubscribe;
+  }, []);
+
   // Safe player card model for compact preview
   const eliteCardModel = {
     id: "card-demo-alpha",
@@ -153,7 +181,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
         <DeltaDesktopSidebar
           profile={profile}
           activeItem="dashboard"
-          unopenedPacks={albumData?.unopenedPacks ?? 0}
+          unopenedPacks={unopenedPacksCount}
           collectionPercent={albumProgress.status === "available" ? (albumData?.percent ?? null) : null}
           variantTheme="elite"
         />
@@ -210,7 +238,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                     title="Przejdź do Skarbca Kolekcji"
                   >
                     <Layers className="w-3.5 h-3.5 text-amber-400" />
-                    <span>SKARBIEC KART ({albumData.unopenedPacks ?? 0}) →</span>
+                    <span>SKARBIEC KART ({unopenedPacksCount}) →</span>
                   </Link>
                 )}
 
@@ -709,7 +737,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                             Zdobyte: <strong className="text-white">{albumData ? albumData.owned : "—"}</strong> {albumData?.total != null ? `z ${albumData.total} kart` : "unikalnych kart"}
                           </div>
                           <div className="text-[10px] text-slate-400">
-                            Duplikaty: <strong className="text-slate-200 font-bold">{albumData?.duplicates ?? 0}</strong> · Paczki: <strong className="text-amber-400 font-bold">{albumData?.unopenedPacks ?? 0} do otwarcia</strong>
+                            Duplikaty: <strong className="text-slate-200 font-bold">{albumData?.duplicates ?? 0}</strong> · Paczki: <strong className="text-amber-400 font-bold">{unopenedPacksCount} do otwarcia</strong>
                           </div>
                         </div>
                       </div>
@@ -788,7 +816,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
 
           {/* Mobile Bottom Navigation */}
           <DeltaMobileBottomNav
-            unopenedPacks={albumData?.unopenedPacks ?? 0}
+            unopenedPacks={unopenedPacksCount}
             activeItem="dashboard"
           />
         </div>

@@ -23,6 +23,8 @@ export interface DeltaCollectionUpdatedPayload {
   timestamp?: number;
   source?: string;
   consumed_pack_id?: string | null;
+  remaining_unopened_packs_count?: number;
+  total_cards_count?: number;
 }
 
 // Global Custom Event Names
@@ -54,11 +56,17 @@ export function dispatchFavoriteUpdated(cardId: string, isFavorite: boolean): vo
   window.dispatchEvent(new CustomEvent(CARD_SYNC_EVENTS.FAVORITE_UPDATED, { detail }));
 }
 
-export function dispatchCollectionUpdated(source = "manual", consumedPackId?: string | null): void {
+export function dispatchCollectionUpdated(
+  source = "manual",
+  consumedPackId?: string | null,
+  extra?: { remaining_unopened_packs_count?: number; total_cards_count?: number }
+): void {
   if (typeof window === "undefined") return;
   const detail: DeltaCollectionUpdatedPayload = {
     source,
     consumed_pack_id: consumedPackId ?? null,
+    remaining_unopened_packs_count: extra?.remaining_unopened_packs_count,
+    total_cards_count: extra?.total_cards_count,
     timestamp: Date.now()
   };
   window.dispatchEvent(new CustomEvent(CARD_SYNC_EVENTS.COLLECTION_UPDATED, { detail }));

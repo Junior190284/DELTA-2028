@@ -287,3 +287,63 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
     nextAction, progress, recentCards, collectionCards, albumProgress, recentAchievements, teamShowcase, clubCommunications,
   };
 }
+
+export function mapServerUserCardsToCollectionCards(userCards: any[]): CollectionCard[] {
+  if (!Array.isArray(userCards)) return [];
+  const sorted = [...userCards].sort((a, b) => {
+    const timeA = a.acquired_at ? new Date(a.acquired_at).getTime() : 0;
+    const timeB = b.acquired_at ? new Date(b.acquired_at).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return sorted.map(uc => {
+    const def = uc.card_definition || uc.card || {};
+    const player = def.player || {};
+    const dupCount = typeof uc.duplicates_count === "number" ? uc.duplicates_count : 0;
+    const quantity = Math.max(1, dupCount + 1);
+    const category = classifyCardCategory(def.card_type, def.rarity);
+
+    return {
+      id: String(uc.id),
+      cardId: String(uc.card_id || def.id),
+      name: String(def.card_name || def.title || def.name || "Karta"),
+      title: String(def.title || def.card_name || "DELTA"),
+      rarity: def.rarity ?? null,
+      cardType: def.card_type ? String(def.card_type).toUpperCase() : null,
+      category,
+      cardNumber: typeof def.card_number === "number" ? def.card_number : null,
+      season: def.season || "2026/27",
+      playerName: player.display_name || player.name || null,
+      playerShirtNumber: player.shirt_number !== undefined ? player.shirt_number : null,
+      playerPosition: player.position || null,
+      playerPhotoUrl: player.photo_path || null,
+      artworkUrl: def.artwork_url || def.image_url || null,
+      artworkPose: def.artwork_pose || null,
+      frameTheme: def.frame_theme || null,
+      acquiredAt: uc.acquired_at || uc.created_at || null,
+      duplicatesCount: dupCount,
+      quantity,
+      isFavorite: uc.is_favorite === true
+    };
+  });
+}
+
+export function mapServerUnopenedPacks(unopenedPacks: any[]): UserUnopenedPackItem[] {
+  if (!Array.isArray(unopenedPacks)) return [];
+  return unopenedPacks
+    .filter(p => p && p.is_opened !== true)
+    .map(p => ({
+      id: String(p.id),
+      packTypeId: String(p.pack_type_id || p.packTypeId || "standard_pack"),
+      sourceReason: p.source_reason ?? p.sourceReason ?? null,
+      createdAt: p.created_at ?? p.createdAt ?? null,
+      packDefinition: p.pack_definition ? {
+        id: String(p.pack_definition.id),
+        name: String(p.pack_definition.name),
+        description: p.pack_definition.description ?? null,
+        cardsCount: typeof p.pack_definition.cards_count === "number" ? p.pack_definition.cards_count : (p.pack_definition.cardsCount ?? 3),
+        theme: p.pack_definition.theme ?? "standard",
+        imageUrl: p.pack_definition.image_url ?? p.pack_definition.imageUrl ?? null
+      } : undefined
+    }));
+}

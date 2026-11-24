@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Layers,
@@ -19,7 +20,9 @@ import {
   Star,
   CheckCircle2,
   Copy,
-  X
+  X,
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import DeltaCard from "@/components/cards/DeltaCard";
@@ -35,10 +38,18 @@ import {
   reconcileUnopenedPacksAfterOpen,
   buildFallbackPackDefinition
 } from "@/lib/cards/packOpeningAlbumBridge";
-import { subscribeCardEvents } from "@/lib/cards/cardSync";
+import {
+  subscribeCardEvents,
+  FetchSequenceGuard,
+  dispatchCollectionUpdated
+} from "@/lib/cards/cardSync";
 import type { PackDefinition, PackOpeningResult, UserUnopenedPack } from "@/lib/cards/types";
 import type { DashboardUI4Model, CollectionCard, UserUnopenedPackItem } from "./types";
-import { classifyCardCategory } from "./adapter";
+import {
+  classifyCardCategory,
+  mapServerUserCardsToCollectionCards,
+  mapServerUnopenedPacks
+} from "./adapter";
 import { DeltaDesktopSidebar } from "./delta-desktop-sidebar";
 import { DeltaMobileBottomNav } from "./delta-mobile-nav";
 import {
@@ -188,10 +199,21 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
     nextAction
   } = model;
 
+  let router: ReturnType<typeof useRouter> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    router = null;
+  }
+
   const [activeTab, setActiveTab] = useState<CollectionTab>("all");
   const [selectedCard, setSelectedCard] = useState<DeltaCardModel | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [favoriteCardId, setFavoriteCardId] = useState<string | null>(null);
+  const [isReconciling, setIsReconciling] = useState(false);
+  const [reconciliationError, setReconciliationError] = useState<string | null>(null);
+  const fetchSequenceGuardRef = useRef(new FetchSequenceGuard());
 
   // Local state for unopened packs allowing dynamic consumption and UI refresh
   const [localUnopenedPacks, setLocalUnopenedPacks] = useState<UserUnopenedPackItem[]>(() => {
@@ -225,6 +247,110 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
     }
     return [];
   });
+
+  // Synchronize local state when server component props (model) update via router.refresh()
+  useEffect(() => {
+    if (model.collectionCards?.status === "available" && Array.isArray(model.collectionCards.data)) {
+      setLocalAllCards(model.collectionCards.data);
+    }
+  }, [model.collectionCards]);
+
+  useEffect(() => {
+    if (model.albumProgress?.data?.unopenedPacksList && Array.isArray(model.albumProgress.data.unopenedPacksList)) {
+      setLocalUnopenedPacks(model.albumProgress.data.unopenedPacksList);
+    } else if (typeof model.albumProgress?.data?.unopenedPacks === "number") {
+      const count = model.albumProgress.data.unopenedPacks;
+      setLocalUnopenedPacks(prev => {
+        if (prev.length === count) return prev;
+        return Array.from({ length: count }, (_, i) => ({
+          id: `pack-${i + 1}`,
+          packTypeId: "standard_pack",
+          sourceReason: "reward",
+          createdAt: new Date().toISOString()
+        }));
+      });
+    }
+  }, [model.albumProgress]);
+
+  useEffect(() => {
+    if (model.recentCards?.status === "available" && Array.isArray(model.recentCards.data)) {
+      setLocalRecentCards(model.recentCards.data);
+    }
+  }, [model.recentCards]);
+
+  // Authoritative server reconciliation engine (DELTA-041G)
+  const reconcileCollectionFromServer = useCallback(async () => {
+    const seq = fetchSequenceGuardRef.current.startRequest();
+    setIsReconciling(true);
+    setReconciliationError(null);
+
+    try {
+      const fetcher = openPackFetch || fetch;
+      const res = await fetcher("/api/cards/collection", {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Guard against out-of-order delayed responses (Requirement D)
+      if (!fetchSequenceGuardRef.current.isLatest(seq)) {
+        return;
+      }
+
+      // Check if data is valid and authorized (Requirement E)
+      if (data && typeof data === "object") {
+        if (Array.isArray(data.unopenedPacks)) {
+          const mappedPacks = mapServerUnopenedPacks(data.unopenedPacks);
+          setLocalUnopenedPacks(mappedPacks);
+        }
+        if (Array.isArray(data.userCards)) {
+          const mappedCards = mapServerUserCardsToCollectionCards(data.userCards);
+          setLocalAllCards(mappedCards);
+          setLocalRecentCards(
+            mappedCards.slice(0, 4).map(c => ({
+              userCardId: c.id,
+              definitionId: c.cardId,
+              name: c.name,
+              rarity: c.rarity,
+              playerName: c.playerName,
+              acquiredAt: c.acquiredAt,
+              artworkUrl: c.artworkUrl
+            }))
+          );
+
+          // Notify global event bus with authoritative counts for cross-view sync (Requirement F)
+          dispatchCollectionUpdated("server_reconciled", null, {
+            remaining_unopened_packs_count: Array.isArray(data.unopenedPacks)
+              ? data.unopenedPacks.filter((p: any) => !p.is_opened).length
+              : undefined,
+            total_cards_count: mappedCards.length
+          });
+        }
+      }
+
+      // Safe trigger of server component refresh
+      try {
+        router?.refresh();
+      } catch {
+        // Safe in test environments
+      }
+    } catch {
+      if (fetchSequenceGuardRef.current.isLatest(seq)) {
+        setReconciliationError(
+          "Nie udało się pobrać aktualnego stanu kolekcji z serwera. Sprawdź połączenie i spróbuj ponownie."
+        );
+      }
+    } finally {
+      if (fetchSequenceGuardRef.current.isLatest(seq)) {
+        setIsReconciling(false);
+      }
+    }
+  }, [openPackFetch, router]);
 
   // Active pack opening session
   const [activePackSession, setActivePackSession] = useState<{
@@ -306,13 +432,13 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
         }
       },
       onCollectionUpdated: (payload) => {
-        if (payload.consumed_pack_id) {
-          setLocalUnopenedPacks(prev => prev.filter(p => p.id !== payload.consumed_pack_id));
+        if (payload.source === "already_opened_reconciliation") {
+          void reconcileCollectionFromServer();
         }
       }
     });
     return unsubscribe;
-  }, []);
+  }, [reconcileCollectionFromServer]);
 
   const handleStartPackOpening = (packItem: UserUnopenedPackItem) => {
     const convertedPacks: UserUnopenedPack[] = localUnopenedPacks.map(p => ({
@@ -580,6 +706,29 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
           {/* MAIN COLLECTION GRID (DESKTOP BALANCED 2-LEVEL ARCHITECTURE)          */}
           {/* ===================================================================== */}
           <main className="d4-container-desktop relative z-10">
+            {/* Reconciliation Error Banner with Manual Retry (DELTA-041G) */}
+            {reconciliationError && (
+              <div
+                role="alert"
+                data-testid="reconciliation-error-banner"
+                className="mb-4 p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/40 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{reconciliationError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void reconcileCollectionFromServer()}
+                  disabled={isReconciling}
+                  data-testid="retry-reconcile-btn"
+                  className="shrink-0 px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold text-xs transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? "animate-spin" : ""}`} />
+                  <span>{isReconciling ? "Odświeżanie..." : "Odśwież stan kolekcji"}</span>
+                </button>
+              </div>
+            )}
             
             {/* ----------------------------------------------------------------- */}
             {/* ROW 1: 2-COLUMN PRIMARY WORKSPACE (DeltaCard Hero vs Album/Drops) */}
