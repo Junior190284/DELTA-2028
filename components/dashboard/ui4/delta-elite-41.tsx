@@ -31,9 +31,50 @@ interface DeltaElite41Props {
   model: DashboardUI4Model;
 }
 
+function formatCommunicationDate(publishedAt?: string | null): string {
+  if (!publishedAt) return "—";
+  try {
+    const d = new Date(publishedAt);
+    if (Number.isNaN(d.getTime())) return "—";
+
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Europe/Warsaw",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    const todayStr = formatter.format(now);
+    const itemDateStr = formatter.format(d);
+
+    if (todayStr === itemDateStr) {
+      return "Dzisiaj";
+    }
+
+    const yesterday = new Date(now.getTime() - 24 * 3600 * 1000);
+    const yesterdayStr = formatter.format(yesterday);
+    if (yesterdayStr === itemDateStr) {
+      return "Wczoraj";
+    }
+
+    return new Intl.DateTimeFormat("pl-PL", {
+      timeZone: "Europe/Warsaw",
+      day: "numeric",
+      month: "short"
+    }).format(d);
+  } catch {
+    return "—";
+  }
+}
+
 export function DeltaElite41({ model }: DeltaElite41Props) {
   const [confirmed, setConfirmed] = useState(false);
   const [showNotificationNotice, setShowNotificationNotice] = useState(false);
+  const [expandedCommIds, setExpandedCommIds] = useState<Record<string, boolean>>({});
+
+  const toggleExpandComm = (id: string) => {
+    setExpandedCommIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const {
     profile,
@@ -86,6 +127,7 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
           profile={profile}
           activeItem="dashboard"
           unopenedPacks={albumData?.unopenedPacks ?? 0}
+          collectionPercent={albumProgress.status === "available" ? (albumData?.percent ?? null) : null}
           variantTheme="elite"
         />
 
@@ -367,33 +409,65 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
 
                     {clubCommunications.status === "available" && clubCommunications.data ? (
                       <div className="space-y-2.5">
-                        {clubCommunications.data.map((item) => (
-                          <div
-                            key={item.id}
-                            className={`p-3 rounded-xl border transition ${
-                              item.urgent
-                                ? "bg-amber-950/25 border-amber-500/40 text-amber-100"
-                                : "bg-slate-950/60 border-slate-800/80 text-slate-200"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-1.5">
-                                {item.urgent && (
-                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500 text-slate-950">
-                                    PILNE
+                        {clubCommunications.data.map((item) => {
+                          const isExpanded = Boolean(expandedCommIds[item.id]);
+                          const hasLongContent =
+                            typeof item.summary === "string" &&
+                            (item.summary.length > 90 || item.summary.includes("\n"));
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={`p-3 rounded-xl border transition ${
+                                item.urgent
+                                  ? "bg-amber-950/25 border-amber-500/40 text-amber-100"
+                                  : "bg-slate-950/60 border-slate-800/80 text-slate-200"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                  {item.urgent && (
+                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 shrink-0">
+                                      PILNE
+                                    </span>
+                                  )}
+                                  <span className="text-xs sm:text-sm font-bold text-white truncate">
+                                    {item.title}
                                   </span>
-                                )}
-                                <span className="text-xs sm:text-sm font-bold text-white">{item.title}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-400 e41-num shrink-0">
+                                  {formatCommunicationDate(item.publishedAt)}
+                                </span>
                               </div>
-                              <span className="text-[10px] text-slate-400 e41-num">Dzisiaj</span>
+                              {item.summary && (
+                                <div className="mt-0.5">
+                                  <p
+                                    className={`text-xs text-slate-300/90 leading-relaxed whitespace-pre-line break-words ${
+                                      isExpanded ? "" : "line-clamp-2 sm:line-clamp-3"
+                                    }`}
+                                  >
+                                    {item.summary}
+                                  </p>
+                                  {hasLongContent && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpandComm(item.id)}
+                                      className="mt-1 text-[11px] font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 transition focus:outline-none"
+                                      data-testid={`communication-expand-${item.id}`}
+                                    >
+                                      <span>{isExpanded ? "Zwiń" : "Więcej"}</span>
+                                      <ChevronRight
+                                        className={`w-3 h-3 transition-transform duration-200 ${
+                                          isExpanded ? "-rotate-90" : "rotate-90"
+                                        }`}
+                                      />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            {item.summary && (
-                              <p className="text-xs text-slate-300/90 leading-relaxed mt-0.5">
-                                {item.summary}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="p-4 bg-slate-950/50 border border-slate-800/80 rounded-xl text-center text-xs text-slate-400">

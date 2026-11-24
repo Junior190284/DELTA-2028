@@ -65,7 +65,8 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
         <DeltaDesktopSidebar
           profile={profile}
           activeItem="collection"
-          unopenedPacks={albumData?.unopenedPacks ?? 3}
+          unopenedPacks={albumData?.unopenedPacks ?? 0}
+          collectionPercent={albumProgress.status === "available" ? (albumData?.percent ?? null) : null}
           variantTheme="collector"
         />
 

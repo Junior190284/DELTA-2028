@@ -171,8 +171,8 @@ test("DELTA-038 — Real Sports XP & Attendance HOME Integration Suite", async (
     assert.equal(result.model.progress.data?.title, "Debiutant");
     assert.equal(result.model.progress.data?.verifiedTrainings, 0);
     assert.equal(result.model.progress.data?.verifiedMatches, 0);
-    // 1 finished training, 0 attended -> 0% attendance
-    assert.equal(result.model.progress.data?.attendanceRatePercent, 0);
+    // 1 finished training, no attendance records for child-1 -> null (neutral state "—" per DELTA-039)
+    assert.equal(result.model.progress.data?.attendanceRatePercent, null);
   });
 
   await t.test("2. Confirmed finished trainings -> exact multiple of +40 XP per session", async () => {

@@ -703,9 +703,22 @@ export async function loadRealDashboardUI4Data(
         isTrainingFinished(s, now)
       );
 
-      const attendanceRatePercent = finishedTrainings.length > 0
-        ? Math.min(100, Math.max(0, Math.round((verifiedResult.presentTrainings / finishedTrainings.length) * 100)))
-        : null;
+      // DELTA-039: Attendance integrity
+      // Check if this player has any recorded attendance on finished sessions.
+      // - If no attendance was recorded for this child: null (neutral state "—" / brak danych).
+      // - If attendance was recorded and present = 0 (all marked absent): 0%.
+      // - If attendance was recorded and present > 0: calculated seasonal rate against finished trainings.
+      const finishedTrainingIds = new Set(finishedTrainings.map((s: any) => s.id));
+      const childFinishedAttendance = (Array.isArray(trAttRes.data) ? trAttRes.data : [])
+        .filter((r: any) => r.player_id === activeChildId && finishedTrainingIds.has(r.training_id));
+
+      let attendanceRatePercent: number | null = null;
+      if (finishedTrainings.length > 0 && childFinishedAttendance.length > 0) {
+        attendanceRatePercent = Math.min(
+          100,
+          Math.max(0, Math.round((verifiedResult.presentTrainings / finishedTrainings.length) * 100))
+        );
+      }
 
       sportsXp = {
         sportsXp: verifiedResult.sportsXp,

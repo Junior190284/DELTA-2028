@@ -24,6 +24,7 @@ interface DesktopSidebarProps {
   activeItem?: "dashboard" | "schedule" | "collection" | "packs" | "team" | "news";
   unopenedPacks?: number;
   badgeCount?: number;
+  collectionPercent?: number | null;
   variantTheme?: "elite" | "sport" | "collector" | "hybrid";
 }
 
@@ -32,11 +33,25 @@ export function DeltaDesktopSidebar({
   activeItem = "dashboard",
   unopenedPacks = 3,
   badgeCount = 0,
+  collectionPercent,
   variantTheme = "elite"
 }: DesktopSidebarProps) {
   const isParent = profile.actorKind === "parent";
   const playerName = profile.player.data?.displayName || profile.displayName;
   const isRestricted = profile.player.status === "unavailable";
+
+  let collectionBadge: string | null = null;
+  if (!isRestricted) {
+    if (typeof collectionPercent === "number") {
+      collectionBadge = `${collectionPercent}%`;
+    } else if (collectionPercent === null) {
+      // In real-data mode or when total cards denominator is unavailable per DELTA-033/039
+      collectionBadge = null;
+    } else {
+      // Standalone demo fallback to preserve demo presentation
+      collectionBadge = "75%";
+    }
+  }
 
   const navItems = [
     {
@@ -58,7 +73,7 @@ export function DeltaDesktopSidebar({
       label: "Kolekcja INFERNO",
       icon: Layers,
       href: "/preview/dashboard-ui4?view=collection",
-      badge: isRestricted ? null : "75%"
+      badge: collectionBadge
     },
     {
       id: "packs",

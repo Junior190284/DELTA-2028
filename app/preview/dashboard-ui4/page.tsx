@@ -273,7 +273,23 @@ const stagingP2Fixture: DashboardUI4AdapterInput = {
       player: { id: "demo-player-alpha", display_name: "Zawodnik U-9" }
     }
   })),
-  unopenedPacksCount: 2
+  unopenedPacksCount: 2,
+  news: [
+    {
+      id: "stg-comm-1",
+      title: "Harmonogram obozów zimowych i przygotowań",
+      summary: "Informujemy, że zapisy na zimowe zgrupowanie szkoleniowe zostały otwarte.\nProsimy o zapoznanie się z wymogami sprzętowymi, badaniami lekarskimi oraz terminami wpłat zaliczek w biurze klubu.",
+      published_at: "2026-10-09T10:00:00.000Z",
+      urgent: true
+    },
+    {
+      id: "stg-comm-2",
+      title: "Komunikat Wydziału Szkolenia",
+      summary: "Przypominamy o punktualnym przybyciu na zbiórki przedmeczowe z kompletem strojów meczowych (czerwony i czarny zestaw).\nW przypadku nieobecności prosimy o zgłoszenie w aplikacji z wyprzedzeniem.",
+      published_at: "2026-10-08T10:00:00.000Z",
+      urgent: false
+    }
+  ]
 };
 
 type ScenarioKey = "elite" | "parent" | "empty" | "restricted" | "staging_p2";
