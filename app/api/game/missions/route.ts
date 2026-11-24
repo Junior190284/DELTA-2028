@@ -1,7 +1,7 @@
 // app/api/game/missions/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateDailyMissions, generateWeeklyMissions, GameMission, calculateLevelFromXP } from '@/lib/game/economy';
+import { generateDailyMissions, generateWeeklyMissions, GameMission } from '@/lib/game/economy';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const weekStartStr = getWeekStartDate();
 
-    // Session verification
+    // 1. Session verification
     const { data: { user } } = await supabase.auth.getUser();
 
     // Guest mode or unauthenticated visitor: return in-memory without polluting DB
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     // Authenticated user: always enforce session user ID to prevent IDOR
     const effectiveUserId = user.id;
 
-    // 1. Fetch or generate Daily Missions
+    // 2. Fetch or generate Daily Missions
     let dailyMissions: GameMission[] = [];
     const { data: dailyRow } = await supabase
       .from('user_daily_missions')
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         }, { onConflict: 'user_id,mission_date' });
     }
 
-    // 2. Fetch or generate Weekly Missions
+    // 3. Fetch or generate Weekly Missions
     let weeklyMissions: GameMission[] = [];
     const { data: weeklyRow } = await supabase
       .from('user_weekly_missions')
@@ -108,206 +108,28 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { userId, missionId, category } = body;
 
+    // 2. SECURITY GATE: Validate basic request structure
     if (!missionId || !category || (category !== 'DAILY' && category !== 'WEEKLY')) {
       return NextResponse.json({ success: false, error: 'Nieprawidłowe dane żądania' }, { status: 400 });
     }
 
-    // 2. SECURITY GATE: IDOR Protection
+    // 3. SECURITY GATE: IDOR Protection
     if (userId && userId !== user.id) {
       return NextResponse.json({ success: false, error: 'Brak uprawnień do konta innego użytkownika' }, { status: 403 });
     }
-    const effectiveUserId = user.id;
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const weekStartStr = getWeekStartDate();
-
-    // 3. SECURITY GATE: Concurrency check against reward_logs (idempotency guard)
-    const { data: existingRewardLog } = await supabase
-      .from('reward_logs')
-      .select('id')
-      .eq('user_id', effectiveUserId)
-      .eq('source_type', 'MISSION')
-      .eq('source_id', missionId)
-      .maybeSingle();
-
-    if (existingRewardLog) {
-      return NextResponse.json({ success: false, error: 'Nagroda została już odebrana' }, { status: 409 });
-    }
-
-    if (category === 'DAILY') {
-      const { data: dailyRow } = await supabase
-        .from('user_daily_missions')
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .eq('mission_date', todayStr)
-        .maybeSingle();
-
-      if (!dailyRow) {
-        return NextResponse.json({ success: false, error: 'Nie znaleziono misji dziennych' }, { status: 404 });
-      }
-
-      const missions: GameMission[] = dailyRow.missions || [];
-      const mission = missions.find(m => m.id === missionId);
-
-      if (!mission) {
-        return NextResponse.json({ success: false, error: 'Nie znaleziono misji' }, { status: 404 });
-      }
-
-      if (mission.claimed) {
-        return NextResponse.json({ success: false, error: 'Nagroda została już odebrana' }, { status: 409 });
-      }
-
-      // 4. SECURITY GATE: Verify genuine mission completion
-      let isCompleted = Boolean(
-        mission.completed === true ||
-        (typeof mission.currentCount === 'number' &&
-         typeof mission.targetCount === 'number' &&
-         mission.currentCount >= mission.targetCount)
-      );
-
-      // Special verification for daily spin: check authoritative user_daily_spins table
-      if (!isCompleted && (mission.id.startsWith('daily_spin') || mission.id.includes('spin'))) {
-        const { data: spinRow } = await supabase
-          .from('user_daily_spins')
-          .select('last_spin_at')
-          .eq('user_id', effectiveUserId)
-          .maybeSingle();
-
-        if (spinRow?.last_spin_at && spinRow.last_spin_at.slice(0, 10) === todayStr) {
-          isCompleted = true;
-          mission.currentCount = 1;
-        }
-      }
-
-      if (!isCompleted) {
-        return NextResponse.json({ success: false, error: 'Misja nie została jeszcze ukończona' }, { status: 400 });
-      }
-
-      // Mark completed & claimed
-      mission.completed = true;
-      mission.claimed = true;
-
-      await supabase
-        .from('user_daily_missions')
-        .update({ missions, updated_at: new Date().toISOString() })
-        .eq('id', dailyRow.id);
-
-      // Record reward log
-      await supabase.from('reward_logs').insert({
-        user_id: effectiveUserId,
-        reward_type: 'XP',
-        reward_value: { xp: mission.xpReward, missionTitle: mission.title },
-        source_type: 'MISSION',
-        source_id: missionId
-      });
-
-      // Award XP
-      const { data: profile } = await supabase
-        .from('user_game_profile')
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .maybeSingle();
-
-      const newXP = (profile?.current_xp || 0) + mission.xpReward;
-      const newSeasonXP = (profile?.season_xp || 0) + mission.xpReward;
-      const levelInfo = calculateLevelFromXP(newXP);
-
-      await supabase
-        .from('user_game_profile')
-        .upsert({
-          user_id: effectiveUserId,
-          current_level: levelInfo.level,
-          current_xp: newXP,
-          season_xp: newSeasonXP,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-
-      return NextResponse.json({
-        success: true,
-        xpAwarded: mission.xpReward,
-        newLevelInfo: levelInfo
-      });
-    } else {
-      // Weekly mission claim
-      const { data: weeklyRow } = await supabase
-        .from('user_weekly_missions')
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .eq('week_start_date', weekStartStr)
-        .maybeSingle();
-
-      if (!weeklyRow) {
-        return NextResponse.json({ success: false, error: 'Nie znaleziono misji tygodniowych' }, { status: 404 });
-      }
-
-      const missions: GameMission[] = weeklyRow.missions || [];
-      const mission = missions.find(m => m.id === missionId);
-
-      if (!mission) {
-        return NextResponse.json({ success: false, error: 'Nie znaleziono misji' }, { status: 404 });
-      }
-
-      if (mission.claimed) {
-        return NextResponse.json({ success: false, error: 'Nagroda została już odebrana' }, { status: 409 });
-      }
-
-      // 4. SECURITY GATE: Verify genuine mission completion
-      const isCompleted = Boolean(
-        mission.completed === true ||
-        (typeof mission.currentCount === 'number' &&
-         typeof mission.targetCount === 'number' &&
-         mission.currentCount >= mission.targetCount)
-      );
-
-      if (!isCompleted) {
-        return NextResponse.json({ success: false, error: 'Misja nie została jeszcze ukończona' }, { status: 400 });
-      }
-
-      mission.completed = true;
-      mission.claimed = true;
-
-      await supabase
-        .from('user_weekly_missions')
-        .update({ missions, updated_at: new Date().toISOString() })
-        .eq('id', weeklyRow.id);
-
-      await supabase.from('reward_logs').insert({
-        user_id: effectiveUserId,
-        reward_type: 'XP',
-        reward_value: { xp: mission.xpReward, missionTitle: mission.title, packReward: mission.packReward },
-        source_type: 'MISSION',
-        source_id: missionId
-      });
-
-      const { data: profile } = await supabase
-        .from('user_game_profile')
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .maybeSingle();
-
-      const newXP = (profile?.current_xp || 0) + mission.xpReward;
-      const newSeasonXP = (profile?.season_xp || 0) + mission.xpReward;
-      const levelInfo = calculateLevelFromXP(newXP);
-
-      await supabase
-        .from('user_game_profile')
-        .upsert({
-          user_id: effectiveUserId,
-          current_level: levelInfo.level,
-          current_xp: newXP,
-          season_xp: newSeasonXP,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-
-      return NextResponse.json({
-        success: true,
-        xpAwarded: mission.xpReward,
-        packReward: mission.packReward,
-        newLevelInfo: levelInfo
-      });
-    }
+    // 4. SECURITY GATE: Atomicity & Untrusted State Safe Refusal (DELTA-043SEC.1)
+    // Tabela user_daily_missions przechowuje misje jako surowy JSONB bez blokad wierszy ani atomowości,
+    // a reward_logs nie posiada ograniczenia UNIQUE(user_id, source_type, source_id).
+    // Bez migracji bazy danych atomowy odbiór bez wyścigu nie jest możliwy.
+    // Zgodnie z zaleceniem bezpieczeństwa, mutacja claim zostaje bezpiecznie zablokowana.
+    return NextResponse.json({
+      success: false,
+      code: 'LEGACY_CLAIM_DISABLED',
+      error: 'Odbieranie nagród przez starszy endpoint /api/game/missions zostało wyłączone ze względów bezpieczeństwa (brak atomowości legacy bazy). Nagrody są przyznawane autorytatywnie przez dedykowane moduły.'
+    }, { status: 410 });
   } catch (err: any) {
-    console.error('Claim mission error:', err);
+    console.error('Legacy claim error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

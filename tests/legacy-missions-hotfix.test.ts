@@ -32,9 +32,7 @@ function createMockSupabase(initialTables: Record<string, any[]>, authUser: any 
           return queryBuilder;
         },
         order: () => queryBuilder,
-        limit: (n: number) => {
-          return queryBuilder;
-        },
+        limit: () => queryBuilder,
         maybeSingle: async () => {
           let filtered = currentData;
           for (const f of pendingFilters) {
@@ -91,9 +89,8 @@ function createMockSupabase(initialTables: Record<string, any[]>, authUser: any 
   };
 }
 
-describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
+describe("DELTA-043SEC.1: Legacy Missions Safety & Atomicity Gate", () => {
   const aliceUser = { id: "user-alice", email: "alice@example.com" };
-  const bobUser = { id: "user-bob", email: "bob@example.com" };
   const todayStr = new Date().toISOString().slice(0, 10);
 
   const getBaseDb = () => ({
@@ -101,9 +98,6 @@ describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
       { user_id: "user-alice", current_xp: 100, season_xp: 100, current_level: 2 }
     ],
     reward_logs: [],
-    user_daily_spins: [
-      { user_id: "user-alice", last_spin_at: `${todayStr}T10:00:00Z` }
-    ],
     user_daily_missions: [
       {
         id: "udm-alice-1",
@@ -115,40 +109,10 @@ describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
             title: "Dzienny Spin",
             category: "DAILY",
             targetCount: 1,
-            currentCount: 0,
-            completed: false,
+            currentCount: 1,
+            completed: true,
             claimed: false,
             xpReward: 35
-          },
-          {
-            id: "m_battle_1",
-            title: "Pojedynek 1v1",
-            category: "DAILY",
-            targetCount: 1,
-            currentCount: 1,
-            completed: true,
-            claimed: false,
-            xpReward: 50
-          },
-          {
-            id: "m_uncompleted_1",
-            title: "Nieukończony trening",
-            category: "DAILY",
-            targetCount: 5,
-            currentCount: 1,
-            completed: false,
-            claimed: false,
-            xpReward: 40
-          },
-          {
-            id: "m_already_claimed",
-            title: "Odebrany bonus",
-            category: "DAILY",
-            targetCount: 1,
-            currentCount: 1,
-            completed: true,
-            claimed: true,
-            xpReward: 50
           }
         ]
       }
@@ -156,14 +120,12 @@ describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
     user_weekly_missions: []
   });
 
-  // --------------------------------------------------------------------------
-  // TEST 1: 401 bez sesji
-  // --------------------------------------------------------------------------
+  // 1. Brak sesji -> 401
   test("1. Brak aktywnej sesji użytkownika zwraca HTTP 401 UNAUTHORIZED", async () => {
     const mockDb = createMockSupabase(getBaseDb(), null);
     const req = new NextRequest("http://localhost:3000/api/game/missions", {
       method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: "m_battle_1", category: "DAILY" })
+      body: JSON.stringify({ userId: "user-alice", missionId: `daily_spin_${todayStr}`, category: "DAILY" })
     });
     (req as any).supabaseClient = mockDb;
 
@@ -173,20 +135,16 @@ describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
     assert.equal(res.status, 401);
     assert.equal(body.success, false);
     assert.equal(body.error, "Wymagane logowanie");
-    // Brak modyfikacji profilu
     assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100);
     assert.equal(mockDb.tables.reward_logs.length, 0);
   });
 
-  // --------------------------------------------------------------------------
-  // TEST 2: 403 dla obcego użytkownika (IDOR)
-  // --------------------------------------------------------------------------
+  // 2. IDOR: obcy użytkownik -> 403
   test("2. Próba manipulacji obcym userId (IDOR) zwraca HTTP 403 FORBIDDEN", async () => {
-    // Zalogowana Alice próbuje wykonać claim na koncie Boba
     const mockDb = createMockSupabase(getBaseDb(), aliceUser);
     const req = new NextRequest("http://localhost:3000/api/game/missions", {
       method: "POST",
-      body: JSON.stringify({ userId: "user-bob", missionId: "m_battle_1", category: "DAILY" })
+      body: JSON.stringify({ userId: "user-bob", missionId: `daily_spin_${todayStr}`, category: "DAILY" })
     });
     (req as any).supabaseClient = mockDb;
 
@@ -196,17 +154,16 @@ describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
     assert.equal(res.status, 403);
     assert.equal(body.success, false);
     assert.equal(body.error, "Brak uprawnień do konta innego użytkownika");
+    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100);
     assert.equal(mockDb.tables.reward_logs.length, 0);
   });
 
-  // --------------------------------------------------------------------------
-  // TEST 3: Brak możliwości sfałszowania ukończenia
-  // --------------------------------------------------------------------------
-  test("3. Próba odebrania nieukończonej misji zwraca HTTP 400 z blokadą", async () => {
+  // 3. Walidacja danych wejściowych -> 400
+  test("3. Nieprawidłowe dane żądania (brak missionId lub category) zwraca HTTP 400", async () => {
     const mockDb = createMockSupabase(getBaseDb(), aliceUser);
     const req = new NextRequest("http://localhost:3000/api/game/missions", {
       method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: "m_uncompleted_1", category: "DAILY" })
+      body: JSON.stringify({ userId: "user-alice", missionId: "" })
     });
     (req as any).supabaseClient = mockDb;
 
@@ -215,154 +172,82 @@ describe("DELTA-043SEC: Legacy Missions Security Hotfix", () => {
 
     assert.equal(res.status, 400);
     assert.equal(body.success, false);
-    assert.equal(body.error, "Misja nie została jeszcze ukończona");
-
-    // Sprawdź czy stan misji w bazie nie został zmieniony
-    const missionInDb = mockDb.tables.user_daily_missions[0].missions.find((m: any) => m.id === "m_uncompleted_1");
-    assert.equal(missionInDb.completed, false);
-    assert.equal(missionInDb.claimed, false);
-    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100);
-    assert.equal(mockDb.tables.reward_logs.length, 0);
+    assert.equal(body.error, "Nieprawidłowe dane żądania");
   });
 
-  // --------------------------------------------------------------------------
-  // TEST 4: Brak wielokrotnego claimu (already claimed)
-  // --------------------------------------------------------------------------
-  test("4. Próba ponownego odebrania już odebranej misji zwraca HTTP 409 CONFLICT", async () => {
+  // 4. Bezpieczne zablokowanie mutacji legacy claim (brak atomowości w JSONB/reward_logs) -> 410
+  test("4. Próba claimu zostaje bezpiecznie zablokowana (HTTP 410 GONE) bez mutacji XP", async () => {
     const mockDb = createMockSupabase(getBaseDb(), aliceUser);
     const req = new NextRequest("http://localhost:3000/api/game/missions", {
       method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: "m_already_claimed", category: "DAILY" })
+      body: JSON.stringify({ userId: "user-alice", missionId: `daily_spin_${todayStr}`, category: "DAILY" })
     });
     (req as any).supabaseClient = mockDb;
 
     const res = await POST(req);
     const body = await res.json();
 
-    assert.equal(res.status, 409);
+    assert.equal(res.status, 410);
     assert.equal(body.success, false);
-    assert.equal(body.error, "Nagroda została już odebrana");
+    assert.equal(body.code, "LEGACY_CLAIM_DISABLED");
+    assert.ok(body.error.includes("wyłączone ze względów bezpieczeństwa"));
+
+    // Bezwzględny brak mutacji w bazie
+    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100, "XP nie może wzrosnąć");
+    assert.equal(mockDb.tables.user_game_profile[0].season_xp, 100, "Season XP nie może wzrosnąć");
+    assert.equal(mockDb.tables.reward_logs.length, 0, "Brak nowych wpisów w reward_logs");
+  });
+
+  // 5. Równoczesny claim: całkowita odporność na race conditions
+  test("5. Równoczesne żądania nie mogą spowodować naliczenia XP ani wyścigu", async () => {
+    const mockDb = createMockSupabase(getBaseDb(), aliceUser);
+
+    const makeReq = () => {
+      const r = new NextRequest("http://localhost:3000/api/game/missions", {
+        method: "POST",
+        body: JSON.stringify({ userId: "user-alice", missionId: `daily_spin_${todayStr}`, category: "DAILY" })
+      });
+      (r as any).supabaseClient = mockDb;
+      return POST(r);
+    };
+
+    // Dwa równoległe żądania
+    const [res1, res2] = await Promise.all([makeReq(), makeReq()]);
+    assert.equal(res1.status, 410);
+    assert.equal(res2.status, 410);
+
+    // XP nadal niezmienione
     assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100);
     assert.equal(mockDb.tables.reward_logs.length, 0);
   });
 
-  // --------------------------------------------------------------------------
-  // TEST 5: Równoczesny claim / ochrona idempotencji przez reward_logs
-  // --------------------------------------------------------------------------
-  test("5. Równoczesny claim: obecność wpisu w reward_logs blokuje duplikat z HTTP 409", async () => {
-    const dbWithLog = getBaseDb();
-    (dbWithLog.reward_logs as any[]).push({
-      id: "log-existing-1",
-      user_id: "user-alice",
-      reward_type: "XP",
-      source_type: "MISSION",
-      source_id: "m_battle_1"
-    });
-
-    const mockDb = createMockSupabase(dbWithLog, aliceUser);
-    const req = new NextRequest("http://localhost:3000/api/game/missions", {
-      method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: "m_battle_1", category: "DAILY" })
-    });
+  // 6. Odczyt GET dla zalogowanego użytkownika działa prawidłowo
+  test("6. GET /api/game/missions dla zalogowanego użytkownika zwraca misje bez mutacji", async () => {
+    const mockDb = createMockSupabase(getBaseDb(), aliceUser);
+    const req = new NextRequest("http://localhost:3000/api/game/missions?userId=user-alice");
     (req as any).supabaseClient = mockDb;
 
-    const res = await POST(req);
-    const body = await res.json();
-
-    assert.equal(res.status, 409);
-    assert.equal(body.success, false);
-    assert.equal(body.error, "Nagroda została już odebrana");
-    // Brak powtórnego naliczenia XP
-    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100);
-    assert.equal(mockDb.tables.reward_logs.length, 1);
-  });
-
-  // --------------------------------------------------------------------------
-  // TEST 6: Brak niezamierzonych zmian w XP
-  // --------------------------------------------------------------------------
-  test("6. Brak niezamierzonych zmian w XP przy nieprawidłowych żądaniach", async () => {
-    const mockDb = createMockSupabase(getBaseDb(), aliceUser);
-    
-    // Nieistniejąca misja
-    const reqNotFound = new NextRequest("http://localhost:3000/api/game/missions", {
-      method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: "non_existent_mission_id", category: "DAILY" })
-    });
-    (reqNotFound as any).supabaseClient = mockDb;
-
-    const res = await POST(reqNotFound);
-    assert.equal(res.status, 404);
-
-    // XP nie uległo zmianie
-    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 100);
-    assert.equal(mockDb.tables.user_game_profile[0].season_xp, 100);
-    assert.equal(mockDb.tables.reward_logs.length, 0);
-  });
-
-  // --------------------------------------------------------------------------
-  // TEST 7: Zgodność z istniejącymi uprawnionymi konsumentami API
-  // --------------------------------------------------------------------------
-  test("7. Uprawniony konsument z ukończoną misją pomyślnie odbiera nagrodę", async () => {
-    const mockDb = createMockSupabase(getBaseDb(), aliceUser);
-    
-    // 7A: Legalny claim ukończonej misji bitewnej (m_battle_1)
-    const req = new NextRequest("http://localhost:3000/api/game/missions", {
-      method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: "m_battle_1", category: "DAILY" })
-    });
-    (req as any).supabaseClient = mockDb;
-
-    const res = await POST(req);
+    const res = await GET(req);
     const body = await res.json();
 
     assert.equal(res.status, 200);
     assert.equal(body.success, true);
-    assert.equal(body.xpAwarded, 50);
+    assert.ok(Array.isArray(body.dailyMissions));
+    assert.ok(Array.isArray(body.weeklyMissions));
+  });
 
-    // XP zostało prawidłowo powiększone z 100 do 150
-    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 150);
-    assert.equal(mockDb.tables.user_game_profile[0].season_xp, 150);
-
-    // Misja oznaczona jako claimed
-    const battleMission = mockDb.tables.user_daily_missions[0].missions.find((m: any) => m.id === "m_battle_1");
-    assert.equal(battleMission.claimed, true);
-
-    // Wpis reward_log został utworzony
-    assert.equal(mockDb.tables.reward_logs.length, 1);
-    assert.equal(mockDb.tables.reward_logs[0].source_id, "m_battle_1");
-
-    // 7B: Legalny claim dziennego spinu (daily_spin_${todayStr}) weryfikowany z tabeli user_daily_spins
-    const reqSpin = new NextRequest("http://localhost:3000/api/game/missions", {
-      method: "POST",
-      body: JSON.stringify({ userId: "user-alice", missionId: `daily_spin_${todayStr}`, category: "DAILY" })
-    });
-    (reqSpin as any).supabaseClient = mockDb;
-
-    const resSpin = await POST(reqSpin);
-    const bodySpin = await resSpin.json();
-
-    assert.equal(resSpin.status, 200);
-    assert.equal(bodySpin.success, true);
-    assert.equal(bodySpin.xpAwarded, 35);
-    assert.equal(mockDb.tables.user_game_profile[0].current_xp, 185);
-
-    // 7C: GET dla zalogowanego użytkownika zwraca misje
-    const reqGetAuth = new NextRequest("http://localhost:3000/api/game/missions?userId=user-alice");
-    (reqGetAuth as any).supabaseClient = mockDb;
-    const resGetAuth = await GET(reqGetAuth);
-    const bodyGetAuth = await resGetAuth.json();
-    assert.equal(resGetAuth.status, 200);
-    assert.equal(bodyGetAuth.success, true);
-    assert.ok(bodyGetAuth.dailyMissions.length > 0);
-
-    // 7D: GET dla gościa (guest_user) zwraca strukturę in-memory bez zanieczyszczania bazy
+  // 7. Odczyt GET dla gościa (guest_user) nie zanieczyszcza bazy danych
+  test("7. GET /api/game/missions dla gościa zwraca in-memory strukturę bez zapisu do bazy", async () => {
     const unauthDb = createMockSupabase({ user_daily_missions: [], user_weekly_missions: [] }, null);
-    const reqGetGuest = new NextRequest("http://localhost:3000/api/game/missions?userId=guest_user");
-    (reqGetGuest as any).supabaseClient = unauthDb;
-    const resGetGuest = await GET(reqGetGuest);
-    const bodyGetGuest = await resGetGuest.json();
-    assert.equal(resGetGuest.status, 200);
-    assert.equal(bodyGetGuest.success, true);
-    assert.equal(unauthDb.tables.user_daily_missions.length, 0, "Baza nie powinna być zanieczyszczana żądaniami gości");
+    const req = new NextRequest("http://localhost:3000/api/game/missions?userId=guest_user");
+    (req as any).supabaseClient = unauthDb;
+
+    const res = await GET(req);
+    const body = await res.json();
+
+    assert.equal(res.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(unauthDb.tables.user_daily_missions.length, 0);
+    assert.equal(unauthDb.tables.user_weekly_missions.length, 0);
   });
 });

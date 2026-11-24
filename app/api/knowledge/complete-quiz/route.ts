@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { QUIZ_PASS_THRESHOLD_PERCENT, getQuizRewardForLesson, QUIZ_LESSON_REWARDS } from "@/lib/economy/security";
 
-export { QUIZ_PASS_THRESHOLD_PERCENT, getQuizRewardForLesson, QUIZ_LESSON_REWARDS };
-
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
