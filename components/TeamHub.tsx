@@ -241,12 +241,19 @@ export default function TeamHub(props:{
   const fetchGameProfile = async () => {
     try {
       const res = await fetch(`/api/game/profile?userId=${props.profile.id || "guest_user"}`);
+      if (!res.ok) {
+        setGameProfile(null);
+        return;
+      }
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.status !== "unavailable" && data.profile) {
         setGameProfile(data.profile);
+      } else {
+        setGameProfile(null);
       }
     } catch (e) {
       console.error("Game profile load error", e);
+      setGameProfile(null);
     }
   };
 

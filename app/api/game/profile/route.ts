@@ -1,26 +1,65 @@
 // app/api/game/profile/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { calculateLevelFromXP } from '@/lib/game/economy';
-import { CURRENT_SEASON } from '@/lib/game/seasons';
+// SECURED LEGACY ENDPOINT (DELTA-037)
+// POST is permanently disabled (405 Method Not Allowed) to prevent unauthorized XP manipulation.
+// GET strictly requires an authenticated Supabase session and enforces owner-scoped access.
 
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { calculateLevelFromXP } from "@/lib/game/economy";
+import { CURRENT_SEASON } from "@/lib/game/seasons";
 
-export async function GET(req: NextRequest) {
+export const dynamic = "force-dynamic";
+
+const ALLOW_HEADER_VALUE = "GET, HEAD, OPTIONS";
+
+async function handleGetProfile(
+  _req: NextRequest,
+  supabaseOverride?: any
+) {
   try {
-    const supabase = await createClient();
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId') || 'guest_user';
+    const supabase = supabaseOverride || (await createClient());
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
 
-    // 1. Fetch user game profile
-    const { data: profile, error } = await supabase
-      .from('user_game_profile')
-      .select('*')
-      .eq('user_id', userId)
+    // 1. Enforce authenticated session
+    if (!user || authError) {
+      return NextResponse.json(
+        { success: false, error: "Wymagana autoryzacja sesji (Unauthorized)" },
+        { status: 401 }
+      );
+    }
+
+    // 2. Identity isolation: Never trust searchParams.get('userId').
+    // Only fetch data for the authenticated session owner.
+    const userId = user.id;
+
+    // 3. Fetch user game profile via owner-scoped authenticated client (never service_role)
+    let isTableAvailable = true;
+    const { data: profile, error: profileErr } = await supabase
+      .from("user_game_profile")
+      .select("*")
+      .eq("user_id", userId)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching game profile:', error);
+    if (profileErr) {
+      // PGRST205 / 42P01: Table does not exist in schema cache
+      if (profileErr.code === "PGRST205" || profileErr.code === "42P01") {
+        isTableAvailable = false;
+      } else if (profileErr.code !== "PGRST116") {
+        console.warn("Game profile read warning (non-fatal):", profileErr.message);
+      }
+    }
+
+    // If table is not available in schema, return controlled unavailable state with null profile
+    // to ensure no substitute/synthetic XP is ever presented as real points.
+    if (!isTableAvailable) {
+      return NextResponse.json({
+        success: true,
+        status: "unavailable",
+        profile: null
+      });
     }
 
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -28,16 +67,17 @@ export async function GET(req: NextRequest) {
     let seasonXP = profile?.season_xp || 0;
     let streak = profile?.activity_streak || 1;
     let maxStreak = profile?.max_streak || 1;
-    let lastActivity = profile?.last_activity_date || todayStr;
     let wheelStreakDay = profile?.wheel_streak_day || 1;
     let lastWheelSpin = profile?.last_wheel_spin_date || null;
 
-    // Check daily activity streak update
+    // Check daily activity streak update if profile row exists
     if (profile && profile.last_activity_date) {
       const lastDate = new Date(profile.last_activity_date);
       const todayDate = new Date(todayStr);
-      const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-      
+      const diffDays = Math.floor(
+        (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
       if (diffDays === 1) {
         streak += 1;
         if (streak > maxStreak) maxStreak = streak;
@@ -49,15 +89,24 @@ export async function GET(req: NextRequest) {
 
     const levelInfo = calculateLevelFromXP(currentXP);
 
-    // Fetch unread notifications count
-    const { count: unreadNotifs } = await supabase
-      .from('user_notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('is_read', false);
+    // Safely query unread notifications count if table exists
+    let unreadNotifs = 0;
+    try {
+      const { count, error: notifErr } = await supabase
+        .from("user_notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_read", false);
+      if (!notifErr && typeof count === "number") {
+        unreadNotifs = count;
+      }
+    } catch {
+      // Table may not exist; gracefully fallback to 0
+    }
 
     return NextResponse.json({
       success: true,
+      status: "available",
       profile: {
         userId,
         currentXP,
@@ -68,76 +117,85 @@ export async function GET(req: NextRequest) {
         wheelStreakDay,
         lastWheelSpinDate: lastWheelSpin,
         canSpinWheelToday: lastWheelSpin !== todayStr,
-        unreadNotifications: unreadNotifs || 0,
+        unreadNotifications: unreadNotifs,
         currentSeason: CURRENT_SEASON
       }
     });
   } catch (err: any) {
-    console.error('Game profile error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    // Return controlled error without leaking database or internal details
+    return NextResponse.json(
+      { success: false, error: "Błąd serwera podczas odczytu profilu gry" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const supabase = await createClient();
-    const body = await req.json();
-    const { userId, addXP, reason, sourceType } = body;
+export async function GET(req: NextRequest) {
+  return handleGetProfile(req, (req as any).supabaseOverride);
+}
 
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'Brak userId' }, { status: 400 });
+// SECURITY HARDENING: POST is permanently disabled.
+// XP cannot be granted or manipulated via client POST requests.
+export async function POST() {
+  return new NextResponse(
+    JSON.stringify({
+      success: false,
+      error: "Metoda POST została wyłączona ze względów bezpieczeństwa (Method Not Allowed). Naliczanie punktów XP odbywa się wyłącznie na serwerze."
+    }),
+    {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        Allow: ALLOW_HEADER_VALUE
+      }
     }
+  );
+}
 
-    const xpToAdd = Number(addXP) || 0;
-    const todayStr = new Date().toISOString().slice(0, 10);
-
-    // Fetch existing
-    const { data: existing } = await supabase
-      .from('user_game_profile')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const newCurrentXP = (existing?.current_xp || 0) + xpToAdd;
-    const newSeasonXP = (existing?.season_xp || 0) + xpToAdd;
-    const levelInfo = calculateLevelFromXP(newCurrentXP);
-
-    const upsertData = {
-      user_id: userId,
-      current_level: levelInfo.level,
-      current_xp: newCurrentXP,
-      season_xp: newSeasonXP,
-      activity_streak: existing?.activity_streak || 1,
-      max_streak: Math.max(existing?.max_streak || 1, existing?.activity_streak || 1),
-      last_activity_date: todayStr,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error: upsertErr } = await supabase
-      .from('user_game_profile')
-      .upsert(upsertData, { onConflict: 'user_id' });
-
-    if (upsertErr) {
-      console.error('Error updating game profile:', upsertErr);
+export async function PUT() {
+  return new NextResponse(
+    JSON.stringify({ success: false, error: "Method Not Allowed" }),
+    {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        Allow: ALLOW_HEADER_VALUE
+      }
     }
+  );
+}
 
-    // Log reward if XP was added
-    if (xpToAdd > 0) {
-      await supabase.from('reward_logs').insert({
-        user_id: userId,
-        reward_type: 'XP',
-        reward_value: { xp: xpToAdd, reason: reason || 'Aktywność w grze' },
-        source_type: sourceType || 'SYSTEM'
-      });
+export async function DELETE() {
+  return new NextResponse(
+    JSON.stringify({ success: false, error: "Method Not Allowed" }),
+    {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        Allow: ALLOW_HEADER_VALUE
+      }
     }
+  );
+}
 
-    return NextResponse.json({
-      success: true,
-      newXP: newCurrentXP,
-      levelInfo
-    });
-  } catch (err: any) {
-    console.error('Update profile error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
+export async function PATCH() {
+  return new NextResponse(
+    JSON.stringify({ success: false, error: "Method Not Allowed" }),
+    {
+      status: 405,
+      headers: {
+        "Content-Type": "application/json",
+        Allow: ALLOW_HEADER_VALUE
+      }
+    }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: ALLOW_HEADER_VALUE
+    }
+  });
 }
