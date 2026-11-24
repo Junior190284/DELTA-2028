@@ -70,6 +70,7 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
     maxStreak: 14,
     unopenedPacks: 3
   },
+  isAuthoritativeCatalog: true,
   allCards: [
     { id: "c-1", name: "Karta Kolekcjonerska Alfa (Inferno)", rarity: "inferno" },
     { id: "c-2", name: "Karta Kolekcjonerska Alfa (Złota)", rarity: "legendary" },
@@ -230,7 +231,52 @@ const restrictedFixture: DashboardUI4AdapterInput = {
   }
 };
 
-type ScenarioKey = "elite" | "parent" | "empty" | "restricted";
+const stagingP2Fixture: DashboardUI4AdapterInput = {
+  profile: {
+    id: "demo-parent-staging",
+    role: "parent",
+    display_name: "Opiekun Staging (DELTA-033)"
+  },
+  teamName: "K.S. Delta Warszawa U-9",
+  access: fullAccess,
+  parentPlayerIds: ["demo-player-alpha"],
+  players: [
+    { id: "demo-player-alpha", display_name: "Zawodnik U-9", shirt_number: 10, position: "POM", active: true }
+  ],
+  nextMatch: {
+    id: "demo-match-1",
+    title: "K.S. Delta Warszawa vs Rywal Ligowy",
+    starts_at: "2026-11-28T10:30:00.000Z",
+    location: "Centrum Treningowe DELTA (Boisko Główne)",
+    opponent: "Rywal Ligowy"
+  },
+  nextMatchCountdown: "ZA 2 DNI 4 GODZ",
+  gameProfile: undefined,
+  achievements: undefined,
+  isAuthoritativeCatalog: false,
+  allCards: Array.from({ length: 15 }, (_, i) => ({
+    id: `c-stage-${i + 1}`,
+    name: `Karta Sezonowa ${i + 1}`,
+    rarity: i < 6 ? "common" : i < 9 ? "rare" : "inferno",
+    card_type: i < 6 ? "base" : i < 9 ? "matchday" : "inferno"
+  })),
+  userCards: Array.from({ length: 10 }, (_, i) => ({
+    id: `uc-stage-${i + 1}`,
+    card_id: `c-stage-${i + 1}`,
+    duplicates_count: i === 0 ? 1 : 0,
+    acquired_at: new Date(Date.now() - (i + 1) * 3600 * 1000 * 6).toISOString(),
+    card_definition: {
+      id: `c-stage-${i + 1}`,
+      name: `Karta Kolekcjonerska #${i + 1}`,
+      rarity: i < 6 ? "common" : i < 9 ? "rare" : "inferno",
+      card_type: i < 6 ? "base" : i < 9 ? "matchday" : "inferno",
+      player: { id: "demo-player-alpha", display_name: "Zawodnik U-9" }
+    }
+  })),
+  unopenedPacksCount: 2
+};
+
+type ScenarioKey = "elite" | "parent" | "empty" | "restricted" | "staging_p2";
 type VariantKey = "elite41" | "sport" | "collector" | "hybrid" | "baseline";
 type ViewKey = "home" | "collection";
 
@@ -254,7 +300,7 @@ function DashboardUI4PreviewContent() {
 
   const initialScenario = useMemo<ScenarioKey>(() => {
     const s = searchParams.get("scenario");
-    if (s === "elite" || s === "parent" || s === "empty" || s === "restricted") {
+    if (s === "elite" || s === "parent" || s === "empty" || s === "restricted" || s === "staging_p2") {
       return s;
     }
     return "elite";
@@ -301,6 +347,8 @@ function DashboardUI4PreviewContent() {
         return emptyFixture;
       case "restricted":
         return restrictedFixture;
+      case "staging_p2":
+        return stagingP2Fixture;
     }
   }, [activeScenario]);
 

@@ -1,4 +1,4 @@
-import type { AchievementInput, ClubCommunication, CommunicationInput, DashboardUI4AdapterInput, DashboardUI4Model, PlayerInput, PlayerSummary, RecentAchievement, RecentCard, Section, UserCardInput } from "./types.ts";
+import type { AchievementInput, ClubCommunication, CommunicationInput, DashboardUI4AdapterInput, DashboardUI4Model, PlayerInput, PlayerSummary, RecentAchievement, RecentCard, Section, SeriesProgress, UserCardInput } from "./types.ts";
 
 const available = <T>(data: T): Section<T> => ({ status: "available", data });
 const empty = <T>(data: T): Section<T> => ({ status: "empty", data });
@@ -91,23 +91,62 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
     recentCards = unavailable("not_loaded"); albumProgress = unavailable("not_loaded");
   } else {
     const cards = [...input.userCards].sort((a,b) => timestamp(b.acquired_at ?? b.created_at) - timestamp(a.acquired_at ?? a.created_at))
-      .map(recentCard).filter((card): card is RecentCard => card !== null).slice(0, 3);
+      .map(recentCard).filter((card): card is RecentCard => card !== null).slice(0, 4);
     recentCards = cards.length ? available(cards) : empty([]);
     const unopenedPacks = input.unopenedPacksCount !== undefined
       ? finite(input.unopenedPacksCount)
       : finite(input.gameProfile?.unopenedPacks);
-    if (input.allCards === undefined) albumProgress = unavailable("not_loaded");
-    else if (!input.allCards.length) albumProgress = empty({ owned: 0, total: 0, percent: 0, duplicates: 0, unopenedPacks });
-    else {
-      const definitions = new Set(input.allCards.map(card => card.id));
-      const ownedIds = new Set<string>(); let copies = 0;
-      for (const card of input.userCards) {
-        const id = cardDefinitionId(card); if (!id || !definitions.has(id)) continue;
-        ownedIds.add(id); copies += Math.max(1, cardCopies(card));
+
+    const validDefinitions = input.allCards !== undefined ? new Set(input.allCards.map(c => c.id)) : null;
+    const ownedIds = new Set<string>();
+    let copies = 0;
+    let baseCount = 0;
+    let matchdayCount = 0;
+    let infernoCount = 0;
+
+    for (const card of input.userCards) {
+      const id = cardDefinitionId(card);
+      if (!id || (validDefinitions && !validDefinitions.has(id))) continue;
+      const isNew = !ownedIds.has(id);
+      ownedIds.add(id);
+      copies += Math.max(1, cardCopies(card));
+
+      if (isNew) {
+        const def = cardDefinition(card);
+        const cardType = (def?.card_type || "").toLowerCase();
+        const rarity = (def?.rarity || "").toLowerCase();
+
+        if (cardType.includes("inferno") || rarity === "inferno" || rarity === "legendary") {
+          infernoCount++;
+        } else if (cardType.includes("matchday") || rarity === "rare" || rarity === "epic" || rarity === "matchday") {
+          matchdayCount++;
+        } else {
+          baseCount++;
+        }
       }
-      const owned = ownedIds.size; const total = definitions.size;
-      albumProgress = available({ owned, total, percent: Math.round(owned / total * 100),
-        duplicates: Math.max(0, copies - owned), unopenedPacks });
+    }
+
+    const owned = ownedIds.size;
+    const duplicates = Math.max(0, copies - owned);
+    const series: SeriesProgress[] = [
+      { id: "base", name: "Karty Podstawowe (Base)", category: "base", owned: baseCount, total: null, percent: null },
+      { id: "matchday", name: "Karty Meczowe (Matchday)", category: "matchday", owned: matchdayCount, total: null, percent: null },
+      { id: "inferno", name: "Karty Specjalne (Inferno)", category: "inferno", owned: infernoCount, total: null, percent: null }
+    ];
+
+    if (input.allCards === undefined && input.userCards === undefined) {
+      albumProgress = unavailable("not_loaded");
+    } else if (input.allCards !== undefined && !input.allCards.length && !input.userCards.length) {
+      albumProgress = empty({ owned: 0, total: 0, percent: 0, duplicates: 0, unopenedPacks, series });
+    } else if (input.isAuthoritativeCatalog === true && input.allCards && input.allCards.length > 0) {
+      const definitions = new Set(input.allCards.map(card => card.id));
+      const total = definitions.size;
+      const percent = total > 0 ? Math.round(owned / total * 100) : 0;
+      albumProgress = available({ owned, total, percent, duplicates, unopenedPacks, series });
+    } else {
+      // Real-data mode: Catalog from RLS is non-authoritative.
+      // Total cards and percent are unavailable (null) per DELTA-033 requirements.
+      albumProgress = available({ owned, total: null, percent: null, duplicates, unopenedPacks, series });
     }
   }
 

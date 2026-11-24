@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeSafeRedirectPath } from "@/lib/auth/profile-bootstrap";
 
 export default function LoginPage() {
   const supabase = createClient();
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [msg,setMsg]=useState("");
   const [hasStuckSession,setHasStuckSession]=useState(false);
   const [isLocalhost, setIsLocalhost] = useState(false);
+  const [nextTarget, setNextTarget] = useState("/dashboard");
 
   useEffect(() => {
     setIsLocalhost(
@@ -20,6 +22,9 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
     const message = params.get("message");
+    const safeNext = sanitizeSafeRedirectPath(params.get("next"), "/dashboard");
+    setNextTarget(safeNext);
+
     if (error) {
       if (error === "profile_missing") {
         setMsg(
@@ -39,7 +44,7 @@ export default function LoginPage() {
 
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        window.location.replace("/dashboard");
+        window.location.replace(safeNext);
       }
     });
   }, []);
@@ -49,7 +54,7 @@ export default function LoginPage() {
     setHasStuckSession(false);
     setMsg("Wylogowano bieżącą sesję. Możesz zalogować się ponownie.");
     if (window.location.search) {
-      window.history.replaceState({}, "", "/login");
+      window.history.replaceState({}, "", nextTarget !== "/dashboard" ? `/login?next=${encodeURIComponent(nextTarget)}` : "/login");
     }
   }
 
@@ -57,7 +62,7 @@ export default function LoginPage() {
     setMsg("Logowanie…");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return setMsg(error.message);
-    location.href="/dashboard";
+    location.href = nextTarget;
   }
 
   async function signInWithGoogle() {
@@ -67,7 +72,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback?next=/dashboard`
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextTarget)}`
       }
     });
 
@@ -129,7 +134,7 @@ export default function LoginPage() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ role: "admin" })
                   });
-                  window.location.href = "/dashboard";
+                  window.location.href = nextTarget;
                 }}
                 style={{ minHeight: 44, padding: "10px 14px", borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "#000", fontWeight: 900, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
@@ -144,7 +149,7 @@ export default function LoginPage() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ role: "parent" })
                   });
-                  window.location.href = "/dashboard";
+                  window.location.href = nextTarget;
                 }}
                 style={{ minHeight: 44, padding: "10px 14px", borderRadius: 8, background: "#1e293b", border: "1px solid #334155", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               >

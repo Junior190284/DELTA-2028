@@ -7,24 +7,24 @@ import {
 } from "@/lib/auth/profile-bootstrap";
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-  const errorParam = requestUrl.searchParams.get("error");
-  const errorDesc = requestUrl.searchParams.get("error_description");
-  const safeNext = sanitizeSafeRedirectPath(requestUrl.searchParams.get("next"), "/dashboard");
+  const origin = request.nextUrl.origin;
+  const code = request.nextUrl.searchParams.get("code");
+  const errorParam = request.nextUrl.searchParams.get("error");
+  const errorDesc = request.nextUrl.searchParams.get("error_description");
+  const safeNext = sanitizeSafeRedirectPath(request.nextUrl.searchParams.get("next"), "/dashboard");
 
   if (errorParam) {
     console.error("OAuth provider error:", errorParam, errorDesc);
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(errorParam)}&message=${encodeURIComponent(errorDesc || errorParam)}`, requestUrl.origin)
+      new URL(`/login?error=${encodeURIComponent(errorParam)}&message=${encodeURIComponent(errorDesc || errorParam)}`, origin)
     );
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=no_code", requestUrl.origin));
+    return NextResponse.redirect(new URL("/login?error=no_code", origin));
   }
 
-  let response = NextResponse.redirect(new URL(safeNext, requestUrl.origin));
+  let response = NextResponse.redirect(new URL(safeNext, origin));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error("OAuth callback error:", error.message);
     return NextResponse.redirect(
-      new URL(`/login?error=oauth_callback&message=${encodeURIComponent(error.message)}`, requestUrl.origin)
+      new URL(`/login?error=oauth_callback&message=${encodeURIComponent(error.message)}`, origin)
     );
   }
 

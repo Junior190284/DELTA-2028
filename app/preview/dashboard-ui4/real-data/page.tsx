@@ -81,16 +81,15 @@ export default async function RealDataIntegrationPreviewPage({
           <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4 text-xs text-slate-300 space-y-2 mb-6">
             <div className="flex items-start gap-2 text-amber-300 font-semibold">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Brak aktywnej sesji użytkownika</span>
+              <span>Brak aktywnej sesji Supabase Staging</span>
             </div>
             <p className="text-slate-400 leading-relaxed">
-              Moduł read-only weryfikuje sesję przez <code className="text-slate-200">getCurrentProfile()</code>.
-              Aby przetestować integrację z rzeczywistą bazą danych:
+              Moduł read-only wymaga tożsamości potwierdzonej przez <code className="text-slate-200">supabase.auth.getUser()</code>.
+              Zgodnie z zasadami bezpieczeństwa DELTA-031, ciasteczko deweloperskie (<code className="text-amber-400">delta_dev_user</code>) nie ma dostępu do danych rzeczywistych i działa wyłącznie w odizolowanym DEMO.
             </p>
-            <ul className="list-disc list-inside text-slate-400 space-y-1 pl-1">
-              <li>Zaloguj się na konto rodzica lub zawodnika w aplikacji</li>
-              <li>Lub w trybie lokalnym ustaw cookie deweloperskie (<code className="text-amber-400">delta_dev_user=parent</code>)</li>
-            </ul>
+            <p className="text-slate-400 leading-relaxed">
+              Zaloguj się na prawdziwe konto rodzica w Supabase Staging (e-mail/hasło lub Google OAuth), aby zweryfikować odczyt własnej kolekcji i terminarza.
+            </p>
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-2">
@@ -102,10 +101,10 @@ export default async function RealDataIntegrationPreviewPage({
               <span>Wróć do dema Preview</span>
             </Link>
             <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 text-white font-bold text-xs hover:bg-sky-400 transition"
+              href="/login?next=/preview/dashboard-ui4/real-data"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition shadow-lg shadow-amber-500/10"
             >
-              <span>Zaloguj się</span>
+              <span>Zaloguj się przez Supabase</span>
             </Link>
           </div>
         </div>

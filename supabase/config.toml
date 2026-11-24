@@ -4,6 +4,8 @@ project_id = "tdlsxamxtygojxhmjjvp"
 additional_redirect_urls = [
   "http://localhost:3000/**",
   "http://127.0.0.1:3000/**",
+  "http://localhost:3005/**",
+  "http://127.0.0.1:3005/**",
   "http://localhost:3006/**",
   "http://127.0.0.1:3006/**",
   "https://delta-2028-5lqwuu96i-tomaszrybacki-3187s-projects.vercel.app/**",

@@ -547,13 +547,13 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                         <div className="flex-1 min-w-0 space-y-0.5">
                           <div className="text-xs font-black text-white">Album Klubowy</div>
                           <div className="text-xs font-extrabold text-amber-400 e41-num">
-                            {albumData ? `${albumData.percent}% UKOŃCZENIA` : "—"}
+                            {albumData?.percent != null ? `${albumData.percent}% UKOŃCZENIA` : "Postęp albumu: Niedostępny"}
                           </div>
                           <div className="text-[11px] text-slate-300">
-                            Zdobyte: <strong className="text-white">{albumData ? `${albumData.owned} z ${albumData.total}` : "—"}</strong> kart
+                            Zdobyte: <strong className="text-white">{albumData ? albumData.owned : "—"}</strong> {albumData?.total != null ? `z ${albumData.total} kart` : "unikalnych kart"}
                           </div>
                           <div className="text-[10px] text-slate-400">
-                            Paczki: <strong className="text-amber-400 font-bold">{albumData?.unopenedPacks ?? 0} do otwarcia</strong>
+                            Duplikaty: <strong className="text-slate-200 font-bold">{albumData?.duplicates ?? 0}</strong> · Paczki: <strong className="text-amber-400 font-bold">{albumData?.unopenedPacks ?? 0} do otwarcia</strong>
                           </div>
                         </div>
                       </div>

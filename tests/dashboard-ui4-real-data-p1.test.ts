@@ -13,6 +13,9 @@ import {
  * Zero database writes, zero external network calls.
  */
 function createMockSupabase(dataset: {
+  authUser?: any | null;
+  authError?: any | null;
+  profiles?: any[];
   parentPlayers?: Array<{ parent_id: string; player_id: string }>;
   players?: Array<{ id: string; display_name: string; shirt_number?: number | null; position?: string | null; active?: boolean }>;
   matches?: any[];
@@ -25,6 +28,17 @@ function createMockSupabase(dataset: {
   errorOn?: string;
 }) {
   return {
+    auth: {
+      getUser: () => {
+        if (dataset.authError) {
+          return Promise.resolve({ data: { user: null }, error: dataset.authError });
+        }
+        if (dataset.authUser) {
+          return Promise.resolve({ data: { user: dataset.authUser }, error: null });
+        }
+        return Promise.resolve({ data: { user: null }, error: new Error("No active session") });
+      }
+    },
     from: (table: string) => {
       if (dataset.errorOn === table) {
         return {
@@ -148,6 +162,26 @@ function createMockSupabase(dataset: {
               order: (_orderCol: string, _orderOpts?: any) => {
                 const rows = (dataset.userCards || []).filter(c => !c.user_id || c.user_id === val);
                 return Promise.resolve({ data: rows, error: null });
+              }
+            })
+          })
+        };
+      }
+
+      if (table === "profiles") {
+        return {
+          select: () => ({
+            eq: (_col: string, val: string) => ({
+              maybeSingle: () => {
+                const p = (dataset.profiles || []).find((x: any) => x.id === val);
+                if (p) return Promise.resolve({ data: p, error: null });
+                if (dataset.authUser && dataset.authUser.id === val) {
+                  return Promise.resolve({
+                    data: { id: val, role: "parent", display_name: "Opiekun Testowy" },
+                    error: null
+                  });
+                }
+                return Promise.resolve({ data: null, error: null });
               }
             })
           })
@@ -423,17 +457,16 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
       }
     });
 
-    // Album calculations:
-    // Total definitions: 4
+    // DELTA-033 Album calculations:
     // Unique owned: 2 (def-1, def-3)
-    // Percent: Math.round(2 / 4 * 100) = 50%
+    // Non-authoritative catalog from RLS: total is null, percent is null (never fake 50% or 67%)
     // Total copies: (1+2) + (1+0) = 4
     // Duplicates: 4 - 2 = 2
     // Unopened packs: 2 (only is_opened === false)
     assert.equal(result.model.albumProgress.status, "available");
     assert.equal(result.model.albumProgress.data?.owned, 2);
-    assert.equal(result.model.albumProgress.data?.total, 4);
-    assert.equal(result.model.albumProgress.data?.percent, 50);
+    assert.equal(result.model.albumProgress.data?.total, null);
+    assert.equal(result.model.albumProgress.data?.percent, null);
     assert.equal(result.model.albumProgress.data?.duplicates, 2);
     assert.equal(result.model.albumProgress.data?.unopenedPacks, 2);
 
@@ -473,8 +506,8 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
     assert.deepEqual(result.model.recentCards.data, []);
     assert.equal(result.model.albumProgress.status, "available");
     assert.equal(result.model.albumProgress.data?.owned, 0);
-    assert.equal(result.model.albumProgress.data?.total, 2);
-    assert.equal(result.model.albumProgress.data?.percent, 0);
+    assert.equal(result.model.albumProgress.data?.total, null);
+    assert.equal(result.model.albumProgress.data?.percent, null);
     assert.equal(result.model.albumProgress.data?.duplicates, 0);
     assert.equal(result.model.albumProgress.data?.unopenedPacks, 1);
   });
@@ -633,7 +666,7 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
     assert.equal(result.model.albumProgress.data?.unopenedPacks, 0);
   });
 
-  await t.test("2.10. Recent cards gallery sorts latest drops first and limits to 3", async () => {
+  await t.test("2.10. Recent cards gallery sorts latest drops first and limits to 4 for gallery grid", async () => {
     const mockClient = createMockSupabase({
       parentPlayers: [{ parent_id: "p-order", player_id: "c-1" }],
       players: [{ id: "c-1", display_name: "Zawodnik Alfa", active: true }],
@@ -644,6 +677,7 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
         { id: "d4", card_name: "Karta 4", card_number: 4, is_active: true }
       ],
       userCards: [
+        { id: "c-oldest", user_id: "p-order", card_id: "d1", acquired_at: "2026-10-01T10:00:00Z", card_definition: { id: "d1", card_name: "Karta 1" } },
         { id: "c-old", user_id: "p-order", card_id: "d1", acquired_at: "2026-11-01T10:00:00Z", card_definition: { id: "d1", card_name: "Karta 1" } },
         { id: "c-newest", user_id: "p-order", card_id: "d4", acquired_at: "2026-11-23T10:00:00Z", card_definition: { id: "d4", card_name: "Karta 4" } },
         { id: "c-mid", user_id: "p-order", card_id: "d2", acquired_at: "2026-11-15T10:00:00Z", card_definition: { id: "d2", card_name: "Karta 2" } },
@@ -660,10 +694,11 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
       }
     });
 
-    assert.equal(result.model.recentCards.data?.length, 3);
+    assert.equal(result.model.recentCards.data?.length, 4);
     assert.equal(result.model.recentCards.data?.[0].userCardId, "c-newest");
     assert.equal(result.model.recentCards.data?.[1].userCardId, "c-second-newest");
     assert.equal(result.model.recentCards.data?.[2].userCardId, "c-mid");
+    assert.equal(result.model.recentCards.data?.[3].userCardId, "c-old");
   });
 
   await t.test("2.11. Data purity: progress and achievements remain unavailable(not_loaded) in real-data mode", async () => {
@@ -744,20 +779,13 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
     assert.equal(resChild2.model.profile.player.data?.shirtNumber, 9);
 
     // Collection metrics remain identical and shared across the family account:
-    assert.deepEqual(resChild1.model.albumProgress.data, {
-      owned: 2,
-      total: 3,
-      percent: 67,
-      duplicates: 1,
-      unopenedPacks: 2
-    });
-    assert.deepEqual(resChild2.model.albumProgress.data, {
-      owned: 2,
-      total: 3,
-      percent: 67,
-      duplicates: 1,
-      unopenedPacks: 2
-    });
+    // DELTA-033: Total and percent are null for non-authoritative RLS catalog
+    assert.deepEqual(resChild1.model.albumProgress.data, resChild2.model.albumProgress.data);
+    assert.equal(resChild1.model.albumProgress.data?.owned, 2);
+    assert.equal(resChild1.model.albumProgress.data?.total, null);
+    assert.equal(resChild1.model.albumProgress.data?.percent, null);
+    assert.equal(resChild1.model.albumProgress.data?.duplicates, 1);
+    assert.equal(resChild1.model.albumProgress.data?.unopenedPacks, 2);
     assert.equal(resChild1.model.recentCards.data?.length, 2);
     assert.equal(resChild2.model.recentCards.data?.length, 2);
   });
@@ -808,6 +836,81 @@ test("DELTA-028 — P1 Schema Alignment & P2 Collection Suite", async (t) => {
     assert.equal(resUserB.model.albumProgress.data?.duplicates, 2);
     assert.equal(resUserB.model.albumProgress.data?.unopenedPacks, 0);
     assert.equal(resUserB.model.recentCards.data?.[0]?.userCardId, "uc-b");
+  });
+
+  await t.test("2.14. DELTA-031 ETAP B: Request without genuine auth session (auth.getUser() returns null) is strictly rejected", async () => {
+    // Client with NO session (returns user: null) and NO profileOverride:
+    const mockClient = createMockSupabase({
+      authUser: null,
+      parentPlayers: [{ parent_id: "fake-parent", player_id: "child-x" }],
+      players: [{ id: "child-x", display_name: "Test" }]
+    });
+
+    const result = await loadRealDashboardUI4Data({
+      now: FIXED_NOW,
+      client: mockClient
+      // Notice: profileOverride is intentionally omitted to test the genuine auth path
+    });
+
+    assert.equal(result.actor.isAuthenticated, false);
+    assert.equal(result.actor.userId, null);
+    assert.equal(result.actor.actorKind, "user");
+    assert.equal(result.model.profile.player.status, "unavailable");
+    assert.equal(result.model.recentCards.status, "unavailable");
+    assert.equal(result.model.recentCards.reason, "not_authorized");
+    assert.equal(result.model.albumProgress.status, "unavailable");
+    assert.equal(result.model.albumProgress.reason, "not_authorized");
+  });
+
+  await t.test("2.15. DELTA-031 ETAP B: Request with verified auth.getUser() successfully loads private records without profileOverride", async () => {
+    // Client with VERIFIED session from auth.getUser() and NO profileOverride:
+    const mockClient = createMockSupabase({
+      authUser: { id: "real-supabase-parent-uid", user_metadata: { full_name: "Opiekun Autentyczny" } },
+      parentPlayers: [{ parent_id: "real-supabase-parent-uid", player_id: "child-verified" }],
+      players: [{ id: "child-verified", display_name: "Zawodnik Autentyczny", shirt_number: 7, active: true }],
+      cardDefinitions: [
+        { id: "def-auth-1", card_name: "Karta Autentyczna", card_number: 1, is_active: true }
+      ],
+      userCards: [
+        { id: "uc-auth-1", user_id: "real-supabase-parent-uid", card_id: "def-auth-1", duplicates_count: 0, card_definition: { id: "def-auth-1", card_name: "Karta Autentyczna" } }
+      ],
+      unopenedPacks: [
+        { id: "pack-auth-1", user_id: "real-supabase-parent-uid", is_opened: false }
+      ]
+    });
+
+    const result = await loadRealDashboardUI4Data({
+      now: FIXED_NOW,
+      client: mockClient
+      // Notice: profileOverride omitted; identity resolved via supabase.auth.getUser()
+    });
+
+    assert.equal(result.actor.isAuthenticated, true);
+    assert.equal(result.actor.userId, "real-supabase-parent-uid");
+    assert.equal(result.actor.actorKind, "parent");
+    assert.equal(result.model.profile.player.status, "available");
+    assert.equal(result.model.profile.player.data?.id, "child-verified");
+    assert.equal(result.model.recentCards.status, "available");
+    assert.equal(result.model.recentCards.data?.length, 1);
+    assert.equal(result.model.albumProgress.status, "available");
+    assert.equal(result.model.albumProgress.data?.unopenedPacks, 1);
+  });
+
+  await t.test("2.16. DELTA-031 ETAP B: Auth error from Supabase auth.getUser() returns unauthenticated fallback safely", async () => {
+    const mockClient = createMockSupabase({
+      authError: new Error("JWT expired or invalid token"),
+      parentPlayers: [{ parent_id: "expired-user", player_id: "child-expired" }]
+    });
+
+    const result = await loadRealDashboardUI4Data({
+      now: FIXED_NOW,
+      client: mockClient
+    });
+
+    assert.equal(result.actor.isAuthenticated, false);
+    assert.equal(result.actor.userId, null);
+    assert.equal(result.model.recentCards.status, "unavailable");
+    assert.equal(result.model.recentCards.reason, "not_authorized");
   });
 
   // =========================================================================

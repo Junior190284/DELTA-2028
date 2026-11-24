@@ -22,7 +22,22 @@ export type RecentCard = {
   userCardId: string; definitionId: string; name: string; rarity: string | null;
   playerName: string | null; acquiredAt: string | null; artworkUrl: string | null;
 };
-export type AlbumProgress = { owned: number; total: number; percent: number; duplicates: number; unopenedPacks: number };
+export type SeriesProgress = {
+  id: string;
+  name: string;
+  category: "base" | "matchday" | "inferno" | "other";
+  owned: number;
+  total: number | null;
+  percent: number | null;
+};
+export type AlbumProgress = {
+  owned: number;
+  total: number | null;
+  percent: number | null;
+  duplicates: number;
+  unopenedPacks: number;
+  series?: SeriesProgress[];
+};
 export type RecentAchievement = { id: string; name: string; description: string | null; icon: string | null; unlockedAt: string | null };
 export type TeamShowcaseSummary = { playerCount: number; featuredPlayers: PlayerSummary[]; entryPoint: "players" };
 export type ClubCommunication = {
@@ -60,7 +75,7 @@ export type GameProfileInput = {
   activityStreak: number; maxStreak: number; unopenedPacks?: number;
 };
 export type CardDefinitionInput = {
-  id: string; name?: string | null; title?: string | null; rarity?: string | null;
+  id: string; name?: string | null; title?: string | null; rarity?: string | null; card_type?: string | null;
   image_url?: string | null; artwork_url?: string | null; player?: PlayerInput | null;
 };
 export type UserCardInput = {
@@ -91,5 +106,6 @@ export interface DashboardUI4AdapterInput {
   nextTraining?: { session: EventInput; start?: string | null; countdown?: string | null } | null;
   gameProfile?: GameProfileInput | null; allCards?: CardDefinitionInput[]; userCards?: UserCardInput[];
   unopenedPacksCount?: number;
+  isAuthoritativeCatalog?: boolean;
   achievements?: AchievementInput[]; news?: CommunicationInput[]; clubUpdates?: CommunicationInput[];
 }

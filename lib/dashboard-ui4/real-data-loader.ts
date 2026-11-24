@@ -35,6 +35,7 @@ export interface RealDataLoaderOptions {
   activeChildId?: string;
   now?: Date;
   client?: any;
+  isAuthoritativeCatalog?: boolean;
   profileOverride?: {
     user: { id: string; email?: string } | null;
     profile: { id: string; role?: string | null; display_name?: string | null } | null;
@@ -376,18 +377,43 @@ export async function loadRealDashboardUI4Data(
 ): Promise<RealDashboardUI4Result> {
   const now = options.now || new Date();
 
-  // 1. Session & Authentication Verification
+  // 1. Client & Session initialization
   let authUser: { id: string; email?: string } | null = null;
   let authProfile: { id: string; role?: string | null; display_name?: string | null } | null = null;
+  let supabase = options.client;
 
+  // 2. Session & Authentication Verification (DELTA-031 ETAP B Strict Real-Data Auth)
   if (options.profileOverride !== undefined) {
     authUser = options.profileOverride?.user ?? null;
     authProfile = options.profileOverride?.profile ?? null;
   } else {
     try {
-      const auth = await getCurrentProfile();
-      authUser = auth.user;
-      authProfile = auth.profile;
+      if (!supabase) {
+        supabase = await createClient();
+      }
+      // ETAP B: In real-data, strictly require identity confirmed by supabase.auth.getUser().
+      // The developer cookie (delta_dev_user) is NEVER allowed to authorize real data or private records.
+      const authResponse = supabase?.auth?.getUser ? await supabase.auth.getUser() : null;
+      const verifiedUser = authResponse?.data?.user ?? null;
+      const authError = authResponse?.error ?? null;
+
+      if (authError || !verifiedUser) {
+        authUser = null;
+        authProfile = null;
+      } else {
+        authUser = verifiedUser;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id,role,display_name")
+          .eq("id", verifiedUser.id)
+          .maybeSingle();
+
+        authProfile = profile ?? {
+          id: verifiedUser.id,
+          role: "parent",
+          display_name: verifiedUser.user_metadata?.full_name || verifiedUser.id.slice(0, 8) || "Użytkownik"
+        };
+      }
     } catch {
       authUser = null;
       authProfile = null;
@@ -420,8 +446,9 @@ export async function loadRealDashboardUI4Data(
   const actorKind: "parent" | "player" | "staff" | "user" =
     userRole === "admin" || userRole === "coach" ? "staff" : "parent";
 
-  // 2. Client initialization
-  const supabase = options.client || (await createClient());
+  if (!supabase) {
+    supabase = await createClient();
+  }
 
   try {
     let linkedChildIds: string[] = [];
@@ -574,6 +601,7 @@ export async function loadRealDashboardUI4Data(
         name: def.card_name || def.title || def.name,
         title: def.title || def.card_name,
         rarity: def.rarity ?? null,
+        card_type: def.card_type ?? null,
         artwork_url: def.artwork_url ?? null,
         image_url: def.artwork_url ?? null,
         player: def.player ? {
@@ -596,6 +624,7 @@ export async function loadRealDashboardUI4Data(
             name: def.card_name || def.title || def.name,
             title: def.title || def.card_name,
             rarity: def.rarity ?? null,
+            card_type: def.card_type ?? null,
             artwork_url: def.artwork_url ?? null,
             image_url: def.artwork_url ?? null,
             player: def.player ? {
@@ -643,6 +672,7 @@ export async function loadRealDashboardUI4Data(
       allCards,
       userCards,
       unopenedPacksCount,
+      isAuthoritativeCatalog: options.isAuthoritativeCatalog ?? false,
       // Data purity: gameProfile (user_game_profile) and achievements remain undefined until future phases
       gameProfile: undefined,
       achievements: undefined

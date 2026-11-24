@@ -397,7 +397,7 @@ export function AlbumProgressPanel({
                 <p className="text-2xl font-black text-white">
                   {a.owned}{" "}
                   <span className="text-sm font-semibold text-slate-400">
-                    / {a.total} ({a.percent}%)
+                    {a.total != null ? `/ ${a.total} (${a.percent}%)` : "kart w kolekcji"}
                   </span>
                 </p>
               </div>
@@ -412,7 +412,7 @@ export function AlbumProgressPanel({
             <div className="d4-progress-track">
               <div
                 className="d4-progress-fill-blue"
-                style={{ width: `${Math.min(100, Math.max(0, a.percent))}%` }}
+                style={{ width: `${a.percent != null ? Math.min(100, Math.max(0, a.percent)) : 0}%` }}
               />
             </div>
 

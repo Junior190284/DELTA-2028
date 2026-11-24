@@ -18,6 +18,8 @@ test("1. Open Redirect Protection — sanitizeSafeRedirectPath", () => {
   assert.equal(sanitizeSafeRedirectPath("/dashboard?tab=matches"), "/dashboard?tab=matches");
   assert.equal(sanitizeSafeRedirectPath("/dashboard#collection"), "/dashboard#collection");
   assert.equal(sanitizeSafeRedirectPath("/settings"), "/settings");
+  assert.equal(sanitizeSafeRedirectPath("/preview/dashboard-ui4/real-data"), "/preview/dashboard-ui4/real-data");
+  assert.equal(sanitizeSafeRedirectPath("/preview/dashboard-ui4/real-data?view=collection"), "/preview/dashboard-ui4/real-data?view=collection");
 
   // Malicious / external / protocol-relative targets must be rejected and fallback to /dashboard
   assert.equal(sanitizeSafeRedirectPath("https://evil.com"), "/dashboard");
@@ -70,7 +72,7 @@ test("4. Auth Callback Error Handling — app/auth/callback/route.ts", () => {
   const callbackCode = fs.readFileSync(path.join(rootDir, "app/auth/callback/route.ts"), "utf8");
 
   assert.ok(
-    callbackCode.includes("requestUrl.searchParams.get(\"error\")"),
+    callbackCode.includes("searchParams.get(\"error\")"),
     "Handles error parameter returned from OAuth provider"
   );
   assert.ok(
@@ -134,4 +136,38 @@ test("6. Supabase Staging URL Configuration — supabase/config.toml", () => {
     configCode.includes("http://localhost:3000/**"),
     "Includes localhost redirect URL"
   );
+  assert.ok(
+    configCode.includes("http://localhost:3005/**"),
+    "Includes localhost port 3005 redirect URL"
+  );
+  assert.ok(
+    configCode.includes("http://127.0.0.1:3005/**"),
+    "Includes loopback port 3005 redirect URL"
+  );
+});
+
+test("7. DELTA-032: Target localhost:3005 Google OAuth Redirect & Next Preservation", () => {
+  const loginCode = fs.readFileSync(path.join(rootDir, "app/login/page.tsx"), "utf8");
+  const callbackCode = fs.readFileSync(path.join(rootDir, "app/auth/callback/route.ts"), "utf8");
+
+  // 1. Login page passes full origin + auth/callback with encoded nextTarget
+  assert.ok(
+    loginCode.includes("redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextTarget)}`"),
+    "Login page dynamically sets redirectTo with caller origin and sanitized nextTarget"
+  );
+
+  // 2. Callback preserves origin and sanitized next
+  assert.ok(
+    callbackCode.includes("const safeNext = sanitizeSafeRedirectPath(request.nextUrl.searchParams.get(\"next\"), \"/dashboard\");"),
+    "Callback route extracts next parameter and sanitizes it"
+  );
+  assert.ok(
+    callbackCode.includes("new URL(safeNext, origin)"),
+    "Callback route redirects to origin + safeNext without hardcoded Vercel deployment URLs"
+  );
+
+  // 3. Verify real-data destination is strictly accepted by sanitizer
+  const targetNext = "/preview/dashboard-ui4/real-data";
+  assert.equal(sanitizeSafeRedirectPath(targetNext), targetNext);
+  assert.equal(sanitizeSafeRedirectPath(targetNext + "?view=collection"), targetNext + "?view=collection");
 });

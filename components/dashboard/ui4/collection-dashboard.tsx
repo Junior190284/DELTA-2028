@@ -215,29 +215,28 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                     <div className="mt-3 w-full grid grid-cols-3 gap-2">
                       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
-                          {albumData ? albumData.owned : "—"} <span className="text-xs text-slate-400 font-normal">/ {albumData ? albumData.total : "—"}</span>
+                          {albumData ? albumData.owned : "—"} {albumData?.total != null ? <span className="text-xs text-slate-400 font-normal">/ {albumData.total}</span> : null}
                         </div>
                         <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mt-0.5">
-                          Karty {albumData ? `(${albumData.percent}%)` : ""}
+                          Unikalne Karty {albumData?.percent != null ? `(${albumData.percent}%)` : ""}
                         </div>
                       </div>
 
                       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
-                          {levelData ? `Lvl ${levelData.level}` : "—"}
+                          {albumData ? albumData.duplicates : "—"}
                         </div>
                         <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wide mt-0.5">
-                          {levelData ? `${levelData.currentLevelXP ?? 350} / ${levelData.nextLevelXP ?? 600} XP` : "Poziom"}
+                          Duplikaty w Kolekcji
                         </div>
                       </div>
 
                       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
-                          {levelData ? `${levelData.activityStreak} ` : "—"}
-                          {levelData && <span className="text-xs text-slate-400 font-normal">DNI</span>}
+                          {albumData ? albumData.unopenedPacks : "—"}
                         </div>
                         <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5">
-                          Seria Dni
+                          Paczki do Otwarcia
                         </div>
                       </div>
                     </div>
@@ -258,40 +257,38 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                       </h2>
                     </div>
                     <span className="text-xs text-amber-400 font-bold e41-num">
-                      75% UKOŃCZENIA
+                      {albumData?.percent != null ? `${albumData.percent}% UKOŃCZENIA` : "Mianownik: Oczekuje na publikację sezonu"}
                     </span>
                   </div>
 
                   <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-300 font-semibold">Złota Jedenastka U-9 (Podstawowa)</span>
-                        <span className="text-amber-400 font-bold e41-num">11 / 11 (KOMPLET!)</span>
-                      </div>
-                      <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
-                        <div className="bg-gradient-to-r from-amber-500 to-amber-300 h-full rounded-full w-full" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-300 font-semibold">Inferno Masters (Specjalna)</span>
-                        <span className="text-amber-400 font-bold e41-num">5 / 8 KART</span>
-                      </div>
-                      <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
-                        <div className="bg-gradient-to-r from-red-500 to-amber-500 h-full rounded-full w-[62%]" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-300 font-semibold">Młode Wilki DELTA (Rocznik 2018)</span>
-                        <span className="text-amber-400 font-bold e41-num">14 / 16 KART</span>
-                      </div>
-                      <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
-                        <div className="bg-gradient-to-r from-sky-500 to-emerald-400 h-full rounded-full w-[87%]" />
-                      </div>
-                    </div>
+                    {(albumData?.series && albumData.series.length > 0 ? albumData.series : [
+                      { id: "base", name: "Karty Podstawowe (Base)", category: "base" as const, owned: 0, total: null, percent: null },
+                      { id: "matchday", name: "Karty Meczowe (Matchday)", category: "matchday" as const, owned: 0, total: null, percent: null },
+                      { id: "inferno", name: "Karty Specjalne (Inferno)", category: "inferno" as const, owned: 0, total: null, percent: null }
+                    ]).map((s) => {
+                      const colorGradient = s.category === "inferno"
+                        ? "from-red-500 to-amber-500"
+                        : s.category === "matchday"
+                        ? "from-sky-500 to-emerald-400"
+                        : "from-amber-500 to-amber-300";
+                      return (
+                        <div key={s.id}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-slate-300 font-semibold">{s.name}</span>
+                            <span className="text-amber-400 font-bold e41-num">
+                              {s.owned} {s.total != null ? `/ ${s.total} KART (${s.percent}%)` : "KART W KOLEKCJI"}
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                            <div
+                              className={`bg-gradient-to-r ${colorGradient} h-full rounded-full transition-all duration-500`}
+                              style={{ width: s.percent != null ? `${s.percent}%` : `${Math.min(100, Math.max(s.owned > 0 ? 15 : 0, s.owned * 12))}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -347,35 +344,10 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                       <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
                         Brak jeszcze kart w kolekcji — otwórz pierwszą paczkę!
                       </div>
-                    ) : recentCards.status === "unavailable" ? (
+                    ) : (
                       <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
                         Kolekcja kart niedostępna dla tego profilu.
                       </div>
-                    ) : (
-                      [
-                        { name: "Zawodnik Alfa", role: "NAPASTNIK", rarity: "INFERNO", num: "#007", glow: "border-red-500/50 bg-red-950/20 text-red-400" },
-                        { name: "Zawodnik Beta", role: "POMOCNIK", rarity: "GOLD", num: "#012", glow: "border-amber-500/50 bg-amber-950/20 text-amber-400" },
-                        { name: "Zawodnik Gamma", role: "OBROŃCA", rarity: "SILVER", num: "#024", glow: "border-slate-400/40 bg-slate-800/30 text-slate-300" },
-                        { name: "Zawodnik Delta", role: "BRAMKARZ", rarity: "GOLD", num: "#001", glow: "border-amber-500/50 bg-amber-950/20 text-amber-400" }
-                      ].map((card, i) => (
-                        <div
-                          key={i}
-                          className={`p-3 rounded-2xl border ${card.glow} flex flex-col items-center text-center transition hover:scale-105 shadow-md backdrop-blur-sm`}
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center p-1 mb-1.5 shadow">
-                            <Image
-                              src="/teamlogos/gm.png"
-                              alt="Crest"
-                              width={32}
-                              height={32}
-                              className="object-contain"
-                            />
-                          </div>
-                          <div className="text-xs font-black text-white truncate max-w-full">{card.name}</div>
-                          <div className="text-[10px] text-slate-400 font-semibold">{card.role}</div>
-                          <span className="text-[9px] font-black mt-0.5 e41-num">{card.rarity} · {card.num}</span>
-                        </div>
-                      ))
                     )}
                   </div>
                 </section>
@@ -399,30 +371,37 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                         Odznaki i Osiągnięcia Kolekcjonerskie
                       </h2>
                     </div>
-                    <span className="text-xs text-amber-400 font-bold">2 / 4 ODBLOKOWANE</span>
+                    <span className="text-xs text-slate-400 font-bold">
+                      {recentAchievements.status === "available" && recentAchievements.data && recentAchievements.data.length > 0
+                        ? `${recentAchievements.data.length} ODBLOKOWANE`
+                        : "ETAP P3"}
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-amber-500/30 flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                        <Star className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-white">Pierwszy Drop Sezonu</div>
-                        <div className="text-[10px] text-emerald-400 font-semibold">Odblokowane ✓</div>
-                      </div>
+                  {recentAchievements.status === "available" && recentAchievements.data && recentAchievements.data.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {recentAchievements.data.map((ach) => (
+                        <div key={ach.id} className="p-3 rounded-xl bg-slate-950/60 border border-amber-500/30 flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                            <Star className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white truncate">{ach.name}</div>
+                            <div className="text-[10px] text-emerald-400 font-semibold">{ach.description || "Odblokowane ✓"}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-
-                    <div className="p-3 rounded-xl bg-slate-950/60 border border-amber-500/30 flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                        <Flame className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-white">Seria Kolekcjonera</div>
-                        <div className="text-[10px] text-emerald-400 font-semibold">7 dni aktywności ✓</div>
-                      </div>
+                  ) : (
+                    <div className="py-6 px-4 bg-slate-950/40 rounded-xl border border-slate-800/80 text-center">
+                      <p className="text-xs text-slate-400 font-medium">
+                        System odznak i osiągnięć: Oczekuje na integrację (Etap P3)
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Brak demonstracyjnych odznak w trybie danych rzeczywistych.
+                      </p>
                     </div>
-                  </div>
+                  )}
                 </section>
               </div>
 
@@ -433,31 +412,47 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-sky-400" />
                       <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                        Radar Paczki Meczowej
+                        Radar Wydarzeń Sportowych
                       </h2>
                     </div>
-                    <span className="text-xs text-sky-400 font-bold">SOBOTA 11:30</span>
+                    <span className="text-xs text-sky-400 font-bold uppercase">
+                      {nextAction.status === "available" && nextAction.data
+                        ? (nextAction.data.countdown || "ZAPLANOWANE")
+                        : "BRAK WYDARZEŃ"}
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-black text-white">Następna Paczka Meczowa</div>
-                        <div className="text-[11px] text-slate-300">
-                          Drop po meczu ligowym U-9: <strong className="text-amber-400">Sobota 11:30</strong>
+                  {nextAction.status === "available" && nextAction.data ? (
+                    <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-white">{nextAction.data.title}</div>
+                          <div className="text-[11px] text-slate-300">
+                            {nextAction.data.kind === "match" ? "Najbliższy mecz ligowy: " : "Najbliższy trening: "}
+                            <strong className="text-amber-400">{nextAction.data.location || "Centrum DELTA"}</strong>
+                          </div>
                         </div>
                       </div>
+                      <Link
+                        href="/preview/dashboard-ui4?view=home"
+                        className="e41-btn-action e41-btn-primary text-xs shrink-0 py-2.5 px-4 min-h-[40px] font-bold"
+                      >
+                        <span>Szczegóły wydarzenia →</span>
+                      </Link>
                     </div>
-                    <Link
-                      href="/preview/dashboard-ui4?view=home"
-                      className="e41-btn-action e41-btn-primary text-xs shrink-0 py-2.5 px-4 min-h-[40px] font-bold"
-                    >
-                      <span>Zobacz mecz →</span>
-                    </Link>
-                  </div>
+                  ) : (
+                    <div className="py-6 px-4 bg-slate-950/40 rounded-xl border border-slate-800/80 text-center">
+                      <p className="text-xs text-slate-400 font-medium">
+                        Brak zaplanowanych meczów ani treningów w najbliższym czasie.
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Paczki meczowe zostaną przydzielone po potwierdzeniu obecności na oficjalnych rozgrywkach.
+                      </p>
+                    </div>
+                  )}
                 </section>
               </div>
 
@@ -467,7 +462,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
 
           {/* Mobile Bottom Navigation */}
           <DeltaMobileBottomNav
-            unopenedPacks={albumData?.unopenedPacks ?? 3}
+            unopenedPacks={albumData?.unopenedPacks ?? 0}
             activeItem="collection"
           />
         </div>
