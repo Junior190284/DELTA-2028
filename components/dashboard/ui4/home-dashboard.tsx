@@ -475,8 +475,8 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                               key={item.id}
                               className={`p-3 rounded-xl border transition ${
                                 item.urgent
-                                  ? "bg-amber-950/25 border-amber-500/40 text-amber-100"
-                                  : "bg-slate-950/60 border-slate-800/80 text-slate-200"
+                                  ? "bg-gradient-to-r from-amber-950/40 to-slate-950/80 border-amber-500/50 border-l-4 border-l-amber-500 text-amber-100 shadow-md shadow-amber-950/20"
+                                  : "bg-gradient-to-r from-slate-900/60 to-slate-950/80 border-slate-800/80 border-l-4 border-l-slate-700/80 text-slate-200"
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2 mb-1">

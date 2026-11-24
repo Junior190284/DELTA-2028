@@ -57,6 +57,7 @@ import {
   DELTA_THEME_CONFIGS,
   resolveDeltaCardTheme
 } from "@/lib/cards/deltaCardModel";
+import { resolveSafePlayerImageUrl } from "@/lib/cards/playerVisuals";
 
 interface CollectionDashboardProps {
   model: DashboardUI4Model;
@@ -208,6 +209,7 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
   }
 
   const [activeTab, setActiveTab] = useState<CollectionTab>("all");
+  const [mobileSection, setMobileSection] = useState<"album" | "vault" | "series">("album");
   const [selectedCard, setSelectedCard] = useState<DeltaCardModel | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [favoriteCardId, setFavoriteCardId] = useState<string | null>(null);
@@ -611,17 +613,36 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
   const levelData = progress.data;
   const albumData = albumProgress.data;
 
-  // Safe player card model for the hero card (zero PII, neutral persona)
-  const eliteCardModel = {
-    id: "card-demo-alpha",
-    playerId: profile.player.data?.id || "demo-player-alpha",
+  // Find if active child has an authentic card in the collection
+  const activePlayerCard = useMemo(() => {
+    if (!profile.player.data?.id && !profile.player.data?.displayName) return null;
+    return localAllCards.find(c =>
+      (profile.player.data?.id && (c.cardId === profile.player.data.id || c.id === profile.player.data.id)) ||
+      (profile.player.data?.displayName && c.playerName && c.playerName.trim().toLowerCase() === profile.player.data.displayName.trim().toLowerCase())
+    ) || null;
+  }, [localAllCards, profile.player.data]);
+
+  // Safely resolve authorized photo for the active child ONLY (zero leakage of other children)
+  const authorizedActivePhoto = useMemo(() => {
+    return resolveSafePlayerImageUrl({
+      playerName: profile.player.data?.displayName,
+      cardName: activePlayerCard?.name,
+      artworkUrl: activePlayerCard?.artworkUrl,
+      photoPath: activePlayerCard?.playerPhotoUrl
+    });
+  }, [activePlayerCard, profile.player.data]);
+
+  // Active child's hero card (representing active player, using authorized photo or neutral fallback)
+  const eliteCardModel = useMemo(() => ({
+    id: activePlayerCard?.id || "card-hero-active-player",
+    playerId: profile.player.data?.id || "player-active",
     playerName: playerName.toUpperCase(),
     shirtNumber: shirtNumber !== null ? String(shirtNumber) : "7",
     position: position || "ZAWODNIK",
-    cardType: "INFERNO" as const,
-    rarity: "inferno" as const,
-    playerImage: null
-  };
+    cardType: "INFERNO" as const, // Visual showcase frame theme of the DELTA INFERNO collection
+    rarity: (activePlayerCard?.rarity ? activePlayerCard.rarity.toLowerCase() : "common") as any, // Authentic rarity from data, never artificially forced to inferno
+    playerImage: authorizedActivePhoto || null
+  }), [activePlayerCard, authorizedActivePhoto, playerName, shirtNumber, position, profile.player.data]);
 
   return (
     <div className="e41-root">
@@ -730,16 +751,75 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
               </div>
             )}
             
+            {/* Mobile Navigation Tabs (<640px compact navigation, DELTA-042C) */}
+            <div
+              role="tablist"
+              aria-label="Nawigacja sekcji kolekcji"
+              data-testid="mobile-collection-tabs"
+              className="d4-mobile-tabs sm:hidden flex items-center p-1 rounded-2xl bg-slate-900/90 border border-slate-800/80 mb-3 shadow-lg"
+            >
+              <button
+                type="button"
+                role="tab"
+                id="mobile-tab-album"
+                aria-selected={mobileSection === "album"}
+                data-testid="mobile-tab-album"
+                onClick={() => setMobileSection("album")}
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  mobileSection === "album"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-950/40"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <BookOpen className="w-4 h-4 shrink-0" />
+                <span>ALBUM ({localAllCards.length})</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                id="mobile-tab-vault"
+                aria-selected={mobileSection === "vault"}
+                data-testid="mobile-tab-vault"
+                onClick={() => setMobileSection("vault")}
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  mobileSection === "vault"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-950/40"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>SKARBIEC ({localUnopenedPacks.length})</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                id="mobile-tab-series"
+                aria-selected={mobileSection === "series"}
+                data-testid="mobile-tab-series"
+                onClick={() => setMobileSection("series")}
+                className={`flex-1 min-h-[44px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  mobileSection === "series"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-950/40"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Layers className="w-4 h-4 shrink-0" />
+                <span>SERIE</span>
+              </button>
+            </div>
+            
             {/* ----------------------------------------------------------------- */}
             {/* ROW 1: 2-COLUMN PRIMARY WORKSPACE (DeltaCard Hero vs Album/Drops) */}
             {/* ----------------------------------------------------------------- */}
-            <div className="d4-dashboard-row-1">
+            <div className={`d4-dashboard-row-1 ${mobileSection === "album" ? "d4-hide-mobile" : ""}`}>
               
               {/* LEFT SHOWCASE COLUMN: HERO INFERNO CARD & PACK VAULT (5 COLS) */}
-              <div className="lg:col-span-5 flex flex-col">
+              <div className={`lg:col-span-5 flex flex-col ${mobileSection !== "vault" ? "d4-hide-mobile" : ""}`}>
                 <section
                   data-testid="e41-collection-section"
-                  className="relative bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border border-amber-500/40 rounded-3xl p-4 sm:p-5 text-center overflow-hidden shadow-2xl flex flex-col items-center"
+                  className="relative bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border border-amber-500/40 rounded-3xl p-3.5 sm:p-4 text-center overflow-hidden shadow-2xl flex flex-col items-center"
                 >
                   {/* Subtle ambient light */}
                   <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -747,12 +827,12 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                   <div className="relative z-10 flex flex-col items-center w-full">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2.5 shadow">
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>GŁÓWNA KARTA ZAWODNIKA · EDYCJA INFERNO</span>
+                      <span>GŁÓWNA KARTA ZAWODNIKA · STYL INFERNO</span>
                     </div>
 
                     {/* High-Fidelity Card Renderer */}
                     {albumProgress.status === "available" && recentCards.status === "available" ? (
-                      <div className="w-[210px] sm:w-[230px] my-1 transition duration-300 hover:scale-105">
+                      <div className="w-[200px] sm:w-[220px] my-1 transition duration-300 hover:scale-105">
                         <DeltaCard
                           card={eliteCardModel}
                           size="responsive"
@@ -781,7 +861,7 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                         <span className="text-slate-400 font-medium">#{shirtNumber} ({position})</span>
                       </div>
                       <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                        INFERNO 26/27
+                        {activePlayerCard?.rarity ? `${activePlayerCard.rarity.toUpperCase()} · 26/27` : "BAZOWA · 26/27"}
                       </span>
                     </div>
 
@@ -810,7 +890,7 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                             <span className="text-[10px] text-slate-400 font-medium">Wybierz paczkę do otwarcia</span>
                           </div>
 
-                          <div className="max-h-[220px] overflow-y-auto space-y-2 pr-0.5">
+                          <div className="max-h-[190px] overflow-y-auto space-y-2 pr-0.5">
                             {localUnopenedPacks.map((packItem) => {
                               const packName = packItem.packDefinition?.name || (
                                 packItem.packTypeId.includes("inferno")
@@ -901,11 +981,11 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
               </div>
 
               {/* RIGHT GALLERY COLUMN: ALBUM MATRIX & RECENT DROPS (7 COLS) */}
-              <div className="lg:col-span-7 flex flex-col gap-4">
+              <div className={`lg:col-span-7 flex flex-col gap-3.5 sm:gap-4 ${mobileSection !== "series" ? "d4-hide-mobile" : ""}`}>
                 
                 {/* 2A. ALBUM BINDER PROGRESS & SUB-COLLECTIONS */}
-                <section className="bg-slate-900/65 border border-slate-800/85 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
-                  <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2">
+                <section className="bg-slate-900/65 border border-slate-800/85 rounded-2xl p-3.5 sm:p-4 backdrop-blur-md">
+                  <div className="flex items-center justify-between mb-2.5 border-b border-slate-800/80 pb-2">
                     <div className="flex items-center gap-2">
                       <BookOpen className="w-4 h-4 text-amber-400" />
                       <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
@@ -949,8 +1029,8 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                 </section>
 
                 {/* 2B. RECENT CARD DROPS GALLERY (4 cards) */}
-                <section className="bg-slate-900/65 border border-slate-800/85 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
-                  <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2">
+                <section className="bg-slate-900/65 border border-slate-800/85 rounded-2xl p-3.5 sm:p-4 backdrop-blur-md">
+                  <div className="flex items-center justify-between mb-2.5 border-b border-slate-800/80 pb-2">
                     <div className="flex items-center gap-2">
                       <Layers className="w-4 h-4 text-sky-400" />
                       <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
@@ -1027,10 +1107,12 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
             {/* ----------------------------------------------------------------- */}
             <section
               data-testid="e41-full-album-section"
-              className="mt-6 bg-slate-900/65 border border-slate-800/85 rounded-3xl p-4 sm:p-6 backdrop-blur-md shadow-2xl relative overflow-hidden"
+              className={`mt-3 sm:mt-5 bg-slate-900/65 border border-slate-800/85 rounded-3xl p-3 sm:p-5 lg:p-6 backdrop-blur-md shadow-2xl relative overflow-hidden ${
+                mobileSection !== "album" ? "d4-hide-mobile" : ""
+              }`}
             >
               {/* Header and Title */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
                     <BookOpen className="w-5 h-5" />

@@ -299,6 +299,23 @@ button:focus-visible {
   outline-offset: 2px !important;
 }
 
+/* Mobile Collection Navigation & Responsive Section Switching (DELTA-042C) */
+.d4-mobile-tabs {
+  display: flex !important;
+}
+
+@media (min-width: 641px) {
+  .d4-mobile-tabs {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .d4-hide-mobile {
+    display: none !important;
+  }
+}
+
 /* Reduced Motion Safety */
 @media (prefers-reduced-motion: reduce) {
   *,
