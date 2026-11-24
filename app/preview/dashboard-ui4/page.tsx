@@ -19,6 +19,8 @@ import {
   VariantCollector,
   VariantHybrid,
   DeltaElite41,
+  HomeDashboard,
+  CollectionDashboard,
   type DashboardUI4AdapterInput
 } from "@/components/dashboard/ui4";
 
@@ -49,7 +51,7 @@ const elitePlayerFixture: DashboardUI4AdapterInput = {
   nextMatch: {
     id: "demo-match-1",
     title: "Drużyna Testowa vs Drużyna Rywala",
-    starts_at: new Date(Date.now() + 2 * 24 * 3600 * 1000 + 4 * 3600 * 1000).toISOString(),
+    starts_at: "2026-11-28T10:30:00.000Z",
     location: "Centrum Treningowe (Boisko Testowe)",
     opponent: "Drużyna Rywala"
   },
@@ -230,6 +232,7 @@ const restrictedFixture: DashboardUI4AdapterInput = {
 
 type ScenarioKey = "elite" | "parent" | "empty" | "restricted";
 type VariantKey = "elite41" | "sport" | "collector" | "hybrid" | "baseline";
+type ViewKey = "home" | "collection";
 
 function DashboardUI4PreviewContent() {
   const searchParams = useSearchParams();
@@ -243,6 +246,12 @@ function DashboardUI4PreviewContent() {
     return "elite41"; // Default to new DELTA ELITE 4.1
   }, [searchParams]);
 
+  const initialView = useMemo<ViewKey>(() => {
+    const view = searchParams.get("view");
+    if (view === "collection") return "collection";
+    return "home";
+  }, [searchParams]);
+
   const initialScenario = useMemo<ScenarioKey>(() => {
     const s = searchParams.get("scenario");
     if (s === "elite" || s === "parent" || s === "empty" || s === "restricted") {
@@ -253,14 +262,32 @@ function DashboardUI4PreviewContent() {
 
   const isClean = searchParams.get("clean") === "1";
   const [activeVariant, setActiveVariant] = useState<VariantKey>(initialVariant);
+  const [activeView, setActiveView] = useState<ViewKey>(initialView);
   const [activeScenario, setActiveScenario] = useState<ScenarioKey>(initialScenario);
   const [qaMode, setQaMode] = useState<boolean>(() => !isClean && searchParams.get("qa") === "1");
+
+  // Keep view in sync with URL
+  useEffect(() => {
+    const view = searchParams.get("view");
+    if (view === "collection" && activeView !== "collection") {
+      setActiveView("collection");
+    } else if (view !== "collection" && activeView === "collection" && !view) {
+      setActiveView("home");
+    }
+  }, [searchParams, activeView]);
 
   // Keep URL query param synced smoothly
   const handleVariantChange = (variant: VariantKey) => {
     setActiveVariant(variant);
     const params = new URLSearchParams(window.location.search);
     params.set("variant", variant);
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  };
+
+  const handleViewChange = (view: ViewKey) => {
+    setActiveView(view);
+    const params = new URLSearchParams(window.location.search);
+    params.set("view", view);
     window.history.replaceState(null, "", `?${params.toString()}`);
   };
 
@@ -305,11 +332,38 @@ function DashboardUI4PreviewContent() {
           <div className="max-w-6xl mx-auto flex flex-col gap-2">
             {/* Top Row: Variant Selector */}
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">
-                  TRYB DEMO — DELTA UI 4.0 HYBRID ELITE · PANEL QA:
-                </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">
+                    TRYB DEMO — DELTA UI 4.0 HYBRID ELITE · PANEL QA:
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-900 border border-slate-700/80">
+                  <button
+                    type="button"
+                    onClick={() => handleViewChange("home")}
+                    className={`px-2.5 py-1 rounded text-xs font-black transition cursor-pointer ${
+                      activeView === "home"
+                        ? "bg-sky-500 text-slate-950 shadow-sm"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    🏠 HOME
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleViewChange("collection")}
+                    className={`px-2.5 py-1 rounded text-xs font-black transition cursor-pointer ${
+                      activeView === "collection"
+                        ? "bg-amber-400 text-slate-950 shadow-sm"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    🃏 KOLEKCJA
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-0.5">
@@ -438,7 +492,13 @@ function DashboardUI4PreviewContent() {
       )}
 
       {/* RENDER ACTIVE VIEW */}
-      {activeVariant === "elite41" && <DeltaElite41 model={model} />}
+      {activeVariant === "elite41" && (
+        activeView === "collection" ? (
+          <CollectionDashboard model={model} />
+        ) : (
+          <HomeDashboard model={model} />
+        )
+      )}
 
       {activeVariant === "sport" && <VariantSport model={model} />}
 

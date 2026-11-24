@@ -17,10 +17,10 @@ test("DELTA-016 — Real HTTP Route Security Integration Tests", async (t) => {
     serverAvailable = false;
   }
 
-  if (!serverAvailable) {
-    console.log("[SKIP] Local Next.js dev server on port 3005 is not responding. Skipping live HTTP tests.");
-    return;
-  }
+  assert.ok(
+    serverAvailable,
+    "Local Next.js dev server on port 3005 must be running and responding to execute real HTTP tests. Never skip silently."
+  );
 
   await t.test("1. Local development HTTP access: allowed with HTTP 200", async () => {
     const res = await fetch(BASE_URL);

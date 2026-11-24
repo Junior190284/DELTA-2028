@@ -5,3 +5,5 @@ export { VariantSport } from "./variants/variant-sport";
 export { VariantCollector } from "./variants/variant-collector";
 export { VariantHybrid } from "./variants/variant-hybrid";
 export { DeltaElite41 } from "./delta-elite-41";
+export { HomeDashboard } from "./home-dashboard";
+export { CollectionDashboard } from "./collection-dashboard";
