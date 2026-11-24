@@ -75,13 +75,40 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
   });
   else nextAction = empty(null as never);
 
-  const progress: DashboardUI4Model["progress"] = input.gameProfile ? available({
-    level: input.gameProfile.levelInfo.level, title: input.gameProfile.levelInfo.title,
-    currentXP: input.gameProfile.currentXP, seasonXP: input.gameProfile.seasonXP,
-    currentLevelXP: input.gameProfile.levelInfo.currentLevelXP, nextLevelXP: input.gameProfile.levelInfo.nextLevelXP,
-    progressPercent: Math.min(100, Math.max(0, input.gameProfile.levelInfo.progressPercent)),
-    activityStreak: input.gameProfile.activityStreak, maxStreak: input.gameProfile.maxStreak,
-  }) : unavailable("not_loaded");
+  let progress: DashboardUI4Model["progress"];
+  if (input.progressUnavailableReason) {
+    progress = unavailable(input.progressUnavailableReason);
+  } else if (input.sportsXp) {
+    progress = available({
+      level: input.sportsXp.playerLevel,
+      title: input.sportsXp.stadiumTierTitle,
+      currentXP: input.sportsXp.sportsXp,
+      seasonXP: input.sportsXp.sportsXp,
+      currentLevelXP: input.sportsXp.currentLvlXp,
+      nextLevelXP: input.sportsXp.neededLvlXp,
+      progressPercent: Math.min(100, Math.max(0, input.sportsXp.progressPercent)),
+      activityStreak: input.sportsXp.presentTrainings,
+      maxStreak: input.sportsXp.presentTrainings,
+      verifiedTrainings: input.sportsXp.presentTrainings,
+      verifiedMatches: input.sportsXp.presentMatches,
+      stadiumStage: input.sportsXp.stadiumTierTitle,
+      attendanceRatePercent: input.sportsXp.attendanceRatePercent ?? null,
+    });
+  } else if (input.gameProfile) {
+    progress = available({
+      level: input.gameProfile.levelInfo.level,
+      title: input.gameProfile.levelInfo.title,
+      currentXP: input.gameProfile.currentXP,
+      seasonXP: input.gameProfile.seasonXP,
+      currentLevelXP: input.gameProfile.levelInfo.currentLevelXP,
+      nextLevelXP: input.gameProfile.levelInfo.nextLevelXP,
+      progressPercent: Math.min(100, Math.max(0, input.gameProfile.levelInfo.progressPercent)),
+      activityStreak: input.gameProfile.activityStreak,
+      maxStreak: input.gameProfile.maxStreak,
+    });
+  } else {
+    progress = unavailable("not_loaded");
+  }
 
   let recentCards: DashboardUI4Model["recentCards"];
   let albumProgress: DashboardUI4Model["albumProgress"];

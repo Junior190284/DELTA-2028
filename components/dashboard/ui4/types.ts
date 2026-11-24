@@ -15,8 +15,19 @@ export type NextAction = {
   location: string | null; opponent: string | null; countdown: string | null;
 };
 export type LevelProgress = {
-  level: number; title: string; currentXP: number; seasonXP: number; currentLevelXP: number;
-  nextLevelXP: number; progressPercent: number; activityStreak: number; maxStreak: number;
+  level: number;
+  title: string;
+  currentXP: number;
+  seasonXP: number;
+  currentLevelXP: number;
+  nextLevelXP: number;
+  progressPercent: number;
+  activityStreak: number;
+  maxStreak: number;
+  verifiedTrainings?: number;
+  verifiedMatches?: number;
+  stadiumStage?: string;
+  attendanceRatePercent?: number | null;
 };
 export type RecentCard = {
   userCardId: string; definitionId: string; name: string; rarity: string | null;
@@ -99,12 +110,26 @@ export type CommunicationInput = {
   id: string; title: string; summary?: string | null; content?: string | null;
   published_at?: string | null; created_at?: string | null; urgent?: boolean | null;
 };
+export interface SportsXpInput {
+  sportsXp: number;
+  playerLevel: number;
+  currentLvlXp: number;
+  neededLvlXp: number;
+  progressPercent: number;
+  presentTrainings: number;
+  presentMatches: number;
+  stadiumTierTitle: string;
+  attendanceRatePercent?: number | null;
+}
 export interface DashboardUI4AdapterInput {
   profile: ProfileInput; access: DashboardUI4Access; teamName?: string | null;
   players?: PlayerInput[]; parentPlayerIds?: string[];
   nextMatch?: EventInput | null; nextMatchCountdown?: string | null;
   nextTraining?: { session: EventInput; start?: string | null; countdown?: string | null } | null;
-  gameProfile?: GameProfileInput | null; allCards?: CardDefinitionInput[]; userCards?: UserCardInput[];
+  gameProfile?: GameProfileInput | null;
+  sportsXp?: SportsXpInput | null;
+  progressUnavailableReason?: UnavailableReason;
+  allCards?: CardDefinitionInput[]; userCards?: UserCardInput[];
   unopenedPacksCount?: number;
   isAuthoritativeCatalog?: boolean;
   achievements?: AchievementInput[]; news?: CommunicationInput[]; clubUpdates?: CommunicationInput[];

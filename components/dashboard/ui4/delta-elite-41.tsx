@@ -461,15 +461,17 @@ export function DeltaElite41({ model }: DeltaElite41Props) {
                         <div className="grid grid-cols-3 gap-1.5 text-center pt-1 text-[10px]">
                           <div className="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
                             <span className="text-slate-400 block font-medium">Razem XP</span>
-                            <span className="text-white font-black e41-num">{levelData.currentXP ?? 2450}</span>
+                            <span className="text-white font-black e41-num">{levelData.currentXP ?? 0}</span>
                           </div>
                           <div className="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
                             <span className="text-slate-400 block font-medium">Seria</span>
-                            <span className="text-amber-400 font-black e41-num">{levelData.activityStreak ?? 7} DNI</span>
+                            <span className="text-amber-400 font-black e41-num">{levelData.activityStreak ?? 0} DNI</span>
                           </div>
                           <div className="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
                             <span className="text-slate-400 block font-medium">Frekwencja sez.</span>
-                            <span className="text-emerald-400 font-black e41-num">94%</span>
+                            <span className="text-emerald-400 font-black e41-num">
+                              {typeof levelData.attendanceRatePercent === "number" ? `${levelData.attendanceRatePercent}%` : "—"}
+                            </span>
                           </div>
                         </div>
                       </div>

@@ -18,7 +18,9 @@ import { createClient } from "../supabase/server.ts";
 import {
   parseWarsawLocalDateTime,
   getWarsawDateTime,
-  normalizeTimeString
+  normalizeTimeString,
+  calculateVerifiedSportsXp,
+  isTrainingFinished
 } from "../stadium/xp-calculator.ts";
 import {
   createDashboardUI4Model,
@@ -27,7 +29,9 @@ import {
   type PlayerInput,
   type EventInput,
   type CardDefinitionInput,
-  type UserCardInput
+  type UserCardInput,
+  type SportsXpInput,
+  type UnavailableReason
 } from "../../components/dashboard/ui4/index.ts";
 import { canAccessChildData } from "../security/roles.ts";
 
@@ -101,6 +105,36 @@ export function isGenuineLocalEnvironment(hostHeader?: string): boolean {
   const isLoopback = cleanHost === "localhost" || cleanHost === "127.0.0.1" || cleanHost === "::1";
 
   return isLoopback;
+}
+
+/**
+ * Safely queries attendance for a player without service_role or unsafe overrides.
+ * Returns { data, error } safely. If mock client or database returns an error,
+ * error is propagated so the caller marks progress as unavailable without guessing.
+ */
+export async function safeQueryAttendance(
+  supabase: any,
+  table: "training_attendance" | "match_attendance",
+  childId: string | null
+): Promise<{ data: any[] | null; error: any }> {
+  if (!childId) {
+    return { data: null, error: null };
+  }
+  try {
+    const selectCols = table === "training_attendance"
+      ? "training_id,player_id,status"
+      : "match_id,player_id,status";
+    let query = supabase.from(table).select(selectCols);
+    if (typeof query?.eq === "function") {
+      query = query.eq("player_id", childId);
+    } else {
+      return { data: null, error: new Error(`Query does not support eq on ${table}`) };
+    }
+    const res = await query;
+    return res;
+  } catch (err: any) {
+    return { data: null, error: err };
+  }
 }
 
 /**
@@ -515,7 +549,9 @@ export async function loadRealDashboardUI4Data(
       { data: clubUpdatesData },
       { data: cardDefsData, error: cardDefsError },
       { data: userCardsData, error: userCardsError },
-      { data: unopenedPacksData, error: unopenedPacksError }
+      { data: unopenedPacksData, error: unopenedPacksError },
+      trAttRes,
+      mAttRes
     ] = await Promise.all([
       supabase
         .from("matches")
@@ -581,7 +617,9 @@ export async function loadRealDashboardUI4Data(
         .from("user_unopened_packs")
         .select("id, pack_type_id, source_reason, is_opened, created_at")
         .eq("user_id", authUser.id)
-        .eq("is_opened", false)
+        .eq("is_opened", false),
+      safeQueryAttendance(supabase, "training_attendance", activeChildId),
+      safeQueryAttendance(supabase, "match_attendance", activeChildId)
     ]);
 
     const { nextMatch, nextMatchCountdown, nextTraining, eventContext } = selectNearestEvent(
@@ -642,6 +680,46 @@ export async function loadRealDashboardUI4Data(
         : 0;
     }
 
+    // 5.5. Sports XP & Attendance Calculation (DELTA-038 Real Sports XP)
+    let sportsXp: SportsXpInput | null = null;
+    let progressUnavailableReason: UnavailableReason | undefined = undefined;
+
+    if (!activeChildId) {
+      progressUnavailableReason = actorKind === "parent"
+        ? "no_linked_player"
+        : "not_loaded";
+    } else if (trAttRes?.error || mAttRes?.error || !Array.isArray(trAttRes?.data) || !Array.isArray(mAttRes?.data)) {
+      progressUnavailableReason = "not_loaded";
+    } else {
+      const verifiedResult = calculateVerifiedSportsXp(activeChildId, {
+        trainingSessions: Array.isArray(trainingData) ? trainingData : [],
+        trainingAttendance: trAttRes.data,
+        matches: Array.isArray(matchesData) ? matchesData : [],
+        matchAttendance: mAttRes.data,
+        referenceDate: now
+      });
+
+      const finishedTrainings = (Array.isArray(trainingData) ? trainingData : []).filter(s =>
+        isTrainingFinished(s, now)
+      );
+
+      const attendanceRatePercent = finishedTrainings.length > 0
+        ? Math.min(100, Math.max(0, Math.round((verifiedResult.presentTrainings / finishedTrainings.length) * 100)))
+        : null;
+
+      sportsXp = {
+        sportsXp: verifiedResult.sportsXp,
+        playerLevel: verifiedResult.playerLevel,
+        currentLvlXp: verifiedResult.currentLvlXp,
+        neededLvlXp: verifiedResult.neededLvlXp,
+        progressPercent: verifiedResult.progressPercent,
+        presentTrainings: verifiedResult.presentTrainings,
+        presentMatches: verifiedResult.presentMatches,
+        stadiumTierTitle: verifiedResult.stadiumProgression.currentTier.name,
+        attendanceRatePercent
+      };
+    }
+
     // 6. Build Adapter Input
     const adapterInput: DashboardUI4AdapterInput = {
       profile: {
@@ -673,6 +751,9 @@ export async function loadRealDashboardUI4Data(
       userCards,
       unopenedPacksCount,
       isAuthoritativeCatalog: options.isAuthoritativeCatalog ?? false,
+      // DELTA-038 Real Sports XP & Progress
+      sportsXp,
+      progressUnavailableReason,
       // Data purity: gameProfile (user_game_profile) and achievements remain undefined until future phases
       gameProfile: undefined,
       achievements: undefined

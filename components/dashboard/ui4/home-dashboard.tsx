@@ -447,13 +447,13 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-white font-bold">Poziom {levelData.level} · {levelData.title}</span>
                           <span className="text-amber-400 font-extrabold e41-num">
-                            {levelData.currentLevelXP ?? 350} / {levelData.nextLevelXP ?? 600} XP ({levelData.progressPercent ?? 58}%)
+                            {levelData.currentLevelXP ?? 0} / {levelData.nextLevelXP ?? 250} XP ({levelData.progressPercent ?? 0}%)
                           </span>
                         </div>
                         <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden p-0.5 border border-slate-800">
                           <div
                             className="bg-gradient-to-r from-sky-500 to-amber-400 h-full rounded-full transition-all duration-500"
-                            style={{ width: `${levelData.progressPercent ?? 58}%` }}
+                            style={{ width: `${levelData.progressPercent ?? 0}%` }}
                           />
                         </div>
 
@@ -461,22 +461,28 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                         <div className="grid grid-cols-3 gap-1.5 text-center pt-1 text-[10px]">
                           <div className="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
                             <span className="text-slate-400 block font-medium">Razem XP</span>
-                            <span className="text-white font-black e41-num">{levelData.currentXP ?? 2450}</span>
+                            <span className="text-white font-black e41-num">{levelData.currentXP ?? 0}</span>
                           </div>
                           <div className="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
                             <span className="text-slate-400 block font-medium">Seria</span>
-                            <span className="text-amber-400 font-black e41-num">{levelData.activityStreak ?? 7} DNI</span>
+                            <span className="text-amber-400 font-black e41-num">{levelData.activityStreak ?? 0} DNI</span>
                           </div>
                           <div className="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800/80">
                             <span className="text-slate-400 block font-medium">Frekwencja sez.</span>
-                            <span className="text-emerald-400 font-black e41-num">94%</span>
+                            <span className="text-emerald-400 font-black e41-num">
+                              {typeof levelData.attendanceRatePercent === "number" ? `${levelData.attendanceRatePercent}%` : "—"}
+                            </span>
                           </div>
                         </div>
                       </div>
                     ) : (
                       <div className="pt-2 border-t border-slate-800/70 text-center py-2">
                         <span className="text-[11px] text-slate-500 font-medium">
-                          Statystyki poziomu i XP: Oczekuje na integrację (Etap P2)
+                          {progress.reason === "no_linked_player"
+                            ? "Brak powiązanego profilu zawodnika"
+                            : progress.reason === "not_authorized"
+                            ? "Brak uprawnień do profilu zawodnika"
+                            : "Statystyki poziomu i XP: Oczekuje na integrację (Etap P2)"}
                         </span>
                       </div>
                     )}

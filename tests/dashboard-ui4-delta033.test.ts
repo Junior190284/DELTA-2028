@@ -47,6 +47,10 @@ function createMockSupabase(data: {
           else if (table === "card_definitions") rows = data.cardDefinitions ?? [];
           else if (table === "user_cards") rows = data.userCards ?? [];
           else if (table === "user_unopened_packs") rows = data.unopenedPacks ?? [];
+          else {
+            resolve({ data: null, error: new Error(`Table ${table} not found`) });
+            return;
+          }
 
           // Apply filters
           let filtered = rows.filter(r => {
