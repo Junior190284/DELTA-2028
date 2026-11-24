@@ -28,6 +28,7 @@ export type LevelProgress = {
   verifiedMatches?: number;
   stadiumStage?: string;
   attendanceRatePercent?: number | null;
+  nextAchievement?: NextAchievementProgress | null;
 };
 export type RecentCard = {
   userCardId: string; definitionId: string; name: string; rarity: string | null;
@@ -49,7 +50,24 @@ export type AlbumProgress = {
   unopenedPacks: number;
   series?: SeriesProgress[];
 };
-export type RecentAchievement = { id: string; name: string; description: string | null; icon: string | null; unlockedAt: string | null };
+export type NextAchievementProgress = {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  current: number;
+  target: number;
+  percent: number;
+};
+export type RecentAchievement = {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  unlockedAt: string | null;
+  category?: string | null;
+  rarity?: string | null;
+};
 export type TeamShowcaseSummary = { playerCount: number; featuredPlayers: PlayerSummary[]; entryPoint: "players" };
 export type ClubCommunication = {
   id: string; title: string; summary: string | null; publishedAt: string | null;
@@ -103,8 +121,9 @@ export type UserCardInput = {
 export type AchievementInput = {
   id?: string; achievement_id?: string; name?: string | null; title?: string | null;
   description?: string | null; icon?: string | null; icon_url?: string | null;
+  category?: string | null; rarity?: string | null;
   isUnlocked?: boolean; is_unlocked?: boolean; unlockedAt?: string | null; unlocked_at?: string | null;
-  achievement?: { id?: string; name?: string | null; title?: string | null; description?: string | null; icon?: string | null; icon_url?: string | null } | null;
+  achievement?: { id?: string; name?: string | null; title?: string | null; description?: string | null; icon?: string | null; icon_url?: string | null; category?: string | null; rarity?: string | null } | null;
 };
 export type CommunicationInput = {
   id: string; title: string; summary?: string | null; content?: string | null;
@@ -132,5 +151,7 @@ export interface DashboardUI4AdapterInput {
   allCards?: CardDefinitionInput[]; userCards?: UserCardInput[];
   unopenedPacksCount?: number;
   isAuthoritativeCatalog?: boolean;
-  achievements?: AchievementInput[]; news?: CommunicationInput[]; clubUpdates?: CommunicationInput[];
+  achievements?: AchievementInput[];
+  nextAchievement?: NextAchievementProgress | null;
+  news?: CommunicationInput[]; clubUpdates?: CommunicationInput[];
 }

@@ -21,7 +21,11 @@ import {
   Activity,
   Check,
   Star,
-  Zap
+  Zap,
+  Target,
+  Trophy,
+  Crown,
+  Medal
 } from "lucide-react";
 import DeltaCard from "@/components/cards/DeltaCard";
 import type { DashboardUI4Model } from "./types";
@@ -65,6 +69,29 @@ function formatCommunicationDate(publishedAt?: string | null): string {
     }).format(d);
   } catch {
     return "—";
+  }
+}
+
+function renderAchievementIcon(iconName?: string | null, className = "w-3 h-3 text-amber-400 shrink-0") {
+  switch (iconName) {
+    case "Shield":
+      return <Shield className={className} />;
+    case "Zap":
+      return <Zap className={className} />;
+    case "Trophy":
+      return <Trophy className={className} />;
+    case "Crown":
+      return <Crown className={className} />;
+    case "Medal":
+      return <Medal className={className} />;
+    case "Flame":
+      return <Flame className={className} />;
+    case "Award":
+      return <Award className={className} />;
+    case "CalendarDays":
+      return <Calendar className={className} />;
+    default:
+      return <Star className={className} />;
   }
 }
 
@@ -548,6 +575,32 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                             </span>
                           </div>
                         </div>
+
+                        {/* Next Achievement Progression */}
+                        {levelData.nextAchievement && (
+                          <div className="pt-2 border-t border-slate-800/70">
+                            <div className="flex justify-between items-center text-[11px] mb-1">
+                              <span className="text-slate-300 font-semibold flex items-center gap-1.5 truncate">
+                                <Target className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                                <span className="truncate">Najbliższy cel: {levelData.nextAchievement.name}</span>
+                              </span>
+                              <span className="text-amber-400 font-bold e41-num shrink-0 ml-2">
+                                {levelData.nextAchievement.current} / {levelData.nextAchievement.target} ({levelData.nextAchievement.percent}%)
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                              <div
+                                className="bg-sky-400 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${levelData.nextAchievement.percent}%` }}
+                              />
+                            </div>
+                            {levelData.nextAchievement.description && (
+                              <p className="text-[10px] text-slate-400 mt-1 line-clamp-1">
+                                {levelData.nextAchievement.description}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="pt-2 border-t border-slate-800/70 text-center py-2">
@@ -556,7 +609,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                             ? "Brak powiązanego profilu zawodnika"
                             : progress.reason === "not_authorized"
                             ? "Brak uprawnień do profilu zawodnika"
-                            : "Statystyki poziomu i XP: Oczekuje na integrację (Etap P2)"}
+                            : "Brak dostępu do statystyk sportowych"}
                         </span>
                       </div>
                     )}
@@ -564,21 +617,44 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
 
                   {/* Integrated Badges & Achievements */}
                   {recentAchievements.status === "available" && recentAchievements.data && recentAchievements.data.length > 0 ? (
-                    <div className="pt-2 border-t border-slate-800/70 flex items-center gap-1.5 flex-wrap">
-                      {recentAchievements.data.map((ach) => (
-                        <span key={ach.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold">
-                          <Star className="w-3 h-3 text-amber-400" />
-                          <span>{ach.name}</span>
-                        </span>
-                      ))}
+                    <div className="pt-2 border-t border-slate-800/70 space-y-1.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 flex items-center gap-1">
+                        <Award className="w-3 h-3 text-amber-400" />
+                        <span>Zdobyte odznaki ({recentAchievements.data.length})</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {recentAchievements.data.map((ach) => (
+                          <div
+                            key={ach.id}
+                            className="group relative inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold"
+                            title={ach.description || ach.name}
+                          >
+                            {renderAchievementIcon(ach.icon)}
+                            <span className="truncate max-w-[130px]">{ach.name}</span>
+                            {ach.unlockedAt && (
+                              <span className="text-[9px] text-slate-400 font-normal">
+                                · {formatCommunicationDate(ach.unlockedAt)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ) : recentAchievements.status === "available" ? (
-                    <div className="pt-2 border-t border-slate-800/70 text-[10px] text-slate-500">
-                      Brak odblokowanych odznak
+                  ) : recentAchievements.status === "available" || recentAchievements.status === "empty" ? (
+                    <div className="pt-2 border-t border-slate-800/70 text-center py-1.5">
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        Brak zdobytych odznak w tym sezonie
+                      </span>
                     </div>
                   ) : (
-                    <div className="pt-2 border-t border-slate-800/70 text-[10px] text-slate-500">
-                      Odznaki i osiągnięcia: Oczekuje na integrację (Etap P2)
+                    <div className="pt-2 border-t border-slate-800/70 text-center py-1.5">
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        {recentAchievements.reason === "no_linked_player"
+                          ? "Brak powiązanego profilu zawodnika"
+                          : recentAchievements.reason === "not_authorized"
+                          ? "Brak uprawnień do profilu zawodnika"
+                          : "Brak dostępu do osiągnięć"}
+                      </span>
                     </div>
                   )}
                 </div>

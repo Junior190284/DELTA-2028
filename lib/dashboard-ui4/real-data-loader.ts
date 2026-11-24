@@ -31,9 +31,15 @@ import {
   type CardDefinitionInput,
   type UserCardInput,
   type SportsXpInput,
+  type AchievementInput,
+  type NextAchievementProgress,
   type UnavailableReason
 } from "../../components/dashboard/ui4/index.ts";
 import { canAccessChildData } from "../security/roles.ts";
+import {
+  ACHIEVEMENTS_CATALOG,
+  calculatePlayerAchievements
+} from "../achievements/engine.ts";
 
 export interface RealDataLoaderOptions {
   activeChildId?: string;
@@ -129,6 +135,33 @@ export async function safeQueryAttendance(
       query = query.eq("player_id", childId);
     } else {
       return { data: null, error: new Error(`Query does not support eq on ${table}`) };
+    }
+    const res = await query;
+    return res;
+  } catch (err: any) {
+    return { data: null, error: err };
+  }
+}
+
+/**
+ * Safely queries achievements for a player from player_achievements table.
+ * Returns { data, error } safely without throwing unhandled exceptions.
+ */
+export async function safeQueryPlayerAchievements(
+  supabase: any,
+  childId: string | null
+): Promise<{ data: any[] | null; error: any }> {
+  if (!childId) {
+    return { data: null, error: null };
+  }
+  try {
+    let query = supabase
+      .from("player_achievements")
+      .select("id,player_id,achievement_id,unlocked_at,progress,metadata,created_at,updated_at");
+    if (typeof query?.eq === "function") {
+      query = query.eq("player_id", childId);
+    } else {
+      return { data: null, error: new Error("Query does not support eq on player_achievements") };
     }
     const res = await query;
     return res;
@@ -551,7 +584,8 @@ export async function loadRealDashboardUI4Data(
       { data: userCardsData, error: userCardsError },
       { data: unopenedPacksData, error: unopenedPacksError },
       trAttRes,
-      mAttRes
+      mAttRes,
+      achievementsRes
     ] = await Promise.all([
       supabase
         .from("matches")
@@ -619,7 +653,8 @@ export async function loadRealDashboardUI4Data(
         .eq("user_id", authUser.id)
         .eq("is_opened", false),
       safeQueryAttendance(supabase, "training_attendance", activeChildId),
-      safeQueryAttendance(supabase, "match_attendance", activeChildId)
+      safeQueryAttendance(supabase, "match_attendance", activeChildId),
+      safeQueryPlayerAchievements(supabase, activeChildId)
     ]);
 
     const { nextMatch, nextMatchCountdown, nextTraining, eventContext } = selectNearestEvent(
@@ -733,6 +768,109 @@ export async function loadRealDashboardUI4Data(
       };
     }
 
+    // 5.6. Player Achievements & In-Memory Progression (DELTA-040)
+    let achievements: AchievementInput[] | undefined = undefined;
+    let nextAchievement: NextAchievementProgress | null = null;
+
+    if (!activeChildId) {
+      achievements = undefined;
+    } else if (achievementsRes?.error) {
+      achievements = undefined;
+    } else if (Array.isArray(achievementsRes?.data)) {
+      const catalogMap = new Map(ACHIEVEMENTS_CATALOG.map(def => [def.id, def]));
+      achievements = achievementsRes.data.map((row: any) => {
+        const def = catalogMap.get(row.achievement_id) || row.achievement_definition || row.achievement;
+        const isUnlocked = Boolean(row.unlocked_at);
+        return {
+          id: String(row.id || row.achievement_id),
+          achievement_id: String(row.achievement_id),
+          name: def?.name || row.achievement_id,
+          title: def?.name || row.achievement_id,
+          description: def?.description || null,
+          icon: def?.iconName || null,
+          category: def?.category || null,
+          rarity: def?.rarity || null,
+          isUnlocked,
+          is_unlocked: isUnlocked,
+          unlockedAt: row.unlocked_at || null,
+          unlocked_at: row.unlocked_at || null,
+          achievement: def ? {
+            id: def.id,
+            name: def.name,
+            title: def.name,
+            description: def.description,
+            icon: def.iconName,
+            category: def.category,
+            rarity: def.rarity
+          } : null
+        };
+      });
+
+      // Compute next achievement progression in-memory without database mutations
+      if (sportsXp) {
+        const unlockedAchievementIds = new Set(
+          achievementsRes.data
+            .filter((r: any) => Boolean(r.unlocked_at))
+            .map((r: any) => String(r.achievement_id))
+        );
+
+        const playerStats = {
+          [activeChildId]: {
+            m: sportsXp.presentMatches,
+            starts: sportsXp.presentMatches,
+            captain: 0,
+            g: 0,
+            a: 0,
+            mvp: 0
+          }
+        };
+        const trainingStats = {
+          [activeChildId]: {
+            sessions: sportsXp.presentTrainings,
+            goals: 0,
+            assists: 0,
+            attendanceStreak: sportsXp.presentTrainings
+          }
+        };
+
+        const calculated = calculatePlayerAchievements(
+          activeChildId,
+          playerStats,
+          trainingStats,
+          0,
+          []
+        );
+
+        const candidates = calculated.filter(item => {
+          if (unlockedAchievementIds.has(item.definition.id)) return false;
+          if (item.isUnlocked) return false;
+          if (item.definition.isSecret || item.definition.isManual) return false;
+          return item.current < item.target;
+        });
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => {
+            if (b.percent !== a.percent) return b.percent - a.percent;
+            const remA = a.target - a.current;
+            const remB = b.target - b.current;
+            if (remA !== remB) return remA - remB;
+            return a.target - b.target;
+          });
+
+          const nearest = candidates[0];
+          nextAchievement = {
+            id: nearest.definition.id,
+            name: nearest.definition.name,
+            description: nearest.definition.description || null,
+            icon: nearest.definition.iconName || null,
+            current: nearest.current,
+            target: nearest.target,
+            percent: nearest.percent
+          };
+        }
+      }
+    }
+
     // 6. Build Adapter Input
     const adapterInput: DashboardUI4AdapterInput = {
       profile: {
@@ -767,9 +905,10 @@ export async function loadRealDashboardUI4Data(
       // DELTA-038 Real Sports XP & Progress
       sportsXp,
       progressUnavailableReason,
-      // Data purity: gameProfile (user_game_profile) and achievements remain undefined until future phases
-      gameProfile: undefined,
-      achievements: undefined
+      // DELTA-040 Real Player Achievements & In-Memory Progression
+      achievements,
+      nextAchievement,
+      gameProfile: undefined
     };
 
     const model = createDashboardUI4Model(adapterInput);

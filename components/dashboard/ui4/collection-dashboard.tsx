@@ -28,6 +28,15 @@ interface CollectionDashboardProps {
   model: DashboardUI4Model;
 }
 
+function formatUnlockedBadgeCount(status: string, count: number): string {
+  if (status !== "available" && status !== "empty") {
+    return "—";
+  }
+  if (count === 1) return "1 ODBLOKOWANA";
+  if (count >= 2 && count <= 4) return `${count} ODBLOKOWANE`;
+  return `${count} ODBLOKOWANYCH`;
+}
+
 export function CollectionDashboard({ model }: CollectionDashboardProps) {
   const {
     profile,
@@ -373,9 +382,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                       </h2>
                     </div>
                     <span className="text-xs text-slate-400 font-bold">
-                      {recentAchievements.status === "available" && recentAchievements.data && recentAchievements.data.length > 0
-                        ? `${recentAchievements.data.length} ODBLOKOWANE`
-                        : "ETAP P3"}
+                      {formatUnlockedBadgeCount(recentAchievements.status, recentAchievements.data?.length ?? 0)}
                     </span>
                   </div>
 
@@ -393,13 +400,23 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                         </div>
                       ))}
                     </div>
+                  ) : recentAchievements.status === "available" || recentAchievements.status === "empty" ? (
+                    <div className="py-6 px-4 bg-slate-950/40 rounded-xl border border-slate-800/80 text-center">
+                      <p className="text-xs text-slate-400 font-medium">
+                        Brak zdobytych odznak w tym sezonie
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Odznaki przyznawane są za obecność na treningach, mecze i postawę sportową.
+                      </p>
+                    </div>
                   ) : (
                     <div className="py-6 px-4 bg-slate-950/40 rounded-xl border border-slate-800/80 text-center">
                       <p className="text-xs text-slate-400 font-medium">
-                        System odznak i osiągnięć: Oczekuje na integrację (Etap P3)
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        Brak demonstracyjnych odznak w trybie danych rzeczywistych.
+                        {recentAchievements.reason === "no_linked_player"
+                          ? "Brak powiązanego profilu zawodnika"
+                          : recentAchievements.reason === "not_authorized"
+                          ? "Brak uprawnień do profilu zawodnika"
+                          : "Osiągnięcia niedostępne"}
                       </p>
                     </div>
                   )}

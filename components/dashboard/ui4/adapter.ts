@@ -37,6 +37,8 @@ function achievement(item: AchievementInput): RecentAchievement | null {
     description: definition?.description ?? item.description ?? null,
     icon: definition?.icon ?? definition?.icon_url ?? item.icon ?? item.icon_url ?? null,
     unlockedAt: item.unlockedAt ?? item.unlocked_at ?? null,
+    category: definition?.category ?? item.category ?? null,
+    rarity: definition?.rarity ?? item.rarity ?? null,
   };
 }
 
@@ -93,6 +95,7 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
       verifiedMatches: input.sportsXp.presentMatches,
       stadiumStage: input.sportsXp.stadiumTierTitle,
       attendanceRatePercent: input.sportsXp.attendanceRatePercent ?? null,
+      nextAchievement: input.nextAchievement ?? null,
     });
   } else if (input.gameProfile) {
     progress = available({
@@ -105,6 +108,7 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
       progressPercent: Math.min(100, Math.max(0, input.gameProfile.levelInfo.progressPercent)),
       activityStreak: input.gameProfile.activityStreak,
       maxStreak: input.gameProfile.maxStreak,
+      nextAchievement: input.nextAchievement ?? null,
     });
   } else {
     progress = unavailable("not_loaded");
@@ -179,8 +183,11 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
 
   let recentAchievements: DashboardUI4Model["recentAchievements"];
   if (!input.access.canViewAchievements) recentAchievements = unavailable("not_authorized");
-  else if (input.achievements === undefined) recentAchievements = unavailable("not_loaded");
-  else {
+  else if (input.achievements === undefined) {
+    recentAchievements = input.progressUnavailableReason
+      ? unavailable(input.progressUnavailableReason)
+      : unavailable("not_loaded");
+  } else {
     const items = input.achievements.filter(a => a.isUnlocked === true || a.is_unlocked === true)
       .sort((a,b) => timestamp(b.unlockedAt ?? b.unlocked_at) - timestamp(a.unlockedAt ?? a.unlocked_at))
       .map(achievement).filter((item): item is RecentAchievement => item !== null).slice(0, 3);
