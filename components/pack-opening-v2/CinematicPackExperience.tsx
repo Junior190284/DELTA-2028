@@ -388,7 +388,14 @@ export default function CinematicPackExperience({
 
       if (err instanceof LivePackOpenError && err.code === "ALREADY_OPENED") {
         attemptIdempotencyKeyRef.current = null;
-        dispatchCollectionUpdated("already_opened_reconciliation");
+        if (userUnopenedPackId) {
+          dispatchPackOpened({
+            pack_type_id: pack.id,
+            consumed_pack_id: userUnopenedPackId,
+            timestamp: Date.now()
+          });
+        }
+        dispatchCollectionUpdated("already_opened_reconciliation", userUnopenedPackId);
         setOpenError(err.message);
       } else {
         if (err instanceof LivePackOpenError && err.status >= 400 && err.status < 500) {

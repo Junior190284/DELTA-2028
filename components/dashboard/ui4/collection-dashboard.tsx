@@ -304,6 +304,11 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
           const target = Math.max(0, Math.floor(payload.remaining_unopened_packs_count));
           setLocalUnopenedPacks(prev => (prev.length > target ? prev.slice(prev.length - target) : prev));
         }
+      },
+      onCollectionUpdated: (payload) => {
+        if (payload.consumed_pack_id) {
+          setLocalUnopenedPacks(prev => prev.filter(p => p.id !== payload.consumed_pack_id));
+        }
       }
     });
     return unsubscribe;
@@ -551,15 +556,20 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
               <div className="flex items-center gap-2 shrink-0">
                 <Link
                   href="/preview/dashboard-ui4?view=home"
-                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-800 hover:text-white transition focus-visible:ring-2 focus-visible:ring-amber-400"
+                  className="inline-flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-full bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-800 hover:text-white transition focus-visible:ring-2 focus-visible:ring-amber-400"
+                  aria-label="Wróć do pulpitu głównego"
                 >
-                  <ArrowRight className="w-3.5 h-3.5 rotate-180 text-sky-400" />
+                  <ArrowRight className="w-3.5 h-3.5 rotate-180 text-sky-400 shrink-0" />
                   <span className="hidden sm:inline">DO PULPITU GŁÓWNEGO</span>
                   <span className="sm:hidden">PULPIT</span>
                 </Link>
 
-                <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-black shadow-sm e41-num">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <div
+                  role="status"
+                  aria-label={`Dostępne paczki: ${localUnopenedPacks.length}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black shadow-sm select-none e41-num"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{localUnopenedPacks.length} {localUnopenedPacks.length === 1 ? "PACZKA" : "PACZEK"}</span>
                 </div>
               </div>
@@ -711,8 +721,9 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
                           {localAllCards.length} {albumData?.total != null ? <span className="text-xs text-slate-400 font-normal">/ {albumData.total}</span> : null}
                         </div>
-                        <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mt-0.5">
-                          Unikalne Karty {albumData?.total ? `(${Math.round((localAllCards.length / albumData.total) * 100)}%)` : (albumData?.percent != null ? `(${albumData.percent}%)` : "")}
+                        <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mt-0.5 truncate">
+                          <span className="sm:hidden">Unikalne</span>
+                          <span className="hidden sm:inline">Unikalne Karty {albumData?.total ? `(${Math.round((localAllCards.length / albumData.total) * 100)}%)` : (albumData?.percent != null ? `(${albumData.percent}%)` : "")}</span>
                         </div>
                       </div>
 
@@ -720,8 +731,9 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
                           {tabCounts.duplicates}
                         </div>
-                        <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wide mt-0.5">
-                          Duplikaty w Kolekcji
+                        <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wide mt-0.5 truncate">
+                          <span className="sm:hidden">Duplikaty</span>
+                          <span className="hidden sm:inline">Duplikaty w Kolekcji</span>
                         </div>
                       </div>
 
@@ -729,8 +741,9 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num" data-testid="unopened-packs-count">
                           {localUnopenedPacks.length}
                         </div>
-                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5">
-                          Paczki do Otwarcia
+                        <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5 truncate">
+                          <span className="sm:hidden">Paczki</span>
+                          <span className="hidden sm:inline">Paczki do Otwarcia</span>
                         </div>
                       </div>
                     </div>
@@ -900,33 +913,42 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
               </div>
 
               {/* Category Navigation Tabs */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 mb-4 -mx-1 px-1">
-                {tabs.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      data-testid={`tab-${tab.id}`}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-2 border ${
-                        isActive
-                          ? "bg-gradient-to-r from-amber-500/25 to-amber-600/15 border-amber-500/60 text-amber-300 shadow-md shadow-amber-950/40"
-                          : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                      }`}
-                    >
-                      <span>{tab.label}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-black e41-num ${
+              <div className="relative mb-4">
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 -mx-1 px-1">
+                  {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        data-testid={`tab-${tab.id}`}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide transition-all shrink-0 flex items-center gap-2 border ${
                           isActive
-                            ? "bg-amber-400 text-slate-950"
-                            : "bg-slate-800 text-slate-400"
+                            ? "bg-gradient-to-r from-amber-500/25 to-amber-600/15 border-amber-500/60 text-amber-300 shadow-md shadow-amber-950/40"
+                            : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
                         }`}
                       >
-                        {tab.count}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span>{tab.label}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-black e41-num ${
+                            isActive
+                              ? "bg-amber-400 text-slate-950"
+                              : "bg-slate-800 text-slate-400"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Discreet scroll cue on mobile */}
+                <div
+                  className="pointer-events-none absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-slate-900/90 via-slate-900/50 to-transparent sm:hidden flex items-center justify-end pr-0.5 text-slate-400/80"
+                  aria-hidden="true"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
               </div>
 
               {/* Filter Bar (Search, Rarity, Sort, Reset) */}

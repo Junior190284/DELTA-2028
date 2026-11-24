@@ -22,6 +22,7 @@ export interface DeltaFavoriteUpdatedPayload {
 export interface DeltaCollectionUpdatedPayload {
   timestamp?: number;
   source?: string;
+  consumed_pack_id?: string | null;
 }
 
 // Global Custom Event Names
@@ -53,10 +54,11 @@ export function dispatchFavoriteUpdated(cardId: string, isFavorite: boolean): vo
   window.dispatchEvent(new CustomEvent(CARD_SYNC_EVENTS.FAVORITE_UPDATED, { detail }));
 }
 
-export function dispatchCollectionUpdated(source = "manual"): void {
+export function dispatchCollectionUpdated(source = "manual", consumedPackId?: string | null): void {
   if (typeof window === "undefined") return;
   const detail: DeltaCollectionUpdatedPayload = {
     source,
+    consumed_pack_id: consumedPackId ?? null,
     timestamp: Date.now()
   };
   window.dispatchEvent(new CustomEvent(CARD_SYNC_EVENTS.COLLECTION_UPDATED, { detail }));

@@ -250,7 +250,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
             <div className="d4-dashboard-row-1">
               
               {/* LEFT: 2. DOMINANT HERO: MATCHDAY COMMAND CENTER & CLUB WIRE (8 cols) */}
-              <div className="lg:col-span-8 flex flex-col gap-4">
+              <div className="lg:col-span-8 min-w-0 flex flex-col gap-4">
                 <section
                   data-testid="e41-event-hero"
                   className="e41-match-hero p-4 sm:p-5 text-white flex flex-col gap-3.5"
@@ -295,7 +295,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                         <div className="bg-slate-950/85 border border-slate-800/90 rounded-2xl p-3 sm:p-4 backdrop-blur-md">
                           <div className="grid grid-cols-7 items-center text-center gap-1 sm:gap-2">
                             {/* Home Team */}
-                            <div className="col-span-3 flex flex-col items-center sm:flex-row sm:text-left gap-1.5 sm:gap-2.5">
+                            <div className="col-span-3 min-w-0 flex flex-col items-center sm:flex-row sm:text-left gap-1.5 sm:gap-2.5">
                               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border border-amber-500/40 p-1 flex items-center justify-center shrink-0 shadow-lg">
                                 <Image
                                   src="/teamlogos/gm.png"
@@ -322,7 +322,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                             </div>
 
                             {/* Away Team */}
-                            <div className="col-span-3 flex flex-col items-center sm:flex-row-reverse sm:text-right gap-1.5 sm:gap-2.5">
+                            <div className="col-span-3 min-w-0 flex flex-col items-center sm:flex-row-reverse sm:text-right gap-1.5 sm:gap-2.5">
                               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border border-slate-700/80 p-1.5 flex items-center justify-center shrink-0 shadow-md text-slate-400">
                                 <Shield className="w-6 h-6 sm:w-7 sm:h-7" />
                               </div>
@@ -364,20 +364,20 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                                 : "e41-btn-primary"
                             }`}
                           >
-                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                             <span>
                               {isParent
                                 ? confirmed
-                                  ? "SYMULACJA: OBECNOŚĆ PODOPIECZNEGO ZAZNACZONA ✓"
-                                  : "SYMULACJA: POTWIERDŹ OBECNOŚĆ PODOPIECZNEGO"
+                                  ? "OBECNOŚĆ ZAZNACZONA ✓"
+                                  : "POTWIERDŹ OBECNOŚĆ PODOPIECZNEGO"
                                 : confirmed
-                                ? "SYMULACJA: OBECNOŚĆ ZAZNACZONA LOKALNIE ✓"
-                                : "SYMULACJA: POTWIERDŹ OBECNOŚĆ NA MECZ"}
+                                ? "OBECNOŚĆ ZAZNACZONA ✓"
+                                : "POTWIERDŹ OBECNOŚĆ NA MECZ"}
                             </span>
                           </button>
 
                           <div className="text-center text-[10px] text-amber-400 font-bold tracking-wide">
-                            [TRYB DEMO — SYMULACJA LOKALNA, BRAK ZAPISU W BAZIE DANYCH]
+                            Tryb demonstracyjny — nie zapisuje obecności
                           </div>
 
                           {confirmed && (
@@ -422,14 +422,14 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
                   className="bg-slate-900/65 border border-slate-800/85 rounded-2xl p-4 sm:p-5 backdrop-blur-md flex flex-col justify-between"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-3 border-b border-slate-800/80 pb-2">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-amber-400" />
-                        <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                    <div className="flex items-center justify-between gap-2 mb-3 border-b border-slate-800/80 pb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Bell className="w-4 h-4 text-amber-400 shrink-0" />
+                        <h2 className="text-xs sm:text-base font-bold text-white tracking-wide truncate">
                           Komunikaty Klubu i Trenera
                         </h2>
                       </div>
-                      <span className="text-[10px] bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
+                      <span className="shrink-0 text-[10px] bg-slate-800 text-slate-300 px-2 sm:px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap">
                         {clubCommunications.data?.length ?? 0} AKTUALNOŚCI
                       </span>
                     </div>
@@ -506,7 +506,7 @@ export function HomeDashboard({ model }: HomeDashboardProps) {
               </div>
 
               {/* RIGHT: 3. PASSPORT, PROGRESS, COLLECTION & TEAM SHOWCASE */}
-              <div className="lg:col-span-4 flex flex-col gap-3.5">
+              <div className="lg:col-span-4 min-w-0 flex flex-col gap-3.5">
                 
                 {/* 3A. PASSPORT & ATHLETE PROGRESS (with integrated badges) */}
                 <div

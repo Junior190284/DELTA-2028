@@ -169,9 +169,9 @@ export default function CardDetailModal({
 
           <button
             onClick={() => setIsFlipped(prev => !prev)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all shadow-md cursor-pointer"
+            className="flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all shadow-md cursor-pointer"
           >
-            <RotateCw className="w-3.5 h-3.5" />
+            <RotateCw className="w-4 h-4" />
             <span>{isFlipped ? "Pokaż Awers" : "Obróć na Rewers"}</span>
           </button>
         </div>
