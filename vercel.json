@@ -1,4 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "feature/ui4-hybrid-elite-preview": false
+    }
+  }
 }
+
