@@ -1,4 +1,4 @@
-import type { AchievementInput, ClubCommunication, CollectionCard, CollectionCardCategory, CommunicationInput, DashboardUI4AdapterInput, DashboardUI4Model, PlayerInput, PlayerSummary, RecentAchievement, RecentCard, Section, SeriesProgress, UserCardInput } from "./types.ts";
+import type { AchievementInput, ClubCommunication, CollectionCard, CollectionCardCategory, CommunicationInput, DashboardUI4AdapterInput, DashboardUI4Model, PlayerInput, PlayerSummary, RecentAchievement, RecentCard, Section, SeriesProgress, UserCardInput, UserUnopenedPackItem } from "./types.ts";
 
 export function classifyCardCategory(cardType?: string | null, rarity?: string | null): CollectionCardCategory {
   const ct = (cardType || "").toLowerCase();
@@ -220,6 +220,10 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
       ? finite(input.unopenedPacksCount)
       : finite(input.gameProfile?.unopenedPacks);
 
+    const effectiveUnopenedCount = unopenedPacks !== undefined
+      ? unopenedPacks
+      : (input.unopenedPacksList ? input.unopenedPacksList.length : 0);
+
     const owned = ownedIds.size;
     const duplicates = Math.max(0, copies - owned);
     const series: SeriesProgress[] = [
@@ -228,19 +232,21 @@ export function createDashboardUI4Model(input: DashboardUI4AdapterInput): Dashbo
       { id: "inferno", name: "Karty Specjalne (Inferno)", category: "inferno", owned: specialCount, total: null, percent: null }
     ];
 
+    const packsListProp = input.unopenedPacksList !== undefined ? { unopenedPacksList: input.unopenedPacksList } : {};
+
     if (input.allCards === undefined && input.userCards === undefined) {
       albumProgress = unavailable("not_loaded");
     } else if (input.allCards !== undefined && !input.allCards.length && !input.userCards.length) {
-      albumProgress = empty({ owned: 0, total: 0, percent: 0, duplicates: 0, unopenedPacks, series });
+      albumProgress = empty({ owned: 0, total: 0, percent: 0, duplicates: 0, unopenedPacks: effectiveUnopenedCount, ...packsListProp, series });
     } else if (input.isAuthoritativeCatalog === true && input.allCards && input.allCards.length > 0) {
       const definitions = new Set(input.allCards.map(card => card.id));
       const total = definitions.size;
       const percent = total > 0 ? Math.round(owned / total * 100) : 0;
-      albumProgress = available({ owned, total, percent, duplicates, unopenedPacks, series });
+      albumProgress = available({ owned, total, percent, duplicates, unopenedPacks: effectiveUnopenedCount, ...packsListProp, series });
     } else {
       // Real-data mode: Catalog from RLS is non-authoritative.
       // Total cards and percent are unavailable (null) per DELTA-033 requirements.
-      albumProgress = available({ owned, total: null, percent: null, duplicates, unopenedPacks, series });
+      albumProgress = available({ owned, total: null, percent: null, duplicates, unopenedPacks: effectiveUnopenedCount, ...packsListProp, series });
     }
   }
 

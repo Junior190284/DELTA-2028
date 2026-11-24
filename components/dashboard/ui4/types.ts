@@ -65,12 +65,27 @@ export type SeriesProgress = {
   total: number | null;
   percent: number | null;
 };
+export type UserUnopenedPackItem = {
+  id: string;
+  packTypeId: string;
+  sourceReason?: string | null;
+  createdAt?: string | null;
+  packDefinition?: {
+    id: string;
+    name: string;
+    cardsCount: number;
+    theme?: string;
+    description?: string | null;
+    imageUrl?: string | null;
+  };
+};
 export type AlbumProgress = {
   owned: number;
   total: number | null;
   percent: number | null;
   duplicates: number;
   unopenedPacks: number;
+  unopenedPacksList?: UserUnopenedPackItem[];
   series?: SeriesProgress[];
 };
 export type NextAchievementProgress = {
@@ -178,6 +193,7 @@ export interface DashboardUI4AdapterInput {
   progressUnavailableReason?: UnavailableReason;
   allCards?: CardDefinitionInput[]; userCards?: UserCardInput[];
   unopenedPacksCount?: number;
+  unopenedPacksList?: UserUnopenedPackItem[];
   isAuthoritativeCatalog?: boolean;
   achievements?: AchievementInput[];
   nextAchievement?: NextAchievementProgress | null;

@@ -393,8 +393,14 @@ export default function CinematicPackExperience({
       } else {
         if (err instanceof LivePackOpenError && err.status >= 400 && err.status < 500) {
           attemptIdempotencyKeyRef.current = null;
+          setOpenError(err instanceof Error ? err.message : "Błąd otwierania paczki.");
+        } else {
+          // Ambiguous network error, timeout, or server disruption
+          // Never assume the pack is preserved; preserve idempotency key and show honest message
+          setOpenError(
+            "Błąd połączenia podczas otwierania paczki. Wynik operacji na serwerze jest niejednoznaczny — odśwież widok lub zweryfikuj stan Skarbca przed kolejną próbą."
+          );
         }
-        setOpenError(err instanceof Error ? err.message : "Błąd połączenia. Spróbuj ponownie.");
       }
 
       isOpeningInFlightRef.current = false;
@@ -431,6 +437,10 @@ export default function CinematicPackExperience({
   }, []);
 
   const handleClose = useCallback(() => {
+    if (isOpeningInFlightRef.current || isRequestingOpen) {
+      // Safety: Never abort or close while open request is in flight
+      return;
+    }
     openRequestGenRef.current += 1;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
@@ -440,7 +450,7 @@ export default function CinematicPackExperience({
     controller?.dispatch("CLOSE");
     controller?.dispose();
     onClose();
-  }, [controller, onClose]);
+  }, [controller, isRequestingOpen, onClose]);
 
   const handleToggleMute = useCallback(() => {
     setIsMutedLive((prev) => !prev);
@@ -509,6 +519,9 @@ export default function CinematicPackExperience({
         e.preventDefault();
         if (inspectedSummaryCard) {
           setInspectedSummaryCard(null);
+          return;
+        }
+        if (isRequestingOpen || isOpeningInFlightRef.current) {
           return;
         }
         handleClose();
@@ -896,7 +909,7 @@ export default function CinematicPackExperience({
   const currentPhase = state?.phase ?? "READY";
   const isMuted = state ? state.isMuted : isMutedLive;
   const canSkip = state ? state.canSkip : false;
-  const canClose = state ? state.canClose : true;
+  const canClose = !isRequestingOpen && (state ? state.canClose : true);
   const packImage = getPackImageUrl(pack.id, pack.theme);
   const cutoutPackThemes = ["standard", "matchday", "gold", "inferno", "legend"];
   const hasPackCutout = enableStadiumFilm && cutoutPackThemes.includes(pack.theme);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -18,12 +18,27 @@ import {
   Clock,
   Star,
   CheckCircle2,
-  Copy
+  Copy,
+  X
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import DeltaCard from "@/components/cards/DeltaCard";
 import CardDetailModal from "@/components/collection/CardDetailModal";
 import CollectionFilterBar, { FilterState } from "@/components/collection/CollectionFilterBar";
-import type { DashboardUI4Model, CollectionCard } from "./types";
+
+const CinematicPackExperience = dynamic(
+  () => import("@/components/pack-opening-v2/CinematicPackExperience"),
+  { ssr: false }
+);
+import {
+  selectPackSessionToOpen,
+  reconcileUnopenedPacksAfterOpen,
+  buildFallbackPackDefinition
+} from "@/lib/cards/packOpeningAlbumBridge";
+import { subscribeCardEvents } from "@/lib/cards/cardSync";
+import type { PackDefinition, PackOpeningResult, UserUnopenedPack } from "@/lib/cards/types";
+import type { DashboardUI4Model, CollectionCard, UserUnopenedPackItem } from "./types";
+import { classifyCardCategory } from "./adapter";
 import { DeltaDesktopSidebar } from "./delta-desktop-sidebar";
 import { DeltaMobileBottomNav } from "./delta-mobile-nav";
 import {
@@ -34,6 +49,7 @@ import {
 
 interface CollectionDashboardProps {
   model: DashboardUI4Model;
+  openPackFetch?: typeof fetch;
 }
 
 export type CollectionTab = "all" | "base" | "matchday" | "special" | "duplicates";
@@ -161,7 +177,7 @@ function formatUnlockedBadgeCount(status: string, count: number): string {
   return `${count} ODBLOKOWANYCH`;
 }
 
-export function CollectionDashboard({ model }: CollectionDashboardProps) {
+export function CollectionDashboard({ model, openPackFetch }: CollectionDashboardProps) {
   const {
     profile,
     progress,
@@ -177,6 +193,48 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [favoriteCardId, setFavoriteCardId] = useState<string | null>(null);
 
+  // Local state for unopened packs allowing dynamic consumption and UI refresh
+  const [localUnopenedPacks, setLocalUnopenedPacks] = useState<UserUnopenedPackItem[]>(() => {
+    if (albumProgress?.data?.unopenedPacksList && albumProgress.data.unopenedPacksList.length > 0) {
+      return albumProgress.data.unopenedPacksList;
+    }
+    const count = albumProgress?.data?.unopenedPacks ?? 0;
+    if (count > 0) {
+      return Array.from({ length: count }, (_, i) => ({
+        id: `pack-${i + 1}`,
+        packTypeId: "standard_pack",
+        sourceReason: "reward",
+        createdAt: new Date().toISOString()
+      }));
+    }
+    return [];
+  });
+
+  // Local state for all cards allowing immediate inclusion of newly drawn cards upon confirmed success
+  const [localAllCards, setLocalAllCards] = useState<CollectionCard[]>(() => {
+    if (collectionCards?.status === "available" && Array.isArray(collectionCards.data)) {
+      return collectionCards.data;
+    }
+    return [];
+  });
+
+  // Local state for recent drops
+  const [localRecentCards, setLocalRecentCards] = useState(() => {
+    if (recentCards?.status === "available" && Array.isArray(recentCards.data)) {
+      return recentCards.data;
+    }
+    return [];
+  });
+
+  // Active pack opening session
+  const [activePackSession, setActivePackSession] = useState<{
+    pack: PackDefinition;
+    userUnopenedPackId: string | null;
+    sessionKey: number;
+  } | null>(null);
+
+  const [packOpenToast, setPackOpenToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -186,12 +244,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
     sort: "newest"
   });
 
-  const allCards = useMemo<CollectionCard[]>(() => {
-    if (collectionCards?.status === "available" && Array.isArray(collectionCards.data)) {
-      return collectionCards.data;
-    }
-    return [];
-  }, [collectionCards]);
+  const allCards = localAllCards;
 
   const playersList = useMemo(() => {
     const map = new Map<string, string>();
@@ -232,6 +285,185 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
     setFavoriteCardId(prev => (prev === cardId ? null : cardId));
   };
 
+  useEffect(() => {
+    if (!packOpenToast) return;
+    const timer = setTimeout(() => {
+      setPackOpenToast(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [packOpenToast]);
+
+  // Synchronize state with cardSync event bus for cross-view reconciliation
+  useEffect(() => {
+    const unsubscribe = subscribeCardEvents({
+      onPackOpened: (payload) => {
+        if (payload.consumed_pack_id) {
+          setLocalUnopenedPacks(prev => prev.filter(p => p.id !== payload.consumed_pack_id));
+        }
+        if (typeof payload.remaining_unopened_packs_count === "number" && Number.isFinite(payload.remaining_unopened_packs_count)) {
+          const target = Math.max(0, Math.floor(payload.remaining_unopened_packs_count));
+          setLocalUnopenedPacks(prev => (prev.length > target ? prev.slice(prev.length - target) : prev));
+        }
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleStartPackOpening = (packItem: UserUnopenedPackItem) => {
+    const convertedPacks: UserUnopenedPack[] = localUnopenedPacks.map(p => ({
+      id: p.id,
+      user_id: "",
+      pack_type_id: p.packTypeId,
+      source_reason: p.sourceReason ?? null,
+      is_opened: false,
+      opened_at: null,
+      created_at: p.createdAt || new Date().toISOString(),
+      pack_definition: p.packDefinition ? {
+        id: p.packDefinition.id,
+        name: p.packDefinition.name,
+        description: p.packDefinition.description ?? "Oficjalna paczka kart",
+        cards_count: p.packDefinition.cardsCount,
+        drop_rates: { common: 60, rare: 30, epic: 8, legendary: 1.8, inferno: 0.2 },
+        min_rarity: "common",
+        theme: p.packDefinition.theme || "standard",
+        image_url: p.packDefinition.imageUrl ?? undefined,
+        is_active: true
+      } : undefined
+    }));
+
+    const session = selectPackSessionToOpen({
+      unopenedPacks: convertedPacks,
+      packDefinitions: [],
+      preferredUnopenedPackId: packItem.id,
+      preferredPackTypeId: packItem.packTypeId
+    });
+
+    if (session) {
+      setActivePackSession({
+        pack: session.pack,
+        userUnopenedPackId: session.targetUnopenedPack.id,
+        sessionKey: Date.now()
+      });
+    } else {
+      const fallbackPack = buildFallbackPackDefinition(packItem.packTypeId, {
+        id: packItem.packTypeId,
+        name: packItem.packDefinition?.name || "Paczka DELTA",
+        cardsCount: packItem.packDefinition?.cardsCount || 4,
+        theme: packItem.packDefinition?.theme || "standard"
+      });
+      setActivePackSession({
+        pack: fallbackPack,
+        userUnopenedPackId: packItem.id,
+        sessionKey: Date.now()
+      });
+    }
+  };
+
+  const handlePackConsumed = (result: PackOpeningResult) => {
+    const consumedId = result.consumed_pack_id || activePackSession?.userUnopenedPackId;
+
+    // 1. Reconcile unopened packs
+    setLocalUnopenedPacks(prev => {
+      let next = prev;
+      if (consumedId) {
+        next = next.filter(p => p.id !== consumedId);
+      }
+      if (
+        typeof result.remaining_unopened_packs_count === "number" &&
+        Number.isFinite(result.remaining_unopened_packs_count)
+      ) {
+        const target = Math.max(0, Math.floor(result.remaining_unopened_packs_count));
+        if (next.length > target) {
+          next = next.slice(next.length - target);
+        }
+      }
+      return next;
+    });
+
+    // 2. Update collection cards
+    if (Array.isArray(result.cards) && result.cards.length > 0) {
+      setLocalAllCards(prev => {
+        const updated = [...prev];
+        for (const item of result.cards) {
+          const drawn = item?.card;
+          if (!drawn || !drawn.id) continue;
+          const existingIdx = updated.findIndex(
+            c => c.cardId === drawn.id || (c.name && drawn.card_name && c.name.toLowerCase() === drawn.card_name.toLowerCase())
+          );
+          if (existingIdx >= 0) {
+            // Increment duplicates count
+            const existing = updated[existingIdx];
+            updated[existingIdx] = {
+              ...existing,
+              duplicatesCount: (existing.duplicatesCount || 0) + 1,
+              quantity: (existing.quantity || 1) + 1
+            };
+          } else {
+            // Add as new unique card
+            const newCard: CollectionCard = {
+              id: `uc-${drawn.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              cardId: drawn.id,
+              name: drawn.card_name || drawn.title || "Karta DELTA",
+              title: drawn.title || drawn.card_name || "Karta DELTA",
+              category: classifyCardCategory(drawn.card_type),
+              rarity: drawn.rarity || "common",
+              cardType: String(drawn.card_type || "base").toUpperCase(),
+              frameTheme: drawn.frame_theme ?? null,
+              artworkPose: drawn.artwork_pose ?? null,
+              cardNumber: drawn.card_number ?? null,
+              playerShirtNumber: drawn.player?.shirt_number ? Number(drawn.player.shirt_number) || null : null,
+              playerName: drawn.player?.display_name || "ZAWODNIK DELTA",
+              playerPosition: drawn.player?.position || "POM",
+              playerPhotoUrl: drawn.player?.photo_path || drawn.artwork_url || null,
+              artworkUrl: drawn.artwork_url || null,
+              acquiredAt: new Date().toISOString(),
+              quantity: 1,
+              duplicatesCount: 0,
+              isFavorite: false,
+              season: drawn.season || "2026/27"
+            };
+            updated.unshift(newCard);
+          }
+        }
+        return updated;
+      });
+
+      // 3. Update recent drops gallery
+      setLocalRecentCards(prev => {
+        const newRecent = result.cards.filter(item => item?.card?.id).map(item => ({
+          userCardId: `drop-${item.card.id}-${Date.now()}`,
+          definitionId: item.card.id,
+          name: item.card.card_name || item.card.title || "Karta DELTA",
+          rarity: (item.card.rarity || "common").toUpperCase(),
+          cardType: String(item.card.card_type || "base").toUpperCase(),
+          playerName: item.card.player?.display_name || "ZAWODNIK DELTA",
+          playerShirtNumber: item.card.player?.shirt_number ? Number(item.card.player.shirt_number) || null : null,
+          acquiredAt: new Date().toISOString(),
+          artworkUrl: item.card.artwork_url || null
+        }));
+        return [...newRecent, ...prev].slice(0, 4);
+      });
+    }
+
+    // 4. Show success toast
+    setPackOpenToast({
+      type: "success",
+      message: `Pomyślnie otwarto paczkę! Zdobyto ${result.cards?.length || 0} kart.`
+    });
+  };
+
+  const handleOpenAnother = () => {
+    setLocalUnopenedPacks(prev => {
+      if (prev.length > 0) {
+        const nextPack = prev[0];
+        handleStartPackOpening(nextPack);
+      } else {
+        setActivePackSession(null);
+      }
+      return prev;
+    });
+  };
+
   const tabs: { id: CollectionTab; label: string; count: number }[] = [
     { id: "all", label: "Wszystkie", count: tabCounts.all },
     { id: "base", label: "Podstawowe", count: tabCounts.base },
@@ -267,7 +499,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
         <DeltaDesktopSidebar
           profile={profile}
           activeItem="collection"
-          unopenedPacks={albumData?.unopenedPacks ?? 0}
+          unopenedPacks={localUnopenedPacks.length}
           collectionPercent={albumProgress.status === "available" ? (albumData?.percent ?? null) : null}
           variantTheme="collector"
         />
@@ -328,7 +560,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
 
                 <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-black shadow-sm e41-num">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{albumData?.unopenedPacks ?? 0} {albumData?.unopenedPacks === 1 ? "PACZKA" : "PACZEK"}</span>
+                  <span>{localUnopenedPacks.length} {localUnopenedPacks.length === 1 ? "PACZKA" : "PACZEK"}</span>
                 </div>
               </div>
             </div>
@@ -394,16 +626,81 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                       </span>
                     </div>
 
-                    {/* Big Action Button: Pack Vault Status */}
-                    <div className="mt-3 w-full">
-                      {albumData && albumData.unopenedPacks > 0 ? (
-                        <div className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-center text-amber-300 font-bold text-xs flex items-center justify-center gap-2">
-                          <Sparkles className="w-4 h-4 text-amber-400" />
-                          <span>DOSTĘPNE PACZKI W SKARBCU: {albumData.unopenedPacks}</span>
+                    {/* Pack Vault Section */}
+                    <div data-testid="pack-vault-section" className="mt-3 w-full">
+                      {localUnopenedPacks.length === 0 ? (
+                        <div
+                          data-testid="pack-vault-empty"
+                          className="w-full py-3 px-4 rounded-xl bg-slate-900/90 border border-slate-800 text-center space-y-1"
+                        >
+                          <div className="flex items-center justify-center gap-1.5 text-slate-400 font-bold text-xs uppercase tracking-wide">
+                            <Lock className="w-3.5 h-3.5 text-slate-500" />
+                            <span>BRAK NOWYCH PACZEK DO OTWARCIA</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            Skarbiec paczek jest pusty. Zdobądź nowe paczki przez obecność na treningach, mecze ligowe i wyzwania klubowe.
+                          </p>
                         </div>
                       ) : (
-                        <div className="w-full py-2.5 px-4 rounded-xl bg-slate-900 border border-slate-800 text-center text-slate-400 font-bold text-xs">
-                          BRAK NOWYCH PACZEK DO OTWARCIA
+                        <div data-testid="pack-vault-list" className="space-y-2">
+                          <div className="flex items-center justify-between text-xs px-1">
+                            <span className="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wide">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Dostępne Paczki ({localUnopenedPacks.length})</span>
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">Wybierz paczkę do otwarcia</span>
+                          </div>
+
+                          <div className="max-h-[220px] overflow-y-auto space-y-2 pr-0.5">
+                            {localUnopenedPacks.map((packItem) => {
+                              const packName = packItem.packDefinition?.name || (
+                                packItem.packTypeId.includes("inferno")
+                                  ? "Paczka Inferno"
+                                  : packItem.packTypeId.includes("legend")
+                                  ? "Paczka Legend"
+                                  : packItem.packTypeId.includes("matchday")
+                                  ? "Paczka Meczowa"
+                                  : packItem.packTypeId.includes("gold")
+                                  ? "Paczka Gold"
+                                  : "Paczka Standardowa DELTA"
+                              );
+                              const cardsCount = packItem.packDefinition?.cardsCount || 4;
+                              const reason = packItem.sourceReason || "Nagroda klubowa";
+                              const isOpeningThis = activePackSession?.userUnopenedPackId === packItem.id;
+
+                              return (
+                                <div
+                                  key={packItem.id}
+                                  data-testid={`pack-item-${packItem.id}`}
+                                  className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30 flex items-center justify-between gap-2.5 hover:border-amber-500/60 transition shadow-sm"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/40 flex items-center justify-center shrink-0 text-amber-400">
+                                      <Sparkles className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0 text-left">
+                                      <div className="text-xs font-black text-white truncate">{packName}</div>
+                                      <div className="text-[10px] text-slate-400 truncate flex items-center gap-1.5">
+                                        <span>{cardsCount} karty</span>
+                                        <span>•</span>
+                                        <span className="text-amber-400/90">{reason}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    data-testid={`open-pack-btn-${packItem.id}`}
+                                    disabled={activePackSession !== null}
+                                    onClick={() => handleStartPackOpening(packItem)}
+                                    className="shrink-0 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-md shadow-amber-950/50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[36px]"
+                                  >
+                                    {isOpeningThis ? "OTWIERANIE..." : "OTWÓRZ"}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -412,16 +709,16 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                     <div className="mt-3 w-full grid grid-cols-3 gap-2">
                       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
-                          {albumData ? albumData.owned : "—"} {albumData?.total != null ? <span className="text-xs text-slate-400 font-normal">/ {albumData.total}</span> : null}
+                          {localAllCards.length} {albumData?.total != null ? <span className="text-xs text-slate-400 font-normal">/ {albumData.total}</span> : null}
                         </div>
                         <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mt-0.5">
-                          Unikalne Karty {albumData?.percent != null ? `(${albumData.percent}%)` : ""}
+                          Unikalne Karty {albumData?.total ? `(${Math.round((localAllCards.length / albumData.total) * 100)}%)` : (albumData?.percent != null ? `(${albumData.percent}%)` : "")}
                         </div>
                       </div>
 
                       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
                         <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
-                          {albumData ? albumData.duplicates : "—"}
+                          {tabCounts.duplicates}
                         </div>
                         <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wide mt-0.5">
                           Duplikaty w Kolekcji
@@ -429,8 +726,8 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                       </div>
 
                       <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5">
-                        <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num">
-                          {albumData ? albumData.unopenedPacks : "—"}
+                        <div className="text-base sm:text-lg lg:text-xl font-black text-white e41-num" data-testid="unopened-packs-count">
+                          {localUnopenedPacks.length}
                         </div>
                         <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5">
                           Paczki do Otwarcia
@@ -504,8 +801,8 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {recentCards.status === "available" && recentCards.data && recentCards.data.length > 0 ? (
-                      recentCards.data.map((card, i) => {
+                    {localRecentCards.length > 0 ? (
+                      localRecentCards.map((card, i) => {
                         const rarity = (card.rarity || "COMMON").toUpperCase();
                         const glow =
                           rarity === "INFERNO"
@@ -547,7 +844,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
                           </div>
                         );
                       })
-                    ) : recentCards.status === "empty" ? (
+                    ) : recentCards.status === "empty" || localRecentCards.length === 0 ? (
                       <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
                         Brak jeszcze kart w kolekcji — otwórz pierwszą paczkę!
                       </div>
@@ -878,7 +1175,7 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
 
           {/* Mobile Bottom Navigation */}
           <DeltaMobileBottomNav
-            unopenedPacks={albumData?.unopenedPacks ?? 0}
+            unopenedPacks={localUnopenedPacks.length}
             activeItem="collection"
           />
 
@@ -891,6 +1188,52 @@ export function CollectionDashboard({ model }: CollectionDashboardProps) {
             onSetFeatured={handleSetFavorite}
             isFeatured={selectedCard ? (favoriteCardId === selectedCard.id || favoriteCardId === selectedCard.playerId) : false}
           />
+
+          {/* Cinematic Pack Experience Stage */}
+          {activePackSession && (
+            <CinematicPackExperience
+              pack={activePackSession.pack}
+              userUnopenedPackId={activePackSession.userUnopenedPackId}
+              sessionKey={activePackSession.sessionKey}
+              unopenedCount={localUnopenedPacks.length}
+              autoStart={false}
+              enableStadiumFilm={true}
+              openPackFetch={openPackFetch}
+              onPackConsumed={handlePackConsumed}
+              onClose={() => setActivePackSession(null)}
+              onOpenAnother={handleOpenAnother}
+            />
+          )}
+
+          {/* Toast feedback notification */}
+          {packOpenToast && (
+            <div
+              role="status"
+              aria-live="polite"
+              className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-2xl border flex items-center gap-3 max-w-sm backdrop-blur-md transition-all ${
+                packOpenToast.type === "success"
+                  ? "bg-slate-900/95 border-emerald-500/50 text-emerald-300"
+                  : "bg-slate-900/95 border-red-500/50 text-red-300"
+              }`}
+            >
+              {packOpenToast.type === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              ) : (
+                <Lock className="w-5 h-5 text-red-400 shrink-0" />
+              )}
+              <div className="text-xs font-bold leading-snug flex-1">
+                {packOpenToast.message}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPackOpenToast(null)}
+                aria-label="Zamknij powiadomienie"
+                className="p-1 rounded-lg text-slate-400 hover:text-white transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

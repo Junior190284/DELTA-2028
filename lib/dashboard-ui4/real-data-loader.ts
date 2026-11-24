@@ -30,6 +30,7 @@ import {
   type EventInput,
   type CardDefinitionInput,
   type UserCardInput,
+  type UserUnopenedPackItem,
   type SportsXpInput,
   type AchievementInput,
   type NextAchievementProgress,
@@ -669,6 +670,7 @@ export async function loadRealDashboardUI4Data(
     let allCards: CardDefinitionInput[] | undefined = undefined;
     let userCards: UserCardInput[] | undefined = undefined;
     let unopenedPacksCount: number | undefined = undefined;
+    let unopenedPacksList: UserUnopenedPackItem[] | undefined = undefined;
 
     if (!cardDefsError && !userCardsError && Array.isArray(cardDefsData) && Array.isArray(userCardsData)) {
       allCards = cardDefsData.map((def: any) => ({
@@ -719,9 +721,15 @@ export async function loadRealDashboardUI4Data(
         };
       });
 
-      unopenedPacksCount = !unopenedPacksError && Array.isArray(unopenedPacksData)
-        ? unopenedPacksData.length
-        : 0;
+      unopenedPacksList = !unopenedPacksError && Array.isArray(unopenedPacksData)
+        ? unopenedPacksData.map((p: any) => ({
+            id: String(p.id),
+            packTypeId: String(p.pack_type_id || "standard_pack"),
+            sourceReason: p.source_reason ?? null,
+            createdAt: p.created_at ?? null
+          }))
+        : [];
+      unopenedPacksCount = unopenedPacksList.length;
     }
 
     // 5.5. Sports XP & Attendance Calculation (DELTA-038 Real Sports XP)
@@ -910,6 +918,7 @@ export async function loadRealDashboardUI4Data(
       allCards,
       userCards,
       unopenedPacksCount,
+      unopenedPacksList,
       isAuthoritativeCatalog: options.isAuthoritativeCatalog ?? false,
       // DELTA-038 Real Sports XP & Progress
       sportsXp,
