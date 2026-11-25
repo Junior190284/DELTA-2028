@@ -1,361 +1,401 @@
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import StadiumFX from "./StadiumFX";
-import { LeagueHome } from "./LeagueCenter";
-import { createClient } from "@/lib/supabase/client";
+import {
+  CalendarDays,
+  Check,
+  ChevronRight,
+  Clock3,
+  Flame,
+  Goal,
+  LockKeyhole,
+  MapPin,
+  Shield,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { decodeHtmlEntities } from "@/lib/text";
 import { formatTeamName, getTeamLogo } from "@/lib/teams";
-import {
-  Activity, ArrowUpRight, CalendarDays, ChevronRight, Clock3, Flame, Goal,
-  LockKeyhole, MapPin, Radio, Shield, Sparkles, Star, Target,
-  Trophy, Users, Zap
-} from "lucide-react";
+import PublicNav from "./public/PublicNav";
+import MatchCountdown from "./public/MatchCountdown";
+import PublicMotion from "./public/PublicMotion";
+import styles from "./public/public-experience.module.css";
 
-type Match={
-  id:string;round_no:number|null;match_date:string;match_time:string|null;venue:string|null;
-  home_team:string;away_team:string;home_score:number|null;away_score:number|null;status:string
-};
-type News={id:string;type:string;title:string;body:string|null;published_at:string};
-type ClubUpdate={id:string;source_key:string;source_name:string;source_url:string;title:string;body:string|null;priority:number;published_at:string};
-type TeamEvent={id:string;title:string;event_type:string;event_date:string;start_time:string|null;end_time:string|null;location:string|null;details:string|null;important:boolean};
-type AttendanceSummary={match_id:string;responses:number;present:number};
-
-const CLUB="K.S. Delta Warszawa GM";
-const GOAL_TARGET=50;
-const teamLogos:Record<string,string>={
-  "K.S. Delta Warszawa GM":"/teamlogos/gm.png",
-  "Alfa Przymierze Rodzin":"/teamlogos/alfa.png",
-  "FC Vizja Warszawa":"/teamlogos/vizja.png",
-  "RKS Ursus Warszawa":"/teamlogos/ursus.png",
-  "MUKS Julianów":"/teamlogos/julianow.png",
+type Match = {
+  id: string;
+  round_no: number | null;
+  match_date: string;
+  match_time: string | null;
+  venue: string | null;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
 };
 
-function datePL(v:string){
-  try{return new Date(`${v}T12:00:00`).toLocaleDateString("pl-PL",{day:"2-digit",month:"2-digit",year:"numeric"});}catch{return v}
-}
-function opponent(m:Match){return formatTeamName(m.home_team===CLUB?m.away_team:m.home_team)}
-function ours(m:Match){return m.home_team===CLUB?(m.home_score??0):(m.away_score??0)}
-function theirs(m:Match){return m.home_team===CLUB?(m.away_score??0):(m.home_score??0)}
-function result(m:Match){return ours(m)>theirs(m)?"W":ours(m)===theirs(m)?"R":"P"}
-function localDate(date:string,time?:string|null){return new Date(`${date}T${time?.slice(0,5)||"12:00"}:00`)}
-function seasonLabel(date?:string){
-  const value=date?new Date(`${date}T12:00:00`):new Date();
-  const start=value.getMonth()>=6?value.getFullYear():value.getFullYear()-1;
-  return `${start}/${String(start+1).slice(-2)}`;
-}
-function countdown(target:Date,now:number){
-  const ms=target.getTime()-now;
-  if(ms<=0)return "TERAZ";
-  const mins=Math.floor(ms/60000),days=Math.floor(mins/1440),hours=Math.floor((mins%1440)/60),m=mins%60;
-  if(days>0)return `${days} d ${hours} godz. ${m} min`;
-  if(hours>0)return `${hours} godz. ${m} min`;
-  return `${Math.max(1,m)} min`;
-}
-function shortCountdown(target:Date,now:number){
-  const ms=target.getTime()-now;
-  if(ms<=0)return "TERAZ";
-  const mins=Math.floor(ms/60000),days=Math.floor(mins/1440),hours=Math.floor((mins%1440)/60);
-  if(days>0)return `${days} d • ${hours} h`;
-  return `${Math.max(1,hours)} h`;
-}
-function Logo({team,size=72}:{team:string,size?:number}){
-  const src=getTeamLogo(team);
-  if(src)return <img src={src} alt={formatTeamName(team)} style={{width:size,height:size,objectFit:"contain"}}/>;
-  return <span className="v101-public-fallback-logo" style={{width:size,height:size}}>{team.split(" ").filter(Boolean)[0]?.slice(0,2).toUpperCase()}</span>;
+type News = { id: string; type: string; title: string; body: string | null; published_at: string };
+type ClubUpdate = {
+  id: string;
+  source_key: string;
+  source_name: string;
+  source_url: string;
+  title: string;
+  body: string | null;
+  priority: number;
+  published_at: string;
+};
+type TeamEvent = {
+  id: string;
+  title: string;
+  event_type: string;
+  event_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  location: string | null;
+  details: string | null;
+  important: boolean;
+};
+type AttendanceSummary = { match_id: string; responses: number; present: number };
+
+const CLUB = "K.S. Delta Warszawa GM";
+
+function localDate(date: string, time?: string | null) {
+  return new Date(`${date}T${time?.slice(0, 5) || "12:00"}:00`);
 }
 
-export default function PublicTeamSite(props:{
-  matches:Match[];
-  news:News[];
-  clubUpdates:ClubUpdate[];
-  teamEvents:TeamEvent[];
-  attendanceSummary:AttendanceSummary[];
-  rosterCount:number;
-}){
-  const [now,setNow]=useState(()=>Date.now());
-  const [signedIn,setSignedIn]=useState(false);
-  useEffect(()=>{
-    let active=true;
-    const client=createClient();
-    client.auth.getSession().then(({data})=>{if(active)setSignedIn(Boolean(data.session));});
-    const {data:{subscription}}=client.auth.onAuthStateChange((_event,session)=>{if(active)setSignedIn(Boolean(session));});
-    return()=>{active=false;subscription.unsubscribe();};
-  },[]);
-  const [cinematicActive, setCinematicActive] = useState(false);
-  useEffect(() => {
-    setCinematicActive(true);
-  }, []);
-  useEffect(()=>{const t=window.setInterval(()=>setNow(Date.now()),30000);return()=>window.clearInterval(t)},[]);
+function datePL(value: string) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString("pl-PL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
-  const scheduled=useMemo(()=>props.matches.filter(m=>m.status==="scheduled").slice().sort((a,b)=>localDate(a.match_date,a.match_time).getTime()-localDate(b.match_date,b.match_time).getTime()),[props.matches]);
-  const nextMatch=scheduled.find(m=>localDate(m.match_date,m.match_time).getTime()>=now-2*60*60*1000)||scheduled[0]||null;
-  const recent=props.matches.filter(m=>m.status==="played").slice().sort((a,b)=>b.match_date.localeCompare(a.match_date)).slice(0,5);
-  const recentThree=recent.slice(0,3);
-  const played=props.matches.filter(m=>m.status==="played");
-  const wins=played.filter(m=>ours(m)>theirs(m)).length;
-  const draws=played.filter(m=>ours(m)===theirs(m)).length;
-  const losses=played.filter(m=>ours(m)<theirs(m)).length;
-  const goals=played.reduce((sum,m)=>sum+ours(m),0);
-  const goalsPerMatch=played.length?goals/played.length:0;
-  const winRate=played.length?Math.round(wins/played.length*100):0;
-  const nextAttendance=nextMatch?props.attendanceSummary.find(x=>x.match_id===nextMatch.id):null;
-  const lastMatch=recent[0]||null;
-  const currentSeason=seasonLabel(nextMatch?.match_date||lastMatch?.match_date);
+function opponent(match: Match) {
+  return formatTeamName(match.home_team === CLUB ? match.away_team : match.home_team);
+}
 
-  const eventCandidates=useMemo(()=>{
-    const events=props.teamEvents.map(e=>({
-      id:`event-${e.id}`,title:e.title,subtitle:[e.start_time?.slice(0,5),e.location].filter(Boolean).join(" • "),date:localDate(e.event_date,e.start_time),kind:e.event_type
-    }));
-    const matches=scheduled.map(m=>({
-      id:`match-${m.id}`,title:`Mecz: ${opponent(m)}`,subtitle:[m.match_time?.slice(0,5),m.venue].filter(Boolean).join(" • "),date:localDate(m.match_date,m.match_time),kind:"match"
-    }));
-    return [...events,...matches].filter(x=>x.date.getTime()>=now-90*60*1000).sort((a,b)=>a.date.getTime()-b.date.getTime());
-  },[props.teamEvents,scheduled,now]);
-  const nextEvent=eventCandidates[0]||null;
+function ourScore(match: Match) {
+  return match.home_team === CLUB ? match.home_score : match.away_score;
+}
 
-  const biggestWin=played.map(m=>({m,diff:ours(m)-theirs(m)})).filter(x=>x.diff>0).sort((a,b)=>b.diff-a.diff)[0]?.m||null;
-  const highestGoals=played.slice().sort((a,b)=>ours(b)-ours(a))[0]||null;
-  const currentWinStreak=(()=>{let n=0;for(const m of recent){if(result(m)!=="W")break;n++;}return n})();
-  const goalProgress=Math.min(100,Math.round(goals/GOAL_TARGET*100));
-  const latestClub=props.clubUpdates[0]||null;
-  const isMatchDay=nextMatch?localDate(nextMatch.match_date,nextMatch.match_time).getTime()-now<=24*60*60*1000&&localDate(nextMatch.match_date,nextMatch.match_time).getTime()>now-3*60*60*1000:false;
-  const liveEvent=eventCandidates.find(event=>{
-    const startsIn=event.date.getTime()-now;
-    return startsIn<=30*60*1000&&startsIn>=-2*60*60*1000;
-  })||null;
+function theirScore(match: Match) {
+  return match.home_team === CLUB ? match.away_score : match.home_score;
+}
 
-  const publicCalendar=[
-    ...scheduled.slice(0,4).map(m=>({id:`m-${m.id}`,date:m.match_date,time:m.match_time,title:`${m.home_team} — ${m.away_team}`,type:"MECZ",location:m.venue})),
-    ...props.teamEvents.slice(0,8).map(e=>({id:`e-${e.id}`,date:e.event_date,time:e.start_time,title:e.title,type:e.event_type.toUpperCase(),location:e.location}))
-  ].sort((a,b)=>`${a.date} ${a.time||""}`.localeCompare(`${b.date} ${b.time||""}`)).slice(0,6);
+function TeamMark({ team, priority = false }: { team: string; priority?: boolean }) {
+  const logo = getTeamLogo(team);
+  if (!logo) {
+    return <span className={styles.teamFallback}>{formatTeamName(team).slice(0, 2).toUpperCase()}</span>;
+  }
 
-  return <main className="public-team-site v101-public-home v102-public-home v104-public">
-    <StadiumFX
-      intro
-      cinematicIntro={cinematicActive}
-      onCloseCinematic={() => setCinematicActive(false)}
+  return (
+    <Image
+      className={styles.teamLogo}
+      src={logo}
+      alt={`Herb ${formatTeamName(team)}`}
+      width={120}
+      height={120}
+      priority={priority}
+      sizes="(max-width: 640px) 72px, 112px"
     />
+  );
+}
 
-    <header className="public-topbar v101-public-topbar">
-      <a href="/" className="public-brand" aria-label="Strona główna DELTA 2018 GM">
-        <img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/>
-        <div><b>DELTA 2018 GM</b><span>Górny Mokotów • Rocznik 2018</span></div>
-      </a>
-      <nav className="v101-public-nav">
-        <a href="#mecz">MECZ</a><a href="#statystyki">STATYSTYKI</a><a href="#kalendarz">KALENDARZ</a><a href="#klub">Z KLUBU</a>
-      </nav>
-      <Link href={signedIn?"/dashboard":"/login"} className="public-login"><LockKeyhole size={15}/> {signedIn?"PANEL DRUŻYNY":"STREFA RODZICA"}</Link>
-    </header>
+const experienceItems = [
+  { title: "Road to Glory", copy: "Droga rozwoju zawodnika opisana przez trening, doświadczenie i osiągnięcia.", status: "DOSTĘPNE" },
+  { title: "Player Passport", copy: "Prywatny profil rozwoju widoczny wyłącznie dla uprawnionego opiekuna.", status: "DOSTĘPNE" },
+  { title: "Centrum Treningowe", copy: "Kalendarz, materiały i bezpieczna organizacja procesu treningowego.", status: "DOSTĘPNE" },
+  { title: "Match Hub", copy: "Mecze, wyniki, obecności i najważniejsze informacje w jednym miejscu.", status: "DOSTĘPNE" },
+  { title: "Kolekcja kart", copy: "Sportowe karty i kolekcja powiązana z rozwojem w aplikacji.", status: "DOSTĘPNE" },
+  { title: "DELTA INFERNO", copy: "Cinematic pack opening i oprawa kolekcji w bezpiecznym panelu drużyny.", status: "DOSTĘPNE" },
+  { title: "Sala Trofeów", copy: "Osiągnięcia i najważniejsze momenty wspólnej sportowej historii.", status: "W ROZWOJU" },
+  { title: "Hall of Fame", copy: "Klubowe wyróżnienia przedstawione bez ujawniania danych na stronie publicznej.", status: "W ROZWOJU" },
+  { title: "Kronika Meczowa", copy: "Historia spotkań, wyników i drużynowych kamieni milowych.", status: "W ROZWOJU" },
+] as const;
 
-    <section id="top" className="public-hero v101-public-hero v102-public-hero">
-      <div className="public-hero-overlay"/>
-      <div className="v102-hero-grid">
-        <div className="public-hero-copy v102-hero-copy-block">
-          <span className="v101-live-eyebrow"><Radio size={13}/> K.S. DELTA WARSZAWA • GÓRNY MOKOTÓW</span>
-          <span className="v104-broadcast-kicker">PASJA <i/> ROZWÓJ <i/> PRZYJAŹŃ <i/> DRUŻYNA</span>
-          <h1>DELTA <em>2018</em> GM</h1>
-          <p>Mecze, treningi, wyniki i najważniejsze informacje jednej drużyny. Razem rozwijamy pasję, charakter i przyjaźń.</p>
-          <div className="v102-hero-meta">
-            <span>{nextMatch?`Najbliższy mecz • ${datePL(nextMatch.match_date)} • ${opponent(nextMatch)}`:"Terminarz gotowy na kolejne wydarzenia"}</span>
-            <span>{lastMatch?`Ostatni wynik • ${ours(lastMatch)}:${theirs(lastMatch)} z ${opponent(lastMatch)}`:"Pierwsze wyniki sezonu pojawią się tutaj"}</span>
-            <span>{latestClub?`Z klubu • ${decodeHtmlEntities(latestClub.title)}`:"Live info • aktualności i kalendarz drużyny"}</span>
+export default function PublicTeamSite(props: {
+  matches: Match[];
+  news: News[];
+  clubUpdates: ClubUpdate[];
+  teamEvents: TeamEvent[];
+  attendanceSummary: AttendanceSummary[];
+  rosterCount: number;
+}) {
+  const now = Date.now();
+  const scheduled = props.matches
+    .filter((match) => match.status === "scheduled")
+    .slice()
+    .sort((a, b) => localDate(a.match_date, a.match_time).getTime() - localDate(b.match_date, b.match_time).getTime());
+  const nextMatch =
+    scheduled.find((match) => localDate(match.match_date, match.match_time).getTime() >= now - 2 * 60 * 60 * 1000) ||
+    scheduled[0] ||
+    null;
+  const lastMatch = props.matches
+    .filter((match) => match.status === "played")
+    .slice()
+    .sort((a, b) => b.match_date.localeCompare(a.match_date))[0] || null;
+  const publicEvents = [
+    ...scheduled.slice(0, 3).map((match) => ({
+      id: `match-${match.id}`,
+      type: "MECZ",
+      title: `${formatTeamName(match.home_team)} — ${formatTeamName(match.away_team)}`,
+      date: match.match_date,
+      time: match.match_time,
+      location: match.venue,
+    })),
+    ...props.teamEvents.slice(0, 5).map((event) => ({
+      id: `event-${event.id}`,
+      type: event.event_type.toUpperCase(),
+      title: event.title,
+      date: event.event_date,
+      time: event.start_time,
+      location: event.location,
+    })),
+  ]
+    .filter((event) => localDate(event.date, event.time).getTime() >= now - 90 * 60 * 1000)
+    .sort((a, b) => localDate(a.date, a.time).getTime() - localDate(b.date, b.time).getTime())
+    .slice(0, 4);
+  const latestUpdate = props.clubUpdates[0] || null;
+  const latestNews = props.news[0] || null;
+
+  return (
+    <main className={styles.page}>
+      <PublicMotion />
+      <PublicNav />
+
+      <section className={styles.hero} aria-labelledby="delta-hero-title">
+        <Image
+          className={styles.heroImage}
+          src="/media/walkouts/delta-gold-stadium.webp"
+          alt="Stadion DELTA w świetle reflektorów"
+          fill
+          priority
+          sizes="100vw"
+        />
+        <div className={styles.heroVeil} aria-hidden="true" />
+        <div className={styles.heroBeam} aria-hidden="true" />
+        <div className={styles.heroInner}>
+          <div className={styles.heroCopy} data-reveal="hero">
+            <p className={styles.eyebrow}>DELTA 2018 GM — GÓRNY MOKOTÓW</p>
+            <h1 id="delta-hero-title">
+              KAŻDY MECZ
+              <span>PROWADZI DO MISTRZOSTWA.</span>
+            </h1>
+            <p className={styles.heroLead}>Każdy trening. Każdy mecz. Każdy krok ma znaczenie.</p>
+            <div className={styles.heroActions}>
+              <Link className={styles.primaryButton} href="/login">
+                WEJDŹ DO ŚWIATA DELTY <ChevronRight aria-hidden="true" />
+              </Link>
+              <a className={styles.secondaryButton} href="#inferno">
+                <Flame aria-hidden="true" /> ZOBACZ INTRO
+              </a>
+            </div>
           </div>
-          <div className="public-hero-actions">
-            <a href="#mecz">NAJBLIŻSZY MECZ <ChevronRight size={15}/></a>
-            <a href="#kalendarz">KALENDARZ</a>
-            <a href="#klub">Z KLUBU</a>
-            <button
-              type="button"
-              className="v101-hero-intro-btn"
-              onClick={() => setCinematicActive(true)}
-              title="Odtwórz filmowe intro stadionowe"
-            >
-              <Flame size={14}/> ZOBACZ INTRO
-            </button>
-            <Link href={signedIn?"/dashboard":"/login"}><LockKeyhole size={14}/> {signedIn?"PANEL DRUŻYNY":"STREFA RODZICA"}</Link>
+
+          <div className={styles.heroCrestWrap} data-reveal="hero-art" aria-hidden="true">
+            <span className={styles.heroOrbit} />
+            <Image src="/teamlogos/gm-crest.webp" alt="" width={360} height={360} priority />
+            <p>JEDNA DRUŻYNA</p>
           </div>
         </div>
 
-        <div className="v102-hero-art" aria-label="Stadionowa oprawa drużyny DELTA 2018 GM">
-          <div className="v102-hero-art-glow"/>
-          <img className="v106-hero-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM stojący razem przed meczem"/>
-          <img className="v102-hero-crest" src="/teamlogos/gm.png" alt="K.S. Delta Warszawa"/>
-          <div className="v102-hero-art-card">
-            <span>K.S. DELTA WARSZAWA</span>
-            <strong>GÓRNY MOKOTÓW</strong>
-            <b>2018</b>
-            <small>PASJA • ROZWÓJ • PRZYJAŹŃ • DRUŻYNA</small>
-          </div>
-        </div>
+        <a className={styles.heroMatchLink} href="#mecze">
+          <span>NAJBLIŻSZY MECZ</span>
+          <strong>{nextMatch ? `${datePL(nextMatch.match_date)} · ${opponent(nextMatch)}` : "Czekamy na kolejny termin"}</strong>
+          <ChevronRight aria-hidden="true" />
+        </a>
+      </section>
+
+      <div className={styles.scoreRibbon} aria-label="Informacje drużyny">
+        <span>DELTA 2018 GM</span>
+        <p>{latestUpdate ? decodeHtmlEntities(latestUpdate.title) : "PASJA · CHARAKTER · PRZYJAŹŃ"}</p>
+        <span>GÓRNY MOKOTÓW</span>
       </div>
 
-      <div className="v102-hero-bottom-strip">
+      <section id="mecze" className={styles.matchSection} data-reveal="section" aria-labelledby="match-title">
+        <div className={styles.sectionIntro}>
+          <p className={styles.sectionIndex}>MATCH DAY CENTER</p>
+          <h2 id="match-title">NASTĘPNY GWIZDEK. <span>PEŁNA GOTOWOŚĆ.</span></h2>
+          <p>Publiczne informacje meczowe bez prywatnych danych zawodników.</p>
+        </div>
+
+        {nextMatch ? (
+          <div className={styles.matchCard}>
+            <div className={styles.matchStatus}><span /> NADCHODZĄCY MECZ · {nextMatch.round_no ? `KOLEJKA ${nextMatch.round_no}` : "TERMINARZ"}</div>
+            <div className={styles.matchTeams}>
+              <article>
+                <TeamMark team={nextMatch.home_team} priority />
+                <small>GOSPODARZE</small>
+                <h3>{formatTeamName(nextMatch.home_team)}</h3>
+              </article>
+              <div className={styles.matchCenter}>
+                <span>DO PIERWSZEGO GWIZDKA</span>
+                <MatchCountdown target={localDate(nextMatch.match_date, nextMatch.match_time).toISOString()} />
+                <b>VS</b>
+                <p><CalendarDays /> {datePL(nextMatch.match_date)} · {nextMatch.match_time?.slice(0, 5) || "—"}</p>
+                <p><MapPin /> {nextMatch.venue || "Miejsce do ustalenia"}</p>
+              </div>
+              <article>
+                <TeamMark team={nextMatch.away_team} priority />
+                <small>GOŚCIE</small>
+                <h3>{formatTeamName(nextMatch.away_team)}</h3>
+              </article>
+            </div>
+            <div className={styles.matchFooter}>
+              <div>
+                <span>OSTATNI WYNIK</span>
+                <strong>{lastMatch ? `${ourScore(lastMatch) ?? "—"}:${theirScore(lastMatch) ?? "—"} · ${opponent(lastMatch)}` : "Pierwszy wynik pojawi się tutaj"}</strong>
+              </div>
+              <Link href="/login">PANEL DRUŻYNY <ChevronRight /></Link>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.matchEmpty}>
+            <Trophy aria-hidden="true" />
+            <h3>Czekamy na kolejny mecz</h3>
+            <p>Gdy termin zostanie opublikowany, pojawi się tutaj automatycznie.</p>
+          </div>
+        )}
+
+        <div id="kalendarz" className={styles.eventStrip}>
+          {publicEvents.length ? publicEvents.map((event) => (
+            <article key={event.id}>
+              <div className={styles.eventDate}>
+                <strong>{new Date(`${event.date}T12:00:00`).getDate()}</strong>
+                <span>{new Date(`${event.date}T12:00:00`).toLocaleDateString("pl-PL", { month: "short" }).replace(".", "")}</span>
+              </div>
+              <div>
+                <small>{event.type}</small>
+                <h3>{event.title}</h3>
+                <p>{[event.time?.slice(0, 5), event.location].filter(Boolean).join(" · ") || "Szczegóły wkrótce"}</p>
+              </div>
+            </article>
+          )) : (
+            <article className={styles.eventEmpty}><Clock3 /><div><small>KALENDARZ</small><h3>Brak publicznych wydarzeń</h3><p>Terminy pojawią się po publikacji.</p></div></article>
+          )}
+        </div>
+      </section>
+
+      <section id="o-aplikacji" className={styles.experience} data-reveal="section" aria-labelledby="experience-title">
+        <div className={styles.sectionIntro}>
+          <p className={styles.sectionIndex}>DELTA EXPERIENCE</p>
+          <h2 id="experience-title">WIĘCEJ NIŻ <span>FUTBOL</span></h2>
+          <p>Jedno środowisko dla sportu, rozwoju i codziennej organizacji drużyny.</p>
+        </div>
+        <div className={styles.bento}>
+          {experienceItems.map((item, index) => (
+            <article key={item.title} className={index === 0 ? styles.bentoLead : index === 5 ? styles.bentoInferno : ""}>
+              <div className={styles.featureTop}>
+                <span>{item.status}</span>
+                {index === 0 ? <Trophy /> : index === 5 ? <Flame /> : <Shield />}
+              </div>
+              <h3>{item.title}</h3>
+              <p>{item.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.road} data-reveal="section" aria-labelledby="road-title">
+        <div className={styles.roadCopy}>
+          <p className={styles.sectionIndex}>ROAD TO GLORY · DEMO</p>
+          <h2 id="road-title">TWOJA HISTORIA <span>ZACZYNA SIĘ TUTAJ.</span></h2>
+          <p>Rozwój jest drogą, nie pojedynczym wynikiem. Aplikacja porządkuje kolejne sportowe kroki bez publikowania indywidualnych danych dzieci.</p>
+          <div className={styles.roadSteps} aria-label="Droga rozwoju">
+            {["TRENING", "DOŚWIADCZENIE", "XP", "ROZWÓJ", "OSIĄGNIĘCIA"].map((step, index) => (
+              <span key={step}><b>{String(index + 1).padStart(2, "0")}</b>{step}</span>
+            ))}
+          </div>
+        </div>
+        <div className={styles.demoPassport} aria-label="Syntetyczny przykład rozwoju zawodnika">
+          <div className={styles.demoBadge}>DEMO · DANE SYNTETYCZNE</div>
+          <div className={styles.demoAvatar}><Image src="/teamlogos/gm-crest.webp" alt="Herb DELTA" width={84} height={84} /></div>
+          <small>PLAYER PASSPORT</small>
+          <h3>ZAWODNIK DELTA</h3>
+          <p>POZIOM 08 · MŁODY TALENT</p>
+          <div className={styles.xpTrack}><i /></div>
+          <div className={styles.demoStats}><span><b>24</b>TRENINGI</span><span><b>08</b>POZIOM</span><span><b>06</b>ODZNAKI</span></div>
+        </div>
+      </section>
+
+      <section id="inferno" className={styles.inferno} data-reveal="section" aria-labelledby="inferno-title">
+        <Image className={styles.infernoBackdrop} src="/media/walkouts/delta-inferno-red-stadium.webp" alt="" fill sizes="100vw" />
+        <div className={styles.infernoContent}>
+          <div>
+            <p className={styles.sectionIndex}>GAMING SHOWCASE · BEZ TRANSAKCJI</p>
+            <h2 id="inferno-title">DELTA <span>INFERNO</span></h2>
+            <p>Karty kolekcjonerskie, rzadkości, osiągnięcia i cinematic pack opening. Publiczny podgląd prezentuje wyłącznie bezpieczne materiały demonstracyjne.</p>
+            <div className={styles.rarityRow}><span>STANDARD</span><span>GOLD</span><span>LEGEND</span><span>INFERNO</span></div>
+            <Link href="/login" className={styles.primaryButton}>OTWÓRZ PANEL DRUŻYNY <ChevronRight /></Link>
+          </div>
+          <div className={styles.packStage} aria-label="Demonstracyjne paczki DELTA INFERNO">
+            <Image className={styles.packBack} src="/media/walkouts/delta-gold-pack-cutout.webp" alt="Demonstracyjna złota paczka DELTA" width={380} height={520} sizes="(max-width: 700px) 170px, 260px" />
+            <Image className={styles.packFront} src="/media/walkouts/delta-inferno-pack-cutout.webp" alt="Demonstracyjna paczka DELTA INFERNO" width={380} height={520} sizes="(max-width: 700px) 190px, 290px" />
+            <span>DEMO</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="druzyna" className={styles.spirit} data-reveal="section" aria-labelledby="spirit-title">
+        <div className={styles.spiritMark}>
+          <Image src="/assets/devils-crest.png" alt="Herb DELTA 2018 GM" width={420} height={420} sizes="(max-width: 700px) 230px, 380px" />
+        </div>
         <div>
-          <span>NAJBLIŻSZE WYDARZENIE</span>
-          <b>{nextEvent?.title||"Brak wydarzenia"}</b>
-          <small>{nextEvent?`${shortCountdown(nextEvent.date,now)} • ${nextEvent.subtitle||datePL(nextEvent.date.toISOString().slice(0,10))}`:"Kalendarz odświeży się automatycznie."}</small>
+          <p className={styles.sectionIndex}>POZNAJ DIABEŁKI</p>
+          <h2 id="spirit-title">PASJA. CHARAKTER. <span>PRZYJAŹŃ.</span></h2>
+          <p>Jedna drużyna. Wspólne marzenia. Publicznie pokazujemy ducha i wartości DELTY, a nazwiska, zdjęcia i profile młodych zawodników pozostają w chronionym panelu.</p>
+          <blockquote>„Razem uczymy się wygrywać, rozwijać i wspierać.”</blockquote>
         </div>
+      </section>
+
+      <section className={styles.parentCenter} data-reveal="section" aria-labelledby="parent-title">
+        <div className={styles.parentCopy}>
+          <p className={styles.sectionIndex}>CENTRUM RODZICA</p>
+          <h2 id="parent-title">WSZYSTKO, CZEGO POTRZEBUJE <span>DRUŻYNA.</span></h2>
+          <p>Wygodny dostęp na telefonie do informacji, które pomagają spokojnie organizować sportowy tydzień.</p>
+          <ul>
+            {[
+              "Kalendarz meczów i treningów",
+              "Komunikaty i organizacja wydarzeń",
+              "Potwierdzanie obecności",
+              "Rozwój własnego dziecka w granicach uprawnień",
+              "Prywatne profile i zdjęcia chronione logowaniem",
+            ].map((item) => <li key={item}><Check /> {item}</li>)}
+          </ul>
+          <Link href="/login" className={styles.secondaryButton}><LockKeyhole /> ZALOGUJ SIĘ</Link>
+        </div>
+        <div className={styles.phoneMockup} aria-label="Bezpieczna demonstracja aplikacji mobilnej">
+          <div className={styles.phoneTop}><span>DELTA</span><Shield /></div>
+          <div className={styles.phoneHero}><small>DZIEŃ MECZU</small><b>{nextMatch ? opponent(nextMatch) : "KALENDARZ DRUŻYNY"}</b><p>{nextMatch ? `${datePL(nextMatch.match_date)} · ${nextMatch.match_time?.slice(0, 5) || "—"}` : "Następne wydarzenia pojawią się tutaj"}</p></div>
+          <div className={styles.phoneRows}><span><CalendarDays /> Kalendarz</span><span><Users /> Obecności</span><span><Goal /> Match Hub</span></div>
+          <div className={styles.phonePrivacy}><LockKeyhole /> DANE PRYWATNE CHRONIONE</div>
+        </div>
+      </section>
+
+      <section className={styles.finalCta} data-reveal="section" aria-labelledby="cta-title">
+        <Image src="/media/walkouts/delta-gold-stadium.webp" alt="" fill sizes="100vw" />
         <div>
-          <span>NASZA DRUŻYNA</span>
-          <b>Więcej niż futbol</b>
-          <small>Wspólna pasja, rozwój i przyjaźń na każdym treningu.</small>
+          <p className={styles.sectionIndex}>DOŁĄCZ DO ŚWIATA DELTY</p>
+          <h2 id="cta-title">WIELKIE HISTORIE ZACZYNAJĄ SIĘ <span>OD PIERWSZEGO TRENINGU.</span></h2>
+          <p>Dołącz do świata DELTY i przeżywaj sportową przygodę razem z drużyną.</p>
+          <Link className={styles.primaryButton} href="/login"><LockKeyhole /> ZALOGUJ SIĘ PRZEZ GOOGLE</Link>
         </div>
-        <div>
-          <span>STREFA RODZICA</span>
-          <b>Pełny dostęp po zalogowaniu</b>
-          <small>Obecność, kalendarz, treningi i dane drużyny.</small>
+      </section>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerBrand}>
+          <Image src="/teamlogos/gm-crest.webp" alt="DELTA 2018 GM" width={74} height={74} />
+          <div><strong>DELTA 2018 GM</strong><span>Górny Mokotów · Warszawa</span></div>
         </div>
-      </div>
-    </section>
-
-    <div className="v101-live-ticker" aria-label="Najważniejsze informacje">
-      <span><Flame size={14}/> NA BIEŻĄCO</span>
-      <div className="v101-ticker-track">
-        <b>{nextMatch?`NAJBLIŻSZY MECZ: ${datePL(nextMatch.match_date)} • ${opponent(nextMatch)}`:"TERMINARZ: do synchronizacji"}</b>
-        <i>•</i>
-        <b>{lastMatch?`OSTATNI WYNIK: ${ours(lastMatch)}:${theirs(lastMatch)} z ${opponent(lastMatch)}`:`SEZON ${currentSeason}`}</b>
-        <i>•</i>
-        <b>{latestClub?`Z KLUBU: ${decodeHtmlEntities(latestClub.title)}`:"DELTA 2018 GM"}</b>
-      </div>
-    </div>
-
-    <div className="v106-match-command">
-    <section id="mecz" className={`v101-public-match-hub devil-card ${isMatchDay?"match-day":""}`}>
-      <div className="v101-match-topline">
-        <div><CalendarDays size={17}/><span>{isMatchDay?"DZIEŃ MECZU":"NAJBLIŻSZY MECZ"}</span></div>
-        <b>{nextMatch?`KOLEJKA ${nextMatch.round_no||"—"}`:"TERMIN DO USTALENIA"}</b>
-      </div>
-      {nextMatch?<>
-        <div className="v101-match-stage">
-          <div className="v101-match-team"><Logo team={nextMatch.home_team} size={175}/><small>GOSPODARZ</small><b>{formatTeamName(nextMatch.home_team)}</b></div>
-          <div className="v101-match-center">
-            <span>DO PIERWSZEGO GWIZDKA</span><strong>{countdown(localDate(nextMatch.match_date,nextMatch.match_time),now)}</strong><em>VS</em>
-            <small>{datePL(nextMatch.match_date)} • {nextMatch.match_time?.slice(0,5)||"—"}</small>
-            <p><MapPin size={12}/>{nextMatch.venue||"Miejsce do ustalenia"}</p>
-          </div>
-          <div className="v101-match-team right"><Logo team={nextMatch.away_team} size={175}/><small>GOŚĆ</small><b>{formatTeamName(nextMatch.away_team)}</b></div>
+        <nav aria-label="Nawigacja w stopce">
+          <a href="#mecze">Mecze</a><a href="#druzyna">Drużyna</a><a href="#kalendarz">Kalendarz</a><a href="#o-aplikacji">O aplikacji</a><Link href="/login">Panel drużyny</Link>
+        </nav>
+        <div className={styles.footerMeta}>
+          <span>Profile, zdjęcia i indywidualne statystyki zawodników są dostępne wyłącznie po autoryzacji.</span>
+          <span>{latestNews ? decodeHtmlEntities(latestNews.title) : "Oficjalny serwis drużyny"}</span>
         </div>
-        <div className="v101-match-tools-public">
-          <div className="v101-public-attendance">
-            <span><Users size={15}/> POTWIERDZENIA</span>
-            <strong>{nextAttendance?.responses||0}<em>/ {props.rosterCount||"—"}</em></strong>
-            <div><i style={{width:`${props.rosterCount?Math.min(100,(nextAttendance?.responses||0)/props.rosterCount*100):0}%`}}/></div>
-            <small>Po zalogowaniu rodzic może potwierdzić udział dziecka.</small>
-          </div>
-          <Link href="/login" className="v101-match-cta"><LockKeyhole size={14}/> POTWIERDŹ OBECNOŚĆ <ChevronRight size={14}/></Link>
-        </div>
-      </>:<div className="v101-empty-stage"><Trophy size={34}/><b>Najbliższy mecz pojawi się po synchronizacji terminarza.</b></div>}
-    </section>
-
-    <aside className="v101-public-smart-row v106-match-side">
-      <article className="v101-smart-clock devil-card">
-        <div className="v101-smart-icon"><Clock3 size={24}/></div>
-        <div><span>ZEGAR DRUŻYNY</span><h3>{nextEvent?.title||"Brak wydarzeń"}</h3><p>{nextEvent?.subtitle||"Kalendarz drużyny jest aktualizowany na bieżąco."}</p></div>
-        <strong>{nextEvent?countdown(nextEvent.date,now):"—"}</strong>
-      </article>
-      <article className="v101-season-goal devil-card">
-        <div><Target size={20}/><span>CEL SEZONU</span></div><b>{goals}<em>/ {GOAL_TARGET}</em></b>
-        <div className="v101-goal-progress"><i style={{width:`${goalProgress}%`}}/></div><small>{goalProgress}% drogi do {GOAL_TARGET} bramek</small>
-      </article>
-    </aside>
-    </div>
-
-    <div className="v107-slogan-band" aria-label="Hasło drużyny">
-      <span>JEDNA DRUŻYNA</span><b>MAŁE KROKI. WIELKIE MARZENIA.</b><span>GÓRNY MOKOTÓW</span>
-    </div>
-
-    <div id="rozgrywki" className="league-public-wrap"><LeagueHome matches={props.matches} onOpen={()=>{window.location.href="/login";}}/><p className="league-public-note">Pełne Centrum Rozgrywek dostępne po wejściu do panelu drużyny. Tabela: stan po I kolejce.</p></div>
-    <section id="statystyki" className="v101-public-stats-zone">
-      <div className="v101-zone-head"><div><span className="v101-zone-eyebrow">SEZON • {currentSeason}</span><h2>CENTRUM <em>STATYSTYK</em></h2></div><div className="v101-form-line"><span>FORMA</span>{recent.map(m=><i key={m.id} className={`r-${result(m).toLowerCase()}`}>{result(m)}</i>)}</div></div>
-      <div className="v101-stat-tiles">
-        <article><Trophy/><b>{played.length}</b><span>MECZE</span></article>
-        <article><Zap/><b>{wins}</b><span>WYGRANE</span></article>
-        <article><Goal/><b>{goals}</b><span>BRAMKI</span></article>
-        <article><Activity/><b>{goalsPerMatch.toFixed(1)}</b><span>GOLI / MECZ</span></article>
-        <article><Star/><b>{winRate}%</b><span>SKUTECZNOŚĆ</span></article>
-        <article><Shield/><b>{wins}-{draws}-{losses}</b><span>ZWYCIĘSTWA • REMISY • PORAŻKI</span></article>
-      </div>
-      <div className="v101-stat-lower">
-        <article className="v101-recent-matches devil-card">
-          <div className="v101-card-title"><Trophy size={17}/> OSTATNIE MECZE</div>
-          {recentThree.length?recentThree.map(m=><div className="v101-result-row" key={m.id}>
-            <span className={`badge r-${result(m).toLowerCase()}`}>{result(m)}</span><Logo team={opponent(m)} size={38}/>
-            <div><b>{opponent(m)}</b><small>{datePL(m.match_date)}</small></div><strong>{ours(m)}:{theirs(m)}</strong>
-          </div>):<p className="v101-public-muted">Pierwsze wyniki sezonu pojawią się tutaj.</p>}
-        </article>
-        <article className="v101-record-wall devil-card">
-          <div className="v101-card-title"><Sparkles size={17}/> NAJWAŻNIEJSZE LICZBY</div>
-          <div><span>NAJWIĘKSZA WYGRANA</span><b>{biggestWin?`${ours(biggestWin)}:${theirs(biggestWin)} • ${opponent(biggestWin)}`:"—"}</b></div>
-          <div><span>NAJWIĘCEJ GOLI W MECZU</span><b>{highestGoals?`${ours(highestGoals)} • ${opponent(highestGoals)}`:"—"}</b></div>
-          <div><span>AKTUALNA SERIA WYGRANYCH</span><b>{currentWinStreak}</b></div>
-          <div><span>CEL BRAMKOWY</span><b>{goals}/{GOAL_TARGET}</b></div>
-        </article>
-      </div>
-    </section>
-
-    <section id="kalendarz" className="v101-public-content-grid">
-      <article className="v101-calendar-card devil-card">
-        <div className="v101-card-title"><CalendarDays size={17}/> KALENDARZ DRUŻYNY <span>NAJBLIŻSZE</span></div>
-        <div className="v101-calendar-list">
-          {publicCalendar.map(e=><div key={e.id}>
-            <span className="date"><b>{new Date(`${e.date}T12:00:00`).getDate()}</b><small>{new Date(`${e.date}T12:00:00`).toLocaleDateString("pl-PL",{month:"short"}).toUpperCase()}</small></span>
-            <div><span>{e.type}</span><b>{e.title}</b><small>{[e.time?.slice(0,5),e.location].filter(Boolean).join(" • ")}</small></div>
-            <ChevronRight size={15}/>
-          </div>)}
-          {!publicCalendar.length&&<p className="v101-public-muted">Brak publicznych wydarzeń.</p>}
-        </div>
-      </article>
-      <article className={`v101-today-card devil-card ${liveEvent?"is-live":""}`}>
-        <div className="v101-card-title"><Radio size={17}/> DZIŚ W DRUŻYNIE</div>
-        <div className="v101-today-visual">{liveEvent&&<span className="pulse"/>}<Flame size={34}/></div>
-        <span>{liveEvent?"TRWA TERAZ":"NAJBLIŻSZE WYDARZENIE"}</span><h3>{(liveEvent||nextEvent)?.title||"Spokojny dzień"}</h3>
-        <p>{(liveEvent||nextEvent)?.subtitle||"Kolejne wydarzenia pojawią się automatycznie z kalendarza."}</p>
-        {(liveEvent||nextEvent)&&<b>{liveEvent?"TERAZ":countdown(nextEvent!.date,now)}</b>}
-      </article>
-    </section>
-
-    <section id="klub" className="v101-public-content-grid v101-news-grid">
-      <article className="v101-club-feed devil-card">
-        <div className="v101-card-title"><Shield size={17}/> Z KLUBU <span>OFICJALNE INFORMACJE</span></div>
-        <div className="v101-news-list">
-          {props.clubUpdates.slice(0,4).map((x,index)=><article key={x.id}>
-            <div><span>{index===0?"NOWE":"DELTA"}</span><small>{new Date(x.published_at).toLocaleDateString("pl-PL")}</small></div>
-            <h3>{decodeHtmlEntities(x.title)}</h3>{x.body&&<p>{decodeHtmlEntities(x.body.slice(0,250))}{x.body.length>250?"…":""}</p>}
-            {x.source_url&&<a href={x.source_url} target="_blank" rel="noreferrer">ŹRÓDŁO <ArrowUpRight size={12}/></a>}
-          </article>)}
-          {!props.clubUpdates.length&&<p className="v101-public-muted">Brak nowych informacji z klubu.</p>}
-        </div>
-      </article>
-      <article className="v101-team-life devil-card">
-        <div className="v101-card-title"><Sparkles size={17}/> ŻYCIE DRUŻYNY</div>
-        <div className="v101-life-mosaic">
-          <figure className="large"><img src="/assets/stadium3.png" alt="Stadion"/><figcaption>DZIEŃ MECZU</figcaption></figure>
-          <figure><img src="/assets/stadium.png" alt="Trybuny"/><figcaption>DIABEŁKI</figcaption></figure>
-          <figure><img src="/assets/stadium2.png" alt="Światła stadionu"/><figcaption>GÓRNY MOKOTÓW</figcaption></figure>
-        </div>
-        <small>Galeria meczowa i zdjęcia dzieci pozostają dostępne wyłącznie po zalogowaniu.</small>
-      </article>
-    </section>
-
-    <section className="v101-featured-lock devil-card">
-      <div className="v101-featured-art"><div className="v101-player-silhouette"><Users size={48}/></div><span>BOHATEROWIE DRUŻYNY</span></div>
-      <div><span className="v101-zone-eyebrow">WYRÓŻNIENIA ZAWODNIKÓW</span><h2>Profile, osiągnięcia i liderzy — po zalogowaniu</h2><p>Chronimy dane i zdjęcia młodych zawodników. W Strefie Rodzica dostępne są profile, statystyki, MVP, kapitan, osiągnięcia i pełne rankingi.</p></div>
-      <Link href="/login"><LockKeyhole size={15}/> ZOBACZ STREFĘ DRUŻYNY <ChevronRight size={15}/></Link>
-    </section>
-
-    <section className="public-private-zone v101-parent-zone devil-card">
-      <div><LockKeyhole size={28}/><span>STREFA RODZICA</span><h2>Pełna aplikacja po zalogowaniu</h2><p>Każdy zalogowany rodzic ma dostęp do całej części drużynowej. Uprawnienia dodatkowe dotyczą tylko edycji danych.</p></div>
-      <div className="public-private-list">
-        <span>✓ Mecze i pełny kalendarz</span><span>✓ Centrum treningowe</span><span>✓ Profile i statystyki zawodników</span>
-        <span>✓ Chemia zespołu</span><span>✓ Osiągnięcia i wyróżnienia</span><span>✓ Potwierdzanie obecności dziecka</span>
-      </div>
-      <Link href="/login">WEJDŹ DO STREFY RODZICA <ChevronRight size={15}/></Link>
-    </section>
-
-    <footer className="public-footer v101-footer">
-      <img src="/teamlogos/gm.png" alt=""/><div><b>DELTA 2018 GM</b><span>Górny Mokotów • Oficjalny serwis drużyny</span></div><small>{currentSeason}</small>
-    </footer>
-  </main>;
+      </footer>
+    </main>
+  );
 }
