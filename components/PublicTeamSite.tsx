@@ -122,6 +122,7 @@ export default function PublicTeamSite(props: {
   teamEvents: TeamEvent[];
   attendanceSummary: AttendanceSummary[];
   rosterCount: number;
+  demoMode?: boolean;
 }) {
   const now = Date.now();
   const scheduled = props.matches
@@ -207,7 +208,7 @@ export default function PublicTeamSite(props: {
       </section>
 
       <div className={styles.scoreRibbon} aria-label="Informacje drużyny">
-        <span>DELTA 2018 GM</span>
+        <span>{props.demoMode ? "DEMO PREVIEW" : "DELTA 2018 GM"}</span>
         <p>{latestUpdate ? decodeHtmlEntities(latestUpdate.title) : "PASJA · CHARAKTER · PRZYJAŹŃ"}</p>
         <span>GÓRNY MOKOTÓW</span>
       </div>
