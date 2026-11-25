@@ -285,7 +285,7 @@ export function RoadToGloryDashboard({
   const childRenderKey = resolvedPlayerId || profile.accountId || "default";
 
   return (
-    <div className="min-h-screen bg-[#050b16] text-slate-100 flex">
+    <div className="min-h-screen bg-[#050b16] text-slate-100 flex flex-col lg:flex-row">
       <div className="hidden lg:block shrink-0">
         <DeltaDesktopSidebar
           profile={profile}
@@ -343,7 +343,7 @@ export function RoadToGloryDashboard({
                     <Sparkles aria-hidden="true" /> THE ROAD TO GLORY
                   </span>
                   <span className="rtg-club-tag">
-                    {profile.teamName || "K.S. DELTA WARSZAWA"} · {isRealData ? "STAGING REAL-DATA" : "DEMO"}
+                    {effectiveTeamName} · {isRealData ? "STAGING REAL-DATA" : "DEMO"}
                   </span>
                 </div>
               </div>
@@ -569,7 +569,7 @@ export function RoadToGloryDashboard({
                   <div className="rtg-versus-block">
                     <div className="rtg-team-side">
                       <Image src="/teamlogos/gm.png" alt="DELTA" width={54} height={54} />
-                      <strong>{profile.teamName || "DELTA"}</strong>
+                      <strong>{effectiveTeamName}</strong>
                       <small>Nasz zespół</small>
                     </div>
 
@@ -592,7 +592,7 @@ export function RoadToGloryDashboard({
                     <div className="rtg-team-side">
                       <Image src="/teamlogos/gm.png" alt="DELTA" width={54} height={54} />
                       <strong>{nextEvent.title}</strong>
-                      <small>{profile.teamName || "DELTA"}</small>
+                      <small>{effectiveTeamName}</small>
                     </div>
                     <div className="rtg-vs-center">
                       <span className="rtg-league-chip">TRENING</span>

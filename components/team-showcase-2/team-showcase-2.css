@@ -361,7 +361,21 @@
   border-radius: 22px;
   pointer-events: none;
   transition: opacity 0.35s ease;
-  z-index: 5;
+  z-index: 2;
+}
+
+/* Interactive cue and hover polish for side cards */
+.ts2-card:not(.is-active) {
+  cursor: pointer;
+}
+
+.ts2-card:not(.is-active):hover .ts2-card-inner {
+  border-color: rgba(245, 196, 81, 0.45);
+  box-shadow: 0 0 22px -2px rgba(245, 196, 81, 0.25), 0 16px 36px -4px rgba(0, 0, 0, 0.9);
+}
+
+.ts2-card:not(.is-active):hover .ts2-card-dim {
+  opacity: 0.06 !important;
 }
 
 /* ---------- INFO PANEL (ACTIVE PLAYER SUMMARY) ---------- */
@@ -564,16 +578,20 @@
 
 /* ---------- RESPONSIVE BREAKPOINTS ---------- */
 @media (max-width: 640px) {
+  .ts2-root {
+    --card-w: clamp(210px, 64vw, 250px);
+    --card-h: clamp(300px, 88vw, 355px);
+  }
   .ts2-header {
-    padding: 12px 16px 6px;
+    padding: 10px 14px 4px;
   }
   .ts2-crest {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
   }
   .ts2-stage-container {
-    padding: 6px 0 16px;
-    min-height: 400px;
+    padding: 4px 0 8px;
+    min-height: auto;
   }
   .ts2-card {
     border-radius: 18px;
@@ -581,13 +599,19 @@
   .ts2-card-inner {
     border-radius: 18px;
   }
+  .ts2-info {
+    min-height: auto;
+    padding: 4px 12px 2px;
+  }
   .ts2-controls {
-    padding: 8px 16px 20px;
-    gap: 14px;
+    padding: 6px 12px 14px;
+    gap: 12px;
   }
   .ts2-nav-btn {
     width: 44px;
     height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
@@ -610,10 +634,25 @@
 }
 
 .ts2-root--embedded .ts2-stage-container {
-  padding: 10px 0 14px;
+  padding: 6px 0 10px;
+  min-height: auto;
 }
 
 .ts2-root--embedded .ts2-controls {
-  padding: 8px 16px 14px;
+  padding: 6px 16px 12px;
+}
+
+.ts2-root--embedded .ts2-info {
+  padding: 4px 16px 2px;
+  min-height: auto;
+}
+
+@media (max-width: 640px) {
+  .ts2-root--embedded .ts2-stage-container {
+    padding: 4px 0 6px;
+  }
+  .ts2-root--embedded .ts2-controls {
+    padding: 4px 12px 8px;
+  }
 }
 

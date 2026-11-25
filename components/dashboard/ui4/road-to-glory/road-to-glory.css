@@ -592,10 +592,14 @@
 }
 
 @media (max-width: 640px) {
+  .rtg-team-roster {
+    padding: 16px 14px 10px;
+  }
   .rtg-team-roster .rtg-panel-head {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 2px;
   }
   .rtg-team-roster .rtg-panel-head-actions {
     width: 100%;

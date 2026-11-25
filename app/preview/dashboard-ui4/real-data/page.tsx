@@ -158,7 +158,7 @@ export default async function RealDataIntegrationPreviewPage({
       } else if (!teamData) {
         liveBlockedReason = "Nie masz dostępu do składu tej drużyny.";
       } else {
-        liveTeamTitle = `${teamData.name} — Rocznik ${teamData.cohort_year}`;
+        liveTeamTitle = teamData.name;
         const isStaff = result.actor.role === "admin" || result.actor.role === "coach";
 
         if (!isStaff) {

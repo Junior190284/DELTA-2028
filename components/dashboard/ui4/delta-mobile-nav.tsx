@@ -36,7 +36,7 @@ export function DeltaMobileBottomNav({
   return (
     <nav
       data-testid="delta-mobile-bottom-nav"
-      className="d4-mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-lg px-2 py-1.5 shadow-2xl"
+      className="d4-mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-lg px-2 py-1.5 shadow-2xl"
     >
       <div className="max-w-md mx-auto grid grid-cols-5 gap-1">
         {items.map((item) => {

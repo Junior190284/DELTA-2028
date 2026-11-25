@@ -156,7 +156,7 @@ export function cardLayout(offset: number, slots: number): CardLayout {
   const scale = a === 0 ? 1 : Math.max(0.5, 0.74 - (a - 1) * 0.12);
   // gap: the side cards sit next to the active one, then partly underneath each other
   const x = a === 0 ? 0 : Math.sign(offset) * (0.5 + scale / 2 + 0.06 + (a - 1) * scale * 0.62);
-  const dim = a === 0 ? 0 : Math.min(0.78, 0.46 + (a - 1) * 0.14);
+  const dim = a === 0 ? 0 : Math.min(0.55, 0.18 + (a - 1) * 0.12);
   return { x, scale, dim, z: 100 - a, visible };
 }
 
