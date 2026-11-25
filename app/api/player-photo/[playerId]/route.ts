@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const SECURITY_HEADERS = {
+  "Cache-Control": "private, no-store",
+};
+
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ playerId: string }> }
 ) {
   const { playerId } = await params;
   if (!playerId) {
-    return NextResponse.json({ error: "Missing playerId" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing playerId" },
+      { status: 400, headers: SECURITY_HEADERS }
+    );
   }
 
   const supabase = await createClient();
@@ -16,7 +23,10 @@ export async function GET(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status:401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status:401, headers: SECURITY_HEADERS }
+    );
   }
 
   // 1. Resolve role from public.profiles
@@ -43,7 +53,7 @@ export async function GET(
     if (linkError || !link) {
       return NextResponse.json(
         { error: "Forbidden: You are not authorized to access this player's photo" },
-        { status: 403 }
+        { status: 403, headers: SECURITY_HEADERS }
       );
     }
   }
@@ -56,12 +66,18 @@ export async function GET(
     .single();
 
   if (error || !player?.photo_path) {
-    return NextResponse.json({ url: null });
+    return NextResponse.json(
+      { url: null },
+      { status: 200, headers: SECURITY_HEADERS }
+    );
   }
 
   const { data } = await supabase.storage
     .from("player-photos")
     .createSignedUrl(player.photo_path, 60*30);
 
-  return NextResponse.json({ url: data?.signedUrl || null });
+  return NextResponse.json(
+    { url: data?.signedUrl || null },
+    { status: 200, headers: SECURITY_HEADERS }
+  );
 }
