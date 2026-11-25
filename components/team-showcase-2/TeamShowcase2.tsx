@@ -352,48 +352,53 @@ export default function TeamShowcase2({
                 <div className="ts2-card-inner">
                   <div className="ts2-card-glow" />
 
-                  {/* Corner Badges */}
-                  <span className="ts2-card-number">
-                    {p.shirtNumber ? `#${p.shirtNumber}` : "#-"}
-                  </span>
+                  {/* Media is a closed stacking context. Its descendants can never enter the identity zone. */}
+                  <div className="ts2-card-media" data-testid="team-showcase-card-media">
+                    <span className="ts2-card-number">
+                      {p.shirtNumber ? `#${p.shirtNumber}` : "#-"}
+                    </span>
 
-                  <span className="ts2-card-pos">
-                    {p.positionCode || "DELTA"}
-                  </span>
+                    <span className="ts2-card-pos">
+                      {p.positionCode || "DELTA"}
+                    </span>
 
-                  {/* Photo or Silhouette */}
-                  <div className="ts2-photo-slot">
-                    {photoUrl ? (
-                      <img
-                        className="ts2-photo"
-                        src={photoUrl}
-                        alt={`Zawodnik ${p.fullName}`}
-                        draggable={false}
-                        onError={() => setPhotos((s) => ({ ...s, [p.id]: { status: "none" } }))}
-                      />
-                    ) : (
-                      <div className="ts2-silhouette" data-testid="team-showcase-silhouette">
-                        <NeutralPlayerSilhouette
-                          shirtNumber={p.shirtNumber}
-                          accentColor="#f5c451"
-                          glowColor="rgba(245, 196, 81, 0.45)"
-                          crestSrc={CREST}
+                    <div className="ts2-photo-slot">
+                      {photoUrl ? (
+                        <img
+                          className="ts2-photo"
+                          src={photoUrl}
+                          alt={`Zawodnik ${p.fullName}`}
+                          draggable={false}
+                          onError={() => setPhotos((s) => ({ ...s, [p.id]: { status: "none" } }))}
                         />
-                        {ph?.status !== "loading" && (
-                          <span className="ts2-soon-pill">ZDJĘCIE WKRÓTCE</span>
-                        )}
-                      </div>
-                    )}
+                      ) : (
+                        <div className="ts2-silhouette" data-testid="team-showcase-silhouette">
+                          <NeutralPlayerSilhouette
+                            shirtNumber={null}
+                            accentColor="#f5c451"
+                            glowColor="rgba(245, 196, 81, 0.45)"
+                            crestSrc={CREST}
+                            className="ts2-neutral-art"
+                          />
+                          {ph?.status !== "loading" && (
+                            <span className="ts2-soon-pill">ZDJĘCIE WKRÓTCE</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="ts2-media-fade" aria-hidden="true" />
+                    <div className="ts2-card-dim" style={{ opacity: layout.dim }} />
                   </div>
 
-                  {/* Nameplate */}
-                  <div className="ts2-nameplate">
-                    <span className="ts2-name-first">{p.firstName || "ZAWODNIK"}</span>
-                    <strong className="ts2-name-last">{p.lastName}</strong>
+                  {/* Identity is a separate, opaque grid row outside the media stacking context. */}
+                  <div className="ts2-card-identity" data-testid="team-showcase-card-identity">
+                    <div className="ts2-nameplate">
+                      <span className="ts2-name-first">{p.firstName || "ZAWODNIK"}</span>
+                      <strong className="ts2-name-last">{p.lastName}</strong>
+                    </div>
+                    <span className="ts2-card-role">{p.positionLabel || "ZAWODNIK AKADEMII"}</span>
                   </div>
-
-                  {/* Dim overlay for side cards */}
-                  <div className="ts2-card-dim" style={{ opacity: layout.dim }} />
                 </div>
               </div>
             );
