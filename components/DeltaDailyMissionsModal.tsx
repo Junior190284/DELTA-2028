@@ -195,18 +195,13 @@ export const DeltaDailyMissionsModal: React.FC<DeltaDailyMissionsModalProps> = (
         await fetchMissions();
         setTimeout(() => setClaimToast(null), 3000);
       } else {
-        // Fallback local update
-        setClaimToast(`+${mission.xpReward} XP!`);
-        if (onRewardClaimed) onRewardClaimed(mission.xpReward);
-        mission.claimed = true;
-        setTimeout(() => setClaimToast(null), 3000);
+        setClaimToast(data.error || 'Nie udało się odebrać nagrody.');
+        setTimeout(() => setClaimToast(null), 3500);
       }
     } catch (err) {
       console.error('Error claiming reward:', err);
-      setClaimToast(`+${mission.xpReward} XP!`);
-      if (onRewardClaimed) onRewardClaimed(mission.xpReward);
-      mission.claimed = true;
-      setTimeout(() => setClaimToast(null), 3000);
+      setClaimToast('Błąd połączenia z serwerem.');
+      setTimeout(() => setClaimToast(null), 3500);
     } finally {
       setClaimingId(null);
     }
