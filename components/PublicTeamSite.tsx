@@ -18,6 +18,7 @@ import { formatTeamName, getTeamLogo } from "@/lib/teams";
 import PublicNav from "./public/PublicNav";
 import MatchCountdown from "./public/MatchCountdown";
 import PublicMotion from "./public/PublicMotion";
+import CinematicIntro from "./public/CinematicIntro";
 import styles from "./public/public-experience.module.css";
 
 type Match = {
@@ -187,9 +188,7 @@ export default function PublicTeamSite(props: {
               <Link className={styles.primaryButton} href="/login">
                 WEJDŹ DO ŚWIATA DELTY <ChevronRight aria-hidden="true" />
               </Link>
-              <a className={styles.secondaryButton} href="#inferno">
-                <Flame aria-hidden="true" /> ZOBACZ INTRO
-              </a>
+              <CinematicIntro />
             </div>
           </div>
 
