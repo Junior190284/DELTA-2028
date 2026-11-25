@@ -4,7 +4,9 @@ import { headers } from "next/headers";
 import "@/components/dashboard/ui4/dashboard-ui4.css";
 import "@/components/dashboard/ui4/variants/variants.css";
 import "@/components/dashboard/ui4/delta-elite-41.css";
+import "@/components/dashboard/ui4/road-to-glory/road-to-glory.css";
 import { HomeDashboard, CollectionDashboard } from "@/components/dashboard/ui4";
+import { RoadToGloryDashboard } from "@/components/dashboard/ui4/road-to-glory/road-to-glory-dashboard";
 import { loadRealDashboardUI4Data, isGenuineLocalEnvironment } from "@/lib/dashboard-ui4/real-data-loader";
 import { Shield, Lock, AlertTriangle, ArrowLeft, CheckCircle2, Home, Sparkles } from "lucide-react";
 
@@ -17,7 +19,12 @@ export default async function RealDataIntegrationPreviewPage({
 }) {
   const resolvedParams = searchParams ? await searchParams : {};
   const activeChildId = resolvedParams.child;
-  const view = resolvedParams.view === "collection" ? "collection" : "home";
+  const view =
+    resolvedParams.view === "collection"
+      ? "collection"
+      : resolvedParams.view === "road-to-glory"
+      ? "road-to-glory"
+      : "home";
 
   // 1. Environment & Local Isolation Check
   const headerList = await headers();
@@ -112,8 +119,9 @@ export default async function RealDataIntegrationPreviewPage({
     );
   }
 
-  // 4. Authenticated state: Render Home or Collection Dashboard with read-only indicators
+  // 4. Authenticated state: Render Home, Road to Glory, or Collection Dashboard with read-only indicators
   const homeHref = `/preview/dashboard-ui4/real-data?view=home${activeChildId ? `&child=${activeChildId}` : ""}`;
+  const roadToGloryHref = `/preview/dashboard-ui4/real-data?view=road-to-glory${activeChildId ? `&child=${activeChildId}` : ""}`;
   const collectionHref = `/preview/dashboard-ui4/real-data?view=collection${activeChildId ? `&child=${activeChildId}` : ""}`;
 
   return (
@@ -150,6 +158,17 @@ export default async function RealDataIntegrationPreviewPage({
               <span>Pulpit Główny</span>
             </Link>
             <Link
+              href={roadToGloryHref}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition ${
+                view === "road-to-glory"
+                  ? "bg-amber-500 text-slate-950 shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Road to Glory</span>
+            </Link>
+            <Link
               href={collectionHref}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition ${
                 view === "collection"
@@ -164,7 +183,7 @@ export default async function RealDataIntegrationPreviewPage({
 
           <div className="flex items-center gap-3 text-[11px]">
             <Link
-              href={`/preview/dashboard-ui4?view=${view}`}
+              href={view === "road-to-glory" ? "/preview/dashboard-ui4/road-to-glory" : `/preview/dashboard-ui4?view=${view}`}
               className="text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-1"
             >
               <ArrowLeft className="w-3 h-3" />
@@ -174,9 +193,15 @@ export default async function RealDataIntegrationPreviewPage({
         </div>
       </div>
 
-      {/* Main Dashboard Layout (Home or Collection) */}
+      {/* Main Dashboard Layout (Home, Road to Glory, or Collection) */}
       {view === "collection" ? (
         <CollectionDashboard model={result.model} />
+      ) : view === "road-to-glory" ? (
+        <RoadToGloryDashboard
+          model={result.model}
+          mode="real-data"
+          activeChildId={result.actor.activeChildId}
+        />
       ) : (
         <HomeDashboard model={result.model} />
       )}
