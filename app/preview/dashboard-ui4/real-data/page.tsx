@@ -5,6 +5,7 @@ import "@/components/dashboard/ui4/dashboard-ui4.css";
 import "@/components/dashboard/ui4/variants/variants.css";
 import "@/components/dashboard/ui4/delta-elite-41.css";
 import "@/components/dashboard/ui4/road-to-glory/road-to-glory.css";
+import "@/components/team-showcase-2/team-showcase-2.css";
 import { HomeDashboard, CollectionDashboard } from "@/components/dashboard/ui4";
 import { RoadToGloryDashboard } from "@/components/dashboard/ui4/road-to-glory/road-to-glory-dashboard";
 import { loadRealDashboardUI4Data, isGenuineLocalEnvironment } from "@/lib/dashboard-ui4/real-data-loader";
@@ -35,8 +36,13 @@ export default async function RealDataIntegrationPreviewPage({
     headerList.get("host") ||
     "";
 
-  // Strict Remote & Production Guard: NEVER load real data or query Supabase on remote Vercel or non-local hosts
-  if (!isGenuineLocalEnvironment(host)) {
+  // Strict Remote & Production Guard: NEVER load real data on production hosts or against production Supabase.
+  // Allow genuine local loopback OR audited Vercel Preview strictly targeting Supabase Staging.
+  const isVercelStagingPreview =
+    process.env.VERCEL_ENV === "preview" &&
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("tdlsxamxtygojxhmjjvp"));
+
+  if (!isGenuineLocalEnvironment(host) && !isVercelStagingPreview) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-6 text-center shadow-2xl">

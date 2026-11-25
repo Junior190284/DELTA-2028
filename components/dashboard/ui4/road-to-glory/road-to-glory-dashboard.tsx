@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import DeltaCard from "@/components/cards/DeltaCard";
 import TeamShowcase2 from "@/components/team-showcase-2/TeamShowcase2";
-import "@/components/team-showcase-2/team-showcase-2.css";
 import { buildRoster, type ShowcasePlayer } from "@/lib/team/teamShowcase";
 import { NEUTRAL_SHOWCASE_ROSTER } from "@/lib/team/teamShowcaseDemo";
 import { subscribeCardEvents } from "@/lib/cards/cardSync";

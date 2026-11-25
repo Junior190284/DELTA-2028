@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import "@/components/dashboard/ui4/dashboard-ui4.css";
 import "@/components/dashboard/ui4/road-to-glory/road-to-glory.css";
+import "@/components/team-showcase-2/team-showcase-2.css";
 import { createDashboardUI4Model, type DashboardUI4AdapterInput } from "@/components/dashboard/ui4";
 import { RoadToGloryDashboard } from "@/components/dashboard/ui4/road-to-glory/road-to-glory-dashboard";
 
