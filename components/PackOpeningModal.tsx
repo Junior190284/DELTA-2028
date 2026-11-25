@@ -50,12 +50,18 @@ export default function PackOpeningModal({
 
   useEffect(() => {
     setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
   }, []);
 
   useEffect(() => {
     if (isOpen) {
       setStep("selector");
       setActiveTheme(chosenTheme);
+      document.body.style.overflow = "hidden";
     }
   }, [isOpen, chosenTheme]);
 
@@ -222,38 +228,92 @@ export default function PackOpeningModal({
       {/* 3. WALKOUT SEQUENCE (FLAGA -> POZYCJA -> HERB -> OCENA) */}
       {(step === "flag" || step === "pos" || step === "club" || step === "rating") && (
         <div className={`v101-walkout-stage theme-${activeTheme}`}>
+          {/* Skip Button */}
           <button 
             type="button" 
             className="v101-walkout-skip" 
             onClick={skipToRevealed}
           >
-            Pomiń <ArrowRight size={14} />
+            <span>Pomiń</span>
+            <ArrowRight size={14} />
           </button>
 
+          {/* Revealed Attribute Ribbon Tracker (No Overlaps) */}
+          <div className="flex items-center justify-center flex-wrap gap-2 mb-6 max-w-md px-4">
+            <span className="px-3 py-1 rounded-full bg-black/60 border border-white/20 text-[11px] font-bold text-white flex items-center gap-1.5 shadow-md">
+              <span className="text-sm">🇵🇱</span>
+              <span>POLSKA</span>
+            </span>
+
+            {(step === "pos" || step === "club" || step === "rating") && (
+              <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/60 text-[11px] font-black text-amber-300 uppercase shadow-md animate-fadeIn">
+                {fifaPos}
+              </span>
+            )}
+
+            {(step === "club" || step === "rating") && (
+              <span className="px-3 py-1 rounded-full bg-red-950/70 border border-red-500/50 text-[11px] font-black text-red-200 uppercase flex items-center gap-1.5 shadow-md animate-fadeIn">
+                <img 
+                  src="/teamlogos/gm.png" 
+                  alt="" 
+                  className="w-3.5 h-3.5 object-contain" 
+                  style={{ width: "14px", height: "14px", maxWidth: "14px", maxHeight: "14px" }}
+                />
+                <span>DELTA GM</span>
+              </span>
+            )}
+
+            {step === "rating" && (
+              <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[11px] font-[1000] shadow-lg animate-fadeIn">
+                87 OVR
+              </span>
+            )}
+          </div>
+
+          {/* Dedicated Spotlight Hero Stage (Strictly 1 Active Attribute at a Time) */}
           <div className="v101-walkout-tunnel">
             {/* Krok 1: FLAGA */}
-            <div className={`v101-walkout-item flag ${step === "flag" || step === "pos" || step === "club" || step === "rating" ? "active" : ""}`}>
-              <span className="v101-walkout-label">NARODOWOŚĆ</span>
-              <div className="v101-walkout-flag-box">
-                <i className="flag-white" />
-                <i className="flag-red" />
+            {step === "flag" && (
+              <div className="v101-walkout-item flag active">
+                <span className="v101-walkout-label">NARODOWOŚĆ</span>
+                <div className="v101-walkout-flag-box">
+                  <i className="flag-white" />
+                  <i className="flag-red" />
+                </div>
+                <h2 className="v101-walkout-val">POLSKA</h2>
               </div>
-              <h2 className="v101-walkout-val">POLSKA</h2>
-            </div>
+            )}
 
             {/* Krok 2: POZYCJA */}
-            {(step === "pos" || step === "club" || step === "rating") && (
+            {step === "pos" && (
               <div className="v101-walkout-item pos active">
                 <span className="v101-walkout-label">POZYCJA</span>
                 <h2 className={`v101-walkout-val highlight theme-${activeTheme}`}>{fifaPos}</h2>
               </div>
             )}
 
-            {/* Krok 3: KLUB */}
-            {(step === "club" || step === "rating") && (
+            {/* Krok 3: KLUB (Herb DELTY - Strictly Bounded) */}
+            {step === "club" && (
               <div className="v101-walkout-item club active">
                 <span className="v101-walkout-label">KLUB</span>
-                <img src="/teamlogos/gm.png" alt="DELTA GM" className="v101-walkout-crest" />
+                <div 
+                  className="p-3 rounded-2xl bg-black/50 border border-white/15 my-2 shadow-2xl flex items-center justify-center mx-auto"
+                  style={{ width: "108px", height: "108px" }}
+                >
+                  <img 
+                    src="/teamlogos/gm.png" 
+                    alt="DELTA GM" 
+                    className="v101-walkout-crest"
+                    style={{
+                      width: "84px",
+                      height: "84px",
+                      maxWidth: "84px",
+                      maxHeight: "84px",
+                      objectFit: "contain",
+                      margin: 0
+                    }}
+                  />
+                </div>
                 <h2 className="v101-walkout-val">K.S. DELTA WARSZAWA GM</h2>
               </div>
             )}

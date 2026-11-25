@@ -24,7 +24,13 @@ export default function DevPackOpeningPage() {
     card_name: name,
     title: type.toUpperCase(),
     rarity: rarity as any,
-    artwork_url: type === "inferno" ? "/assets/players/ryszard-inferno.png" : type === "legend" ? "/assets/players/ryszard-legend.png" : null,
+    artwork_url: type === "inferno" 
+      ? "/assets/players/ryszard-inferno.png" 
+      : type === "legend" 
+      ? "/assets/players/ryszard-legend.png" 
+      : (type === "gold_master" || type === "gold")
+      ? "/assets/players/ryszard-gold.png"
+      : null,
     artwork_pose: "standard",
     frame_theme: type,
     card_number: 1,
@@ -62,7 +68,8 @@ export default function DevPackOpeningPage() {
         total_delta_points_earned: 60,
         new_points_balance: 510,
         pack_type_id: "inferno_booster",
-        remaining_unopened_packs_count: 2
+        remaining_unopened_packs_count: 2,
+        enable_3d_walkout: true
       }
     },
     {
@@ -205,6 +212,7 @@ export default function DevPackOpeningPage() {
           onClose={() => setActivePack(null)}
           mockResult={activeMockResult || undefined}
           unopenedCount={2}
+          autoStart={true}
         />
       )}
     </div>

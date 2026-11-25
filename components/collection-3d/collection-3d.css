@@ -1,0 +1,462 @@
+/* ==========================================================================
+   DELTA COLLECTION 3D ENGINE — UNIVERSAL CARD STYLES
+   Generic theme variables, 3D viewport, slab layers, and theme customizations.
+   ========================================================================== */
+
+@import "../inferno-3d/inferno-card.css";
+
+/* --- Base Theme CSS Variables (Overridden per theme class) --- */
+.collection-card-theme {
+  --card-primary: #ef4444;
+  --card-secondary: #450a0a;
+  --card-glow: rgba(255, 42, 42, 0.45);
+  --card-accent: #ffca58;
+  --card-font-accent: #ffca58;
+  --card-border-gradient: linear-gradient(135deg, #ff4d5a, #dc2626, #7f1d1d);
+  --card-depth: 15px;
+}
+
+/* 1. INFERNO ULTRA */
+.collection-card-theme.theme-inferno {
+  --card-primary: #ef4444;
+  --card-secondary: #450a0a;
+  --card-glow: rgba(255, 42, 42, 0.45);
+  --card-accent: #ffca58;
+  --card-font-accent: #ffca58;
+  --card-border-gradient: linear-gradient(135deg, #ff4d5a, #dc2626, #7f1d1d);
+  --card-depth: 15px;
+}
+
+/* 2. GOLD MASTER */
+.collection-card-theme.theme-gold {
+  --card-primary: #eab308;
+  --card-secondary: #713f12;
+  --card-glow: rgba(234, 179, 8, 0.45);
+  --card-accent: #fef08a;
+  --card-font-accent: #fef9c3;
+  --card-border-gradient: linear-gradient(135deg, #fde047, #ca8a04, #713f12);
+  --card-depth: 14px;
+}
+.collection-card-theme.theme-gold .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(234, 179, 8, 0.22) 0, rgba(161, 98, 7, 0.14) 36%, transparent 74%);
+}
+.collection-card-theme.theme-gold .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(250, 204, 21, 0.42) 0, rgba(161, 98, 7, 0.16) 42%, transparent 75%);
+}
+.collection-card-theme.theme-gold .inferno-edge-glow {
+  box-shadow: 0 0 25px rgba(234, 179, 8, 0.4), 0 0 55px rgba(202, 138, 4, 0.25), inset 0 0 16px rgba(250, 204, 21, 0.2);
+}
+.collection-card-theme.theme-gold .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #eab308, 0 0 28px rgba(202, 138, 4, 0.6);
+}
+
+/* 3. MATCHDAY HERO */
+.collection-card-theme.theme-matchday {
+  --card-primary: #0ea5e9;
+  --card-secondary: #075985;
+  --card-glow: rgba(14, 165, 233, 0.45);
+  --card-accent: #38bdf8;
+  --card-font-accent: #e0f2fe;
+  --card-border-gradient: linear-gradient(135deg, #38bdf8, #0369a1, #0c4a6e);
+  --card-depth: 13px;
+}
+.collection-card-theme.theme-matchday .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(14, 165, 233, 0.22) 0, rgba(3, 105, 161, 0.14) 36%, transparent 74%);
+}
+.collection-card-theme.theme-matchday .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.42) 0, rgba(7, 89, 133, 0.16) 42%, transparent 75%);
+}
+.collection-card-theme.theme-matchday .inferno-edge-glow {
+  box-shadow: 0 0 25px rgba(14, 165, 233, 0.4), 0 0 55px rgba(3, 105, 161, 0.25), inset 0 0 16px rgba(56, 189, 248, 0.2);
+}
+.collection-card-theme.theme-matchday .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #0ea5e9, 0 0 28px rgba(3, 105, 161, 0.6);
+}
+
+/* 4. DELTA ICON (LEGEND) */
+.collection-card-theme.theme-legend {
+  --card-primary: #f59e0b;
+  --card-secondary: #78350f;
+  --card-glow: rgba(245, 158, 11, 0.50);
+  --card-accent: #fef08a;
+  --card-font-accent: #fef08a;
+  --card-border-gradient: linear-gradient(135deg, #fef08a, #d97706, #78350f);
+  --card-depth: 15px;
+}
+.collection-card-theme.theme-legend .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.26) 0, rgba(180, 83, 9, 0.14) 36%, transparent 74%);
+}
+.collection-card-theme.theme-legend .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(254, 240, 138, 0.45) 0, rgba(120, 53, 15, 0.18) 42%, transparent 75%);
+}
+.collection-card-theme.theme-legend .inferno-edge-glow {
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.45), 0 0 60px rgba(217, 119, 6, 0.3), inset 0 0 18px rgba(254, 240, 138, 0.25);
+}
+.collection-card-theme.theme-legend .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #f59e0b, 0 0 28px rgba(217, 119, 6, 0.6);
+}
+
+/* 5. TRAINING HERO (RARE) */
+.collection-card-theme.theme-rare {
+  --card-primary: #10b981;
+  --card-secondary: #064e3b;
+  --card-glow: rgba(16, 185, 129, 0.40);
+  --card-accent: #34d399;
+  --card-font-accent: #a7f3d0;
+  --card-border-gradient: linear-gradient(135deg, #34d399, #059669, #064e3b);
+  --card-depth: 12px;
+}
+.collection-card-theme.theme-rare .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.20) 0, rgba(5, 150, 105, 0.12) 36%, transparent 74%);
+}
+.collection-card-theme.theme-rare .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(52, 211, 153, 0.38) 0, rgba(6, 78, 59, 0.14) 42%, transparent 75%);
+}
+.collection-card-theme.theme-rare .inferno-edge-glow {
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.35), 0 0 50px rgba(5, 150, 105, 0.2), inset 0 0 14px rgba(52, 211, 153, 0.18);
+}
+.collection-card-theme.theme-rare .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 16px #10b981, 0 0 28px rgba(5, 150, 105, 0.6);
+}
+
+/* 6. BASE (COMMON) */
+.collection-card-theme.theme-common {
+  --card-primary: #94a3b8;
+  --card-secondary: #1e293b;
+  --card-glow: rgba(148, 163, 184, 0.35);
+  --card-accent: #cbd5e1;
+  --card-font-accent: #ffffff;
+  --card-border-gradient: linear-gradient(135deg, #cbd5e1, #475569);
+  --card-depth: 12px;
+}
+.collection-card-theme.theme-common .inferno-aura {
+  background: radial-gradient(ellipse at center, rgba(148, 163, 184, 0.16) 0, rgba(71, 85, 105, 0.10) 36%, transparent 74%);
+}
+.collection-card-theme.theme-common .inferno-floor-glow {
+  background: radial-gradient(ellipse at center, rgba(203, 213, 225, 0.30) 0, rgba(30, 41, 59, 0.12) 42%, transparent 75%);
+}
+.collection-card-theme.theme-common .inferno-edge-glow {
+  box-shadow: 0 0 20px rgba(148, 163, 184, 0.3), 0 0 45px rgba(71, 85, 105, 0.18), inset 0 0 12px rgba(203, 213, 225, 0.15);
+}
+.collection-card-theme.theme-common .inferno-player-number {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 14px #94a3b8, 0 0 24px rgba(71, 85, 105, 0.5);
+}
+
+/* Series Badge Dynamic Color */
+.collection-card-theme .inferno-brand-badge em {
+  color: var(--card-font-accent);
+}
+
+/* Submeta OVR Tag Dynamic Highlight */
+.collection-card-theme .inferno-front-ovr-tag b {
+  color: var(--card-font-accent);
+}
+
+/* Ensure no transitions when timeline is active or in walkout mode */
+.walkout-container .inferno-card-object {
+  transition: none !important;
+}
+
+/* ==========================================================================
+   REVERSE (REWERS) — ENHANCED COMPOSITION & CREST CONSTRAINTS
+   Guarantees 100% bounded crest sizing (no blowout) across all viewports.
+   ========================================================================== */
+.inferno-back-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.09;
+  transform: translateZ(24px) scale(1.35);
+  filter: blur(1.5px) grayscale(20%);
+  z-index: 4;
+  overflow: hidden;
+}
+
+.inferno-back-watermark img {
+  width: 72% !important;
+  height: 72% !important;
+  max-width: 72% !important;
+  max-height: 72% !important;
+  object-fit: contain !important;
+  pointer-events: none;
+}
+
+.inferno-back-content {
+  position: absolute;
+  inset: 12% 11% 8% 11%;
+  transform: translateZ(70px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  z-index: 6;
+  text-shadow: 0 4px 16px #000;
+  pointer-events: none;
+}
+
+/* Authentic Crest Medallion */
+.inferno-back-crest-medallion {
+  width: clamp(66px, 16vw, 80px) !important;
+  height: clamp(66px, 16vw, 80px) !important;
+  max-width: 80px !important;
+  max-height: 80px !important;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border: 2px solid var(--card-accent, #ff7250);
+  background: radial-gradient(circle at 35% 25%, rgba(255, 126, 102, 0.22) 0, #130a12 65%);
+  box-shadow:
+    0 0 32px var(--card-glow, rgba(255, 75, 40, 0.45)),
+    inset 0 0 20px rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 215, 170, 0.35);
+  transform: translateZ(16px);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.inferno-back-crest-medallion img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 8px rgba(255, 90, 50, 0.4));
+  pointer-events: none;
+}
+
+/* Compact, Prestigious Titles */
+.inferno-back-titles-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 4px 0;
+}
+
+.inferno-back-titles-wrap h2 {
+  margin: 0;
+  font-size: clamp(17px, 4.2vw, 24px);
+  letter-spacing: 0.16em;
+  font-weight: 1000;
+  color: #fff;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95), 0 0 12px rgba(255, 75, 40, 0.35);
+}
+
+.inferno-back-series-tag {
+  color: var(--card-font-accent, #ffb8a2);
+  font-size: clamp(8px, 1.9vw, 9.5px);
+  letter-spacing: 0.32em;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.inferno-back-gold-divider {
+  height: 1px;
+  width: 82%;
+  background: linear-gradient(90deg, transparent, var(--card-primary, rgba(255, 120, 80, 0.8)) 25%, var(--card-accent, rgba(255, 225, 160, 0.95)) 50%, var(--card-primary, rgba(255, 120, 80, 0.8)) 75%, transparent);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.inferno-back-gold-divider::after {
+  content: "♦";
+  position: absolute;
+  color: var(--card-accent, #f59e0b);
+  font-size: 7px;
+  text-shadow: 0 0 6px var(--card-accent, #f59e0b);
+}
+
+/* Credentials Grid: High Contrast for Number, Position & OVR */
+.inferno-back-creds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 100%;
+  background: rgba(14, 8, 14, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 6px 6px;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.65);
+}
+
+.inferno-back-cred-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.inferno-back-cred-cell span {
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.inferno-back-cred-cell b {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+/* Security Barcode & Certificate Plate */
+.inferno-back-security-barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.inferno-barcode-pattern {
+  width: 80%;
+  height: 14px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ffffff,
+    #ffffff 2px,
+    transparent 2px,
+    transparent 4px,
+    #ffffff 4px,
+    #ffffff 7px,
+    transparent 7px,
+    transparent 9px
+  );
+  opacity: 0.55;
+  border-radius: 2px;
+}
+
+.inferno-back-security-barcode span {
+  font-family: monospace;
+  font-size: 7px;
+  letter-spacing: 0.22em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+/* UI.5 Card3DEngine Polish: Specular Glare, Name Legibility, Touch Action, Mobile Perf */
+.inferno-scene-viewport.is-interactive {
+  touch-action: none;
+  cursor: grab;
+}
+.inferno-scene-viewport.is-static {
+  touch-action: pan-y;
+  cursor: default;
+}
+
+.inferno-specular-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 17;
+  transform: translateZ(102px);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: var(--glare-opacity, 0.26);
+  background:
+    radial-gradient(
+      circle at var(--glare-x, 50%) var(--glare-y, 44%),
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(255, 255, 255, 0.16) 24%,
+      transparent 58%
+    );
+  transition: opacity 0.22s ease;
+}
+
+.collection-card-theme .inferno-front-namebar {
+  padding: 6px 10px 4px;
+  border-radius: 10px;
+  background: radial-gradient(ellipse at center, rgba(2, 4, 8, 0.64) 0%, rgba(2, 4, 8, 0.25) 68%, transparent 100%);
+}
+
+.collection-card-theme .inferno-front-name-text {
+  text-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.98),
+    0 0 18px rgba(0, 0, 0, 0.88),
+    0 0 10px var(--card-glow, rgba(255, 42, 42, 0.45));
+}
+
+.collection-card-theme .inferno-front-series-bar {
+  background: rgba(8, 10, 18, 0.84);
+  border-color: var(--card-accent, rgba(255, 202, 88, 0.35));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+}
+
+@media (max-width: 768px) {
+  .inferno-scene-viewport {
+    filter: drop-shadow(0 20px 22px rgba(0, 0, 0, 0.78));
+  }
+  .inferno-aura {
+    filter: blur(22px);
+  }
+  .inferno-floor-glow {
+    filter: blur(12px);
+  }
+  .inferno-player-back-glow {
+    filter: blur(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inferno-specular-glare,
+  .inferno-holo-foil {
+    transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   P12E — RENDER-BUDGET-SAFE 3D CARD (Card3DEngine only)
+   Root cause: each translateZ() child inside a preserve-3d face became its own
+   3D compositor layer (≈37 layers / ≈190 MB of textures per card at DPR 3),
+   and the whole 3D scene was additionally wrapped in filter: drop-shadow(),
+   which forces an extra offscreen surface. Over the mobile GPU memory budget,
+   the browser stops rasterising some layers and the face's near-black
+   background (#09090d) shows through: a black or empty card.
+   ========================================================================== */
+
+/* The face turned away from the viewer (decided in Card3DEngine) is not rendered at all. */
+.collection-card-theme .inferno-card-face.is-face-hidden {
+  visibility: hidden;
+}
+
+/* Phones and touch devices: the card still rotates in 3D, but each face is a single
+   flat surface. Content stays visible; only the internal parallax depth is lost. */
+@media (max-width: 820px), (pointer: coarse) {
+  .collection-card-theme.inferno-scene-viewport {
+    filter: none;
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-card-face {
+    transform-style: flat;
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-card-face > * {
+    transform: none;
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-card-face > .inferno-back-watermark {
+    transform: scale(1.35);
+  }
+  /* The middle slab layer adds no visible depth at phone size: one fewer full-card layer. */
+  .collection-card-theme.inferno-scene-viewport .inferno-shell-1 {
+    display: none;
+  }
+  /* Replaces the viewport drop-shadow without a filter on the 3D container. */
+  .collection-card-theme.inferno-scene-viewport .inferno-shell-0 {
+    box-shadow: 0 26px 42px rgba(0, 0, 0, 0.72);
+  }
+  .collection-card-theme.inferno-scene-viewport .inferno-player-slot {
+    filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 12px rgba(255, 75, 40, 0.4));
+  }
+}
+
+

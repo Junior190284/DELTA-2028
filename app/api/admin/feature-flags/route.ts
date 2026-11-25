@@ -41,8 +41,26 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
+
+    // 1. Strict user authentication check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Wymagane logowanie' }, { status: 401 });
+    }
+
+    // 2. Strict admin authorization check
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Brak uprawnień administratora' }, { status: 403 });
+    }
+
     const body = await req.json();
-    const { key, value, userId } = body;
+    const { key, value } = body;
 
     if (!key || value === undefined) {
       return NextResponse.json({ success: false, error: 'Brak klucza lub wartości' }, { status: 400 });
@@ -61,7 +79,7 @@ export async function POST(req: NextRequest) {
         key,
         value,
         updated_at: new Date().toISOString(),
-        updated_by: userId || 'admin'
+        updated_by: user.id
       }, { onConflict: 'key' });
 
     if (error) {
@@ -69,9 +87,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    // Log admin audit
+    // Log admin audit with verified user identity
     await logAuditAction({
-      userId: userId || 'admin',
+      userId: user.id,
+      userEmail: user.email,
       userRole: 'admin',
       action: 'SETTINGS_CHANGE',
       resourceType: 'settings',

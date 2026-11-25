@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Lock } from "lucide-react";
 import { DeltaCardTheme, DeltaThemeConfig } from "@/lib/cards/deltaCardModel";
+import { sanitizePlayerPhotoCandidate } from "@/lib/cards/playerVisuals";
 import { CardLayoutConfig } from "@/lib/cards/types";
+import NeutralPlayerSilhouette from "./NeutralPlayerSilhouette";
 
 export interface CardCutoutProps {
   playerName: string;
@@ -26,15 +28,39 @@ export default function CardCutout({
   isLocked = false,
   layoutOverride
 }: CardCutoutProps) {
+  const safePhotoUrl = sanitizePlayerPhotoCandidate(photoUrl, playerName);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const currentPhotoUrlRef = useRef<string | null | undefined>(safePhotoUrl);
+
+  // Synchronize and reset imageError whenever photoUrl changes
+  useEffect(() => {
+    currentPhotoUrlRef.current = safePhotoUrl;
+    setImageError(false);
+    setImageLoaded(false);
+  }, [safePhotoUrl]);
+
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Guard against stale error events from previously discarded image URLs
+    const targetSrc = e.currentTarget.currentSrc || e.currentTarget.src;
+    if (safePhotoUrl && targetSrc && currentPhotoUrlRef.current === safePhotoUrl) {
+      setImageError(true);
+    }
+  }, [safePhotoUrl]);
 
   // Determine pose scale & position adjustments
   const poseScale = artworkPose === "action" ? 1.15 : artworkPose === "celebration" ? 1.2 : 1.05;
   const poseTranslateY = artworkPose === "action" ? -4 : artworkPose === "celebration" ? -6 : -2;
 
-  const finalScale = (layoutOverride?.scale || poseScale);
+  // Specific positioning for INFERNO to prevent top flame ornament from obscuring face
+  const isInferno = String(cardType || "").toUpperCase() === "INFERNO";
+  const cutoutTop = isInferno ? "16%" : "10%";
+
+  const finalScale = layoutOverride?.scale || (isInferno ? 0.98 : poseScale);
   const finalTranslateX = layoutOverride?.translateX || 0;
-  const finalTranslateY = (layoutOverride?.translateY || poseTranslateY);
+  const finalTranslateY = layoutOverride?.translateY !== undefined 
+    ? layoutOverride.translateY 
+    : (poseTranslateY + (isInferno ? 5 : 0));
   const finalRotate = layoutOverride?.rotate || 0;
   const finalBrightness = layoutOverride?.brightness || 1;
   const finalContrast = layoutOverride?.contrast || 1;
@@ -52,60 +78,84 @@ export default function CardCutout({
     );
   }
 
-  const hasValidPhoto = photoUrl && !imageError;
+  const hasValidPhoto = Boolean(safePhotoUrl) && !imageError;
 
   return (
-    <div className="card-layer-cutout absolute top-[10%] left-[8%] right-[8%] bottom-[28%] flex items-end justify-center pointer-events-none z-10 overflow-hidden">
+    <div 
+      className="card-layer-cutout absolute left-[8%] right-[8%] bottom-[28%] flex items-end justify-center pointer-events-none z-10 overflow-hidden"
+      style={{
+        position: "absolute",
+        top: cutoutTop,
+        left: "8%",
+        right: "8%",
+        bottom: "28%",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        pointerEvents: "none",
+        zIndex: 10,
+        overflow: "hidden"
+      }}
+    >
       {hasValidPhoto ? (
         <div
-          className="w-full h-full flex items-end justify-center transition-transform duration-300"
+          className="w-full h-full flex items-end justify-center transition-transform duration-300 relative"
           style={{
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            minWidth: 0,
             transform: `translate(${finalTranslateX}%, ${finalTranslateY}%) scale(${finalScale}) rotate(${finalRotate}deg)`,
             filter: `brightness(${finalBrightness}) contrast(${finalContrast}) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85))`
           }}
         >
+          {/* Instant silhouette visible while photo is loading */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <NeutralPlayerSilhouette
+                shirtNumber={shirtNumber}
+                accentColor={themeConfig.fontAccentColor}
+                glowColor={themeConfig.accentGlow}
+                crestSrc="/teamlogos/gm.png"
+                compact={false}
+              />
+            </div>
+          )}
           <img
-            src={photoUrl}
+            src={safePhotoUrl!}
             alt={playerName}
-            className="max-w-full max-h-full object-contain object-bottom pointer-events-none"
+            className="w-full h-full max-w-full max-h-full object-contain object-bottom pointer-events-none"
+            style={{
+              width: "100%",
+              height: "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              objectPosition: "center bottom",
+              opacity: imageLoaded ? 1 : 0,
+              transition: "opacity 200ms ease-in"
+            }}
             loading="eager"
             decoding="sync"
-            onError={() => setImageError(true)}
+            onLoad={() => setImageLoaded(true)}
+            onError={handleImageError}
           />
         </div>
       ) : (
-        /* Fallback: High-Tech Neon Silhouette with Jersey Crest & Number */
+        /* Fallback: High-Tech Unified Neon Silhouette with Jersey Crest & Number */
         <div
-          className="w-full h-full flex flex-col items-center justify-center relative"
+          className="w-full h-full flex items-center justify-center relative"
           style={{
             transform: `translate(${finalTranslateX}%, ${finalTranslateY}%) scale(${finalScale})`
           }}
         >
-          {/* Radial Silhouette Glow */}
-          <div
-            className="absolute w-[36cqw] h-[36cqw] rounded-full filter blur-xl opacity-60 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle, ${themeConfig.accentGlow} 0%, transparent 70%)`
-            }}
+          <NeutralPlayerSilhouette
+            shirtNumber={shirtNumber}
+            accentColor={themeConfig.fontAccentColor}
+            glowColor={themeConfig.accentGlow}
+            crestSrc="/teamlogos/gm.png"
+            compact={false}
           />
-
-          {/* Stylized Silhouette Jersey Body */}
-          <div className="relative flex flex-col items-center justify-center z-10">
-            <img
-              src="/teamlogos/gm.png"
-              alt="DELTA"
-              className="w-[12cqw] h-[12cqw] object-contain filter drop-shadow(0 0 8px rgba(255,255,255,0.6)) mb-1"
-            />
-            <span
-              className="text-[6.5cqw] font-black tracking-tighter"
-              style={{
-                color: themeConfig.fontAccentColor,
-                textShadow: `0 0 12px ${themeConfig.accentGlow}, 0 2px 4px #000`
-              }}
-            >
-              {shirtNumber ? `#${shirtNumber}` : "GM"}
-            </span>
-          </div>
         </div>
       )}
     </div>

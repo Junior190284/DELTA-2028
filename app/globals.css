@@ -285,7 +285,7 @@ button.v103-day-event:hover{border-color:rgba(246,201,82,.48);transform:translat
 .login-msg{margin-top:12px;padding:10px 12px;border:1px solid rgba(240,201,93,.13);background:rgba(240,201,93,.05);color:#e9ddb6;font-size:12px}
 
 .admin-link{display:flex;align-items:center;padding:0 12px;border:1px solid rgba(240,201,93,.22);color:var(--gold);text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.12em}
-.admin-app{min-height:100vh;background:radial-gradient(800px 420px at 90% -10%,rgba(237,31,47,.12),transparent 65%),#07090d;color:#fff}.admin-top{display:flex;gap:18px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);background:#090d13}.admin-top h1{margin:4px 0 0}.admin-back{display:flex;align-items:center;gap:7px;color:#cbd5df;text-decoration:none}.admin-role{margin-left:auto;color:var(--gold);font-size:11px;font-weight:900;text-transform:uppercase}.admin-tabs{display:flex;gap:6px;overflow:auto;padding:10px 18px;border-bottom:1px solid var(--line);background:#0b1017}.admin-tabs button{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#111722;color:#aab6c3;padding:9px 12px;white-space:nowrap}.admin-tabs button.active{color:#fff;border-color:rgba(240,201,93,.28);background:rgba(240,201,93,.08)}.admin-main{max-width:1400px;margin:auto;padding:18px}.admin-two-col{display:grid;grid-template-columns:330px 1fr;gap:14px}.admin-card,.admin-subcard{border:1px solid var(--line);background:linear-gradient(145deg,#121927,#0b1017);padding:16px}.admin-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.admin-card-head h2{margin:0}.admin-card-head button,.admin-subcard button,.push-main{display:flex;align-items:center;gap:7px;padding:9px 12px;border:0;background:var(--gold);color:#181208;font-weight:900}.admin-match-list{display:grid;gap:7px}.admin-match-list button{padding:10px;text-align:left;border:1px solid var(--line);background:#0a0e14;color:#d9e1ea}.admin-match-list button.selected{border-color:rgba(240,201,93,.3);background:rgba(240,201,93,.07)}.admin-match-list span{display:block;color:#83909d;font-size:11px;margin-top:4px}.admin-form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.admin-form-grid label{font-size:11px;color:#a7b2bf}.admin-form-grid input,.admin-form-grid select,.admin-subcard select{width:100%;margin-top:6px;padding:9px;background:#080b10;color:#fff;border:1px solid #2b3440}.admin-roster{display:grid;gap:7px}.admin-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(255,255,255,.06);background:#0a0e14}.admin-player-row span{display:block;color:#8e9ba8;font-size:11px;margin-top:3px}.row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.row-actions button,.danger-btn,.event-list button{display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid var(--line);background:#141b24;color:#cbd5df}.row-actions button.on{background:#163821;color:#aef0bb}.row-actions button.danger{background:#40161a;color:#ffb0b5}.row-actions button.gold{background:#3a2f14;color:#f4da83}.admin-event-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.admin-subcard h3{display:flex;align-items:center;gap:7px;margin-top:0}.admin-subcard select{margin-bottom:8px}.event-list{display:grid;gap:7px}.event-list>div{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border:1px solid var(--line);background:#090d13}.admin-news-list{display:grid;gap:10px}.admin-news-list article{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line);background:#0a0e14}.admin-news-list h3{margin:8px 0}.admin-news-list p{color:#aab6c3}.admin-news-list button{height:34px;border:1px solid var(--line);background:#151b24;color:#ff9fa6}.parent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.parent-check{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}.push-main{margin-top:16px;font-size:15px;padding:12px 16px}.danger-btn{color:#ff9ca4}
+.admin-app{min-height:100vh;background:radial-gradient(800px 420px at 90% -10%,rgba(237,31,47,.12),transparent 65%),#07090d;color:#fff}.admin-top{display:flex;gap:18px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);background:#090d13}.admin-top h1{margin:4px 0 0}.admin-back{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:#111722;color:#f8fafc;font-size:13px;font-weight:700;text-decoration:none;transition:all .2s ease}.admin-back:hover{background:#1a2334;border-color:rgba(240,201,93,.35);color:#f59e0b}.admin-role{margin-left:auto;color:var(--gold);font-size:11px;font-weight:900;text-transform:uppercase}.admin-tabs{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:10px 16px;border-bottom:1px solid var(--line);background:#0b1017;scrollbar-width:thin;-webkit-overflow-scrolling:touch}.admin-tabs button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:1px solid var(--line);background:#111722;color:#cbd5df;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .15s ease}.admin-tabs button:hover{background:#182030;border-color:rgba(255,255,255,.2);color:#fff}.admin-tabs button.active{color:#fff;border-color:rgba(240,201,93,.28);background:rgba(240,201,93,.08)}.admin-main{max-width:1400px;margin:auto;padding:18px}.admin-two-col{display:grid;grid-template-columns:330px 1fr;gap:14px}.admin-card,.admin-subcard{border:1px solid var(--line);background:linear-gradient(145deg,#121927,#0b1017);padding:16px}.admin-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.admin-card-head h2{margin:0}.admin-card-head button,.admin-subcard button,.push-main{display:flex;align-items:center;gap:7px;padding:9px 12px;border:0;background:var(--gold);color:#181208;font-weight:900}.admin-match-list{display:grid;gap:7px}.admin-match-list button{padding:10px;text-align:left;border:1px solid var(--line);background:#0a0e14;color:#d9e1ea}.admin-match-list button.selected{border-color:rgba(240,201,93,.3);background:rgba(240,201,93,.07)}.admin-match-list span{display:block;color:#83909d;font-size:11px;margin-top:4px}.admin-form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.admin-form-grid label{font-size:11px;color:#a7b2bf}.admin-form-grid input,.admin-form-grid select,.admin-subcard select{width:100%;margin-top:6px;padding:9px;background:#080b10;color:#fff;border:1px solid #2b3440}.admin-roster{display:grid;gap:7px}.admin-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(255,255,255,.06);background:#0a0e14}.admin-player-row span{display:block;color:#8e9ba8;font-size:11px;margin-top:3px}.row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.row-actions button,.danger-btn,.event-list button{display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid var(--line);background:#141b24;color:#cbd5df}.row-actions button.on{background:#163821;color:#aef0bb}.row-actions button.danger{background:#40161a;color:#ffb0b5}.row-actions button.gold{background:#3a2f14;color:#f4da83}.admin-event-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.admin-subcard h3{display:flex;align-items:center;gap:7px;margin-top:0}.admin-subcard select{margin-bottom:8px}.event-list{display:grid;gap:7px}.event-list>div{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border:1px solid var(--line);background:#090d13}.admin-news-list{display:grid;gap:10px}.admin-news-list article{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line);background:#0a0e14}.admin-news-list h3{margin:8px 0}.admin-news-list p{color:#aab6c3}.admin-news-list button{height:34px;border:1px solid var(--line);background:#151b24;color:#ff9fa6}.parent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.parent-check{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}.push-main{margin-top:16px;font-size:15px;padding:12px 16px}.danger-btn{color:#ff9ca4}
 @media(max-width:900px){.admin-two-col{grid-template-columns:1fr}.admin-form-grid{grid-template-columns:1fr 1fr}.parent-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.admin-top{align-items:flex-start;flex-wrap:wrap}.admin-form-grid{grid-template-columns:1fr}.admin-event-grid{grid-template-columns:1fr}.admin-player-row{align-items:flex-start;flex-direction:column}.row-actions{justify-content:flex-start}.admin-main{padding:10px}}
 
@@ -3299,7 +3299,7 @@ button.v85-summary-card{color:inherit;cursor:pointer}
 }
 .public-footer{margin-top:15px;padding:16px;display:flex;align-items:center;gap:9px;border-top:1px solid rgba(255,255,255,.06);color:#78848e}
 .public-footer img{width:32px;height:32px;object-fit:contain}.public-footer div{display:flex;flex-direction:column}.public-footer b{font-size:8px;color:#fff}.public-footer span{font-size:6px;margin-top:2px}
-.login-public-back{display:block;margin:10px 0;color:#f1c95c;text-decoration:none;font-size:8px;text-align:center}
+.login-public-back{display:inline-flex;align-items:center;justify-content:center;min-height:44px;width:100%;margin:12px 0 6px;color:#f1c95c;text-decoration:none;font-size:13px;font-weight:600;text-align:center;border-radius:8px;transition:background .15s ease}.login-public-back:hover{background:rgba(245,158,11,.08)}
 
 @media(max-width:900px){
   .public-team-site{padding-left:18px}
@@ -4223,7 +4223,7 @@ body > main,
   background:
     linear-gradient(90deg,rgba(2,4,7,.94) 0%,rgba(2,4,7,.62) 38%,rgba(6,3,5,.26) 68%,rgba(2,4,7,.54) 100%),
     linear-gradient(180deg,rgba(2,4,7,.02) 0%,rgba(2,4,7,.12) 44%,rgba(2,4,7,.96) 100%),
-    url('/assets/hero-stadium-desktop.png') center 56%/cover no-repeat!important;
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 56%/cover no-repeat!important;
   border-color:rgba(231,32,49,.34)!important;
   box-shadow:
     inset 0 -120px 130px rgba(0,0,0,.60),
@@ -4254,7 +4254,7 @@ body > main,
   background:
     linear-gradient(90deg,rgba(3,5,8,.86),rgba(3,5,8,.35) 46%,rgba(8,3,6,.18)),
     linear-gradient(180deg,rgba(3,5,8,.04),rgba(3,5,8,.78) 100%),
-    url('/assets/hero-stadium-desktop.png') center 58%/cover no-repeat!important;
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 58%/cover no-repeat!important;
   box-shadow:
     inset 0 -90px 100px rgba(0,0,0,.52),
     0 18px 48px rgba(0,0,0,.38)!important;
@@ -4282,7 +4282,7 @@ body > main,
     background:
       linear-gradient(180deg,rgba(2,4,7,.05) 0%,rgba(2,4,7,.20) 42%,rgba(2,4,7,.94) 86%,rgba(2,4,7,.99) 100%),
       linear-gradient(90deg,rgba(6,2,4,.16),rgba(3,5,8,.02),rgba(6,2,4,.14)),
-      url('/assets/hero-stadium-mobile.png') center 66%/cover no-repeat!important;
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 66%/cover no-repeat!important;
     box-shadow:
       inset 0 -90px 100px rgba(0,0,0,.62),
       0 14px 36px rgba(0,0,0,.42)!important;
@@ -4309,7 +4309,7 @@ body > main,
     min-height:230px!important;
     background:
       linear-gradient(180deg,rgba(3,5,8,.08),rgba(3,5,8,.32) 48%,rgba(3,5,8,.92)),
-      url('/assets/hero-stadium-mobile.png') center 66%/cover no-repeat!important;
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 66%/cover no-repeat!important;
     box-shadow:
       inset 0 -70px 90px rgba(0,0,0,.58),
       0 12px 28px rgba(0,0,0,.32)!important;
@@ -4624,7 +4624,7 @@ body > main,
   background:
     linear-gradient(90deg,rgba(2,4,7,.92) 0%,rgba(2,4,7,.62) 38%,rgba(5,3,5,.18) 66%,rgba(2,4,7,.24) 100%),
     linear-gradient(180deg,rgba(2,4,7,.03),rgba(2,4,7,.12) 54%,rgba(2,4,7,.94) 100%),
-    url('/assets/hero-stadium-clean-desktop.png') center 56%/cover no-repeat!important;
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 56%/cover no-repeat!important;
   display:flex!important;
   align-items:flex-end!important;
 }
@@ -4634,7 +4634,7 @@ body > main,
   background:
     linear-gradient(90deg,rgba(3,5,8,.76),rgba(3,5,8,.28) 45%,rgba(3,5,8,.10)),
     linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.77) 100%),
-    url('/assets/hero-stadium-clean-desktop.png') center 58%/cover no-repeat!important;
+    url('/assets/hero-stadium-clean-desktop-v2.png') center 58%/cover no-repeat!important;
   position:relative!important;
 }
 
@@ -4756,14 +4756,14 @@ body > main,
     min-height:390px!important;
     background:
       linear-gradient(180deg,rgba(2,4,7,.02),rgba(2,4,7,.10) 38%,rgba(2,4,7,.87) 79%,rgba(2,4,7,.98)),
-      url('/assets/hero-stadium-clean-mobile.png') center 62%/cover no-repeat!important;
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 62%/cover no-repeat!important;
     align-items:flex-end!important;
   }
   .v101-logged-hero{
     min-height:255px!important;
     background:
       linear-gradient(180deg,rgba(3,5,8,.02),rgba(3,5,8,.18) 50%,rgba(3,5,8,.88)),
-      url('/assets/hero-stadium-clean-mobile.png') center 61%/cover no-repeat!important;
+      url('/assets/hero-stadium-clean-mobile-v2.png') center 61%/cover no-repeat!important;
   }
 
   .v101-hero-club-identity,
@@ -8038,13 +8038,17 @@ body > main,
 .v101-pack-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, #151c28 0%, #06090e 70%, #020305 100%);
-  z-index: 1000000;
+  width: 100vw;
+  height: 100dvh;
+  background: #020408;
+  z-index: 9999999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   overflow: hidden;
+  isolation: isolate;
+  user-select: none;
 }
 
 .v101-pack-close-btn {
@@ -8072,10 +8076,20 @@ body > main,
 
 .v101-pack-bg-rays {
   position: absolute;
-  inset: -50%;
+  top: 50%;
+  left: 50%;
+  width: 250vmax;
+  height: 250vmax;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
   background: conic-gradient(from 0deg, transparent 0deg, rgba(241, 201, 92, 0.08) 20deg, transparent 40deg, rgba(241, 201, 92, 0.08) 60deg, transparent 80deg, rgba(241, 201, 92, 0.08) 100deg, transparent 120deg, rgba(241, 201, 92, 0.08) 140deg, transparent 160deg, rgba(241, 201, 92, 0.08) 180deg, transparent 200deg, rgba(241, 201, 92, 0.08) 220deg, transparent 240deg, rgba(241, 201, 92, 0.08) 260deg, transparent 280deg, rgba(241, 201, 92, 0.08) 300deg, transparent 320deg, rgba(241, 201, 92, 0.08) 340deg, transparent 360deg);
-  animation: v101-spin-rays 35s linear infinite;
+  animation: v101-spin-rays-centered 35s linear infinite;
   pointer-events: none;
+}
+
+@keyframes v101-spin-rays-centered {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .v101-pack-bg-rays.theme-inferno {
@@ -8367,12 +8381,27 @@ body > main,
   text-shadow: 0 0 25px rgba(241, 201, 92, 0.8);
 }
 
+.pack-experience-header-crest,
+div[role="dialog"] img[src*="/teamlogos/gm.png"],
+.pack-header-logo {
+  max-width: 90px !important;
+  max-height: 90px !important;
+  width: clamp(34px, 7vw, 42px) !important;
+  height: clamp(34px, 7vw, 42px) !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+}
+
 .v101-walkout-crest {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  margin: 0 auto 6px;
+  width: 84px !important;
+  height: 84px !important;
+  max-width: min(84px, 24vw) !important;
+  max-height: min(84px, 24vw) !important;
+  object-fit: contain !important;
+  margin: 0 auto 8px;
   filter: drop-shadow(0 0 20px rgba(255, 60, 0, 0.7));
+  flex-shrink: 0 !important;
 }
 
 .v101-walkout-ovr {
@@ -28587,6 +28616,41 @@ body > main,
 }
 
 /* Specific Mission Modal Styling */
+.v200-mission-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(4, 7, 14, 0.88) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.v200-mission-sheet {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 680px !important;
+  max-height: 90vh !important;
+  margin: auto !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: radial-gradient(circle at 50% 10%, rgba(220, 38, 38, 0.14) 0%, rgba(15, 12, 24, 0.98) 60%, rgba(6, 8, 14, 0.99) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.98), 0 0 50px rgba(220, 38, 38, 0.15) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
 .v200-missions-modal {
   max-width: 640px;
 }
@@ -31326,16 +31390,19 @@ body > main,
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: center !important;
-  padding: 1rem !important;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom)) 1rem !important;
   overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
 }
 
 .v200-squad-sheet {
   position: relative !important;
   width: 100% !important;
   max-width: 1100px !important;
+  margin: auto 0 !important;
   background: #070d1e !important;
   border: 1px solid rgba(245, 158, 11, 0.35) !important;
   border-radius: 20px !important;
@@ -31617,11 +31684,23 @@ body > main,
   padding: 1.2rem !important;
   overflow-y: auto !important;
   flex: 1 !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 @media (max-width: 960px) {
+  .v200-squad-overlay {
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.5rem max(0.75rem, env(safe-area-inset-bottom)) 0.5rem !important;
+  }
+  .v200-squad-sheet {
+    max-height: none !important;
+    margin: 0 auto !important;
+    border-radius: 16px !important;
+  }
   .v200-squad-arena-layout {
     grid-template-columns: 1fr !important;
+    overflow-y: visible !important;
+    padding: 0.85rem !important;
+    gap: 1rem !important;
   }
 }
 
@@ -32136,14 +32215,17 @@ body > main,
   background: rgba(0, 0, 0, 0.8) !important;
   backdrop-filter: blur(8px) !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: center !important;
-  padding: 1rem !important;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom)) 1rem !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 .squad-drawer-panel {
   width: 100% !important;
   max-width: 680px !important;
+  margin: auto 0 !important;
   background: #0b1329 !important;
   border: 1px solid rgba(245, 158, 11, 0.35) !important;
   border-radius: 18px !important;
@@ -39191,11 +39273,11 @@ body > main,
    DELTA INFERNO — ETAP 5: NAVIGATION 2.0 + LIVE BAR + MORE SHEET
    ========================================================= */
 
-/* 1. DELTA LIVE BAR 2.0 (STICKY UNDER HEADER) */
+/* 1. DELTA LIVE BAR 2.0 (STICKY UNDER HEADER ON DESKTOP, IN-FLOW ON MOBILE) */
 .delta-sticky-live-bar {
   position: sticky;
-  top: 60px;
-  z-index: 80;
+  top: 64px;
+  z-index: 25;
   width: 100%;
   max-width: 1100px;
   margin: 0 auto 12px;
@@ -39203,6 +39285,16 @@ body > main,
   box-sizing: border-box;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .delta-sticky-live-bar {
+    position: relative;
+    top: auto;
+    z-index: 5;
+    margin: 6px auto 10px;
+    padding: 0 8px;
+  }
 }
 
 .delta-livebar-inner {
@@ -39340,16 +39432,18 @@ body > main,
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 4px 10px;
+  min-height: 44px;
+  padding: 6px 12px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #ffffff;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 900;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.15s ease;
+  touch-action: manipulation;
 }
 
 .delta-livebar-cta-btn:hover {
@@ -39357,22 +39451,36 @@ body > main,
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+.delta-livebar-cta-btn:focus-visible {
+  outline: 2px solid #f6c952;
+  outline-offset: 2px;
+}
+
 .delta-livebar-dismiss-btn {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   background: transparent;
   border: 0;
   color: #64748b;
   cursor: pointer;
   transition: all 0.15s ease;
+  touch-action: manipulation;
 }
 
 .delta-livebar-dismiss-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.delta-livebar-dismiss-btn:focus-visible {
+  outline: 2px solid #f6c952;
+  outline-offset: 2px;
 }
 
 /* 2. DELTA MORE MENU SHEET (10 KAFELKÓW PREMIUM) */

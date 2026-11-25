@@ -10,6 +10,7 @@ import {
 import { UserCard } from "@/lib/cards/types";
 import { SQUAD_FORMATIONS, FormationKey, SquadSlotAssignment, evaluateSquad, SquadEvaluationResult } from "@/lib/cards/squad-engine";
 import { calculateCardOVR, CENTRAL_CARD_TYPES, INITIAL_COACH_CARDS, SPECIAL_VENUE_CARDS } from "@/lib/cards/central-types";
+import { lockBodyScroll } from "@/lib/ui/body-scroll-lock";
 
 interface DeltaSquadBuilderModalProps {
   isOpen: boolean;
@@ -43,6 +44,28 @@ export default function DeltaSquadBuilderModal({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Safe reference-counted body scroll lock and Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const unlock = lockBodyScroll();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (activeSlotId) {
+          setActiveSlotId(null);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      unlock();
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen, activeSlotId, onClose]);
 
   // Load existing saved squad
   useEffect(() => {

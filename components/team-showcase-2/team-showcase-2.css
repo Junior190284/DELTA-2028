@@ -1,0 +1,658 @@
+/* ==========================================================================
+   DELTA INFERNO — DELTA-045A: TEAM SHOWCASE 2.0 (THE ROAD TO GLORY AESTHETICS)
+   Cinematic stadium depth, authentic DELTA crest, central focal card,
+   accessible mobile/desktop controls, zero PII leak, 2D transform performance.
+   ========================================================================== */
+
+.ts2-root {
+  --gold: #f5c451;
+  --gold-glow: rgba(245, 196, 81, 0.42);
+  --gold-rim: rgba(245, 196, 81, 0.65);
+  --red: #ef4444;
+  --bg-deep: #030712;
+  --card-w: clamp(230px, 32vw, 340px);
+  --card-h: clamp(340px, 48vw, 490px);
+
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--bg-deep);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  font-family: inherit;
+}
+
+/* ---------- STADIUM BACKDROP & LIGHTING ---------- */
+.ts2-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ts2-stadium-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  filter: brightness(0.62) contrast(1.15) saturate(1.1);
+  transform: scale(1.02);
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ts2-stadium-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  mix-blend-mode: screen;
+  opacity: 0.72;
+}
+
+.ts2-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 45%, rgba(239, 68, 68, 0.12) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.6) 0%, rgba(3, 7, 18, 0.25) 35%, rgba(3, 7, 18, 0.9) 80%, #030712 100%);
+}
+
+.ts2-floodlight {
+  position: absolute;
+  top: -12%;
+  width: 40%;
+  height: 90%;
+  transform-origin: 50% 0;
+  background: linear-gradient(180deg, rgba(255, 230, 160, 0.28) 0%, rgba(245, 196, 81, 0.08) 50%, transparent 80%);
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.ts2-floodlight--left {
+  left: -6%;
+  transform: rotate(-18deg);
+  animation: ts2BeamSwayL 10s ease-in-out infinite alternate;
+}
+.ts2-floodlight--right {
+  right: -6%;
+  transform: rotate(18deg);
+  animation: ts2BeamSwayR 10s ease-in-out infinite alternate;
+}
+
+@keyframes ts2BeamSwayL {
+  0%   { transform: rotate(-22deg); opacity: 0.45; }
+  100% { transform: rotate(-14deg); opacity: 0.68; }
+}
+@keyframes ts2BeamSwayR {
+  0%   { transform: rotate(14deg); opacity: 0.68; }
+  100% { transform: rotate(22deg); opacity: 0.45; }
+}
+
+/* ---------- HEADER ---------- */
+.ts2-header {
+  position: relative;
+  z-index: 10;
+  padding: 16px 20px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.ts2-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ts2-crest {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 14px rgba(245, 196, 81, 0.5));
+}
+
+.ts2-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.ts2-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ts2-title {
+  font-size: clamp(20px, 3.4vw, 28px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.ts2-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(3, 7, 18, 0.75);
+  color: #fcd34d;
+  backdrop-filter: blur(8px);
+}
+
+/* ---------- STAGE & CAROUSEL ---------- */
+.ts2-stage-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0 20px;
+  width: 100%;
+  min-height: 460px;
+}
+
+.ts2-stage {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: var(--card-h);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+  touch-action: pan-y;
+  outline: none;
+}
+
+.ts2-stage:focus-visible {
+  box-shadow: 0 0 0 2px var(--gold);
+  border-radius: 24px;
+}
+
+/* Individual Card */
+.ts2-card {
+  position: absolute;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: 22px;
+  cursor: pointer;
+  transform-style: flat;
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease-out;
+  will-change: transform, opacity;
+  user-select: none;
+}
+
+.ts2-card.is-wrap {
+  transition: none !important;
+}
+
+.ts2-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #0f172a 0%, #030712 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.85);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.ts2-card.is-active .ts2-card-inner {
+  border-color: var(--gold-rim);
+  box-shadow:
+    0 0 28px -4px var(--gold-glow),
+    0 24px 48px -10px rgba(0, 0, 0, 0.95);
+}
+
+.ts2-card-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 20%, rgba(245, 196, 81, 0.22) 0%, transparent 65%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.ts2-card.is-active .ts2-card-glow {
+  opacity: 1;
+}
+
+/* Card Number Badge */
+.ts2-card-number {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 4;
+  font-size: 15px;
+  font-weight: 900;
+  padding: 4px 9px;
+  border-radius: 10px;
+  background: rgba(3, 7, 18, 0.85);
+  border: 1px solid var(--gold);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Card Position Badge */
+.ts2-card-pos {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+/* Card Photo Slot */
+.ts2-photo-slot {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  padding-bottom: 8px;
+}
+
+.ts2-photo {
+  max-width: 90%;
+  max-height: 85%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.7));
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+.ts2-silhouette {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+}
+
+.ts2-soon-pill {
+  position: absolute;
+  bottom: 12px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(245, 196, 81, 0.4);
+  color: #fcd34d;
+  text-transform: uppercase;
+  z-index: 3;
+}
+
+/* Card Nameplate */
+.ts2-nameplate {
+  position: relative;
+  z-index: 4;
+  padding: 12px 14px 14px;
+  background: linear-gradient(180deg, rgba(3, 7, 18, 0.4) 0%, rgba(3, 7, 18, 0.95) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.ts2-name-first {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.ts2-name-last {
+  font-size: clamp(16px, 2.2vw, 20px);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Darkening overlay for non-active cards */
+.ts2-card-dim {
+  position: absolute;
+  inset: 0;
+  background: #030712;
+  border-radius: 22px;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 2;
+}
+
+/* Interactive cue and hover polish for side cards */
+.ts2-card:not(.is-active) {
+  cursor: pointer;
+}
+
+.ts2-card:not(.is-active):hover .ts2-card-inner {
+  border-color: rgba(245, 196, 81, 0.45);
+  box-shadow: 0 0 22px -2px rgba(245, 196, 81, 0.25), 0 16px 36px -4px rgba(0, 0, 0, 0.9);
+}
+
+.ts2-card:not(.is-active):hover .ts2-card-dim {
+  opacity: 0.06 !important;
+}
+
+/* ---------- INFO PANEL (ACTIVE PLAYER SUMMARY) ---------- */
+.ts2-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 20px 4px;
+  gap: 4px;
+  min-height: 72px;
+}
+
+.ts2-info-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ts2-info-num {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--gold);
+}
+
+.ts2-info-name {
+  font-size: clamp(18px, 2.8vw, 24px);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.ts2-info-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ts2-meta-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+/* ---------- CONTROLS ---------- */
+.ts2-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 12px 20px 24px;
+}
+
+.ts2-nav-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid rgba(245, 196, 81, 0.4);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.ts2-nav-btn:hover:not(:disabled) {
+  background: rgba(245, 196, 81, 0.15);
+  border-color: var(--gold);
+  transform: scale(1.06);
+}
+
+.ts2-nav-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.ts2-counter {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  min-width: 68px;
+  text-align: center;
+}
+
+.ts2-action-btn {
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.2) 0%, rgba(245, 196, 81, 0.05) 100%);
+  border: 1px solid var(--gold);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ts2-action-btn:hover {
+  background: rgba(245, 196, 81, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 196, 81, 0.25);
+}
+
+/* ---------- DETAIL MODAL / DRAWER ---------- */
+.ts2-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: ts2FadeIn 0.25s ease-out;
+}
+
+.ts2-modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #090e17;
+  border: 1.5px solid rgba(245, 196, 81, 0.45);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow:
+    0 0 36px -4px rgba(245, 196, 81, 0.3),
+    0 24px 60px rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: ts2ScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ts2FadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ts2ScaleUp {
+  from { transform: scale(0.94); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.ts2-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.ts2-modal-close {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ts2-modal-close:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ---------- PREFERS REDUCED MOTION ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .ts2-card,
+  .ts2-stadium-base,
+  .ts2-floodlight--left,
+  .ts2-floodlight--right,
+  .ts2-modal-overlay,
+  .ts2-modal-box {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- RESPONSIVE BREAKPOINTS ---------- */
+@media (max-width: 640px) {
+  .ts2-root {
+    --card-w: clamp(210px, 64vw, 250px);
+    --card-h: clamp(300px, 88vw, 355px);
+  }
+  .ts2-header {
+    padding: 10px 14px 4px;
+  }
+  .ts2-crest {
+    width: 34px;
+    height: 34px;
+  }
+  .ts2-stage-container {
+    padding: 4px 0 8px;
+    min-height: auto;
+  }
+  .ts2-card {
+    border-radius: 18px;
+  }
+  .ts2-card-inner {
+    border-radius: 18px;
+  }
+  .ts2-info {
+    min-height: auto;
+    padding: 4px 12px 2px;
+  }
+  .ts2-controls {
+    padding: 6px 12px 14px;
+    gap: 12px;
+  }
+  .ts2-nav-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ---------- EMBEDDED VARIANT (FOR ROAD TO GLORY & PANELS) ---------- */
+.ts2-root--embedded {
+  min-height: auto;
+  background: transparent;
+  padding: 0;
+  overflow-x: clip;
+  overflow-y: visible;
+  isolation: auto;
+}
+
+.ts2-root--embedded .ts2-backdrop {
+  display: none;
+}
+
+.ts2-root--embedded .ts2-header {
+  display: none;
+}
+
+.ts2-root--embedded .ts2-stage-container {
+  padding: 6px 0 10px;
+  min-height: auto;
+}
+
+.ts2-root--embedded .ts2-controls {
+  padding: 6px 16px 12px;
+}
+
+.ts2-root--embedded .ts2-info {
+  padding: 4px 16px 2px;
+  min-height: auto;
+}
+
+@media (max-width: 640px) {
+  .ts2-root--embedded .ts2-stage-container {
+    padding: 4px 0 6px;
+  }
+  .ts2-root--embedded .ts2-controls {
+    padding: 4px 12px 8px;
+  }
+}
+

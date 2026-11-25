@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 export function createAdminClient() {
+  if (typeof window !== "undefined") {
+    throw new Error("createAdminClient must only be executed in a server environment");
+  }
+
   const secret =
     process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY;

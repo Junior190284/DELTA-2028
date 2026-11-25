@@ -1,38 +1,72 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { cookies } from "next/headers";
+import { ensureUserProfileExists } from "@/lib/auth/profile-bootstrap";
+import { cookies, headers } from "next/headers";
 
-export async function getCurrentProfile() {
+export async function getCurrentProfile(req?: Request) {
+  // Support Authorization: Bearer <token> for API callers and automated tests
+  try {
+    let authHeader: string | null = null;
+    if (req) {
+      authHeader = req.headers.get("authorization");
+    } else {
+      const headerStore = await headers();
+      authHeader = headerStore.get("authorization");
+    }
+
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "").trim();
+      const admin = createAdminClient();
+      const { data: { user }, error: userError } = await admin.auth.getUser(token);
+      if (user && !userError) {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("id,role,display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        return { user, profile, error: null };
+      }
+    }
+  } catch {}
+
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    // Development / Localhost fallback if dev user cookie is set
+    // Development / Localhost fallback if dev user cookie is set (strictly loopback only, never on Vercel)
     try {
-      const cookieStore = await cookies();
-      const devRole = cookieStore.get("delta_dev_user")?.value;
-      if (devRole) {
-        const admin = createAdminClient();
-        const { data: profile } = await admin
-          .from("profiles")
-          .select("id,role,display_name")
-          .eq("role", devRole)
-          .limit(1)
-          .maybeSingle();
+      const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+      const headerStore = await headers();
+      const host = headerStore.get("x-forwarded-host") || headerStore.get("host") || "";
+      const isLoopback = host.startsWith("localhost") || host.startsWith("127.0.0.1");
 
-        if (profile) {
-          return {
-            user: { id: profile.id, email: `${devRole}@delta.local` } as any,
-            profile,
-            error: null
-          };
-        } else {
-          // If no profile exists for this role, return a generic dev profile
-          return {
-            user: { id: "dev_admin_user", email: "admin@delta.local" } as any,
-            profile: { id: "dev_admin_user", role: devRole, display_name: devRole === "admin" ? "Trener / Administrator (Dev)" : "Rodzic (Dev)" },
-            error: null
-          };
+      if (!isVercel && isLoopback) {
+        const cookieStore = await cookies();
+        const devRole = cookieStore.get("delta_dev_user")?.value;
+        if (devRole) {
+          const admin = createAdminClient();
+          const { data: profile } = await admin
+            .from("profiles")
+            .select("id,role,display_name")
+            .eq("role", devRole)
+            .limit(1)
+            .maybeSingle();
+
+          if (profile) {
+            return {
+              user: { id: profile.id, email: `${devRole}@delta.local` } as any,
+              profile,
+              error: null
+            };
+          } else {
+            // If no profile exists for this role, return a generic dev profile
+            return {
+              user: { id: "dev_admin_user", email: "admin@delta.local" } as any,
+              profile: { id: "dev_admin_user", role: devRole, display_name: devRole === "admin" ? "Trener / Administrator (Dev)" : "Rodzic (Dev)" },
+              error: null
+            };
+          }
         }
       }
     } catch {}
@@ -59,9 +93,19 @@ export async function getCurrentProfile() {
     .eq("id", user.id)
     .maybeSingle();
 
+  if (elevated.data || elevated.error) {
+    return {
+      user,
+      profile: elevated.data,
+      error: elevated.error?.message || normal.error?.message || null
+    };
+  }
+
+  // Idempotent server-side bootstrap ONLY when authenticated user has no row in public.profiles
+  const bootstrapped = await ensureUserProfileExists(admin, user);
   return {
     user,
-    profile: elevated.data,
-    error: elevated.error?.message || normal.error?.message || null
+    profile: bootstrapped.profile,
+    error: bootstrapped.error || normal.error?.message || null
   };
 }

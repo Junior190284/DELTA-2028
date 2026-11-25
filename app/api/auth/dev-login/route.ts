@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { cookies, headers } from "next/headers";
 
 export async function POST(req: Request) {
   try {
+    const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+    const headerStore = await headers();
+    const host = headerStore.get("x-forwarded-host") || headerStore.get("host") || "";
+    const isLoopback = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+
+    if (isVercel || !isLoopback) {
+      return NextResponse.json(
+        { success: false, error: "Dev login is restricted to local development only." },
+        { status: 403 }
+      );
+    }
+
     const { role = "admin" } = await req.json().catch(() => ({ role: "admin" }));
     const cookieStore = await cookies();
 

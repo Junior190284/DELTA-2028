@@ -67,7 +67,7 @@ export async function GET() {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       totalLatencyMs: totalLatency,
-      environment: process.env.NODE_ENV || 'production',
+      environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'production',
       version: '1.8.0-prod',
       checks
     });

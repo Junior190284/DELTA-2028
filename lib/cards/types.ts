@@ -111,6 +111,7 @@ export interface PackOpeningResult {
   pack_type_id: string;
   consumed_pack_id?: string | null;
   remaining_unopened_packs_count?: number;
+  enable_3d_walkout?: boolean;
 }
 
 export const RARITY_CONFIG: Record<CardRarity, {

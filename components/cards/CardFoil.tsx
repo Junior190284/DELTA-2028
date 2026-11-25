@@ -19,11 +19,15 @@ export default function CardFoil({
   const currentOpacity = glarePos.opacity > 0 ? glarePos.opacity : isHovered ? 0.45 : 0.25;
 
   return (
-    <div className="card-layer-foil absolute inset-0 w-full h-full pointer-events-none overflow-hidden rounded-[4cqw] z-30">
+    <div 
+      className="card-layer-foil absolute inset-0 w-full h-full pointer-events-none overflow-hidden rounded-[4cqw] z-30"
+      style={{ pointerEvents: "none" }}
+    >
       {/* Specular Glare Gradient */}
       <div
-        className="absolute inset-0 w-full h-full transition-opacity duration-200"
+        className="absolute inset-0 w-full h-full transition-opacity duration-200 pointer-events-none"
         style={{
+          pointerEvents: "none",
           opacity: currentOpacity,
           background: themeConfig.foilType === "gold_refractor"
             ? `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(254, 240, 138, 0.8) 0%, rgba(217, 119, 6, 0.4) 30%, transparent 65%)`

@@ -3,11 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ACHIEVEMENTS_CATALOG, calculatePlayerAchievements } from "@/lib/achievements/engine";
 import { CARD_TYPES_CONFIG } from "@/lib/cards/types";
+import { invokeEconomyRpc, serializeEconomyError } from "@/lib/economy/server-rpc";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const playerId = searchParams.get("playerId") || null;
+    const requestedPlayerId = searchParams.get("playerId") || null;
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -18,28 +19,43 @@ export async function GET(req: Request) {
 
     const admin = createAdminClient();
 
-    // 1. Ustal właściwego zawodnika (playerId)
-    let effectivePlayerId = playerId;
-    if (!effectivePlayerId) {
-      const { data: linked } = await admin
-        .from("parent_players")
-        .select("player_id")
-        .eq("parent_id", user.id)
-        .limit(1)
-        .maybeSingle();
-      effectivePlayerId = linked?.player_id || null;
+    // 1. Sprawdź rolę oraz przypisanych zawodników użytkownika (ochrona przed IDOR)
+    const [{ data: profile }, { data: parentLinks }] = await Promise.all([
+      admin.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      admin.from("parent_players").select("player_id").eq("parent_id", user.id)
+    ]);
+
+    const isStaff = profile?.role === "admin" || profile?.role === "coach";
+    const linkedPlayerIds = (parentLinks || []).map((x: any) => String(x.player_id));
+
+    let effectivePlayerId = requestedPlayerId;
+    if (effectivePlayerId) {
+      if (!isStaff && !linkedPlayerIds.includes(effectivePlayerId)) {
+        return NextResponse.json(
+          { error: "Brak uprawnień do synchronizacji osiągnięć obcego zawodnika." },
+          { status: 403 }
+        );
+      }
+    } else if (linkedPlayerIds.length > 0) {
+      effectivePlayerId = linkedPlayerIds[0];
     }
 
+    const canPersistUserRewards =
+      Boolean(effectivePlayerId) && (isStaff || linkedPlayerIds.includes(String(effectivePlayerId)));
+
     if (!effectivePlayerId) {
-      // Fallback: pierwszy aktywny zawodnik w klubie
-      const { data: firstPlayer } = await admin
-        .from("players")
-        .select("id")
-        .eq("active", true)
-        .order("display_name")
-        .limit(1)
-        .maybeSingle();
-      effectivePlayerId = firstPlayer?.id || null;
+      if (isStaff) {
+        const { data: firstPlayer } = await admin
+          .from("players")
+          .select("id")
+          .eq("active", true)
+          .order("display_name")
+          .limit(1)
+          .maybeSingle();
+        effectivePlayerId = firstPlayer?.id || null;
+      } else {
+        return NextResponse.json({ success: true, achievements: [], stats: { total: 0, unlockedCount: 0 } });
+      }
     }
 
     if (!effectivePlayerId) {
@@ -148,6 +164,7 @@ export async function GET(req: Request) {
     const { data: existingUserAchievements } = await admin
       .from("user_achievements")
       .select("*")
+      .eq("user_id", user.id)
       .eq("player_id", effectivePlayerId);
 
     const existingMap = new Map((existingUserAchievements || []).map(a => [a.achievement_id, a]));
@@ -166,98 +183,101 @@ export async function GET(req: Request) {
     const newlyUnlockedAchievements: string[] = [];
     const newlyUnlockedCards: string[] = [];
 
-    // 8. Zapisz nowe osiągnięcia i odblokuj powiązane karty (Idempotent Execution)
-    for (const item of computedList) {
-      const existing = existingMap.get(item.definition.id);
-      const wasUnlockedBefore = existing?.is_unlocked || false;
+    // 8. Zapisz nowe osiągnięcia i odblokuj powiązane karty wyłącznie dla uprawnionego powiązania (Idempotent + Atomic RPC)
+    if (canPersistUserRewards) {
+      for (const item of computedList) {
+        const existing = existingMap.get(item.definition.id);
+        const wasUnlockedBefore = existing?.is_unlocked || false;
 
-      // Zapisujemy postęp w user_achievements
-      if (!existing || existing.current_value !== item.current || (!wasUnlockedBefore && item.isUnlocked)) {
-        await admin
-          .from("user_achievements")
-          .upsert({
-            user_id: user.id,
-            player_id: effectivePlayerId,
-            achievement_id: item.definition.id,
-            current_value: item.current,
-            is_unlocked: item.isUnlocked,
-            unlocked_at: item.isUnlocked ? (existing?.unlocked_at || new Date().toISOString()) : null,
-            updated_at: new Date().toISOString()
-          }, { onConflict: "user_id,player_id,achievement_id" });
-      }
-
-      // Jeżeli osiągnięcie zostało odblokowane i posiada nagrodę kartową:
-      if (item.isUnlocked && item.definition.rewardCardType) {
-        const cardType = item.definition.rewardCardType;
-        const cardKey = `${effectivePlayerId}_${cardType}`;
-
-        if (!existingCardKeys.has(cardKey)) {
-          // A) Zapewnij definicję karty w card_definitions
-          const cfg = CARD_TYPES_CONFIG[cardType] || {
-            name: "Karta Specjalna",
-            defaultRarity: "gold",
-            description: "Oficjalna karta DELTA"
-          };
-
-          const isRyszard = (playerName || "").toLowerCase().includes("ryszard");
-          let artworkUrl = null;
-          if (isRyszard) {
-            if (cardType === "inferno") artworkUrl = "/assets/players/ryszard-inferno.png";
-            else if (cardType === "mvp" || cardType === "goal_hunter") artworkUrl = "/assets/players/ryszard-legend.png";
-            else artworkUrl = "/assets/players/ryszard-gold.png";
-          }
-
-          const { data: insertedDef } = await admin
-            .from("card_definitions")
+        // Zapisujemy postęp w user_achievements
+        if (!existing || existing.current_value !== item.current || (!wasUnlockedBefore && item.isUnlocked)) {
+          await admin
+            .from("user_achievements")
             .upsert({
+              user_id: user.id,
               player_id: effectivePlayerId,
-              season: "2026/27",
-              card_type: cardType,
-              card_name: `${playerName} — ${cfg.name}`,
-              title: cfg.name,
-              rarity: item.definition.rarity === "inferno" ? "inferno" : item.definition.rarity === "legend" ? "legendary" : "epic",
-              artwork_url: artworkUrl,
-              description: cfg.description,
-              lore: `Karta odblokowana za osiągnięcie: ${item.definition.name}`,
-              is_active: true
-            }, { onConflict: "player_id,season,card_type" })
-            .select("id")
-            .single();
+              achievement_id: item.definition.id,
+              current_value: item.current,
+              is_unlocked: item.isUnlocked,
+              unlocked_at: item.isUnlocked ? (existing?.unlocked_at || new Date().toISOString()) : null,
+              updated_at: new Date().toISOString()
+            }, { onConflict: "user_id,player_id,achievement_id" });
+        }
 
-          const cardDefId = insertedDef?.id;
+        // Jeżeli osiągnięcie zostało odblokowane i posiada nagrodę kartową:
+        if (item.isUnlocked && item.definition.rewardCardType) {
+          const cardType = item.definition.rewardCardType;
+          const cardKey = `${effectivePlayerId}_${cardType}`;
 
-          // B) Wstaw kartę do user_cards
-          if (cardDefId) {
-            await admin
-              .from("user_cards")
-              .insert({
-                user_id: user.id,
-                card_id: cardDefId,
-                duplicates_count: 0
+          if (!existingCardKeys.has(cardKey)) {
+            // A) Zapewnij definicję karty w card_definitions
+            const cfg = CARD_TYPES_CONFIG[cardType] || {
+              name: "Karta Specjalna",
+              defaultRarity: "gold",
+              description: "Oficjalna karta DELTA"
+            };
+
+            const isRyszard = (playerName || "").toLowerCase().includes("ryszard");
+            let artworkUrl = null;
+            if (isRyszard) {
+              if (cardType === "inferno") artworkUrl = "/assets/players/ryszard-inferno.png";
+              else if (cardType === "mvp" || cardType === "goal_hunter") artworkUrl = "/assets/players/ryszard-legend.png";
+              else artworkUrl = "/assets/players/ryszard-gold.png";
+            }
+
+            const { data: insertedDef } = await admin
+              .from("card_definitions")
+              .upsert({
+                player_id: effectivePlayerId,
+                season: "2026/27",
+                card_type: cardType,
+                card_name: `${playerName} — ${cfg.name}`,
+                title: cfg.name,
+                rarity: item.definition.rarity === "inferno" ? "inferno" : item.definition.rarity === "legend" ? "legendary" : "epic",
+                artwork_url: artworkUrl,
+                description: cfg.description,
+                lore: `Karta odblokowana za osiągnięcie: ${item.definition.name}`,
+                is_active: true
+              }, { onConflict: "player_id,season,card_type" })
+              .select("id")
+              .single();
+
+            const cardDefId = insertedDef?.id;
+
+            // B) Wstaw kartę atomowo do user_cards przez RPC (zero wyścigów z open_pack_atomic)
+            if (cardDefId) {
+              await invokeEconomyRpc(admin, "grant_user_card_atomic", {
+                p_user_id: user.id,
+                p_card_id: String(cardDefId),
+                p_increment_duplicate: false,
+                p_acquisition_source: "achievement",
+                p_admin_id: null,
+                p_reason: item.definition.name
               });
 
-            existingCardKeys.add(cardKey);
-            newlyUnlockedCards.push(cfg.name);
+              existingCardKeys.add(cardKey);
+              newlyUnlockedCards.push(cfg.name);
+            }
           }
         }
-      }
 
-      if (item.isUnlocked && !wasUnlockedBefore) {
-        newlyUnlockedAchievements.push(item.definition.name);
+        if (item.isUnlocked && !wasUnlockedBefore) {
+          newlyUnlockedAchievements.push(item.definition.name);
 
-        // Tworzymy wpis w News Center
-        try {
-          await admin
-            .from("club_updates")
-            .insert({
-              source_key: "achievements",
-              source_name: "DELTA ACHIEVEMENTS 2.0",
-              title: `🏆 Nowe osiągnięcie: ${item.definition.name}`,
-              body: `${playerName} zdobył odznakę "${item.definition.name}" (${item.definition.description})!`,
-              priority: item.definition.rarity === "inferno" ? "high" : "normal",
-              published_at: new Date().toISOString()
-            });
-        } catch {}
+          // Tworzymy wpis w News Center
+          try {
+            await admin
+              .from("club_updates")
+              .insert({
+                source_key: "achievements",
+                source_name: "DELTA ACHIEVEMENTS 2.0",
+                title: `🏆 Nowe osiągnięcie: ${item.definition.name}`,
+                body: `${playerName} zdobył odznakę "${item.definition.name}" (${item.definition.description})!`,
+                priority: item.definition.rarity === "inferno" ? "high" : "normal",
+                published_at: new Date().toISOString()
+              });
+          } catch {}
+        }
       }
     }
 

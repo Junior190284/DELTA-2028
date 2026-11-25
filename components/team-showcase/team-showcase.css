@@ -1,0 +1,353 @@
+/* ==========================================================================
+   DELTA INFERNO — P14A: TEAM SHOWCASE 2.0 (prototype)
+   Dark stadium, DELTA gold/red accents. Animations: transform/opacity only.
+   2D layout (translate + scale). No rotateY / preserve-3d / backface-visibility.
+   ========================================================================== */
+.dts-root {
+  --dts-gold: #f5c451;
+  --dts-gold-soft: rgba(245, 196, 81, 0.55);
+  --dts-red: #dc2626;
+  --dts-ink: #05060a;
+  --dts-card-w: clamp(210px, 30vw, 330px);
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--dts-ink);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  font-family: inherit;
+}
+
+/* ---------- Background ---------- */
+.dts-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background-size: cover;
+  background-position: center 30%;
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 1.1s ease-out, transform 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dts-root.is-entered .dts-bg { opacity: 0.55; transform: scale(1); }
+.dts-bg-tint {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 60% 46% at 50% 44%, rgba(220, 38, 38, 0.16) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(5, 6, 10, 0.55) 0%, rgba(5, 6, 10, 0.35) 38%, rgba(5, 6, 10, 0.92) 82%, #05060a 100%);
+}
+.dts-lights { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.dts-beam {
+  position: absolute;
+  top: -14%;
+  width: 36%;
+  height: 86%;
+  transform-origin: 50% 0%;
+  background: linear-gradient(180deg, rgba(255, 226, 150, 0.26) 0%, rgba(245, 196, 81, 0.08) 48%, transparent 80%);
+  clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.dts-root.is-entered .dts-beam { animation: dtsBeamIn 1.4s ease-out forwards, dtsBeamSway 12s ease-in-out 1.4s infinite alternate; }
+.dts-beam.is-l { left: -8%;  --b-from: -24deg; --b-to: -12deg; }
+.dts-beam.is-c { left: 32%;  --b-from: -5deg;  --b-to: 5deg; animation-delay: 0.15s, 1.55s !important; }
+.dts-beam.is-r { right: -8%; --b-from: 12deg;  --b-to: 24deg; animation-delay: 0.3s, 1.7s !important; }
+@keyframes dtsBeamIn {
+  0%   { opacity: 0; transform: rotate(var(--b-from, 0deg)) translateY(-6%); }
+  100% { opacity: 0.55; transform: rotate(var(--b-from, 0deg)) translateY(0); }
+}
+@keyframes dtsBeamSway {
+  0%   { transform: rotate(var(--b-from, 0deg)); opacity: 0.55; }
+  50%  { opacity: 0.32; }
+  100% { transform: rotate(var(--b-to, 0deg)); opacity: 0.5; }
+}
+/* light sweep on every player change (an element keyed by id, so it re-mounts) */
+.dts-sweep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 236, 190, 0.10) 45%, rgba(255, 236, 190, 0.16) 50%, rgba(255, 236, 190, 0.10) 55%, transparent 100%);
+  transform: translateX(-120%);
+  opacity: 0;
+  animation: dtsSweep 0.95s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes dtsSweep {
+  0%   { transform: translateX(-120%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(300%); opacity: 0; }
+}
+
+/* ---------- Header ---------- */
+.dts-header {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(14px, env(safe-area-inset-top)) 18px 6px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.7s ease-out 0.2s, transform 0.7s ease-out 0.2s;
+}
+.dts-root.is-entered .dts-header { opacity: 1; transform: none; }
+.dts-crest { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.5)); }
+.dts-titles { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
+.dts-kicker { font-size: 10px; font-weight: 900; letter-spacing: 0.22em; color: var(--dts-gold); }
+.dts-title { margin: 2px 0 0; font-size: clamp(18px, 3.2vw, 28px); font-weight: 950; letter-spacing: 0.04em; text-transform: uppercase; }
+.dts-demo-pill {
+  margin-left: auto;
+  font-size: 10px; font-weight: 900; letter-spacing: 0.14em;
+  padding: 4px 10px; border-radius: 999px;
+  color: #fde68a; background: rgba(120, 53, 15, 0.45); border: 1px solid rgba(245, 196, 81, 0.5);
+}
+
+/* ---------- Stage / carousel ---------- */
+.dts-stage {
+  position: relative;
+  z-index: 2;
+  /* P14A.1: fixed height (not flex-grow), so the name sits right under the carousel;
+     the remaining space is shared (margin-top: auto here and in .dts-controls) */
+  flex: 0 0 auto;
+  height: calc(var(--dts-card-w) * 1.5 + 28px);
+  margin-top: auto;
+  outline: none;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.dts-stage:focus-visible { box-shadow: inset 0 0 0 2px var(--dts-gold-soft); }
+.dts-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--dts-card-w);
+  aspect-ratio: 2 / 3;
+  margin-left: calc(var(--dts-card-w) / -2);
+  margin-top: calc(var(--dts-card-w) * -0.75);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease-out;
+  will-change: transform;
+  cursor: pointer;
+}
+.dts-card.is-active { cursor: default; }
+/* entrance: cards rise and fade in (the active one first, then its neighbours) */
+.dts-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 38%, rgba(220, 38, 38, 0.28) 0%, transparent 70%),
+    linear-gradient(180deg, #17121a 0%, #0b0a10 62%, #07070b 100%);
+  border: 1px solid rgba(245, 196, 81, 0.28);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.8s ease-out, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+.dts-root.is-entered .dts-card-inner { opacity: 1; transform: none; }
+.dts-root.is-entered .dts-card[data-offset="0"] .dts-card-inner { transition-delay: 0.25s; }
+.dts-root.is-entered .dts-card[data-offset="-1"] .dts-card-inner,
+.dts-root.is-entered .dts-card[data-offset="1"] .dts-card-inner { transition-delay: 0.45s; }
+.dts-root.is-entered .dts-card[data-offset="-2"] .dts-card-inner,
+.dts-root.is-entered .dts-card[data-offset="2"] .dts-card-inner { transition-delay: 0.6s; }
+.dts-card.is-active .dts-card-inner {
+  border-color: rgba(245, 196, 81, 0.75);
+  box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.35), 0 0 42px rgba(220, 38, 38, 0.38), 0 28px 60px rgba(0, 0, 0, 0.8);
+}
+.dts-card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(245, 196, 81, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+.dts-photo {
+  position: absolute;
+  inset: 6% 4% 18%;
+  width: 92%;
+  height: 76%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.75));
+  pointer-events: none;
+}
+.dts-silhouette {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 9%;
+  height: 68%;
+  pointer-events: none;
+  opacity: 0.92;
+}
+.dts-card-number {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: clamp(22px, 4.2vw, 40px);
+  font-weight: 1000;
+  line-height: 1;
+  color: var(--dts-gold);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 18px rgba(220, 38, 38, 0.45);
+}
+.dts-card-nameplate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 26px 10px 12px;
+  text-align: center;
+  background: linear-gradient(180deg, transparent 0%, rgba(5, 6, 10, 0.86) 45%, rgba(5, 6, 10, 0.96) 100%);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+.dts-card-first { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; color: rgba(255, 255, 255, 0.72); text-transform: uppercase; }
+.dts-card-last { font-size: clamp(15px, 2.3vw, 22px); font-weight: 950; letter-spacing: 0.06em; text-transform: uppercase; }
+.dts-soon {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  padding: 4px 7px;
+  border-radius: 6px;
+  color: #fde68a;
+  background: rgba(10, 10, 14, 0.82);
+  border: 1px solid rgba(245, 196, 81, 0.45);
+}
+.dts-card-dim {
+  position: absolute;
+  inset: 0;
+  background: #030306;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+/* ---------- Selected player details ---------- */
+.dts-info {
+  position: relative;
+  z-index: 4;
+  text-align: center;
+  padding: 4px 18px 6px;
+  animation: dtsInfoIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes dtsInfoIn {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: none; }
+}
+.dts-info-number { display: block; font-size: 13px; font-weight: 950; letter-spacing: 0.2em; color: var(--dts-gold); }
+.dts-info-name { margin: 2px 0 6px; display: flex; flex-direction: column; line-height: 1.02; text-transform: uppercase; }
+.dts-info-name span { font-size: clamp(13px, 2vw, 18px); font-weight: 800; letter-spacing: 0.18em; color: rgba(255, 255, 255, 0.75); }
+.dts-info-name strong { font-size: clamp(28px, 6vw, 56px); font-weight: 1000; letter-spacing: 0.04em; text-shadow: 0 4px 24px rgba(0, 0, 0, 0.8), 0 0 30px rgba(220, 38, 38, 0.3); }
+.dts-info-meta { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 24px; }
+.dts-pill { font-size: 10px; font-weight: 900; letter-spacing: 0.16em; padding: 5px 11px; border-radius: 999px; }
+.dts-pill.is-position { color: #1a1205; background: linear-gradient(180deg, #ffe08a, #e5a92e); }
+.dts-pill.is-soon { color: #fde68a; background: rgba(10, 10, 14, 0.7); border: 1px solid rgba(245, 196, 81, 0.45); }
+
+/* ---------- Controls ---------- */
+.dts-controls {
+  position: relative;
+  z-index: 4;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 8px 0 max(18px, env(safe-area-inset-bottom));
+}
+.dts-nav {
+  width: 46px; height: 46px; border-radius: 50%;
+  font-size: 26px; line-height: 1; font-weight: 700;
+  color: #fff; background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(245, 196, 81, 0.4);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.dts-nav:hover { background: rgba(245, 196, 81, 0.18); }
+.dts-nav:active { transform: scale(0.94); }
+.dts-nav:focus-visible { outline: 2px solid var(--dts-gold); outline-offset: 2px; }
+.dts-counter { min-width: 64px; text-align: center; font-size: 13px; font-weight: 900; letter-spacing: 0.14em; color: rgba(255, 255, 255, 0.8); }
+.dts-controls.is-placeholder { min-height: 46px; }
+
+/* P14A.1: a card that wraps (far left -> far right) does not fly across the centre */
+.dts-card.is-wrap { transition: none; }
+.dts-card.is-wrap .dts-card-inner { animation: dtsWrapIn 0.38s ease-out both; }
+@keyframes dtsWrapIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* P14A.1: empty roster / error state */
+.dts-message {
+  position: relative;
+  z-index: 4;
+  margin: auto;
+  max-width: 420px;
+  padding: 28px 22px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: dtsInfoIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dts-message-silhouette { width: 150px; height: 190px; opacity: 0.8; }
+.dts-message-title {
+  margin: 4px 0 0;
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.8), 0 0 30px rgba(220, 38, 38, 0.3);
+}
+.dts-message-text { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, 0.75); }
+.dts-retry {
+  margin-top: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 0;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #1a1205;
+  background: linear-gradient(180deg, #ffe08a, #e5a92e);
+  box-shadow: 0 8px 24px rgba(229, 169, 46, 0.3);
+  cursor: pointer;
+}
+.dts-retry:disabled { opacity: 0.6; cursor: progress; }
+a.dts-retry { display: inline-flex; align-items: center; text-decoration: none; }
+.dts-retry.is-secondary { color: #fde68a; background: rgba(10, 10, 14, 0.7); border: 1px solid rgba(245, 196, 81, 0.5); box-shadow: none; }
+.dts-message-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.dts-retry:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 640px) {
+  .dts-root { --dts-card-w: min(62vw, 250px); }
+  .dts-beam.is-l, .dts-beam.is-r { width: 52%; }
+}
+@media (max-height: 700px) {
+  .dts-root { --dts-card-w: min(52vw, 210px); }
+}
+
+/* ---------- Reduced Motion: no movement, instant changes ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .dts-root *, .dts-root *::before, .dts-root *::after { animation: none !important; transition: none !important; }
+  .dts-bg { opacity: 0.55; transform: none; }
+  .dts-beam { opacity: 0.4; }
+  .dts-sweep { display: none; }
+  .dts-card-inner, .dts-header { opacity: 1; transform: none; }
+}

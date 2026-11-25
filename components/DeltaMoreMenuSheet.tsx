@@ -22,7 +22,8 @@ import {
   ExternalLink,
   BookOpen,
   Newspaper,
-  Bell
+  Bell,
+  Smartphone
 } from "lucide-react";
 
 interface DeltaMoreMenuSheetProps {
@@ -319,6 +320,27 @@ export default function DeltaMoreMenuSheet({
               <div className="delta-sublink-text">
                 <strong className="delta-sublink-title">POWIADOMIENIA WEB PUSH</strong>
                 <small className="delta-sublink-subtitle">Włącz / wyłącz na tym urządzeniu</small>
+              </div>
+              <ChevronRight size={16} className="delta-sublink-arrow" />
+            </button>
+
+            {/* 2. ZAINSTALUJ APLIKACJĘ (PWA) */}
+            <button 
+              type="button" 
+              onClick={() => {
+                onClose();
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("delta_trigger_pwa_install"));
+                }
+              }} 
+              className="delta-more-sublink"
+            >
+              <div className="delta-sublink-icon-box">
+                <Smartphone size={18} />
+              </div>
+              <div className="delta-sublink-text">
+                <strong className="delta-sublink-title">ZAINSTALUJ APLIKACJĘ (PWA)</strong>
+                <small className="delta-sublink-subtitle">Dostęp offline i szybkie uruchamianie</small>
               </div>
               <ChevronRight size={16} className="delta-sublink-arrow" />
             </button>

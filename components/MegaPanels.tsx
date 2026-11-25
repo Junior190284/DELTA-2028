@@ -45,7 +45,7 @@ function TeamBadge({ team }: { team: string }) {
   return <span className="v108-team-badge v108-team-fallback">{team.split(/\s+/).map(part => part[0]).join("").slice(0, 3)}</span>;
 }
 
-export { MyChildCenter } from "./MyChildCenter";
+export { MyChildCenter, PlayerCareerHub } from "./MyChildCenter";
 
 export function MatchDayMode(props: {
   match: Match | null;

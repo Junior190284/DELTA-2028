@@ -52,6 +52,16 @@ export interface DeltaCardProps {
   customPhotoUrl?: string | null;
   className?: string;
   style?: React.CSSProperties;
+  /**
+   * P12G: render a single face with no 3D trick, for static presentations
+   * (the safe card in the phone reveal and the 2D summary preview):
+   *  - "front": only the front, no back face (CardBack uses rotateY(180deg) +
+   *    backface-visibility);
+   *  - "back":  only the back, as a flat face (CardBack flat).
+   * Visibility then never depends on how the browser handles backface-visibility.
+   * Default undefined, so existing behaviour (front + back, flip) is unchanged.
+   */
+  staticFace?: "front" | "back";
 }
 
 function DeltaCard({
@@ -71,7 +81,8 @@ function DeltaCard({
   stats,
   customPhotoUrl,
   className = "",
-  style
+  style,
+  staticFace
 }: DeltaCardProps) {
   // Normalize into DeltaCardModel
   const cardModel: DeltaCardModel = useMemo(() => {
@@ -111,11 +122,13 @@ function DeltaCard({
           {/* ============================================================= */}
           {/* FACE 1: FRONT FACE                                            */}
           {/* ============================================================= */}
+          {staticFace !== "back" && (
           <div
             className="card-face-front absolute inset-0 w-full h-full rounded-[4cqw] overflow-hidden select-none"
             style={{
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden",
+              // P12G: a static face (staticFace) has no second side, so it never needs to be hidden.
+              backfaceVisibility: staticFace ? "visible" : "hidden",
+              WebkitBackfaceVisibility: staticFace ? "visible" : "hidden",
               pointerEvents: isBackFace ? "none" : "auto"
             }}
           >
@@ -174,17 +187,21 @@ function DeltaCard({
               isHovered={isHovered}
             />
           </div>
+          )}
 
           {/* ============================================================= */}
           {/* FACE 2: REVERSE / BACK FACE                                    */}
           {/* ============================================================= */}
-          <CardBack
-            card={cardModel}
-            themeConfig={themeConfig}
-            showFlip={showFlip}
-            onFlip={flipCard}
-            glarePos={glarePos}
-          />
+          {staticFace !== "front" && (
+            <CardBack
+              card={cardModel}
+              themeConfig={themeConfig}
+              showFlip={showFlip}
+              onFlip={flipCard}
+              glarePos={glarePos}
+              flat={staticFace === "back"}
+            />
+          )}
         </>
       )}
     </CardInteractiveLayer>
