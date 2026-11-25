@@ -145,8 +145,18 @@ export default async function RealDataIntegrationPreviewPage({
         .eq("slug", "delta-2018-gm")
         .maybeSingle();
 
-      if (teamError || !teamData) {
-        liveBlockedReason = "Brak tabeli teams i relacji drużyna–zawodnik w bazie (LIVE zablokowany)";
+      if (teamError) {
+        const isSchemaMissing =
+          teamError.code === "42P01" ||
+          teamError.code === "PGRST205" ||
+          teamError.message?.toLowerCase().includes("does not exist") ||
+          teamError.message?.toLowerCase().includes("relation");
+
+        liveBlockedReason = isSchemaMissing
+          ? "Moduł kadr drużynowych jest chwilowo niedostępny (schemat w trakcie wdrażania)."
+          : "Nie masz dostępu do składu tej drużyny.";
+      } else if (!teamData) {
+        liveBlockedReason = "Nie masz dostępu do składu tej drużyny.";
       } else {
         liveTeamTitle = `${teamData.name} — Rocznik ${teamData.cohort_year}`;
         const isStaff = result.actor.role === "admin" || result.actor.role === "coach";
@@ -161,7 +171,7 @@ export default async function RealDataIntegrationPreviewPage({
             .limit(1);
 
           if (!membershipCheck || membershipCheck.length === 0) {
-            liveBlockedReason = "Brak przypisania do drużyny: Twój podopieczny nie znajduje się w kadrze DELTA 2018 GM.";
+            liveBlockedReason = "Nie masz dostępu do składu tej drużyny.";
           }
         }
 
@@ -170,8 +180,16 @@ export default async function RealDataIntegrationPreviewPage({
             .rpc("get_team_roster", { p_team_id: teamData.id });
 
           if (rosterError || !teamRoster || teamRoster.length === 0) {
-            liveBlockedReason = rosterError
-              ? `Brak uprawnień do składu: ${rosterError.message}`
+            const isRosterMissing =
+              rosterError?.code === "42883" ||
+              rosterError?.code === "PGRST202" ||
+              rosterError?.message?.toLowerCase().includes("function") ||
+              rosterError?.message?.toLowerCase().includes("does not exist");
+
+            liveBlockedReason = isRosterMissing
+              ? "Moduł kadr drużynowych jest chwilowo niedostępny."
+              : rosterError
+              ? "Nie masz dostępu do składu tej drużyny."
               : "Skład drużyny jest pusty lub oczekuje na przypisanie zweryfikowanych zawodników.";
           } else {
             const rawRows = teamRoster.map((row: any) => ({

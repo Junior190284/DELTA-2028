@@ -193,6 +193,7 @@ async function run() {
 
   const pBText = await pBPage.locator("body").innerText();
   assert.ok(
+    pBText.includes("Nie masz dostępu do składu tej drużyny") ||
     pBText.includes("Skład Rzeczywisty Zablokowany") ||
     pBText.includes("LIVE zablokowany") ||
     pBText.includes("Brak przypisania do drużyny") ||
