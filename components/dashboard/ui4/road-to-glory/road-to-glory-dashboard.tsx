@@ -170,10 +170,43 @@ export function RoadToGloryDashboard({
   const isPlayerRestricted = profile.player.status === "unavailable";
   const isPlayerEmpty = profile.player.status === "empty";
 
-  const [photoFailedForId, setPhotoFailedForId] = useState<string | null>(null);
+  const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
+  const [photoState, setPhotoState] = useState<"idle" | "loading" | "ready" | "none">("idle");
   const [unopenedPacksCount, setUnopenedPacksCount] = useState<number>(
     albumProgress.data?.unopenedPacks ?? 0
   );
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!isRealData || !resolvedPlayerId || resolvedPlayerId.startsWith("demo-")) {
+      setSignedPhotoUrl(null);
+      setPhotoState("none");
+      return;
+    }
+
+    setPhotoState("loading");
+    fetch(`/api/player-photo/${encodeURIComponent(resolvedPlayerId)}`)
+      .then((res) => (res.ok ? res.json() : { url: null }))
+      .then((data: { url?: string | null }) => {
+        if (!isMounted) return;
+        if (data?.url) {
+          setSignedPhotoUrl(data.url);
+          setPhotoState("ready");
+        } else {
+          setSignedPhotoUrl(null);
+          setPhotoState("none");
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setSignedPhotoUrl(null);
+        setPhotoState("none");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isRealData, resolvedPlayerId]);
 
   useEffect(() => {
     setUnopenedPacksCount(albumProgress.data?.unopenedPacks ?? 0);
@@ -213,14 +246,6 @@ export function RoadToGloryDashboard({
   const shirtNumber = playerData?.shirtNumber ?? null;
   const positionLabel = playerData?.position || null;
   const levelData = progress.status === "available" ? progress.data : null;
-
-  // Only attempt authorized photo endpoint in real-data mode for an actual linked player UUID
-  const canLoadAuthorizedPhoto =
-    isRealData &&
-    Boolean(resolvedPlayerId) &&
-    !resolvedPlayerId?.startsWith("demo-") &&
-    photoFailedForId !== resolvedPlayerId;
-  const authorizedPhotoUrl = canLoadAuthorizedPhoto ? `/api/player-photo/${resolvedPlayerId}` : null;
 
   // Next event date parsing (Europe/Warsaw)
   const nextEvent = nextAction.status === "available" ? nextAction.data : null;
@@ -413,15 +438,21 @@ export function RoadToGloryDashboard({
                 <div className="rtg-passport-top">
                   <div className="rtg-passport-id">
                     <div className="rtg-passport-photo-slot">
-                      {authorizedPhotoUrl ? (
+                      {photoState === "ready" && signedPhotoUrl ? (
                         <img
-                          src={authorizedPhotoUrl}
+                          src={signedPhotoUrl}
                           alt={displayPlayerName}
                           className="rtg-passport-photo"
-                          onError={() => setPhotoFailedForId(resolvedPlayerId)}
+                          onError={() => {
+                            setSignedPhotoUrl(null);
+                            setPhotoState("none");
+                          }}
                         />
                       ) : (
-                        <div className="rtg-jersey-crest">
+                        <div
+                          className="rtg-jersey-crest"
+                          aria-label={shirtNumber !== null ? `Numer zawodnika #${shirtNumber}` : "Herb DELTA"}
+                        >
                           <span>{shirtNumber !== null ? `#${shirtNumber}` : "D"}</span>
                         </div>
                       )}
