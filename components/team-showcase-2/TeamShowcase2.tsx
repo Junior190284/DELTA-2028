@@ -350,18 +350,10 @@ export default function TeamShowcase2({
                 }}
               >
                 <div className="ts2-card-inner">
+                  {/* Layer 1: Ambient Card Glow */}
                   <div className="ts2-card-glow" />
 
-                  {/* Corner Badges */}
-                  <span className="ts2-card-number">
-                    {p.shirtNumber ? `#${p.shirtNumber}` : "#-"}
-                  </span>
-
-                  <span className="ts2-card-pos">
-                    {p.positionCode || "DELTA"}
-                  </span>
-
-                  {/* Photo or Silhouette */}
+                  {/* Layer 2: Player Photo or Placeholder Silhouette */}
                   <div className="ts2-photo-slot">
                     {photoUrl ? (
                       <img
@@ -386,13 +378,25 @@ export default function TeamShowcase2({
                     )}
                   </div>
 
-                  {/* Nameplate */}
+                  {/* Layer 3: Text Readability Gradient Scrim */}
+                  <div className="ts2-card-scrim" aria-hidden="true" />
+
+                  {/* Layer 4: Nameplate (First Name & Surname) */}
                   <div className="ts2-nameplate">
                     <span className="ts2-name-first">{p.firstName || "ZAWODNIK"}</span>
                     <strong className="ts2-name-last">{p.lastName}</strong>
                   </div>
 
-                  {/* Dim overlay for side cards */}
+                  {/* Layer 5: Corner Badges */}
+                  <span className="ts2-card-number">
+                    {p.shirtNumber ? `#${p.shirtNumber}` : "#-"}
+                  </span>
+
+                  <span className="ts2-card-pos">
+                    {p.positionCode || "DELTA"}
+                  </span>
+
+                  {/* Layer 6: Dim overlay for side cards */}
                   <div className="ts2-card-dim" style={{ opacity: layout.dim }} />
                 </div>
               </div>
@@ -506,7 +510,7 @@ export default function TeamShowcase2({
 
             <div className="flex items-center gap-4">
               <div className="w-16 h-20 rounded-xl bg-slate-900 border border-amber-500/40 p-1 flex items-center justify-center shrink-0">
-                <NeutralPlayerSilhouette shirtNumber={detailPlayer.shirtNumber} crestSrc={CREST} />
+                <NeutralPlayerSilhouette shirtNumber={detailPlayer.shirtNumber} crestSrc={CREST} compact={true} />
               </div>
               <div>
                 <div className="text-xs font-bold text-amber-400">

@@ -205,6 +205,7 @@
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 10;
   padding: 26px 10px 12px;
   text-align: center;
   background: linear-gradient(180deg, transparent 0%, rgba(5, 6, 10, 0.86) 45%, rgba(5, 6, 10, 0.96) 100%);
