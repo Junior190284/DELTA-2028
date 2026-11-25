@@ -56,8 +56,6 @@ type TeamEvent = {
   details: string | null;
   important: boolean;
 };
-type AttendanceSummary = { match_id: string; responses: number; present: number };
-
 const CLUB = "K.S. Delta Warszawa GM";
 
 function localDate(date: string, time?: string | null) {
@@ -120,9 +118,8 @@ export default function PublicTeamSite(props: {
   news: News[];
   clubUpdates: ClubUpdate[];
   teamEvents: TeamEvent[];
-  attendanceSummary: AttendanceSummary[];
-  rosterCount: number;
   demoMode?: boolean;
+  signedIn?: boolean;
 }) {
   const now = Date.now();
   const scheduled = props.matches
@@ -164,7 +161,7 @@ export default function PublicTeamSite(props: {
   return (
     <main className={styles.page}>
       <PublicMotion />
-      <PublicNav />
+      <PublicNav signedIn={props.signedIn} />
 
       <section className={styles.hero} aria-labelledby="delta-hero-title">
         <Image
@@ -173,6 +170,7 @@ export default function PublicTeamSite(props: {
           alt="Stadion DELTA w świetle reflektorów"
           fill
           priority
+          loading="eager"
           sizes="100vw"
         />
         <div className={styles.heroVeil} aria-hidden="true" />

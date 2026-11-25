@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import PublicTeamSite from "@/components/PublicTeamSite";
 
 export const dynamic = "force-dynamic";
@@ -8,15 +9,16 @@ export default async function Home() {
   // No player records, attendance, lineups, training-game data or parent links
   // are passed to the browser.
   const admin=createAdminClient();
+  const auth=await createClient();
 
   const [
+    {data:{user}},
     {data:matches},
     {data:news},
     {data:clubUpdates},
-    {data:teamEvents},
-    {data:attendanceRows},
-    {count:activePlayerCount}
+    {data:teamEvents}
   ]=await Promise.all([
+    auth.auth.getUser(),
     admin.from("matches")
       .select("id,round_no,match_date,match_time,venue,home_team,away_team,home_score,away_score,status")
       .order("match_date"),
@@ -33,28 +35,14 @@ export default async function Home() {
       .is("player_id",null)
       .neq("event_type","birthday")
       .order("event_date")
-      .limit(12),
-    admin.from("match_attendance")
-      .select("match_id,status"),
-    admin.from("players")
-      .select("id",{count:"exact",head:true})
-      .eq("active",true)
+      .limit(12)
   ]);
-
-  const attendanceSummary=Object.values((attendanceRows||[]).reduce((acc:any,row:any)=>{
-    const item=acc[row.match_id]||{match_id:row.match_id,responses:0,present:0};
-    item.responses+=1;
-    if(["present","yes"].includes(String(row.status)))item.present+=1;
-    acc[row.match_id]=item;
-    return acc;
-  },{}));
 
   return <PublicTeamSite
     matches={matches||[]}
     news={news||[]}
     clubUpdates={clubUpdates||[]}
     teamEvents={(teamEvents||[]).map(({player_id,...event})=>event)}
-    attendanceSummary={attendanceSummary as any}
-    rosterCount={activePlayerCount||0}
+    signedIn={Boolean(user)}
   />;
 }

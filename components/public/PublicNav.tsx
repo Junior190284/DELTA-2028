@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { LockKeyhole, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import styles from "./public-experience.module.css";
 
 const links = [
@@ -14,9 +13,8 @@ const links = [
   ["O aplikacji", "#o-aplikacji"],
 ] as const;
 
-export default function PublicNav() {
+export default function PublicNav({ signedIn = false }: { signedIn?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -24,21 +22,6 @@ export default function PublicNav() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    const client = createClient();
-    client.auth.getSession().then(({ data }) => {
-      if (active) setSignedIn(Boolean(data.session));
-    });
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      if (active) setSignedIn(Boolean(session));
-    });
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
   }, []);
 
   useEffect(() => {

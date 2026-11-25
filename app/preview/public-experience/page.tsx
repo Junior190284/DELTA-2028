@@ -62,8 +62,6 @@ export default function PublicExperiencePreviewPage() {
         details: null,
         important: false,
       }]}
-      attendanceSummary={[]}
-      rosterCount={0}
     />
   );
 }
