@@ -4,8 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { createServerClient } from "@supabase/ssr";
 
-const PREVIEW_URL = "https://delta-2028-momrzsstp-tomaszrybacki-3187s-projects.vercel.app";
-const PREVIEW_DOMAIN = "delta-2028-momrzsstp-tomaszrybacki-3187s-projects.vercel.app";
+const PREVIEW_URL = "https://delta-2028-6q6d27uiy-tomaszrybacki-3187s-projects.vercel.app";
+const PREVIEW_DOMAIN = "delta-2028-6q6d27uiy-tomaszrybacki-3187s-projects.vercel.app";
 const VERCEL_BYPASS_TOKEN = "BXoDTakmomkFW9QV4LV7tdinlnoSxM5A";
 const SCREENSHOT_DIR = path.resolve(process.cwd(), "screenshots", "delta045o");
 const ARTIFACT_DIR = "C:\\Users\\tomas\\.gemini\\antigravity\\brain\\2fbf42b8-e0dc-44a8-9e00-27c9753d6eef";
