@@ -8,6 +8,8 @@ import "@/components/dashboard/ui4/road-to-glory/road-to-glory.css";
 import { HomeDashboard, CollectionDashboard } from "@/components/dashboard/ui4";
 import { RoadToGloryDashboard } from "@/components/dashboard/ui4/road-to-glory/road-to-glory-dashboard";
 import { loadRealDashboardUI4Data, isGenuineLocalEnvironment } from "@/lib/dashboard-ui4/real-data-loader";
+import { createClient } from "@/lib/supabase/server";
+import { buildRoster, type ShowcasePlayer } from "@/lib/team/teamShowcase";
 import { Shield, Lock, AlertTriangle, ArrowLeft, CheckCircle2, Home, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -124,6 +126,65 @@ export default async function RealDataIntegrationPreviewPage({
   const roadToGloryHref = `/preview/dashboard-ui4/real-data?view=road-to-glory${activeChildId ? `&child=${activeChildId}` : ""}`;
   const collectionHref = `/preview/dashboard-ui4/real-data?view=collection${activeChildId ? `&child=${activeChildId}` : ""}`;
 
+  let liveRoster: ShowcasePlayer[] | undefined = undefined;
+  let liveBlockedReason: string | null = null;
+  let liveTeamTitle = "DELTA 2018 GM";
+
+  if (view === "road-to-glory" && result.actor.isAuthenticated) {
+    try {
+      const supabase = await createClient();
+      const { data: teamData, error: teamError } = await supabase
+        .from("teams")
+        .select("id, name, cohort_year, slug, active")
+        .eq("slug", "delta-2018-gm")
+        .maybeSingle();
+
+      if (teamError || !teamData) {
+        liveBlockedReason = "Brak tabeli teams i relacji drużyna–zawodnik w bazie (LIVE zablokowany)";
+      } else {
+        liveTeamTitle = `${teamData.name} — Rocznik ${teamData.cohort_year}`;
+        const isStaff = result.actor.role === "admin" || result.actor.role === "coach";
+
+        if (!isStaff) {
+          const { data: membershipCheck } = await supabase
+            .from("team_players")
+            .select("id")
+            .eq("team_id", teamData.id)
+            .in("player_id", result.actor.linkedChildIds.length > 0 ? result.actor.linkedChildIds : ["00000000-0000-0000-0000-000000000000"])
+            .is("left_at", null)
+            .limit(1);
+
+          if (!membershipCheck || membershipCheck.length === 0) {
+            liveBlockedReason = "Brak przypisania do drużyny: Twój podopieczny nie znajduje się w kadrze DELTA 2018 GM.";
+          }
+        }
+
+        if (!liveBlockedReason) {
+          const { data: teamRoster, error: rosterError } = await supabase
+            .rpc("get_team_roster", { p_team_id: teamData.id });
+
+          if (rosterError || !teamRoster || teamRoster.length === 0) {
+            liveBlockedReason = rosterError
+              ? `Brak uprawnień do składu: ${rosterError.message}`
+              : "Skład drużyny jest pusty lub oczekuje na przypisanie zweryfikowanych zawodników.";
+          } else {
+            const rawRows = teamRoster.map((row: any) => ({
+              id: row.player_id,
+              display_name: row.display_name,
+              shirt_number: row.shirt_number,
+              position: row.position,
+              photo_path: result.actor.linkedChildIds.includes(row.player_id) ? "storage" : null,
+              active: true,
+            }));
+            liveRoster = buildRoster(rawRows);
+          }
+        }
+      }
+    } catch {
+      liveBlockedReason = "Błąd połączenia z bazą autoryzacyjną.";
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Top Integration Mode Notification Banner */}
@@ -201,6 +262,11 @@ export default async function RealDataIntegrationPreviewPage({
           model={result.model}
           mode="real-data"
           activeChildId={result.actor.activeChildId}
+          rosterPlayers={liveRoster}
+          parentPlayerIds={result.actor.linkedChildIds}
+          userRole={result.actor.role}
+          teamName={liveTeamTitle}
+          liveBlockedReason={liveBlockedReason}
         />
       ) : (
         <HomeDashboard model={result.model} />

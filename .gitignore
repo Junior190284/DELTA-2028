@@ -12,4 +12,7 @@ backup_*/
 /checkpoint_*.png
 /screenshot_*.png
 /screenshot.png
+screenshots/
 
+.vercel
+.env*

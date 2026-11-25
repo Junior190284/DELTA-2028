@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -25,6 +25,10 @@ import {
   Zap,
 } from "lucide-react";
 import DeltaCard from "@/components/cards/DeltaCard";
+import TeamShowcase2 from "@/components/team-showcase-2/TeamShowcase2";
+import "@/components/team-showcase-2/team-showcase-2.css";
+import { buildRoster, type ShowcasePlayer } from "@/lib/team/teamShowcase";
+import { NEUTRAL_SHOWCASE_ROSTER } from "@/lib/team/teamShowcaseDemo";
 import { subscribeCardEvents } from "@/lib/cards/cardSync";
 import type { DeltaCardModel } from "@/lib/cards/deltaCardModel";
 import { toDeltaCardModel } from "../collection-dashboard";
@@ -36,6 +40,11 @@ export interface RoadToGloryDashboardProps {
   model: DashboardUI4Model;
   mode?: "demo" | "real-data";
   activeChildId?: string | null;
+  rosterPlayers?: ShowcasePlayer[];
+  parentPlayerIds?: string[];
+  teamName?: string;
+  userRole?: string | null;
+  liveBlockedReason?: string | null;
 }
 
 function formatWarsawDateParts(isoString?: string | null) {
@@ -139,6 +148,11 @@ export function RoadToGloryDashboard({
   model,
   mode = "demo",
   activeChildId = null,
+  rosterPlayers,
+  parentPlayerIds,
+  teamName,
+  userRole,
+  liveBlockedReason = null,
 }: RoadToGloryDashboardProps) {
   const {
     profile,
@@ -242,6 +256,31 @@ export function RoadToGloryDashboard({
     clubCommunications.status === "available" && clubCommunications.data
       ? clubCommunications.data.slice(0, 3)
       : [];
+
+  // Team Showcase / Roster resolution
+  const effectiveTeamName = teamName || profile.teamName || "DELTA 2018 GM";
+  const teamShowcaseHref = isRealData
+    ? `/preview/team-showcase${activeChildId ? `?child=${activeChildId}` : ""}`
+    : "/preview/team-showcase?demo=1";
+
+  const effectiveParentPlayerIds = useMemo(() => {
+    if (parentPlayerIds && parentPlayerIds.length > 0) return parentPlayerIds;
+    if (isRealData) {
+      return resolvedPlayerId ? [resolvedPlayerId] : [];
+    }
+    // Demo mode: link Zawodnik Alfa
+    return [resolvedPlayerId || "demo-player-alpha", "demo-a"];
+  }, [parentPlayerIds, isRealData, resolvedPlayerId]);
+
+  const displayedRoster: ShowcasePlayer[] = useMemo(() => {
+    if (rosterPlayers && rosterPlayers.length > 0) return rosterPlayers;
+    if (!isRealData) {
+      return buildRoster(NEUTRAL_SHOWCASE_ROSTER);
+    }
+    return [];
+  }, [rosterPlayers, isRealData]);
+
+  const isRosterRestricted = isRealData && Boolean(liveBlockedReason);
 
   // Key player-scoped tree by resolvedPlayerId so sibling switching never leaves stale state
   const childRenderKey = resolvedPlayerId || profile.accountId || "default";
@@ -586,7 +625,51 @@ export function RoadToGloryDashboard({
             )}
           </section>
 
-          {/* 4. ACHIEVEMENTS & COLLECTION PREVIEW */}
+          {/* 4. TEAM ROSTER / SHOWCASE */}
+          <section className="rtg-panel rtg-team-roster" id="rtg-team-roster" aria-label="Kadra Drużyny">
+            <div className="rtg-panel-head">
+              <div>
+                <span className="rtg-eyebrow">TEAM SQUAD · KADRA DRUŻYNY</span>
+                <h2>{effectiveTeamName}</h2>
+              </div>
+              <div className="rtg-panel-head-actions flex items-center gap-3">
+                {displayedRoster.length > 0 && (
+                  <span className="rtg-countdown-badge">
+                    <Users aria-hidden="true" className="w-3.5 h-3.5" /> {displayedRoster.length} zawodników
+                  </span>
+                )}
+                <Link href={teamShowcaseHref} className="rtg-link-btn">
+                  Pełny widok <ChevronRight aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+
+            {isRosterRestricted ? (
+              <div className="rtg-state-box">
+                <Lock className="w-5 h-5 text-amber-400" />
+                <strong>Dostęp do składu drużyny ograniczony</strong>
+                <p>{liveBlockedReason || "Zaloguj się na uprawnione konto rodzica, aby zobaczyć kadrę drużyny swojego dziecka."}</p>
+              </div>
+            ) : isRealData && displayedRoster.length === 0 ? (
+              <div className="rtg-state-box">
+                <Lock className="w-5 h-5 text-amber-400" />
+                <strong>Brak zawodników w kadrze</strong>
+                <p>Skład drużyny nie został jeszcze przypisany w systemie akademii lub oczekuje na weryfikację.</p>
+              </div>
+            ) : (
+              <TeamShowcase2
+                players={displayedRoster}
+                source={isRealData ? "live" : "demo"}
+                userRole={userRole || (isRealData ? "parent" : "demo")}
+                parentPlayerIds={effectiveParentPlayerIds}
+                teamName={effectiveTeamName}
+                liveBlockedReason={liveBlockedReason}
+                embedded={true}
+              />
+            )}
+          </section>
+
+          {/* 5. ACHIEVEMENTS & COLLECTION PREVIEW */}
           <div className="rtg-glory-grid">
             <section className="rtg-panel" id="rtg-achievements">
               <div className="rtg-panel-head">

@@ -20,3 +20,18 @@ export const DEMO_ROSTER: RosterPlayerRow[] = [
 export const DEMO_STATIC_PHOTOS: Record<string, string> = {
   "demo-p7": "/assets/players/ryszard-rybacki.png",
 };
+
+/**
+ * DELTA-045C: Strictly neutral demo roster for Team Showcase 2.0.
+ * Zero real children's names, compliant with DELTA-014 PII protection rules.
+ */
+export const NEUTRAL_SHOWCASE_ROSTER: RosterPlayerRow[] = [
+  { id: "demo-a", display_name: "Zawodnik Alfa", shirt_number: "7", position: "NAP", photo_path: null, active: true },
+  { id: "demo-b", display_name: "Zawodnik Beta", shirt_number: "4", position: "POM", photo_path: null, active: true },
+  { id: "demo-c", display_name: "Zawodnik Gamma", shirt_number: "9", position: "POM", photo_path: null, active: true },
+  { id: "demo-d", display_name: "Zawodnik Delta", shirt_number: "10", position: "POM", photo_path: null, active: true },
+  { id: "demo-e", display_name: "Zawodnik Epsilon", shirt_number: "14", position: "OBR", photo_path: null, active: true },
+  { id: "demo-f", display_name: "Zawodnik Dzeta", shirt_number: "19", position: "POM", photo_path: null, active: true },
+  { id: "demo-g", display_name: "Zawodnik Eta", shirt_number: "22", position: "BR", photo_path: null, active: true },
+];
+
