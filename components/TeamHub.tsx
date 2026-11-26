@@ -30,6 +30,7 @@ import DeltaKnowledgeCornerModal from "./DeltaKnowledgeCornerModal";
 import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import DeltaMatchHub20 from "./matches/DeltaMatchHub20";
 import DeltaTrainingCenter20 from "./training/DeltaTrainingCenter20";
+import { unifyTrainingSessions } from "@/lib/training/unifiedTrainingService";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
 import DeltaSkillMiniGamesModal from "./DeltaSkillMiniGamesModal";
 import DailyInfernoSpin from "./DailyInfernoSpin";
@@ -203,7 +204,9 @@ export default function TeamHub(props:{
   const [news,setNews]=useState(props.initialNews);
   const [clubUpdates,setClubUpdates]=useState(props.initialClubUpdates);
   const [teamEvents,setTeamEvents]=useState(props.initialTeamEvents);
-  const [trainingSessions,setTrainingSessions]=useState(props.initialTrainingSessions);
+  const [trainingSessions,setTrainingSessions]=useState(() =>
+    unifyTrainingSessions(props.initialTrainingSessions, props.initialTeamEvents)
+  );
   const [trainingAttendance,setTrainingAttendance]=useState(props.initialTrainingAttendance);
   const [trainingGames,setTrainingGames]=useState(props.initialTrainingGames);
   const [trainingGamePlayers,setTrainingGamePlayers]=useState(props.initialTrainingGamePlayers);
@@ -488,7 +491,7 @@ export default function TeamHub(props:{
   useEffect(()=>{
     setPlayers(props.initialPlayers);setMatches(props.initialMatches);setAttendance(props.initialAttendance);
     setLineup(props.initialLineup);setEvents(props.initialEvents);setNews(props.initialNews);setClubUpdates(props.initialClubUpdates);setTeamEvents(props.initialTeamEvents);
-    setTrainingSessions(props.initialTrainingSessions);setTrainingAttendance(props.initialTrainingAttendance);
+    setTrainingSessions(unifyTrainingSessions(props.initialTrainingSessions, props.initialTeamEvents));setTrainingAttendance(props.initialTrainingAttendance);
     setTrainingGames(props.initialTrainingGames);setTrainingGamePlayers(props.initialTrainingGamePlayers);setTrainingEvents(props.initialTrainingEvents);
   },[props.initialPlayers,props.initialMatches,props.initialAttendance,props.initialLineup,props.initialEvents,props.initialNews,props.initialClubUpdates,props.initialTeamEvents,props.initialTrainingSessions,props.initialTrainingAttendance,props.initialTrainingGames,props.initialTrainingGamePlayers,props.initialTrainingEvents]);
 

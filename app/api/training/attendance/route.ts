@@ -50,14 +50,41 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient();
 
-    // 1. Sprawdzenie istnienia sesji treningowej w bazie
-    const { data: training, error: trainingErr } = await admin
+    // 1. Sprawdzenie istnienia sesji treningowej w bazie (lub utworzenie rekordu dla oficjalnego treningu)
+    let { data: training, error: trainingErr } = await admin
       .from("training_sessions")
       .select("id")
       .eq("id", trainingId)
       .maybeSingle();
 
     if (trainingErr || !training) {
+      // Sprawdź czy to powiązane wydarzenie w team_events
+      const { data: teamEv } = await admin
+        .from("team_events")
+        .select("id, event_date, start_time, end_time, location, title, details")
+        .eq("id", trainingId)
+        .maybeSingle();
+
+      if (teamEv) {
+        // Utwórz powiązany rekord w training_sessions z zachowaniem tego samego id
+        const { data: createdSession } = await admin
+          .from("training_sessions")
+          .insert({
+            id: teamEv.id,
+            training_date: teamEv.event_date,
+            start_time: teamEv.start_time || "17:00",
+            end_time: teamEv.end_time || "18:30",
+            location: teamEv.location || "Górny Mokotów",
+            title: teamEv.title || "Trening",
+            notes: teamEv.details || null,
+          })
+          .select("id")
+          .single();
+        if (createdSession) training = createdSession;
+      }
+    }
+
+    if (!training) {
       return NextResponse.json(
         { success: false, error: "Nie znaleziono sesji treningowej w bazie danych" },
         { status: 404 }
