@@ -1330,18 +1330,37 @@ export default function DeltaTrainingCenter20(props: DeltaTrainingCenter20Props)
               {trainingSessions.slice(0, 8).map(s => {
                 const present = trainingAttendance.filter(a => a.training_id === s.id && a.status === "present").length;
                 const games = trainingGames.filter(g => g.training_id === s.id);
+                const gameIds = new Set(games.map(g => g.id));
+                const sessionEvents = trainingEvents.filter(e => e.game_id && gameIds.has(e.game_id));
+                const goalsCount = sessionEvents.filter(e => e.event_type === "goal").length;
                 return (
-                  <div key={s.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-3 text-xs">
-                    <div>
-                      <b className="text-white block">{s.title || "Trening"}</b>
-                      <span className="text-[11px] text-slate-400">
-                        {datePL(s.training_date)} • {[s.start_time?.slice(0, 5), s.location].filter(Boolean).join(" • ")}
-                      </span>
+                  <div key={s.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <b className="text-white block">{s.title || "Trening"}</b>
+                        <span className="text-[11px] text-slate-400">
+                          {datePL(s.training_date)} • {[s.start_time?.slice(0, 5), s.location].filter(Boolean).join(" • ")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-bold text-amber-300">{present}/{players.length} os.</span>
+                        <span className="text-[10px] text-slate-400">{games.length} {games.length === 1 ? "gra" : "gry"} ({goalsCount} ⚽)</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="font-bold text-amber-300">{present}/{players.length} os.</span>
-                      <span className="text-[10px] text-slate-400">{games.length} {games.length === 1 ? "gra" : "gry"}</span>
-                    </div>
+                    {/* Live Match Scores in Session History */}
+                    {games.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/5">
+                        {games.map(g => (
+                          <span
+                            key={g.id}
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/40 border border-white/5 text-[10px] text-slate-300"
+                          >
+                            <span className="font-semibold text-slate-400">{g.team_a_name} vs {g.team_b_name}</span>
+                            <b className="font-mono text-amber-300">{g.team_a_score}:{g.team_b_score}</b>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

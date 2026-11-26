@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Users,
   Calendar,
@@ -22,7 +22,10 @@ import {
   AlertTriangle,
   ChevronRight,
   Settings,
-  Swords
+  Swords,
+  Edit2,
+  Medal,
+  Target
 } from "lucide-react";
 import {
   SYNTHETIC_QA_PLAYERS,
@@ -30,9 +33,16 @@ import {
   INITIAL_SYNTHETIC_ATTENDANCE,
   INITIAL_SYNTHETIC_GAMES,
   INITIAL_SYNTHETIC_GAME_PLAYERS,
+  INITIAL_SYNTHETIC_EVENTS,
   type SyntheticGamePlayer,
   type TeamLetter
 } from "@/lib/qa/syntheticQaData";
+import {
+  calculateGameScoreFromEvents,
+  aggregateTrainingLiveStats,
+  type TrainingLiveEvent,
+  type TrainingEventType
+} from "@/lib/training/trainingLiveStats";
 import type { Player, TrainingSession, TrainingAttendance, TrainingGame } from "@/components/training/DeltaTrainingCenter20";
 
 const TEAM_OPTIONS: { letter: TeamLetter; name: string; color: string; border: string; bg: string }[] = [
@@ -50,11 +60,19 @@ export default function InteractiveQaPlayground() {
   const [attendance, setAttendance] = useState<TrainingAttendance[]>(INITIAL_SYNTHETIC_ATTENDANCE);
   const [games, setGames] = useState<TrainingGame[]>(INITIAL_SYNTHETIC_GAMES);
   const [gamePlayers, setGamePlayers] = useState<SyntheticGamePlayer[]>(INITIAL_SYNTHETIC_GAME_PLAYERS);
+  const [events, setEvents] = useState<TrainingLiveEvent[]>(INITIAL_SYNTHETIC_EVENTS);
   const [selectedGameId, setSelectedGameId] = useState<string>(INITIAL_SYNTHETIC_GAMES[0]?.id || "");
   const [feedback, setFeedback] = useState<string | null>(null);
 
   // Modal / Confirm delete dialog state
   const [deleteConfirmGameId, setDeleteConfirmGameId] = useState<string | null>(null);
+
+  // Goal Creation / Editing Form State for Active Game
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [goalSide, setGoalSide] = useState<"A" | "B">("A");
+  const [goalType, setGoalType] = useState<TrainingEventType>("goal");
+  const [selectedScorerId, setSelectedScorerId] = useState<string>(""); // "" = brak/nieznany
+  const [selectedAssistId, setSelectedAssistId] = useState<string>(""); // "" = bez asysty
 
   // Active game resolver
   const activeGame = games.find(g => g.id === selectedGameId) || games[0] || null;
@@ -137,12 +155,24 @@ export default function InteractiveQaPlayground() {
     const targetGame = games.find(g => g.id === gameId);
     setGames(prev => prev.filter(g => g.id !== gameId));
     setGamePlayers(prev => prev.filter(gp => gp.game_id !== gameId));
+    setEvents(prev => prev.filter(e => e.game_id !== gameId));
     setSelectedGameId(games.find(g => g.id !== gameId)?.id || "");
     setDeleteConfirmGameId(null);
     triggerFeedback(`✓ Usunięto mecz: ${targetGame?.team_a_name || ""} vs ${targetGame?.team_b_name || ""}`);
   };
 
-  // Update Score for specific game
+  // Synchronize game score from events whenever events change
+  const syncGameScoreFromEvents = (gameId: string, updatedEvents: TrainingLiveEvent[]) => {
+    const targetGame = games.find(g => g.id === gameId);
+    if (!targetGame) return;
+    const { team_a_score, team_b_score } = calculateGameScoreFromEvents(gameId, updatedEvents, {
+      team_a_score: targetGame.team_a_score,
+      team_b_score: targetGame.team_b_score
+    });
+    setGames(prev => prev.map(g => g.id === gameId ? { ...g, team_a_score, team_b_score } : g));
+  };
+
+  // Manual fallback score update (when coach modifies raw score directly)
   const handleUpdateScore = (gameId: string, side: "A" | "B", score: number) => {
     setGames(prev => prev.map(g => {
       if (g.id !== gameId) return g;
@@ -154,25 +184,143 @@ export default function InteractiveQaPlayground() {
     }));
   };
 
+  // Live Goals & Events Management
+  const handleSaveGoalEvent = () => {
+    if (!activeGame) return;
+
+    // Rule: Zawodnik nie może asystować przy własnej bramce
+    if (selectedScorerId && selectedAssistId && selectedScorerId === selectedAssistId) {
+      alert("Zawodnik nie może asystować przy własnej bramce!");
+      return;
+    }
+
+    if (editingEventId) {
+      // Edit existing event
+      const updated = events.map(ev => {
+        if (ev.id !== editingEventId) return ev;
+        return {
+          ...ev,
+          event_type: goalType,
+          team_side: goalSide,
+          player_id: selectedScorerId || null,
+          assist_player_id: goalType === "goal" ? (selectedAssistId || null) : null,
+        };
+      });
+      setEvents(updated);
+      syncGameScoreFromEvents(activeGame.id, updated);
+      setEditingEventId(null);
+      triggerFeedback(`✓ Zaktualizowano zdarzenie bramkowe`);
+    } else {
+      // Create new event
+      const newEvent: TrainingLiveEvent = {
+        id: `qa-ev-sim-${Date.now()}`,
+        game_id: activeGame.id,
+        event_type: goalType,
+        team_side: goalSide,
+        player_id: selectedScorerId || null,
+        assist_player_id: goalType === "goal" ? (selectedAssistId || null) : null,
+        created_at: new Date().toISOString(),
+      };
+      const updated = [...events, newEvent];
+      setEvents(updated);
+      syncGameScoreFromEvents(activeGame.id, updated);
+      triggerFeedback(`✓ Dodano gol dla ${goalSide === "A" ? activeGame.team_a_name : activeGame.team_b_name}`);
+    }
+
+    // Reset form fields
+    setSelectedScorerId("");
+    setSelectedAssistId("");
+    setGoalType("goal");
+  };
+
+  const handleStartEditEvent = (ev: TrainingLiveEvent) => {
+    setEditingEventId(ev.id);
+    setGoalSide(ev.team_side);
+    setGoalType(ev.event_type);
+    setSelectedScorerId(ev.player_id || "");
+    setSelectedAssistId(ev.assist_player_id || "");
+  };
+
+  const handleCancelEditEvent = () => {
+    setEditingEventId(null);
+    setSelectedScorerId("");
+    setSelectedAssistId("");
+    setGoalType("goal");
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    if (!activeGame) return;
+    const updated = events.filter(e => e.id !== eventId);
+    setEvents(updated);
+    syncGameScoreFromEvents(activeGame.id, updated);
+    if (editingEventId === eventId) handleCancelEditEvent();
+    triggerFeedback(`✓ Usunięto zdarzenie bramkowe i przeliczono wynik`);
+  };
+
   // Reset Scenario to initial state
   const handleResetScenario = () => {
     setSession(SYNTHETIC_QA_TRAINING_SESSION);
     setAttendance(INITIAL_SYNTHETIC_ATTENDANCE);
     setGames(INITIAL_SYNTHETIC_GAMES);
     setGamePlayers(INITIAL_SYNTHETIC_GAME_PLAYERS);
+    setEvents(INITIAL_SYNTHETIC_EVENTS);
     setSelectedGameId(INITIAL_SYNTHETIC_GAMES[0]?.id || "");
     setDeleteConfirmGameId(null);
-    triggerFeedback(`✓ Zresetowano scenariusz do 3 meczów kanonicznych (A-B, C-D, A-C)`);
+    setEditingEventId(null);
+    triggerFeedback(`✓ Zresetowano scenariusz do 3 meczów kanonicznych ze zdarzeniami live`);
   };
 
-  // Counts for active game
+  // Derived calculations
   const presentCount = attendance.filter(a => a.status === "present").length;
   const activePair = activeGame ? getGameTeamLetters(activeGame) : { teamA: "A" as TeamLetter, teamB: "B" as TeamLetter };
 
-  const activeRosterA = activeGame ? gamePlayers.filter(x => x.game_id === activeGame.id && x.team === activePair.teamA) : [];
-  const activeRosterB = activeGame ? gamePlayers.filter(x => x.game_id === activeGame.id && x.team === activePair.teamB) : [];
-  const activeRosterC = activeGame ? gamePlayers.filter(x => x.game_id === activeGame.id && x.team === "C") : [];
-  const activeRosterD = activeGame ? gamePlayers.filter(x => x.game_id === activeGame.id && x.team === "D") : [];
+  // Eligible players per side for activeGame
+  // Strona A odpowiada Drużynie activePair.teamA, Strona B odpowiada activePair.teamB
+  const sideAPlayers = useMemo(() => {
+    if (!activeGame) return [];
+    const assignedIds = new Set(
+      gamePlayers
+        .filter(gp => gp.game_id === activeGame.id && gp.team === activePair.teamA)
+        .map(gp => gp.player_id)
+    );
+    return SYNTHETIC_QA_PLAYERS.filter(p => assignedIds.has(p.id));
+  }, [activeGame, gamePlayers, activePair.teamA]);
+
+  const sideBPlayers = useMemo(() => {
+    if (!activeGame) return [];
+    const assignedIds = new Set(
+      gamePlayers
+        .filter(gp => gp.game_id === activeGame.id && gp.team === activePair.teamB)
+        .map(gp => gp.player_id)
+    );
+    return SYNTHETIC_QA_PLAYERS.filter(p => assignedIds.has(p.id));
+  }, [activeGame, gamePlayers, activePair.teamB]);
+
+  // Dla bramek samobójczych strzelec pochodzi z drużyny PRZECIWNEJ
+  const eligibleScorers = useMemo(() => {
+    if (goalType === "own_goal") {
+      return goalSide === "A" ? sideBPlayers : sideAPlayers;
+    }
+    return goalSide === "A" ? sideAPlayers : sideBPlayers;
+  }, [goalType, goalSide, sideAPlayers, sideBPlayers]);
+
+  const eligibleAssisters = useMemo(() => {
+    if (goalType === "own_goal") return []; // Przy samobóju nie ma asysty
+    const currentSidePlayers = goalSide === "A" ? sideAPlayers : sideBPlayers;
+    // Wyklucz aktualnie wybranego strzelca (nie można asystować samemu sobie)
+    return currentSidePlayers.filter(p => p.id !== selectedScorerId);
+  }, [goalType, goalSide, sideAPlayers, sideBPlayers, selectedScorerId]);
+
+  // Match events for active game sorted chronologically
+  const activeGameEvents = useMemo(() => {
+    if (!activeGame) return [];
+    return events.filter(e => e.game_id === activeGame.id);
+  }, [activeGame, events]);
+
+  // Aggregate live stats for the entire training
+  const liveStatsSummary = useMemo(() => {
+    return aggregateTrainingLiveStats(SYNTHETIC_QA_PLAYERS, games, gamePlayers, events);
+  }, [games, gamePlayers, events]);
 
   return (
     <div className="space-y-6">
@@ -188,7 +336,7 @@ export default function InteractiveQaPlayground() {
           className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 border border-white/10 flex items-center justify-center gap-1.5 font-bold transition-all shrink-0"
         >
           <RotateCcw size={13} />
-          <span>Reset Scenariusza (3 Mecze)</span>
+          <span>Reset Scenariusza (Live Stats)</span>
         </button>
       </div>
 
@@ -244,7 +392,7 @@ export default function InteractiveQaPlayground() {
           }`}
         >
           <Sparkles size={14} />
-          <span>Podsumowanie & XP</span>
+          <span>Podsumowanie & XP (Statystyki)</span>
         </button>
       </div>
 
@@ -260,55 +408,60 @@ export default function InteractiveQaPlayground() {
                 {session.title} • {session.training_date}
               </h3>
               <p className="text-xs text-slate-400 m-0">
-                {session.location} ({session.start_time} - {session.end_time})
+                Lokalizacja: {session.location} ({session.start_time} - {session.end_time})
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">
-                Obecni na boisku: {presentCount} / {SYNTHETIC_QA_PLAYERS.length}
+              <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
+                Obecni: {presentCount} / {SYNTHETIC_QA_PLAYERS.length}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SYNTHETIC_QA_PLAYERS.map(p => {
               const att = attendance.find(a => a.player_id === p.id);
-              const status = att?.status || "undecided";
-              const isPresent = status === "present";
-              const isAbsent = status === "absent";
+              const status = att?.status || "none";
 
               return (
                 <div
                   key={p.id}
-                  className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between gap-2 text-xs"
+                  className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between gap-3 text-xs"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-6 h-6 rounded-lg bg-white/10 font-bold flex items-center justify-center text-[10px] text-amber-300 shrink-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 font-bold flex items-center justify-center text-xs shrink-0">
                       #{p.shirt_number}
-                    </span>
-                    <span className="font-bold text-slate-200 truncate">{p.display_name}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-bold text-white block truncate">{p.display_name}</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                        Pozycja: {p.position}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => setAttendanceStatus(p.id, "present")}
-                      className={`px-2.5 py-1.5 rounded-lg font-black text-[11px] transition-all ${
-                        isPresent
-                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/40"
-                          : "bg-white/[0.04] text-slate-400 hover:text-white"
+                      className={`px-2.5 py-1.5 rounded-xl font-bold transition-all text-xs flex items-center gap-1 ${
+                        status === "present"
+                          ? "bg-emerald-500 text-black shadow-md shadow-emerald-950/40"
+                          : "bg-white/[0.05] text-slate-300 hover:text-white"
                       }`}
                     >
-                      JEST
+                      <CheckCircle2 size={13} />
+                      <span className="hidden sm:inline">Obecny</span>
                     </button>
                     <button
                       onClick={() => setAttendanceStatus(p.id, "absent")}
-                      className={`px-2.5 py-1.5 rounded-lg font-black text-[11px] transition-all ${
-                        isAbsent
-                          ? "bg-red-600 text-white shadow-md shadow-red-950/40"
-                          : "bg-white/[0.04] text-slate-400 hover:text-white"
+                      className={`px-2.5 py-1.5 rounded-xl font-bold transition-all text-xs flex items-center gap-1 ${
+                        status === "absent"
+                          ? "bg-red-500 text-white shadow-md shadow-red-950/40"
+                          : "bg-white/[0.05] text-slate-300 hover:text-white"
                       }`}
                     >
-                      NIE
+                      <XCircle size={13} />
+                      <span className="hidden sm:inline">Nieobecny</span>
                     </button>
                   </div>
                 </div>
@@ -318,134 +471,97 @@ export default function InteractiveQaPlayground() {
         </div>
       )}
 
-      {/* SUBTAB 2: TWORZENIE DRUŻYN (MULTI-MATCH COMPONENT) */}
+      {/* SUBTAB 2: TWORZENIE DRUŻYN (MULTI-MATCH ROSTERS & PAIR SELECTOR) */}
       {subTab === "teams" && (
         <div className="p-5 sm:p-6 rounded-3xl bg-white/[0.02] border border-white/10 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
             <div>
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block">
-                ZARZĄDZANIE DRUŻYNAMI TRENINGOWYMI (MULTI-MATCH ENGINE)
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">
+                ZARZĄDZANIE DRUŻYNAMI • NIEZALEŻNE SKŁADY DLA KAŻDEGO MECZU
               </span>
               <h3 className="text-base sm:text-lg font-black text-white m-0">
-                Składy meczu: {activeGame?.team_a_name || ""} vs {activeGame?.team_b_name || ""}
+                Wybierz mecz i przypisuj składy do par A, B, C, D
               </h3>
-              <p className="text-xs text-slate-400 m-0">
-                Wybierz dowolny mecz z listy poniżej lub utwórz kolejny. Każdy mecz posiada w pełni niezależny skład i wynik.
-              </p>
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleCreateGameWithPair("A", "B")}
-                className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md shadow-amber-950/40 transition-all shrink-0"
-              >
-                <Plus size={14} />
-                <span>Nowy Mecz</span>
-              </button>
-            </div>
+            <button
+              onClick={() => handleCreateGameWithPair("A", "B")}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black text-xs uppercase tracking-wider flex items-center gap-1.5 hover:brightness-110 transition-all shrink-0"
+            >
+              <Plus size={14} />
+              <span>Dodaj Grę Kontrolną</span>
+            </button>
           </div>
 
-          {/* LISTA WSZYSTKICH GIER KONTROLNYCH (MULTI-MATCH LIST) */}
+          {/* MATCH SELECTOR TABS */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-300 uppercase">
-              <span>Wszystkie Gry Kontrolne ({games.length}):</span>
-              <span className="text-[11px] text-slate-500 lowercase">kliknij mecz, aby edytować jego skład</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              Aktywny mecz do edycji składów:
+            </span>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
               {games.map((g, idx) => {
-                const isSelected = activeGame?.id === g.id;
                 const pair = getGameTeamLetters(g);
                 const countA = gamePlayers.filter(x => x.game_id === g.id && x.team === pair.teamA).length;
                 const countB = gamePlayers.filter(x => x.game_id === g.id && x.team === pair.teamB).length;
 
                 return (
-                  <div
+                  <button
                     key={g.id}
                     onClick={() => setSelectedGameId(g.id)}
-                    className={`p-3.5 rounded-2xl cursor-pointer transition-all border text-left flex flex-col justify-between gap-2 ${
-                      isSelected
-                        ? "bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-950/50"
-                        : "bg-white/[0.03] border-white/10 hover:border-white/20"
+                    className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
+                      activeGame?.id === g.id
+                        ? "bg-amber-500/20 border-amber-500 text-amber-300 shadow-lg shadow-amber-950/30"
+                        : "bg-white/[0.03] border-white/10 text-slate-300 hover:text-white"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-amber-400">
-                        Mecz {idx + 1}
-                      </span>
-                      <span className="text-xs font-black text-white px-2 py-0.5 rounded bg-black/40 border border-white/10">
-                        {g.team_a_score} : {g.team_b_score}
-                      </span>
-                    </div>
-
-                    <div>
-                      <b className="text-sm font-bold text-white block">
-                        {g.team_a_name} vs {g.team_b_name}
-                      </b>
-                      <span className="text-[11px] text-slate-400">
-                        Skład: {countA} ({pair.teamA}) vs {countB} ({pair.teamB}) zawodników
-                      </span>
-                    </div>
-
-                    <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px]">
-                      <span className={isSelected ? "text-blue-400 font-bold" : "text-slate-500"}>
-                        {isSelected ? "● Edytowany" : "Wybierz"}
-                      </span>
-                      {games.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmGameId(g.id);
-                          }}
-                          className="text-red-400 hover:text-red-300 p-1"
-                          title="Usuń ten mecz"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                    <span className="w-5 h-5 rounded-full bg-white/10 text-[10px] font-black flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <span className="font-black">{g.team_a_name} vs {g.team_b_name}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-black/40 text-[10px] font-mono text-amber-400">
+                      {countA}v{countB}
+                    </span>
+                  </button>
                 );
               })}
             </div>
           </div>
 
-          {/* ACTIVE GAME PAIR CHANGER & DETAILS */}
+          {/* ACTIVE GAME CONFIGURATION PANEL */}
           {activeGame && (
-            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
                   <Swords size={16} className="text-amber-400" />
-                  <span className="text-xs font-bold text-white uppercase">
-                    Konfiguracja Par Drużyn dla aktywnego meczu:
+                  <span className="text-xs font-black text-white uppercase tracking-wider">
+                    Konfiguracja Par Meczu: {activeGame.team_a_name} vs {activeGame.team_b_name}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-xs">
-                    <span className="text-slate-400">Gospodarz:</span>
+                {/* Team Pair Dropdowns */}
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400 font-bold">Gospodarz:</span>
                     <select
                       value={activePair.teamA}
                       onChange={(e) => handleChangeGamePair(activeGame.id, "A", e.target.value as TeamLetter)}
-                      className="bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs font-bold text-white"
+                      className="bg-[#121622] text-amber-300 border border-white/10 rounded-lg px-2 py-1 font-bold"
                     >
-                      {(["A", "B", "C", "D"] as const).map(l => (
+                      {(["A", "B", "C", "D"] as TeamLetter[]).map(l => (
                         <option key={l} value={l}>Drużyna {l}</option>
                       ))}
                     </select>
                   </div>
 
-                  <span className="text-slate-500 font-black">vs</span>
+                  <span className="text-slate-500 font-bold">vs</span>
 
-                  <div className="flex items-center gap-1 text-xs">
-                    <span className="text-slate-400">Gość:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400 font-bold">Gość:</span>
                     <select
                       value={activePair.teamB}
                       onChange={(e) => handleChangeGamePair(activeGame.id, "B", e.target.value as TeamLetter)}
-                      className="bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs font-bold text-white"
+                      className="bg-[#121622] text-amber-300 border border-white/10 rounded-lg px-2 py-1 font-bold"
                     >
-                      {(["A", "B", "C", "D"] as const).map(l => (
+                      {(["A", "B", "C", "D"] as TeamLetter[]).map(l => (
                         <option key={l} value={l}>Drużyna {l}</option>
                       ))}
                     </select>
@@ -522,12 +638,22 @@ export default function InteractiveQaPlayground() {
                                   : teamLetter === "C"
                                   ? "bg-emerald-600 text-white ring-2 ring-emerald-400"
                                   : "bg-purple-600 text-white ring-2 ring-purple-400"
-                                : "bg-white/[0.05] text-slate-400 hover:text-white border border-white/5"
+                                : "bg-white/[0.06] text-slate-400 hover:text-white hover:bg-white/[0.1]"
                             }`}
+                            title={`Przypisz do Drużyny ${teamLetter}`}
                           >
                             {teamLetter}
                           </button>
                         ))}
+                        {currentAssignment && (
+                          <button
+                            onClick={() => assignPlayerToTeam(p.id, null)}
+                            className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-all ml-1"
+                            title="Usuń z tego meczu"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -538,16 +664,16 @@ export default function InteractiveQaPlayground() {
         </div>
       )}
 
-      {/* SUBTAB 3: GRA KONTROLNA (TABLICA WYNIKÓW I LISTA SPOTKAŃ) */}
+      {/* SUBTAB 3: GRA KONTROLNA (TABLICA WYNIKÓW, REJESTRACJA BRAMEK & ASYST LIVE) */}
       {subTab === "game" && (
         <div className="p-5 sm:p-6 rounded-3xl bg-white/[0.02] border border-white/10 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
             <div>
               <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">
-                TABLICA WYNIKÓW GIER KONTROLNYCH
+                TABLICA WYNIKÓW GIER KONTROLNYCH • LIVE STATS
               </span>
               <h3 className="text-base sm:text-lg font-black text-white m-0">
-                Wybierz mecz i wprowadzaj bramki niezależnie
+                Gole, asysty i automatyczne przeliczanie wyniku meczu
               </h3>
             </div>
             <button
@@ -564,7 +690,10 @@ export default function InteractiveQaPlayground() {
             {games.map((g, idx) => (
               <button
                 key={g.id}
-                onClick={() => setSelectedGameId(g.id)}
+                onClick={() => {
+                  setSelectedGameId(g.id);
+                  handleCancelEditEvent();
+                }}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-2 ${
                   activeGame?.id === g.id
                     ? "bg-amber-500 text-black font-black shadow-md shadow-amber-950/40"
@@ -581,7 +710,7 @@ export default function InteractiveQaPlayground() {
 
           {/* ACTIVE GAME SCOREBOARD */}
           {activeGame && (
-            <div className="p-6 rounded-3xl bg-black/40 border border-white/10 space-y-4">
+            <div className="p-6 rounded-3xl bg-black/40 border border-white/10 space-y-6">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="text-xs font-bold text-slate-400 uppercase">
                   Wynik na żywo: <b className="text-white">{activeGame.team_a_name} vs {activeGame.team_b_name}</b>
@@ -597,6 +726,7 @@ export default function InteractiveQaPlayground() {
                 )}
               </div>
 
+              {/* SCOREBOARD COUNTER */}
               <div className="flex items-center justify-around text-center py-2">
                 <div className="space-y-2">
                   <span className="text-xs font-black text-red-400 uppercase tracking-wider block">
@@ -646,6 +776,189 @@ export default function InteractiveQaPlayground() {
                   </div>
                 </div>
               </div>
+
+              {/* GOAL / EVENT REGISTRATION FORM (MOBILE OPTIMIZED) */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target size={16} className="text-amber-400" />
+                    <span className="text-xs font-black text-white uppercase tracking-wider">
+                      {editingEventId ? "Edycja Zdarzenia Bramkowego" : "Rejestracja Bramki & Asysty"}
+                    </span>
+                  </div>
+                  {editingEventId && (
+                    <button
+                      onClick={handleCancelEditEvent}
+                      className="text-xs text-slate-400 hover:text-white"
+                    >
+                      Anuluj edycję
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  {/* Wybór drużyny (komu dopisać bramkę) */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400">Dla drużyny:</label>
+                    <select
+                      value={goalSide}
+                      onChange={(e) => {
+                        setGoalSide(e.target.value as "A" | "B");
+                        setSelectedScorerId("");
+                        setSelectedAssistId("");
+                      }}
+                      className="w-full bg-[#121622] text-white border border-white/10 rounded-xl px-3 py-2 font-bold"
+                    >
+                      <option value="A">{activeGame.team_a_name}</option>
+                      <option value="B">{activeGame.team_b_name}</option>
+                    </select>
+                  </div>
+
+                  {/* Typ bramki: normalny / samobójcza */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400">Rodzaj bramki:</label>
+                    <select
+                      value={goalType}
+                      onChange={(e) => {
+                        setGoalType(e.target.value as TrainingEventType);
+                        setSelectedScorerId("");
+                        setSelectedAssistId("");
+                      }}
+                      className="w-full bg-[#121622] text-white border border-white/10 rounded-xl px-3 py-2 font-bold"
+                    >
+                      <option value="goal">Standardowy Gol</option>
+                      <option value="own_goal">Gol Samobójczy (OG)</option>
+                    </select>
+                  </div>
+
+                  {/* Strzelec */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400">
+                      {goalType === "own_goal" ? "Strzelec samobója:" : "Strzelec gola:"}
+                    </label>
+                    <select
+                      value={selectedScorerId}
+                      onChange={(e) => {
+                        setSelectedScorerId(e.target.value);
+                        if (selectedAssistId === e.target.value) {
+                          setSelectedAssistId("");
+                        }
+                      }}
+                      className="w-full bg-[#121622] text-white border border-white/10 rounded-xl px-3 py-2 font-bold"
+                    >
+                      <option value="">(Bez znanego strzelca)</option>
+                      {eligibleScorers.map(p => (
+                        <option key={p.id} value={p.id}>
+                          #{p.shirt_number} {p.display_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Asysta */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400">Asystent:</label>
+                    <select
+                      value={selectedAssistId}
+                      disabled={goalType === "own_goal"}
+                      onChange={(e) => setSelectedAssistId(e.target.value)}
+                      className={`w-full bg-[#121622] text-white border border-white/10 rounded-xl px-3 py-2 font-bold ${
+                        goalType === "own_goal" ? "opacity-40 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <option value="">(Bez asysty)</option>
+                      {eligibleAssisters.map(p => (
+                        <option key={p.id} value={p.id}>
+                          #{p.shirt_number} {p.display_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    onClick={handleSaveGoalEvent}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-950/40"
+                  >
+                    <Plus size={14} />
+                    <span>{editingEventId ? "Zapisz Zmianę Bramki" : "Zatwierdź Bramkę (+ Wynik)"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* TIMELINE / LIST OF GOALS FOR ACTIVE GAME */}
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  Historia bramek tego meczu ({activeGameEvents.length}):
+                </span>
+
+                {activeGameEvents.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic p-3 rounded-xl bg-white/[0.02]">
+                    Brak zarejestrowanych bramek w tym spotkaniu. Wynik można ustawić manualnie lub dodać bramkę powyżej.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {activeGameEvents.map((ev, idx) => {
+                      const scorer = SYNTHETIC_QA_PLAYERS.find(p => p.id === ev.player_id);
+                      const assist = SYNTHETIC_QA_PLAYERS.find(p => p.id === ev.assist_player_id);
+                      const teamName = ev.team_side === "A" ? activeGame.team_a_name : activeGame.team_b_name;
+
+                      return (
+                        <div
+                          key={ev.id}
+                          className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-black text-[10px] flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-white block truncate">
+                                {ev.event_type === "own_goal" ? "⚠️ Gol Samobójczy" : "⚽ Bramka"} dla:{" "}
+                                <b className={ev.team_side === "A" ? "text-red-400" : "text-amber-400"}>
+                                  {teamName}
+                                </b>
+                              </span>
+                              <span className="text-[11px] text-slate-400 block truncate">
+                                Strzelec:{" "}
+                                <strong className="text-slate-200">
+                                  {scorer ? scorer.display_name : "(Nieznany)"}
+                                </strong>
+                                {ev.event_type === "goal" && (
+                                  <>
+                                    {" "}• Asysta:{" "}
+                                    <strong className="text-slate-300">
+                                      {assist ? assist.display_name : "Brak"}
+                                    </strong>
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={() => handleStartEditEvent(ev)}
+                              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-300"
+                              title="Edytuj strzelca / asystenta"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(ev.id)}
+                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400"
+                              title="Usuń bramkę"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -653,32 +966,37 @@ export default function InteractiveQaPlayground() {
 
       {/* SUBTAB 4: PODSUMOWANIE & STATYSTYKI WSZYSTKICH SPOTKAŃ */}
       {subTab === "summary" && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-white/[0.02] border border-white/10 space-y-5">
+        <div className="p-5 sm:p-6 rounded-3xl bg-white/[0.02] border border-white/10 space-y-6">
           <div className="border-b border-white/5 pb-3">
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block">
-              ZBIORCZE PODSUMOWANIE TRENINGU & WSZYSTKICH GIER KONTROLNYCH
+              ZBIORCZE PODSUMOWANIE TRENINGU & LIVE STATYSTYKI
             </span>
             <h3 className="text-base sm:text-lg font-black text-white m-0">
-              Wyniki wszystkich meczów oraz podsumowanie sportowego XP
+              Wyniki meczów, statystyki strzelców, asystentów oraz bilans G+A
             </h3>
           </div>
 
-          {/* GLOBAL ATTENDANCE & XP TILES */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          {/* GLOBAL TILES (XP & AGGREGATE GOALS) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-              <span className="text-slate-400 block">Potwierdzeni Obecni:</span>
-              <strong className="text-lg text-emerald-400 font-black">{presentCount} zawodników</strong>
-              <small className="text-slate-500 block">Uprawnieni do +40 XP</small>
+              <span className="text-slate-400 block">Obecni zawodnicy:</span>
+              <strong className="text-lg text-emerald-400 font-black">{presentCount}</strong>
+              <small className="text-slate-500 block">+{presentCount * 40} XP łącznego</small>
             </div>
             <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-              <span className="text-slate-400 block">Suma Przyznanego XP:</span>
-              <strong className="text-lg text-amber-400 font-black">+{presentCount * 40} XP</strong>
-              <small className="text-slate-500 block">Ścisłe 40 XP / zawodnik</small>
+              <span className="text-slate-400 block">Rozegrane mecze:</span>
+              <strong className="text-lg text-white font-black">{liveStatsSummary.totalMatches}</strong>
+              <small className="text-slate-500 block">Wszystkie w pamięci</small>
             </div>
             <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-              <span className="text-slate-400 block">Rozegrane Mecze:</span>
-              <strong className="text-lg text-white font-black">{games.length} spotkań</strong>
-              <small className="text-slate-500 block">Wszystkie mecze w pamięci lokalnej</small>
+              <span className="text-slate-400 block">Zdobyte bramki:</span>
+              <strong className="text-lg text-amber-400 font-black">{liveStatsSummary.totalGoals}</strong>
+              <small className="text-slate-500 block">Samobójcze: {liveStatsSummary.totalOwnGoals}</small>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
+              <span className="text-slate-400 block">Liczba asyst:</span>
+              <strong className="text-lg text-sky-400 font-black">{liveStatsSummary.totalAssists}</strong>
+              <small className="text-slate-500 block">G+A: {liveStatsSummary.totalGoals + liveStatsSummary.totalAssists}</small>
             </div>
           </div>
 
@@ -693,6 +1011,7 @@ export default function InteractiveQaPlayground() {
                 const pair = getGameTeamLetters(g);
                 const countA = gamePlayers.filter(x => x.game_id === g.id && x.team === pair.teamA).length;
                 const countB = gamePlayers.filter(x => x.game_id === g.id && x.team === pair.teamB).length;
+                const matchEvCount = events.filter(e => e.game_id === g.id).length;
 
                 return (
                   <div
@@ -708,7 +1027,7 @@ export default function InteractiveQaPlayground() {
                           {g.team_a_name} vs {g.team_b_name}
                         </b>
                         <span className="text-[11px] text-slate-400">
-                          Składy: {countA} ({pair.teamA}) vs {countB} ({pair.teamB}) zawodników
+                          Składy: {countA} ({pair.teamA}) vs {countB} ({pair.teamB}) • {matchEvCount} zdarzeń bramkowych
                         </span>
                       </div>
                     </div>
@@ -733,6 +1052,46 @@ export default function InteractiveQaPlayground() {
               })}
             </div>
           </div>
+
+          {/* INDIVIDUAL PLAYER STATS TABLE (GOALS, ASSISTS, G+A) */}
+          <div className="space-y-3">
+            <span className="text-xs font-bold text-white uppercase tracking-wider block">
+              Indywidualne Statystyki Treningu (Gole, Asysty, G+A):
+            </span>
+
+            <div className="overflow-x-auto rounded-2xl border border-white/5 bg-white/[0.02]">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-white/10 text-slate-400 text-[10px] uppercase">
+                    <th className="p-3">Zawodnik</th>
+                    <th className="p-3 text-center">Mecze</th>
+                    <th className="p-3 text-center">⚽ Gole</th>
+                    <th className="p-3 text-center">👟 Asysty</th>
+                    <th className="p-3 text-center font-bold text-amber-300">G+A</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {Object.values(liveStatsSummary.playerStats)
+                    .sort((a, b) => b.ga - a.ga || b.goals - a.goals || b.games - a.games)
+                    .map(stat => (
+                      <tr key={stat.player_id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3 flex items-center gap-2">
+                          <span className="w-6 h-6 rounded bg-white/10 text-[10px] font-bold flex items-center justify-center text-amber-300">
+                            #{stat.shirt_number}
+                          </span>
+                          <span className="font-bold text-white">{stat.display_name}</span>
+                          <span className="text-[10px] text-slate-500">({stat.position})</span>
+                        </td>
+                        <td className="p-3 text-center text-slate-300">{stat.games}</td>
+                        <td className="p-3 text-center font-bold text-emerald-400">{stat.goals}</td>
+                        <td className="p-3 text-center font-bold text-sky-400">{stat.assists}</td>
+                        <td className="p-3 text-center font-black text-amber-300 text-sm">{stat.ga}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -745,7 +1104,7 @@ export default function InteractiveQaPlayground() {
               <span>Potwierdzenie Usunięcia</span>
             </div>
             <p className="text-xs text-slate-300 m-0">
-              Czy na pewno chcesz usunąć ten mecz kontrolny? Przypisania zawodników do tego meczu zostaną wyczyszczone.
+              Czy na pewno chcesz usunąć ten mecz kontrolny? Przypisania zawodników oraz bramki z tego meczu zostaną wyczyszczone.
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button

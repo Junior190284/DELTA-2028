@@ -1,7 +1,9 @@
 import type { Player, TrainingSession, TrainingAttendance, TrainingGame } from "@/components/training/DeltaTrainingCenter20";
+import type { TrainingLiveEvent } from "@/lib/training/trainingLiveStats";
 
 export type SyntheticGame = TrainingGame;
 export type TeamLetter = "A" | "B" | "C" | "D";
+export type SyntheticTrainingEvent = TrainingLiveEvent;
 
 export interface SyntheticGamePlayer {
   game_id: string;
@@ -120,4 +122,124 @@ export const INITIAL_SYNTHETIC_GAME_PLAYERS: SyntheticGamePlayer[] = [
   { game_id: "qa-game-sim-03", player_id: "qa-p-09", team: "C" },
   { game_id: "qa-game-sim-03", player_id: "qa-p-10", team: "C" },
   { game_id: "qa-game-sim-03", player_id: "qa-p-11", team: "C" },
+];
+
+export const INITIAL_SYNTHETIC_EVENTS: TrainingLiveEvent[] = [
+  // Mecz 1: A vs B (3:2)
+  // Gole dla Drużyny A (3):
+  {
+    id: "qa-ev-sim-01",
+    game_id: "qa-game-sim-01",
+    event_type: "goal",
+    player_id: "qa-p-01", // Zawodnik 01
+    assist_player_id: "qa-p-02", // Asysta Zawodnik 02
+    team_side: "A",
+    created_at: new Date(Date.now() - 28 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-02",
+    game_id: "qa-game-sim-01",
+    event_type: "goal",
+    player_id: "qa-p-03", // Zawodnik 03
+    assist_player_id: null, // Bez asysty
+    team_side: "A",
+    created_at: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-03",
+    game_id: "qa-game-sim-01",
+    event_type: "goal",
+    player_id: "qa-p-01", // Zawodnik 01 (drugi gol)
+    assist_player_id: "qa-p-04", // Asysta Zawodnik 04
+    team_side: "A",
+    created_at: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
+  },
+  // Gole dla Drużyny B (2):
+  {
+    id: "qa-ev-sim-04",
+    game_id: "qa-game-sim-01",
+    event_type: "goal",
+    player_id: "qa-p-05", // Zawodnik 05
+    assist_player_id: "qa-p-06", // Asysta Zawodnik 06
+    team_side: "B",
+    created_at: new Date(Date.now() - 24 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-05",
+    game_id: "qa-game-sim-01",
+    event_type: "goal",
+    player_id: "qa-p-07", // Zawodnik 07
+    assist_player_id: null, // Bez asysty
+    team_side: "B",
+    created_at: new Date(Date.now() - 21 * 60 * 1000).toISOString(),
+  },
+
+  // Mecz 2: C vs D (1:4)
+  // Gol dla Drużyny C (1):
+  {
+    id: "qa-ev-sim-06",
+    game_id: "qa-game-sim-02",
+    event_type: "goal",
+    player_id: "qa-p-09", // Zawodnik 09
+    assist_player_id: "qa-p-10",
+    team_side: "A", // Dla Mecz 2 strona A to Drużyna C
+    created_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+  },
+  // Gole dla Drużyny D (4):
+  {
+    id: "qa-ev-sim-07",
+    game_id: "qa-game-sim-02",
+    event_type: "goal",
+    player_id: "qa-p-12",
+    assist_player_id: "qa-p-13",
+    team_side: "B", // Dla Mecz 2 strona B to Drużyna D
+    created_at: new Date(Date.now() - 17 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-08",
+    game_id: "qa-game-sim-02",
+    event_type: "goal",
+    player_id: "qa-p-12", // Drugi gol Zawodnika 12
+    assist_player_id: null,
+    team_side: "B",
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-09",
+    game_id: "qa-game-sim-02",
+    event_type: "goal",
+    player_id: "qa-p-14",
+    assist_player_id: "qa-p-12",
+    team_side: "B",
+    created_at: new Date(Date.now() - 13 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-10",
+    game_id: "qa-game-sim-02",
+    event_type: "goal",
+    player_id: null, // Gol bez znanego strzelca (wymaganie nr 4)
+    assist_player_id: null,
+    team_side: "B",
+    created_at: new Date(Date.now() - 11 * 60 * 1000).toISOString(),
+  },
+
+  // Mecz 3: A vs C (2:0)
+  {
+    id: "qa-ev-sim-11",
+    game_id: "qa-game-sim-03",
+    event_type: "goal",
+    player_id: "qa-p-02",
+    assist_player_id: "qa-p-01",
+    team_side: "A",
+    created_at: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "qa-ev-sim-12",
+    game_id: "qa-game-sim-03",
+    event_type: "goal",
+    player_id: "qa-p-03",
+    assist_player_id: null,
+    team_side: "A",
+    created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  },
 ];
