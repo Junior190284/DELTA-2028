@@ -11,23 +11,29 @@ import {
   Trophy, 
   Target, 
   Zap, 
-  ShieldCheck
+  ShieldCheck,
+  ArrowRight,
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 import { GameMission } from '@/lib/game/economy';
 import { cardSound } from '@/lib/cards/audio';
+import { resolveMissionAction, type MissionActionTarget } from '@/lib/missions/missionActionRegistry';
 
 interface DeltaDailyMissionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId?: string;
   onRewardClaimed?: (xp: number) => void;
+  onExecuteAction?: (target: MissionActionTarget) => void;
 }
 
 export const DeltaDailyMissionsModal: React.FC<DeltaDailyMissionsModalProps> = ({
   isOpen,
   onClose,
   userId = 'guest_user',
-  onRewardClaimed
+  onRewardClaimed,
+  onExecuteAction
 }) => {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'DAILY' | 'WEEKLY'>('DAILY');
@@ -429,9 +435,34 @@ export const DeltaDailyMissionsModal: React.FC<DeltaDailyMissionsModalProps> = (
                           )}
                         </button>
                       ) : (
-                        <div className="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/5 px-2.5 py-1 rounded-lg">
-                          <Clock size={12} className="text-slate-400 shrink-0" />
-                          <span>W trakcie realizacji ({mission.currentCount}/{mission.targetCount})</span>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                          <div className="inline-flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/5 px-2.5 py-1.5 rounded-lg">
+                            <Clock size={12} className="text-slate-400 shrink-0" />
+                            <span>W trakcie realizacji ({mission.currentCount}/{mission.targetCount})</span>
+                          </div>
+
+                          {onExecuteAction && (() => {
+                            const actionTarget = resolveMissionAction(mission.id);
+                            const hasStarted = mission.currentCount > 0;
+                            const label = hasStarted
+                              ? (actionTarget.ctaContinuingLabel || "KONTYNUUJ")
+                              : (actionTarget.ctaLabel || "ROZPOCZNIJ");
+
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onClose();
+                                  onExecuteAction(actionTarget);
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-300 hover:text-amber-200 text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                                title={actionTarget.hint}
+                              >
+                                <span>{label}</span>
+                                <ChevronRight size={14} className="shrink-0" />
+                              </button>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>

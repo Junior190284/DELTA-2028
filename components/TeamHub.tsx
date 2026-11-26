@@ -32,6 +32,8 @@ import DeltaMatchHub20 from "./matches/DeltaMatchHub20";
 import DeltaTrainingCenter20 from "./training/DeltaTrainingCenter20";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
 import DeltaSkillMiniGamesModal from "./DeltaSkillMiniGamesModal";
+import DailyInfernoSpin from "./DailyInfernoSpin";
+import type { MissionActionTarget } from "@/lib/missions/missionActionRegistry";
 import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
 import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
 import DeltaSeasonPassModal from "./DeltaSeasonPassModal";
@@ -219,6 +221,7 @@ export default function TeamHub(props:{
   const [matchBriefModalOpen, setMatchBriefModalOpen] = useState(false);
   const [tacticsModalOpen, setTacticsModalOpen] = useState(false);
   const [skillGamesModalOpen, setSkillGamesModalOpen] = useState(false);
+  const [dailySpinModalOpen, setDailySpinModalOpen] = useState(false);
   const [questsModalOpen, setQuestsModalOpen] = useState(false);
   const [trainingKingModalOpen, setTrainingKingModalOpen] = useState(false);
   const [seasonPassModalOpen, setSeasonPassModalOpen] = useState(false);
@@ -1250,6 +1253,8 @@ export default function TeamHub(props:{
     setKnowledgeModalOpen(false);
     setMatchBriefModalOpen(false);
     setTacticsModalOpen(false);
+    setSkillGamesModalOpen(false);
+    setDailySpinModalOpen(false);
     setQuestsModalOpen(false);
     setTrainingKingModalOpen(false);
     setMobileMoreOpen(false);
@@ -1321,6 +1326,15 @@ export default function TeamHub(props:{
         break;
       case "knowledge":
         setKnowledgeModalOpen(true);
+        break;
+      case "game":
+        setSkillGamesModalOpen(true);
+        break;
+      case "dailyspin":
+        setDailySpinModalOpen(true);
+        break;
+      case "tactics":
+        setTacticsModalOpen(true);
         break;
       default:
         break;
@@ -3487,6 +3501,18 @@ export default function TeamHub(props:{
     {skillGamesModalOpen && (
       <DeltaSkillMiniGamesModal
         onClose={() => setSkillGamesModalOpen(false)}
+        onPointsEarned={() => fetchGameProfile()}
+      />
+    )}
+
+    {dailySpinModalOpen && (
+      <DailyInfernoSpin
+        onClose={() => setDailySpinModalOpen(false)}
+        onRewardClaimed={() => fetchGameProfile()}
+        onOpenPack={() => {
+          setDailySpinModalOpen(false);
+          handleSelectTab("collection");
+        }}
       />
     )}
 
@@ -3584,6 +3610,17 @@ export default function TeamHub(props:{
         onClose={() => setMissionsModalOpen(false)}
         userId={props.profile.id}
         onRewardClaimed={() => fetchGameProfile()}
+        onExecuteAction={(target: MissionActionTarget) => {
+          if (target.type === "NAVIGATE_TAB" && target.targetTab) {
+            handleSelectTab(target.targetTab as any);
+          } else if (target.type === "OPEN_MODAL" && target.modalAction) {
+            handleOpenModalAction(target.modalAction);
+          } else if (target.type === "LAUNCH_MINIGAME") {
+            setSkillGamesModalOpen(true);
+          } else if (target.type === "DAILY_SPIN") {
+            setDailySpinModalOpen(true);
+          }
+        }}
       />
     )}
 

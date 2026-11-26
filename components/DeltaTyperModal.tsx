@@ -76,14 +76,22 @@ interface DeltaTyperModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPointsUpdated?: (newPoints: number) => void;
+  initialTab?: "predict" | "history" | "leaderboard" | "rules" | "fantasy";
 }
 
 export default function DeltaTyperModal({
   isOpen,
   onClose,
-  onPointsUpdated
+  onPointsUpdated,
+  initialTab = "predict"
 }: DeltaTyperModalProps) {
-  const [activeTab, setActiveTab] = useState<"predict" | "history" | "leaderboard" | "rules">("predict");
+  const [activeTab, setActiveTab] = useState<"predict" | "history" | "leaderboard" | "rules" | "fantasy">("predict");
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
@@ -326,6 +334,7 @@ export default function DeltaTyperModal({
             { id: "predict", label: "Typuj Mecze", icon: <Target size={14} />, badge: scheduledMatches.length },
             { id: "history", label: "Historia Twoich Typów", icon: <CalendarDays size={14} />, badge: myPredictions.length },
             { id: "leaderboard", label: "Tabela Liderów", icon: <Trophy size={14} /> },
+            { id: "fantasy", label: "Fantasy League", icon: <Crown size={14} /> },
             { id: "rules", label: "Zasady Punktacji", icon: <HelpCircle size={14} /> }
           ].map(tab => (
             <button
@@ -778,6 +787,71 @@ export default function DeltaTyperModal({
                   )}
                 </>
               )}
+            </div>
+          ) : activeTab === "fantasy" ? (
+            <div style={{ padding: 20, borderRadius: 16, background: "rgba(18,24,38,0.8)", border: "1px solid rgba(245,158,11,0.25)", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ padding: 8, borderRadius: 10, background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+                    <Crown size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: "#f1c95c", textTransform: "uppercase" }}>
+                      DELTA FANTASY LEAGUE
+                    </h3>
+                    <span style={{ fontSize: 11, color: "#94a3b8" }}>Oficjalna liga menedżerska rocznika 2018 GM</span>
+                  </div>
+                </div>
+                <span style={{ padding: "4px 10px", borderRadius: 999, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontSize: 11, fontWeight: 900 }}>
+                  SEZON WIOSNA 2027
+                </span>
+              </div>
+
+              {/* Informacja o stanie ligi */}
+              <div style={{ padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#38bdf8", fontSize: 13, fontWeight: 800 }}>
+                  <CalendarDays size={16} />
+                  <span>START ROZGRYWEK WRAZ Z RUNDĄ WIOSENNĄ</span>
+                </div>
+                <p style={{ margin: 0, fontSize: 12, color: "#cbd5e1", lineHeight: 1.5 }}>
+                  Wybór składu i kolejki Fantasy League zostaną uruchomione po opublikowaniu oficjalnego terminarza ligowego MZPN na rundę wiosenną. Wszyscy zawodnicy rocznika 2018 GM wezmą udział w punktacji bez sztywnych ograniczeń pozycji.
+                </p>
+              </div>
+
+              {/* Zasady Fantasy League */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, color: "#f59e0b", textTransform: "uppercase" }}>
+                  Zasady punktacji Fantasy DELTA:
+                </span>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+                  <div style={{ padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <strong style={{ color: "#34d399", display: "block" }}>⚽ Gol zawodnika</strong>
+                    <span style={{ color: "#94a3b8" }}>+5 pkt Fantasy / +25 DP</span>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <strong style={{ color: "#38bdf8", display: "block" }}>🎯 Asysta</strong>
+                    <span style={{ color: "#94a3b8" }}>+3 pkt Fantasy / +15 DP</span>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <strong style={{ color: "#f59e0b", display: "block" }}>⭐ Występ w meczu</strong>
+                    <span style={{ color: "#94a3b8" }}>+2 pkt Fantasy</span>
+                  </div>
+                  <div style={{ padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <strong style={{ color: "#c084fc", display: "block" }}>🔥 MVP Spotkania</strong>
+                    <span style={{ color: "#94a3b8" }}>+5 pkt bonusowych</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status uczestnictwa */}
+              <div style={{ padding: 12, borderRadius: 10, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ color: "#34d399", fontSize: 12, fontWeight: 700 }}>
+                  Twój profil jest automatycznie zarejestrowany w rankingu Fantasy.
+                </span>
+                <span style={{ color: "#94a3b8", fontSize: 11 }}>
+                  Dostępne wkrótce
+                </span>
+              </div>
             </div>
           ) : (
             <div style={{ padding: 18, borderRadius: 16, background: "rgba(18,24,38,0.8)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 12 }}>
