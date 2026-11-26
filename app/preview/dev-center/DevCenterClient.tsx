@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import InteractiveQaPlayground from "@/components/qa/InteractiveQaPlayground";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -36,7 +37,7 @@ export interface DevCenterTelemetry {
 }
 
 export default function DevCenterClient({ telemetry }: { telemetry: DevCenterTelemetry }) {
-  const [activeTab, setActiveTab] = useState<"overview" | "simulation" | "roles">("overview");
+  const [activeTab, setActiveTab] = useState<"playground" | "overview" | "simulation" | "roles">("playground");
   const [simulatedRole, setSimulatedRole] = useState<"parent" | "coach" | "admin">(
     (telemetry.currentUser.role as any) || "parent"
   );
@@ -82,14 +83,25 @@ export default function DevCenterClient({ telemetry }: { telemetry: DevCenterTel
             <strong className="text-amber-300 block font-bold">STATUS IZOLACJI BAZY DANYCH:</strong>
             <p className="m-0 text-slate-300">
               Projekt Preview jest połączony z bazą <code className="text-amber-300 bg-black/40 px-1.5 py-0.5 rounded">{telemetry.maskedDbHost}</code>.
-              Zgodnie z regułą bezpieczeństwa DELTA-051T3, <strong>nie utworzono fikcyjnych kont sztabu w bazie zawierającej rzeczywiste dane</strong>.
-              Zamiast tego udostępniono w 100% bezpieczny <strong>Tryb Symulacji Interfejsu (Read-Only)</strong> oraz zestaw diagnostyczny.
+              Zgodnie z regułą bezpieczeństwa DELTA-051T3/T4, <strong>nie utworzono fikcyjnych kont sztabu w bazie zawierającej rzeczywiste dane</strong>.
+              Udostępniono w 100% bezpieczny <strong>Interaktywny QA Playground (In-Memory State)</strong> oraz zestaw diagnostyczny.
             </p>
           </div>
         </div>
 
         {/* TAB NAVIGATION */}
         <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("playground")}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              activeTab === "playground"
+                ? "bg-amber-500 text-black shadow-lg shadow-amber-950/40"
+                : "bg-white/[0.04] text-slate-300 hover:text-white"
+            }`}
+          >
+            <Flame size={14} className={activeTab === "playground" ? "text-black" : "text-amber-400"} />
+            <span>INTERAKTYWNY PLAYGROUND</span>
+          </button>
           <button
             onClick={() => setActiveTab("overview")}
             className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
@@ -108,7 +120,7 @@ export default function DevCenterClient({ telemetry }: { telemetry: DevCenterTel
                 : "bg-white/[0.04] text-slate-300 hover:text-white"
             }`}
           >
-            SYMULACJA WIDOKÓW (READ-ONLY)
+            SYMULACJA RÓL (READ-ONLY)
           </button>
           <button
             onClick={() => setActiveTab("roles")}
@@ -121,6 +133,11 @@ export default function DevCenterClient({ telemetry }: { telemetry: DevCenterTel
             PRZEWODNIK RÓL & SZTABU
           </button>
         </div>
+
+        {/* TAB 0: INTERACTIVE QA PLAYGROUND */}
+        {activeTab === "playground" && (
+          <InteractiveQaPlayground />
+        )}
 
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (

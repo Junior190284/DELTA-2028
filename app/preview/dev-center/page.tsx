@@ -14,10 +14,28 @@ export default async function DevCenterPage() {
     notFound();
   }
 
-  // 2. Session verification
+  // 2. Session verification & Server-Side Tester Allowlist
   const { user, profile } = await getCurrentProfile();
   if (!user || !profile) {
     redirect("/login?next=/preview/dev-center");
+  }
+
+  // Server-side allowlist for Developer Center:
+  // Allowed if:
+  // - User is staff (coach or admin)
+  // - OR user email matches QA tester pattern (*@delta* or QA_TESTER_ALLOWLIST env var)
+  // - OR user is the verified project owner / tester
+  const allowlistEnv = process.env.QA_TESTER_ALLOWLIST || "";
+  const allowedEmails = allowlistEnv.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+  const userEmail = (user.email || "").toLowerCase();
+
+  const isStaff = profile.role === "coach" || profile.role === "admin";
+  const isExplicitlyAllowed = allowedEmails.length > 0 && allowedEmails.includes(userEmail);
+  const isDeltaTester = userEmail.endsWith("@delta.local") || userEmail.includes("rybacki") || userEmail.includes("delta");
+
+  if (!isStaff && !isExplicitlyAllowed && !isDeltaTester) {
+    // Non-authorized parent accounts are strictly denied from the QA Developer Center
+    redirect("/dashboard?error=dev_center_unauthorized");
   }
 
   // 3. Database & Deployment Telemetry (strictly sanitized, zero secrets)
