@@ -39,6 +39,25 @@ export function isUuid(id: string | null | undefined): boolean {
 }
 
 /**
+ * Resolves the immutable, persistent identity of a training session.
+ * CRITICAL RULE (DELTA-051T7A - STABLE TRAINING IDENTITY):
+ * An existing training session's ID MUST NOT change when rescheduled (e.g. date, start_time or end_time changes).
+ * Rescheduling an existing session preserves its exact same primary key UUID so that:
+ * 1. training_attendance rows remain valid without cascading deletes or foreign key breaks
+ * 2. training_games and training_game_players remain attached
+ * 3. training_events (goals and assists) remain intact
+ * 4. Earned XP (+40 XP per attendance) remains 100% stable and idempotent
+ */
+export function getStableTrainingSessionId(
+  session: { id?: string | null; training_date?: string | null }
+): string {
+  if (isUuid(session.id)) {
+    return session.id!;
+  }
+  return deriveDeterministicTrainingUuid(session.training_date || "default-session");
+}
+
+/**
  * Unifies training sessions from:
  * 1. public.training_sessions (authoritative DB sessions)
  * 2. public.team_events (where event_type === "training" or title contains "trening")
@@ -64,7 +83,7 @@ export function unifyTrainingSessions(
     const dateKey = s.training_date.trim();
     sessionMap.set(dateKey, {
       ...s,
-      id: isUuid(s.id) ? s.id : deriveDeterministicTrainingUuid(dateKey),
+      id: getStableTrainingSessionId(s),
       title: s.title || "Trening",
       start_time: s.start_time || "17:00",
       end_time: s.end_time || "18:30",

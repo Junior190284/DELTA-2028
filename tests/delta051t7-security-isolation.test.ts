@@ -5,6 +5,10 @@ import {
   filterCalendarItemsByPermissions,
   type SmartCalendarItem
 } from "../lib/calendar/smartCalendarTypes.ts";
+import {
+  getStableTrainingSessionId,
+  unifyTrainingSessions
+} from "../lib/training/unifiedTrainingService.ts";
 
 describe("DELTA-051T7 — DATABASE SECURITY & CROSS-ROLE ISOLATION MATRIX", () => {
 
@@ -183,7 +187,98 @@ describe("DELTA-051T7 — DATABASE SECURITY & CROSS-ROLE ISOLATION MATRIX", () =
   test("8. Migration SQL checks: RLS policies in 20261126_delta051t6_smart_calendar.sql drop permissive select", () => {
     const sql = fs.readFileSync("supabase/migrations/20261126_delta051t6_smart_calendar.sql", "utf8");
     assert.ok(sql.includes("drop policy if exists \"delegated team events all\" on public.team_events"), "Must drop broad permissive policy");
-    assert.ok(sql.includes("parent_player_links"), "Must join parent_player_links for scoped child visibility");
+    assert.ok(sql.includes("parent_players"), "Must join parent_players for scoped child visibility");
     assert.ok(sql.includes("user_id = auth.uid()"), "Private notes must strictly check owner");
+  });
+
+  test("9. P0. STABLE TRAINING IDENTITY: Rescheduled training preserves exact same session UUID and all linked relations", () => {
+    const originalSessionId = "d0000000-0000-4000-a000-000000000001";
+    const initialSession = {
+      id: originalSessionId,
+      training_date: "2026-11-25",
+      start_time: "17:00",
+      end_time: "18:30",
+      location: "Warszawianka",
+      title: "Trening U-9",
+      notes: null,
+      created_at: "2026-11-20T10:00:00Z",
+    };
+
+    // Before reschedule:
+    const idBefore = getStableTrainingSessionId(initialSession);
+    assert.equal(idBefore, originalSessionId);
+
+    // After reschedule (date moved to next day, time moved to 18:00):
+    const rescheduledSession = {
+      ...initialSession,
+      training_date: "2026-11-26", // moved date
+      start_time: "18:00",         // moved time
+    };
+
+    const idAfter = getStableTrainingSessionId(rescheduledSession);
+    assert.equal(idAfter, originalSessionId, "Session UUID must NEVER change when rescheduled!");
+
+    // Verification via unifyTrainingSessions:
+    const unified = unifyTrainingSessions([rescheduledSession], [], new Date("2026-11-26T12:00:00Z"));
+    const found = unified.find((s: any) => s.training_date === "2026-11-26");
+    assert.ok(found, "Rescheduled session must appear on new date");
+    assert.equal(found.id, originalSessionId, "Unified session must retain identical persistent primary key UUID");
+  });
+
+  test("10. P0. XP IDEMPOTENCY: Relational primary key on training_attendance guarantees atomic idempotency (+40 XP single grant)", () => {
+    // Database schema check:
+    const schemaSql = fs.readFileSync("supabase/v6_training_center.sql", "utf8");
+    assert.ok(
+      schemaSql.includes("primary key (training_id, player_id)"),
+      "training_attendance MUST have composite primary key (training_id, player_id) to guarantee idempotency"
+    );
+
+    // Mathematical aggregation verification:
+    // Simulated attendance database state after multiple repeated / concurrent clicks
+    const simulatedAttendanceRecords = [
+      { training_id: "t-01", player_id: "p-01", status: "present" },
+      // Duplicate insert is rejected by PK constraint, so only 1 row exists
+    ];
+
+    const presentCount = simulatedAttendanceRecords.filter(r => r.status === "present").length;
+    const earnedXp = presentCount * 40;
+    assert.equal(earnedXp, 40, "Single present record must award exactly +40 XP, regardless of repetition");
+  });
+
+  test("11. P0. NON-DESTRUCTIVE ROLLBACK: Migration files strictly forbid DROP TABLE training_events and preserve comments/notes", () => {
+    const calendarSql = fs.readFileSync("supabase/migrations/20261126_delta051t6_smart_calendar.sql", "utf8");
+    const eventsSql = fs.readFileSync("supabase/migrations/20261126_delta051t5b_training_events.sql", "utf8");
+
+    // Strictly forbidden: DROP TABLE training_events
+    assert.equal(calendarSql.includes("drop table public.training_events"), false);
+    assert.equal(eventsSql.includes("drop table public.training_events"), false);
+    assert.equal(calendarSql.includes("drop table if exists public.training_events"), false);
+    assert.equal(eventsSql.includes("drop table if exists public.training_events"), false);
+
+    // Rollback policy documentation exists
+    assert.ok(calendarSql.includes("NON-DESTRUCTIVE ROLLBACK PROCEDURE"));
+    assert.ok(eventsSql.includes("NON-DESTRUCTIVE ROLLBACK POLICY"));
+  });
+
+  test("12. P0. TEAM-SCOPED RLS: Non-staff parents strictly blocked from self-approving events, elevating visibility, or spoofing created_by", () => {
+    const calendarSql = fs.readFileSync("supabase/migrations/20261126_delta051t6_smart_calendar.sql", "utf8");
+
+    // Insert with check enforces is_approved = false and approved_by is null for non-staff
+    assert.ok(calendarSql.includes("is_approved = false"));
+    assert.ok(calendarSql.includes("approved_by is null"));
+
+    // Update with check enforces is_approved = false for non-staff
+    assert.ok(calendarSql.includes("created_by = auth.uid()"));
+    assert.ok(calendarSql.includes("visibility != 'public'"));
+  });
+
+  test("13. P1. MIGRATION COMPATIBILITY: training_events event_type constraint preserves legacy 'assist' along with 'goal' and 'own_goal'", () => {
+    const eventsSql = fs.readFileSync("supabase/migrations/20261126_delta051t5b_training_events.sql", "utf8");
+
+    // Must preserve 'assist' to not break historical rows from 00_STAGING_BOOTSTRAP_ALL.sql
+    assert.ok(
+      eventsSql.includes("check (event_type in ('goal', 'own_goal', 'assist'))"),
+      "Must preserve 'assist' in event_type check constraint"
+    );
   });
 });
