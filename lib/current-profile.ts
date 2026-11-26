@@ -36,37 +36,27 @@ export async function getCurrentProfile(req?: Request) {
   if (userError || !user) {
     // Development / Localhost fallback if dev user cookie is set (strictly loopback only, never on Vercel)
     try {
+      const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
       const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
       const headerStore = await headers();
       const host = headerStore.get("x-forwarded-host") || headerStore.get("host") || "";
       const isLoopback = host.startsWith("localhost") || host.startsWith("127.0.0.1");
 
-      if (!isVercel && isLoopback) {
+      if (!isProduction && !isVercel && isLoopback) {
         const cookieStore = await cookies();
-        const devRole = cookieStore.get("delta_dev_user")?.value;
+        const rawRole = cookieStore.get("delta_dev_user")?.value;
+        const devRole = (rawRole === "admin" || rawRole === "coach" || rawRole === "parent") ? rawRole : null;
         if (devRole) {
-          const admin = createAdminClient();
-          const { data: profile } = await admin
-            .from("profiles")
-            .select("id,role,display_name")
-            .eq("role", devRole)
-            .limit(1)
-            .maybeSingle();
-
-          if (profile) {
-            return {
-              user: { id: profile.id, email: `${devRole}@delta.local` } as any,
-              profile,
-              error: null
-            };
-          } else {
-            // If no profile exists for this role, return a generic dev profile
-            return {
-              user: { id: "dev_admin_user", email: "admin@delta.local" } as any,
-              profile: { id: "dev_admin_user", role: devRole, display_name: devRole === "admin" ? "Trener / Administrator (Dev)" : "Rodzic (Dev)" },
-              error: null
-            };
-          }
+          // In dev fallback mode, NEVER impersonate real profiles or real user IDs from the database
+          return {
+            user: { id: `dev_user_${devRole}`, email: `${devRole}@delta.local` } as any,
+            profile: {
+              id: `dev_user_${devRole}`,
+              role: devRole,
+              display_name: devRole === "admin" ? "Administrator (Dev Mock)" : devRole === "coach" ? "Trener (Dev Mock)" : "Rodzic (Dev Mock)"
+            },
+            error: null
+          };
         }
       }
     } catch {}
