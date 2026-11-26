@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "../styles/delta-tokens.css";
 import "./globals.css";
+import "../styles/dashboard-football-theme.css";
 
 export const metadata: Metadata = {
   title: "DELTA 2018 GM",

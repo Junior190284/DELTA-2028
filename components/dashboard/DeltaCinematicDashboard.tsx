@@ -409,7 +409,7 @@ export default function DeltaCinematicDashboard({
         <DeltaCard
           variant="elevated"
           padding="sm"
-          className="delta-gaming-card border-white/10 bg-gradient-to-r from-[#0d1017] via-[#141822] to-[#0d1017] p-3 sm:p-4 shadow-lg"
+          className="delta-gaming-card delta-profile-card border-white/10 bg-gradient-to-r from-[#0d1017] via-[#141822] to-[#0d1017] p-3 sm:p-4 shadow-lg"
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
             {/* Identity & Role (with strict Parent vs Child separation) */}
@@ -578,7 +578,7 @@ export default function DeltaCinematicDashboard({
               <DeltaCard
                 variant="elevated"
                 padding="none"
-                className="delta-gaming-card border-amber-400/25 shadow-xl relative overflow-hidden"
+                className="delta-gaming-card delta-match-card border-amber-400/25 shadow-xl relative overflow-hidden"
               >
                 {/* Header Ribbon */}
                 <div className="flex items-center justify-between px-3.5 sm:px-4 py-2 bg-gradient-to-r from-red-950/40 via-[#141822] to-[#0c0f16] border-b border-white/10">
@@ -753,7 +753,7 @@ export default function DeltaCinematicDashboard({
               <DeltaCard
                 variant="elevated"
                 padding="none"
-                className="delta-gaming-card border-red-500/25 shadow-xl relative overflow-hidden"
+                className="delta-gaming-card delta-training-card border-red-500/25 shadow-xl relative overflow-hidden"
               >
                 {/* Header Ribbon */}
                 <div className="flex items-center justify-between px-3.5 sm:px-4 py-2 bg-gradient-to-r from-red-950/40 via-[#141822] to-[#0c0f16] border-b border-white/10">
@@ -822,7 +822,7 @@ export default function DeltaCinematicDashboard({
             <DeltaCard
               variant="elevated"
               padding="sm"
-              className="delta-gaming-card border-white/10 bg-gradient-to-r from-[#0d1017] via-[#121520] to-[#0d1017] flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4"
+              className="delta-gaming-card delta-empty-fixture-card border-white/10 bg-gradient-to-r from-[#0d1017] via-[#121520] to-[#0d1017] flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
@@ -917,7 +917,7 @@ export default function DeltaCinematicDashboard({
                   key={tile.id}
                   variant="interactive"
                   padding="sm"
-                  className="delta-gaming-card flex flex-col justify-between gap-2 min-h-[64px] sm:min-h-[72px] group focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer"
+                  className="delta-gaming-card delta-quick-tile flex flex-col justify-between gap-2 min-h-[64px] sm:min-h-[72px] group focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer"
                   onClick={tile.action}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -952,7 +952,7 @@ export default function DeltaCinematicDashboard({
           <DeltaCard
             variant="elevated"
             padding="md"
-            className="delta-gaming-card border-amber-400/25 bg-gradient-to-b from-[#14101e] via-[#0d0f17] to-[#07080b] relative overflow-hidden shadow-2xl"
+            className="delta-gaming-card delta-collection-card border-amber-400/25 bg-gradient-to-b from-[#14101e] via-[#0d0f17] to-[#07080b] relative overflow-hidden shadow-2xl"
           >
             {/* Top Atmospheric Glow */}
             <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-red-600/15 rounded-full blur-2xl pointer-events-none" />
@@ -1095,7 +1095,7 @@ export default function DeltaCinematicDashboard({
           {/* ==============================================================
               2. DAILY MISSIONS & BATTLE PASS (WITHOUT DUPLICATE XP BAR)
               ============================================================== */}
-          <DeltaCard variant="gold" padding="md" className="delta-gaming-card flex flex-col gap-3">
+          <DeltaCard variant="gold" padding="md" className="delta-gaming-card delta-missions-card flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                 <Zap size={14} />
@@ -1174,6 +1174,7 @@ export default function DeltaCinematicDashboard({
           ================================================================== */}
       <section className="space-y-3 pt-2">
         <DeltaSectionHeader
+          className="delta-dashboard-news-header"
           kicker="Z ŻYCIA KLUBU"
           title="Aktualności & Komunikaty"
           action={
@@ -1196,7 +1197,7 @@ export default function DeltaCinematicDashboard({
                 key={item.id}
                 variant="interactive"
                 padding="sm"
-                className="delta-gaming-card flex flex-col justify-between gap-3"
+                className="delta-gaming-card delta-news-card flex flex-col justify-between gap-3"
                 onClick={() => onSelectTab("news")}
               >
                 <div className="space-y-1.5">
@@ -1262,7 +1263,7 @@ export default function DeltaCinematicDashboard({
             },
             { label: "ASYSTY", val: teamSummary.assists, icon: Star, glow: "gold" as const, note: "Kluczowe podania" },
           ].map((item) => (
-            <DeltaCard key={item.label} variant={item.glow} padding="sm" className="delta-gaming-card text-center">
+            <DeltaCard key={item.label} variant={item.glow} padding="sm" className="delta-gaming-card delta-stat-card text-center">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
                 {item.label}
               </span>

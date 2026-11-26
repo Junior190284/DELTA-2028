@@ -1,0 +1,377 @@
+/* ========================================================================== 
+   DELTA 048 — FOOTBALL COMMAND CENTRE
+   Presentation-only skin for the authenticated team dashboard.
+   ========================================================================== */
+
+.v104-hub {
+  --football-gold: #f4cb62;
+  --football-gold-soft: rgba(244, 203, 98, 0.2);
+  --football-red: #e32138;
+  --football-green: #173623;
+  --football-ink: #05070a;
+  --football-panel: rgba(10, 13, 17, 0.91);
+  --football-line: rgba(244, 203, 98, 0.24);
+  --football-display: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Narrow", sans-serif;
+}
+
+/* Full-page stadium canvas. The generated artwork stays atmospheric and low contrast. */
+.v104-hub .delta-app-shell {
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(3, 5, 7, 0.58) 0%, rgba(3, 5, 7, 0.86) 46rem, #05070a 78rem),
+    url('/assets/dashboard-football-command-v1.webp') center top / max(100vw, 1440px) auto no-repeat,
+    #05070a !important;
+}
+
+.v104-hub .delta-app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(5, 7, 10, 0.44), transparent 26%, transparent 74%, rgba(5, 7, 10, 0.42)),
+    repeating-linear-gradient(90deg, transparent 0 118px, rgba(255, 255, 255, 0.012) 119px 120px);
+  opacity: 0.95;
+}
+
+.v104-hub .delta-sidebar,
+.v104-hub .delta-app-shell-main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Navigation becomes a dark dugout wall with restrained field graphics. */
+.v104-hub .delta-sidebar {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(227, 33, 56, 0.15), transparent 25%),
+    linear-gradient(180deg, rgba(5, 8, 11, 0.98), rgba(5, 8, 11, 0.94)),
+    url('/assets/dashboard-football-command-v1.webp') 18% top / auto 560px no-repeat !important;
+  border-right: 1px solid rgba(244, 203, 98, 0.22) !important;
+  box-shadow: 18px 0 50px rgba(0, 0, 0, 0.38), inset -1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.v104-hub .delta-sidebar::after {
+  content: "";
+  position: absolute;
+  inset: 64px 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, transparent 0 49.7%, rgba(244, 203, 98, 0.035) 50%, transparent 50.3%) 0 0 / 44px 44px,
+    linear-gradient(180deg, transparent, rgba(3, 5, 8, 0.72));
+}
+
+.v104-hub .delta-sidebar-nav-item {
+  border-radius: 10px !important;
+  color: #c6ced8 !important;
+  letter-spacing: 0.01em;
+}
+
+.v104-hub .delta-sidebar-nav-item:hover {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)) !important;
+  border-left-color: rgba(244, 203, 98, 0.4) !important;
+}
+
+.v104-hub .delta-sidebar-nav-item.active {
+  background:
+    linear-gradient(90deg, rgba(167, 19, 35, 0.55), rgba(111, 71, 15, 0.22) 62%, rgba(5, 7, 10, 0.12)) !important;
+  border-left-color: var(--football-gold) !important;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.06),
+    inset 9px 0 22px rgba(227, 33, 56, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.24) !important;
+}
+
+.v104-hub .delta-topbar {
+  background:
+    linear-gradient(90deg, rgba(5, 8, 11, 0.97), rgba(10, 13, 17, 0.92)),
+    url('/assets/dashboard-football-command-v1.webp') center 7% / cover no-repeat !important;
+  border-bottom-color: rgba(244, 203, 98, 0.18) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.26);
+}
+
+/* Remove the legacy nested sidebar offset and use the available pitch width. */
+.v104-hub .delta-app-shell .v8-main {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 28px clamp(16px, 2.4vw, 38px) 120px !important;
+}
+
+.v104-hub .delta-cinematic-dashboard {
+  position: relative;
+  max-width: 1460px !important;
+  margin-inline: auto;
+}
+
+.v104-hub .delta-cinematic-dashboard::before {
+  content: "MATCHDAY  /  TEAM COMMAND CENTRE";
+  display: block;
+  margin-bottom: 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--football-red);
+  color: rgba(244, 203, 98, 0.76);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+/* Shared football-card language: broadcast blade, pitch markings, tactile frame. */
+.v104-hub .delta-cinematic-dashboard .delta-gaming-card {
+  border: 1px solid rgba(244, 203, 98, 0.22) !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 108% 112%, transparent 0 72px, rgba(244, 203, 98, 0.07) 73px 74px, transparent 75px),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.035), transparent 24%),
+    linear-gradient(145deg, rgba(18, 22, 27, 0.96), rgba(6, 9, 12, 0.97)) !important;
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.42),
+    inset 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.018) !important;
+  backdrop-filter: blur(14px) saturate(1.08);
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
+}
+
+.v104-hub .delta-cinematic-dashboard .delta-gaming-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--football-red), var(--football-gold) 35%, transparent 76%);
+  box-shadow: 0 0 16px rgba(227, 33, 56, 0.28);
+}
+
+.v104-hub .delta-cinematic-dashboard .delta-gaming-card > * {
+  z-index: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .v104-hub .delta-cinematic-dashboard .delta-card-interactive:hover,
+  .v104-hub .delta-cinematic-dashboard .delta-quick-tile:hover {
+    transform: translateY(-3px) !important;
+    border-color: rgba(244, 203, 98, 0.5) !important;
+    box-shadow:
+      0 22px 48px rgba(0, 0, 0, 0.5),
+      0 0 24px rgba(244, 203, 98, 0.08),
+      inset 0 1px rgba(255, 255, 255, 0.09) !important;
+  }
+}
+
+.v104-hub .delta-stadium-header-box {
+  min-height: 78px;
+  border: 1px solid rgba(244, 203, 98, 0.32) !important;
+  background:
+    linear-gradient(90deg, rgba(4, 6, 9, 0.97), rgba(7, 9, 12, 0.72) 58%, rgba(83, 9, 17, 0.42)),
+    url('/assets/dashboard-football-command-v1.webp') center 14% / cover no-repeat !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.46), inset 0 0 50px rgba(227, 33, 56, 0.07) !important;
+}
+
+.v104-hub .delta-profile-card {
+  background:
+    linear-gradient(90deg, rgba(7, 10, 13, 0.97), rgba(24, 28, 34, 0.94) 46%, rgba(7, 10, 13, 0.97)),
+    repeating-linear-gradient(115deg, transparent 0 12px, rgba(255, 255, 255, 0.018) 13px 14px) !important;
+}
+
+.v104-hub .delta-match-card,
+.v104-hub .delta-training-card {
+  background:
+    linear-gradient(180deg, rgba(5, 8, 10, 0.73), rgba(4, 7, 9, 0.97)),
+    radial-gradient(circle at 50% 58%, transparent 0 54px, rgba(255, 255, 255, 0.1) 55px 56px, transparent 57px),
+    linear-gradient(90deg, transparent 49.8%, rgba(255, 255, 255, 0.07) 50%, transparent 50.2%),
+    linear-gradient(135deg, #173623, #0a1710) !important;
+}
+
+.v104-hub .delta-match-card::after,
+.v104-hub .delta-training-card::after {
+  content: "";
+  position: absolute;
+  inset: 48px 0 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.016) 0 74px, transparent 74px 148px);
+}
+
+.v104-hub .delta-quick-tile {
+  min-height: 92px !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(150deg, rgba(17, 22, 27, 0.97), rgba(7, 10, 13, 0.98)),
+    linear-gradient(90deg, transparent 49%, rgba(244, 203, 98, 0.08) 50%, transparent 51%) !important;
+}
+
+.v104-hub .delta-quick-tile::after {
+  content: "";
+  position: absolute;
+  right: -24px;
+  bottom: -34px;
+  width: 92px;
+  height: 92px;
+  border: 1px solid rgba(244, 203, 98, 0.08);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.v104-hub .delta-collection-card {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(227, 33, 56, 0.2), transparent 30%),
+    linear-gradient(145deg, rgba(32, 9, 15, 0.96), rgba(7, 10, 13, 0.98) 62%) !important;
+}
+
+.v104-hub .delta-missions-card {
+  background:
+    linear-gradient(145deg, rgba(48, 34, 10, 0.52), rgba(8, 11, 14, 0.97) 56%),
+    repeating-linear-gradient(90deg, rgba(244, 203, 98, 0.02) 0 1px, transparent 1px 28px) !important;
+}
+
+.v104-hub .delta-news-card {
+  min-height: 158px;
+  background:
+    linear-gradient(145deg, rgba(15, 19, 23, 0.98), rgba(7, 10, 13, 0.98)),
+    radial-gradient(circle at 100% 0, rgba(227, 33, 56, 0.14), transparent 40%) !important;
+}
+
+.v104-hub .delta-dashboard-news-header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+}
+
+.v104-hub .delta-dashboard-news-header > div:first-child {
+  align-items: flex-start !important;
+  align-self: flex-start !important;
+  margin: 0 auto 0 0 !important;
+}
+
+.v104-hub .delta-dashboard-news-header > div:last-child {
+  margin-left: auto !important;
+}
+
+.v104-hub .delta-stat-card {
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    linear-gradient(155deg, rgba(19, 24, 29, 0.98), rgba(7, 10, 13, 0.98)) !important;
+}
+
+.v104-hub .delta-dashboard-stats-grid-box .delta-stat-card:nth-child(2) {
+  background: linear-gradient(155deg, rgba(22, 70, 42, 0.72), rgba(7, 13, 10, 0.98)) !important;
+  border-color: rgba(81, 205, 123, 0.3) !important;
+}
+
+.v104-hub .delta-dashboard-stats-grid-box .delta-stat-card:nth-child(4) {
+  background: linear-gradient(155deg, rgba(92, 10, 23, 0.64), rgba(11, 7, 10, 0.98)) !important;
+  border-color: rgba(227, 33, 56, 0.3) !important;
+}
+
+.v104-hub .delta-dashboard-stats-grid-box .delta-stat-card:nth-child(5),
+.v104-hub .delta-dashboard-stats-grid-box .delta-stat-card:nth-child(6) {
+  background: linear-gradient(155deg, rgba(80, 56, 10, 0.5), rgba(9, 10, 9, 0.98)) !important;
+}
+
+.v104-hub .delta-stat-card strong,
+.v104-hub .delta-cinematic-dashboard h2,
+.v104-hub .league-head h2,
+.v104-hub .v8-panel-title {
+  font-family: var(--football-display) !important;
+  letter-spacing: 0.045em !important;
+}
+
+.v104-hub .delta-stat-card strong {
+  color: #fff2c2 !important;
+  font-size: clamp(1.75rem, 2.4vw, 2.25rem) !important;
+  line-height: 1 !important;
+  text-shadow: 0 0 20px rgba(244, 203, 98, 0.12);
+}
+
+.v104-hub .delta-stat-card > span,
+.v104-hub .delta-stat-card > small {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* Continue the same material language below the cinematic summary. */
+.v104-hub .league-card,
+.v104-hub .v8-panel,
+.v104-hub .devil-card {
+  border-color: rgba(244, 203, 98, 0.24) !important;
+  background:
+    radial-gradient(circle at 100% 0, rgba(227, 33, 56, 0.08), transparent 35%),
+    linear-gradient(145deg, rgba(15, 18, 22, 0.96), rgba(6, 9, 12, 0.98)) !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.4), inset 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.v104-hub .league-card::before,
+.v104-hub .v8-panel::before,
+.v104-hub .devil-card::before {
+  background: linear-gradient(90deg, var(--football-red), var(--football-gold) 36%, transparent 74%) !important;
+}
+
+.v104-hub .delta-section-header h2,
+.v104-hub .delta-cinematic-dashboard section > div > h2 {
+  text-transform: uppercase;
+}
+
+@media (max-width: 1023px) {
+  .v104-hub .delta-app-shell .v8-main {
+    padding: 22px 18px 112px !important;
+  }
+
+  .v104-hub .delta-quick-tile {
+    min-height: 86px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .v104-hub .delta-desktop-only {
+    display: none !important;
+  }
+
+  .v104-hub .delta-app-shell {
+    background:
+      linear-gradient(180deg, rgba(3, 5, 7, 0.7), rgba(3, 5, 7, 0.94) 32rem, #05070a 58rem),
+      url('/assets/dashboard-football-command-v1.webp') 50% top / auto 520px no-repeat,
+      #05070a !important;
+  }
+
+  .v104-hub .delta-app-shell .v8-main {
+    padding: 14px 10px calc(116px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .v104-hub .delta-cinematic-dashboard::before {
+    margin: 2px 2px 9px;
+    font-size: 0.58rem;
+    letter-spacing: 0.13em;
+  }
+
+  .v104-hub .delta-cinematic-dashboard .delta-gaming-card {
+    border-radius: 14px !important;
+    backdrop-filter: blur(10px) saturate(1.04);
+  }
+
+  .v104-hub .delta-news-card {
+    min-height: 132px;
+  }
+
+  .v104-hub .delta-dashboard-news-header > div:last-child {
+    margin-left: 0 !important;
+  }
+
+  .v104-hub .delta-dashboard-news-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v104-hub .delta-cinematic-dashboard .delta-gaming-card,
+  .v104-hub .delta-sidebar-nav-item {
+    transition: none !important;
+  }
+}
