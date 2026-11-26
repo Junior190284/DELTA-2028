@@ -276,7 +276,7 @@ export default function PackDemoCenterPage() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2.5">
               <Link
-                href="/collection"
+                href="/preview/dashboard-ui4?view=collection"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 hover:text-white transition-colors border border-white/10"
               >
                 <ArrowLeft size={14} />

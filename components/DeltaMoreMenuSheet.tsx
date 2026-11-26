@@ -21,6 +21,7 @@ import {
   CalendarDays,
   ExternalLink,
   BookOpen,
+  ClipboardList,
   Newspaper,
   Bell,
   Smartphone
@@ -159,6 +160,24 @@ export default function DeltaMoreMenuSheet({
               </div>
               <span className="delta-tile-status-chip gold">
                 DIETA & EDU
+              </span>
+            </button>
+
+            {/* 3B. TABLICA TAKTYCZNA */}
+            <button
+              type="button"
+              className="delta-more-tile"
+              onClick={() => handleTileClick("tactics")}
+            >
+              <div className="delta-tile-icon-box icon-tactics">
+                <ClipboardList size={22} />
+              </div>
+              <div className="delta-tile-text">
+                <strong className="delta-tile-title">TABLICA TAKTYCZNA</strong>
+                <small className="delta-tile-subtitle">Formacje & ustawienia meczowe</small>
+              </div>
+              <span className="delta-tile-status-chip">
+                TACTICS 3D
               </span>
             </button>
 

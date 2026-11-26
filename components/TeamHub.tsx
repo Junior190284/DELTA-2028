@@ -31,6 +31,7 @@ import DeltaMatchBriefModal from "./DeltaMatchBriefModal";
 import DeltaMatchHub20 from "./matches/DeltaMatchHub20";
 import DeltaTrainingCenter20 from "./training/DeltaTrainingCenter20";
 import DeltaTacticsBoardModal from "./DeltaTacticsBoardModal";
+import DeltaSkillMiniGamesModal from "./DeltaSkillMiniGamesModal";
 import DeltaWeeklyQuestsModal from "./DeltaWeeklyQuestsModal";
 import DeltaTrainingKingModal from "./DeltaTrainingKingModal";
 import DeltaSeasonPassModal from "./DeltaSeasonPassModal";
@@ -217,6 +218,7 @@ export default function TeamHub(props:{
   const [knowledgeModalOpen, setKnowledgeModalOpen] = useState(false);
   const [matchBriefModalOpen, setMatchBriefModalOpen] = useState(false);
   const [tacticsModalOpen, setTacticsModalOpen] = useState(false);
+  const [skillGamesModalOpen, setSkillGamesModalOpen] = useState(false);
   const [questsModalOpen, setQuestsModalOpen] = useState(false);
   const [trainingKingModalOpen, setTrainingKingModalOpen] = useState(false);
   const [seasonPassModalOpen, setSeasonPassModalOpen] = useState(false);
@@ -1808,8 +1810,10 @@ export default function TeamHub(props:{
             setTab("teamcenter");
           } else if (targetTab === "typer") {
             setTyperModalOpen(true);
+          } else if (targetTab === "tactics") {
+            setTacticsModalOpen(true);
           } else if (targetTab === "game") {
-            window.location.href = "/game";
+            setSkillGamesModalOpen(true);
           } else if (targetTab === "gallery") {
             setPhotoBoothModalOpen(true);
           } else if (targetTab === "tv") {
@@ -3304,8 +3308,10 @@ export default function TeamHub(props:{
           handleSelectTab("players");
         } else if (targetTab === "typer") {
           setTyperModalOpen(true);
+        } else if (targetTab === "tactics") {
+          setTacticsModalOpen(true);
         } else if (targetTab === "game") {
-          window.location.href = "/game";
+          setSkillGamesModalOpen(true);
         } else if (targetTab === "collection") {
           handleSelectTab("collection");
         } else if (targetTab === "achievements") {
@@ -3475,6 +3481,12 @@ export default function TeamHub(props:{
         isOpen={tacticsModalOpen}
         onClose={() => setTacticsModalOpen(false)}
         players={players}
+      />
+    )}
+
+    {skillGamesModalOpen && (
+      <DeltaSkillMiniGamesModal
+        onClose={() => setSkillGamesModalOpen(false)}
       />
     )}
 
