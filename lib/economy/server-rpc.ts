@@ -10,6 +10,8 @@ import {
   type SpinSegment,
   getQuizRewardForLesson,
   getMinigameLevelReward,
+  isAllowedMinigame,
+  getMinigameCanonicalKey,
   normalizePackTypeId,
   selectRandomSpinSegment
 } from "./security.ts";
@@ -835,11 +837,43 @@ export async function claimMinigameLevelRewardServerSide(params: {
     throw new EconomyRpcError("UNAUTHORIZED", "Wymagane logowanie", 401);
   }
 
-  const cleanGameId = typeof gameId === "string" ? gameId.trim() : "";
+  const rawGameId = typeof gameId === "string" ? gameId.trim() : "";
+  if (!isAllowedMinigame(rawGameId)) {
+    throw new EconomyRpcError("BAD_REQUEST", `Nieprawidłowy identyfikator minigry: "${rawGameId}". Dozwolone minigry: free_kicks, gk_reflex.`, 400);
+  }
+
+  const cleanGameId = getMinigameCanonicalKey(rawGameId);
   const safeLevel = Math.max(1, Math.min(10, Math.floor(Number(level) || 0)));
 
-  if (!cleanGameId || safeLevel < 1 || safeLevel > 10) {
-    throw new EconomyRpcError("BAD_REQUEST", "Nieprawidłowy identyfikator minigry lub poziom.", 400);
+  if (safeLevel < 1 || safeLevel > 10) {
+    throw new EconomyRpcError("BAD_REQUEST", "Nieprawidłowy poziom minigry (dozwolone poziomy 1-10).", 400);
+  }
+
+  // AUDIT & PROGRESS VERIFICATION: Weryfikacja rzeczywistego ukończenia poziomu w bazie danych
+  // Sprawdzamy czy użytkownik faktycznie osiągnął ten poziom w tabeli user_minigame_progress
+  const { data: progressRow, error: progErr } = await adminClient
+    .from("user_minigame_progress")
+    .select("max_level_reached")
+    .eq("user_id", userId)
+    .in("game_id", [cleanGameId, rawGameId])
+    .order("max_level_reached", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (progErr) {
+    console.error("[claimMinigameLevelRewardServerSide] Error reading progress:", progErr);
+  }
+
+  const maxLevelReached = progressRow?.max_level_reached || 1;
+  // Poziom safeLevel uznaje się za ukończony, gdy max_level_reached > safeLevel LUB gdy ukończono poziom 10 (max_level_reached >= 10)
+  const isLevelCompleted = maxLevelReached > safeLevel || (safeLevel === 10 && maxLevelReached >= 10);
+
+  if (!isLevelCompleted) {
+    throw new EconomyRpcError(
+      "FORBIDDEN",
+      `Poziom ${safeLevel} nie został jeszcze ukończony na serwerze (najwyższy osiągnięty poziom: ${maxLevelReached}). Ukończ poziom w grze przed odbiorem nagrody!`,
+      403
+    );
   }
 
   const dpAmount = getMinigameLevelReward(safeLevel);
@@ -849,7 +883,7 @@ export async function claimMinigameLevelRewardServerSide(params: {
 
   const rewardKey = `minigame:${cleanGameId}:lvl_${safeLevel}`;
   const rewardType = "MINIGAME";
-  const sourceReason = `Nagroda Minigry: ${cleanGameId === "free_kicks" ? "Rzuty Wolne" : cleanGameId} Poziom ${safeLevel}`;
+  const sourceReason = `Nagroda Minigry: ${cleanGameId === "free_kicks" ? "Rzuty Wolne" : "Refleks Bramkarza"} Poziom ${safeLevel}`;
 
   const rpcResult = await invokeEconomyRpc<{
     success: true;

@@ -49,6 +49,18 @@ export const DEFAULT_QUIZ_REWARD_DELTA_POINTS = 50;
  * Level 6: 75 DP, Level 7: 90 DP, Level 8: 110 DP, Level 9: 135 DP, Level 10: 200 DP.
  * Idempotent, awarded once per (user, game_id, level).
  */
+export const ALLOWED_MINIGAME_IDS = new Set<string>(["free_kicks", "gk_reflex", "accuracy"]);
+
+export function isAllowedMinigame(gameId: string): boolean {
+  return ALLOWED_MINIGAME_IDS.has(gameId);
+}
+
+export function getMinigameCanonicalKey(gameId: string): string {
+  // Map historical alias 'accuracy' to canonical 'free_kicks'
+  if (gameId === "accuracy") return "free_kicks";
+  return gameId;
+}
+
 export const MINIGAME_LEVEL_DP_REWARDS: Record<number, number> = {
   1: 20,
   2: 25,

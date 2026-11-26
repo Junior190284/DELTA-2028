@@ -204,6 +204,7 @@ export default function DeltaSkillMiniGamesModal({
   const [accuracyHighScore, setAccuracyHighScore] = useState<number>(0);
   const [gkHighScore, setGkHighScore] = useState<number>(0);
   const [gkBestStreakRecord, setGkBestStreakRecord] = useState<number>(0);
+  const [claimedRewardKeys, setClaimedRewardKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setMounted(true);
@@ -220,6 +221,9 @@ export default function DeltaSkillMiniGamesModal({
           if (data.accuracyHighScore) setAccuracyHighScore(data.accuracyHighScore);
           if (data.gkHighScore) setGkHighScore(data.gkHighScore);
           if (data.gkBestStreak) setGkBestStreakRecord(data.gkBestStreak);
+          if (Array.isArray(data.claimedRewardKeys)) {
+            setClaimedRewardKeys(new Set(data.claimedRewardKeys));
+          }
         }
       } catch (err) {
         console.warn("Minigame progress load note:", err);
@@ -329,7 +333,10 @@ export default function DeltaSkillMiniGamesModal({
         fetch("/api/minigames/progress", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accuracyHighScore: newAccuracyHigh })
+          body: JSON.stringify({
+            game_id: "free_kicks",
+            score: newAccuracyHigh
+          })
         }).catch(err => console.warn("Save minigame progress failed", err));
       }
     } else {
@@ -343,7 +350,11 @@ export default function DeltaSkillMiniGamesModal({
       fetch("/api/minigames/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gkHighScore: newGkHigh, gkBestStreak: newGkStreak })
+        body: JSON.stringify({
+          game_id: "gk_reflex",
+          score: newGkHigh,
+          streak: newGkStreak
+        })
       }).catch(err => console.warn("Save GK progress failed", err));
     }
   };
@@ -367,8 +378,9 @@ export default function DeltaSkillMiniGamesModal({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        unlockedMaxLevel: nextMax,
-        accuracyHighScore: newAccuracyHigh
+        game_id: activeMode,
+        level_completed: currentLevel.level,
+        score: newAccuracyHigh
       })
     }).catch(err => console.warn("Save minigame progress failed", err));
   };
@@ -385,9 +397,12 @@ export default function DeltaSkillMiniGamesModal({
     setCurrentWave(1);
     setShotFeedback(null);
     setShootingBallPos(null);
-    setRewardClaimed(false);
+    // Check if this level was already claimed on server for current activeMode
+    const levelRewardKey = `minigame:${activeMode}:lvl_${lvl.level}`;
+    const isAlreadyClaimedOnServer = claimedRewardKeys.has(levelRewardKey);
+    setRewardClaimed(isAlreadyClaimedOnServer);
     setClaimingReward(false);
-    setClaimError(null);
+    setClaimError(isAlreadyClaimedOnServer ? "Nagroda za ten poziom została już odebrana." : null);
 
     if (activeMode === "free_kicks") {
       const firstWave = generateWaveTargets(lvl, 1);
@@ -836,12 +851,16 @@ export default function DeltaSkillMiniGamesModal({
                             setRewardClaimed(true);
                             const awarded = typeof data.pointsAwarded === "number" ? data.pointsAwarded : currentLevel.dpReward;
                             if (onPointsEarned) onPointsEarned(awarded);
+                            const claimedKey = `minigame:${activeMode}:lvl_${currentLevel.level}`;
+                            setClaimedRewardKeys(prev => new Set(prev).add(claimedKey));
                             dispatchCollectionUpdated("minigame_reward");
                             cardSound.playPurchase();
                             cardSound.playHaptic("medium");
                           } else if (res.status === 409 || data.code === "ALREADY_CLAIMED") {
                             // Idempotent graceful recovery: nagroda była już wcześniej zaksięgowana na serwerze
                             setRewardClaimed(true);
+                            const claimedKey = `minigame:${activeMode}:lvl_${currentLevel.level}`;
+                            setClaimedRewardKeys(prev => new Set(prev).add(claimedKey));
                             setClaimError("Nagroda za ten poziom została już wcześniej odebrana.");
                           } else {
                             setClaimError(data.error || "Błąd zapisu nagrody na serwerze. Spróbuj ponownie.");
