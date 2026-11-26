@@ -10,7 +10,7 @@ const demoMatches = [
     match_time: "11:30",
     venue: "Warszawa · obiekt demonstracyjny",
     home_team: "K.S. Delta Warszawa GM",
-    away_team: "FC Vizja Warszawa",
+    away_team: "K.S. Delta Warszawa WI",
     home_score: null,
     away_score: null,
     status: "scheduled",

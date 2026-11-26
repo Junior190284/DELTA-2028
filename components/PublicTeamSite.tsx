@@ -1,20 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  BookOpenText,
   CalendarDays,
   Check,
   ChevronRight,
   Clock3,
   Flame,
   Goal,
+  Layers3,
   LockKeyhole,
   MapPin,
+  Medal,
   Shield,
   Trophy,
   Users,
 } from "lucide-react";
 import { decodeHtmlEntities } from "@/lib/text";
-import { formatTeamName, getTeamLogo } from "@/lib/teams";
+import { formatTeamName, getDeltaBranchLabel, getTeamLogo } from "@/lib/teams";
 import PublicNav from "./public/PublicNav";
 import MatchCountdown from "./public/MatchCountdown";
 import PublicMotion from "./public/PublicMotion";
@@ -84,34 +87,51 @@ function theirScore(match: Match) {
 
 function TeamMark({ team, priority = false }: { team: string; priority?: boolean }) {
   const logo = getTeamLogo(team);
-  if (!logo) {
-    return <span className={styles.teamFallback}>{formatTeamName(team).slice(0, 2).toUpperCase()}</span>;
-  }
+  const branch = getDeltaBranchLabel(team);
 
   return (
-    <Image
-      className={styles.teamLogo}
-      src={logo}
-      alt={`Herb ${formatTeamName(team)}`}
-      width={120}
-      height={120}
-      priority={priority}
-      sizes="(max-width: 640px) 72px, 112px"
-    />
+    <div className={styles.teamMark}>
+      {logo ? (
+        <Image
+          className={styles.teamLogo}
+          src={logo}
+          alt={`Herb ${formatTeamName(team)}`}
+          width={120}
+          height={120}
+          priority={priority}
+          sizes="(max-width: 640px) 72px, 112px"
+        />
+      ) : (
+        <span className={styles.teamFallback}>{formatTeamName(team).slice(0, 2).toUpperCase()}</span>
+      )}
+      {branch && <span className={styles.teamDistrict}>{branch}</span>}
+    </div>
   );
 }
 
 const experienceItems = [
-  { title: "Road to Glory", copy: "Droga rozwoju zawodnika opisana przez trening, doświadczenie i osiągnięcia.", status: "DOSTĘPNE" },
-  { title: "Player Passport", copy: "Prywatny profil rozwoju widoczny wyłącznie dla uprawnionego opiekuna.", status: "DOSTĘPNE" },
-  { title: "Centrum Treningowe", copy: "Kalendarz, materiały i bezpieczna organizacja procesu treningowego.", status: "DOSTĘPNE" },
-  { title: "Match Hub", copy: "Mecze, wyniki, obecności i najważniejsze informacje w jednym miejscu.", status: "DOSTĘPNE" },
-  { title: "Kolekcja kart", copy: "Sportowe karty i kolekcja powiązana z rozwojem w aplikacji.", status: "DOSTĘPNE" },
-  { title: "DELTA INFERNO", copy: "Cinematic pack opening i oprawa kolekcji w bezpiecznym panelu drużyny.", status: "DOSTĘPNE" },
-  { title: "Sala Trofeów", copy: "Osiągnięcia i najważniejsze momenty wspólnej sportowej historii.", status: "W ROZWOJU" },
-  { title: "Hall of Fame", copy: "Klubowe wyróżnienia przedstawione bez ujawniania danych na stronie publicznej.", status: "W ROZWOJU" },
-  { title: "Kronika Meczowa", copy: "Historia spotkań, wyników i drużynowych kamieni milowych.", status: "W ROZWOJU" },
+  { slug: "road", title: "Road to Glory", category: "ROZWÓJ ZAWODNIKA", copy: "Czytelna droga od treningu do kolejnego poziomu. Postęp, XP i osiągnięcia tworzą jedną sportową historię.", detail: "XP · poziomy · cele", audience: "ZAWODNIK", status: "DOSTĘPNE", art: "/assets/public-experience-tactical-v1.webp", icon: "trophy" },
+  { slug: "passport", title: "Player Passport", category: "PRYWATNY PROFIL", copy: "Bezpieczna karta rozwoju dostępna tylko dla zawodnika i uprawnionego opiekuna.", detail: "postęp · cele · odznaki", audience: "RODZIC + ZAWODNIK", status: "DOSTĘPNE", art: "/teamlogos/gm-crest.webp", icon: "shield" },
+  { slug: "training", title: "Centrum Treningowe", category: "ORGANIZACJA", copy: "Plan tygodnia, materiały trenerskie i potwierdzanie obecności bez szukania informacji w wielu miejscach.", detail: "terminy · materiały · obecność", audience: "RODZIC + TRENER", status: "DOSTĘPNE", art: "/assets/stadium-experience/stadium_mlody_talent.webp", icon: "goal" },
+  { slug: "match", title: "Match Hub", category: "DZIEŃ MECZU", copy: "Najbliższe spotkanie, miejsce, wynik i komunikaty meczowe w jednym, spokojnym widoku.", detail: "mecz · wynik · komunikaty", audience: "CAŁA DRUŻYNA", status: "DOSTĘPNE", art: "/media/walkouts/delta-matchday-stadium.webp", icon: "calendar" },
+  { slug: "collection", title: "Kolekcja kart", category: "SPORTOWA KOLEKCJA", copy: "Karty zdobywane za aktywność i rozwój tworzą prywatny album sezonu.", detail: "karty · album · rzadkości", audience: "ZAWODNIK", status: "DOSTĘPNE", art: "/assets/cards/templates/reverse_gold.png", icon: "layers" },
+  { slug: "inferno", title: "DELTA INFERNO", category: "CINEMATIC EXPERIENCE", copy: "Efektowne, bezpieczne otwieranie paczek i oprawa kolekcji — bez płatności i bez publicznych danych dzieci.", detail: "paczki · animacje · kolekcja", audience: "ZAWODNIK", status: "DOSTĘPNE", art: "/media/walkouts/delta-inferno-pack-cutout.webp", icon: "flame" },
+  { slug: "trophies", title: "Sala Trofeów", category: "OSIĄGNIĘCIA", copy: "Miejsce na drużynowe kamienie milowe, wyróżnienia i najważniejsze momenty sezonu.", detail: "trofea · rekordy · sezony", audience: "CAŁA DRUŻYNA", status: "W ROZWOJU", art: "/assets/delta-podium-three-steps-v1013.png", icon: "medal" },
+  { slug: "hall", title: "Hall of Fame", category: "KLUBOWA HISTORIA", copy: "Najważniejsze osiągnięcia DELTY pokazane w premium oprawie, bez ujawniania chronionych profili.", detail: "legendy · wyróżnienia · historia", audience: "SPOŁECZNOŚĆ", status: "W ROZWOJU", art: "/assets/hall-of-fame-premium-v109.png", icon: "users" },
+  { slug: "chronicle", title: "Kronika Meczowa", category: "ARCHIWUM SEZONU", copy: "Mecze, wyniki i drużynowe wydarzenia ułożone w jedną czytelną oś czasu.", detail: "mecze · wyniki · wspomnienia", audience: "CAŁA DRUŻYNA", status: "W ROZWOJU", art: "/media/walkouts/delta-gold-stadium.webp", icon: "book" },
 ] as const;
+
+function FeatureIcon({ icon }: { icon: (typeof experienceItems)[number]["icon"] }) {
+  if (icon === "flame") return <Flame aria-hidden="true" />;
+  if (icon === "goal") return <Goal aria-hidden="true" />;
+  if (icon === "calendar") return <CalendarDays aria-hidden="true" />;
+  if (icon === "layers") return <Layers3 aria-hidden="true" />;
+  if (icon === "medal") return <Medal aria-hidden="true" />;
+  if (icon === "users") return <Users aria-hidden="true" />;
+  if (icon === "book") return <BookOpenText aria-hidden="true" />;
+  if (icon === "shield") return <Shield aria-hidden="true" />;
+  return <Trophy aria-hidden="true" />;
+}
 
 export default function PublicTeamSite(props: {
   matches: Match[];
@@ -220,7 +240,10 @@ export default function PublicTeamSite(props: {
 
         {nextMatch ? (
           <div className={styles.matchCard}>
-            <div className={styles.matchStatus}><span /> NADCHODZĄCY MECZ · {nextMatch.round_no ? `KOLEJKA ${nextMatch.round_no}` : "TERMINARZ"}</div>
+            <div className={styles.matchStatus}>
+              <span /> NADCHODZĄCY MECZ · {nextMatch.round_no ? `KOLEJKA ${nextMatch.round_no}` : "TERMINARZ"}
+              <b>WSPÓLNY HERB · RÓŻNE OŚRODKI</b>
+            </div>
             <div className={styles.matchTeams}>
               <article>
                 <TeamMark team={nextMatch.home_team} priority />
@@ -279,17 +302,41 @@ export default function PublicTeamSite(props: {
         <div className={styles.sectionIntro}>
           <p className={styles.sectionIndex}>DELTA EXPERIENCE</p>
           <h2 id="experience-title">WIĘCEJ NIŻ <span>FUTBOL</span></h2>
-          <p>Jedno środowisko dla sportu, rozwoju i codziennej organizacji drużyny.</p>
+          <p>Jedno środowisko dla sportu, rozwoju i codziennej organizacji drużyny. Każdy moduł ma konkretną rolę i jasno określoną grupę odbiorców.</p>
+        </div>
+        <div className={styles.experienceGuide} aria-label="Dla kogo jest DELTA Experience">
+          <span><Trophy aria-hidden="true" /><b>DLA ZAWODNIKA</b><small>rozwój, cele i kolekcja</small></span>
+          <span><CalendarDays aria-hidden="true" /><b>DLA RODZICA</b><small>terminy, obecność i komunikaty</small></span>
+          <span><Users aria-hidden="true" /><b>DLA DRUŻYNY</b><small>mecze, historia i wspólne osiągnięcia</small></span>
         </div>
         <div className={styles.bento}>
           {experienceItems.map((item, index) => (
-            <article key={item.title} className={index === 0 ? styles.bentoLead : index === 5 ? styles.bentoInferno : ""}>
+            <article
+              key={item.title}
+              data-feature={item.slug}
+              className={`${styles.featureCard} ${index === 0 ? styles.bentoLead : index === 5 ? styles.bentoInferno : ""}`}
+            >
+              <Image
+                className={styles.featureArt}
+                src={item.art}
+                alt=""
+                fill
+                sizes={index === 0 || index === 5 ? "(max-width: 760px) 100vw, 66vw" : "(max-width: 760px) 100vw, 33vw"}
+              />
+              <div className={styles.featureShade} aria-hidden="true" />
               <div className={styles.featureTop}>
                 <span>{item.status}</span>
-                {index === 0 ? <Trophy /> : index === 5 ? <Flame /> : <Shield />}
+                <FeatureIcon icon={item.icon} />
               </div>
-              <h3>{item.title}</h3>
-              <p>{item.copy}</p>
+              <div className={styles.featureCopy}>
+                <small>{item.category}</small>
+                <h3>{item.title}</h3>
+                <p>{item.copy}</p>
+                <div className={styles.featureMeta}>
+                  <span>{item.detail}</span>
+                  <b>{item.audience}</b>
+                </div>
+              </div>
             </article>
           ))}
         </div>

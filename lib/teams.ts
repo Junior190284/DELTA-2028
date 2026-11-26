@@ -1,8 +1,10 @@
 const teamLogos: Record<string, string> = {
   "K.S. Delta Warszawa GM": "/teamlogos/gm.png",
   "Delta Górny Mokotów": "/teamlogos/gm.png",
+  "Delta Dolny Mokotów": "/teamlogos/gm.png",
   "Delta Wilanów": "/teamlogos/gm.png",
   "Delta Wawer": "/teamlogos/gm.png",
+  "K.S. Delta Warszawa DM": "/teamlogos/gm.png",
   "K.S. Delta Warszawa WI": "/teamlogos/gm.png",
   "K.S. Delta Warszawa WA": "/teamlogos/gm.png",
   "Alfa Przymierze Rodzin": "/teamlogos/alfa.png",
@@ -28,6 +30,10 @@ export function formatTeamName(team: string | null | undefined): string {
 
   // Check specific Delta branches safely
   if (lower.includes("delta")) {
+    // Check Dolny Mokotów before the generic Mokotów fallback.
+    if (/\b(dm|dolny)\b/i.test(lower) || lower.endsWith(" dm") || lower.includes("dolny mokot")) {
+      return "Delta Dolny Mokotów";
+    }
     // Check Wilanów
     if (/\b(wi|wilan|wilanow|wilanów)\b/i.test(lower) || lower.endsWith(" wi") || lower.endsWith(" wilanów") || lower.endsWith(" wilanow")) {
       return "Delta Wilanów";
@@ -68,8 +74,16 @@ export function formatTeamName(team: string | null | undefined): string {
 }
 
 /**
+ * Returns the local DELTA branch used to distinguish teams sharing one crest.
+ */
+export function getDeltaBranchLabel(team: string | null | undefined): string | null {
+  if (!team || !team.toLowerCase().includes("delta")) return null;
+  return formatTeamName(team).replace(/^Delta\s+/i, "").toUpperCase();
+}
+
+/**
  * Resolves the logo path for any team.
- * All Delta teams (Górny Mokotów, Wilanów, Wawer) automatically receive the Delta crest.
+ * All Delta teams (Górny Mokotów, Dolny Mokotów, Wilanów, Wawer) receive the shared Delta crest.
  */
 export function getTeamLogo(team: string | null | undefined): string {
   if (!team) return "/teamlogos/gm.png";
