@@ -1741,7 +1741,7 @@ export default function TeamHub(props:{
       gameProfile={gameProfile}
     >
       {noticesOpen&&<div className="v151-notices" role="region" aria-label="Komunikaty drużyny"><header><b>KOMUNIKATY DRUŻYNY</b><button onClick={()=>setNoticesOpen(false)} aria-label="Zamknij komunikaty"><X size={17}/></button></header><p>Aktualne sprawy na podstawie kalendarza i potwierdzeń. To nie są powiadomienia push.</p>{teamNotices.length?teamNotices.map(item=><button key={item.id} onClick={()=>{setNoticesOpen(false);item.action();}}><span className={item.type}><Bell size={15}/></span><span><b>{item.title}</b><small>{item.detail}</small><em>{item.label} →</em></span></button>):<div className="v151-notice-empty">Brak spraw wymagających uwagi.</div>}</div>}
-      <div className={`hub-main v8-main ${viewFx ? "v101-view-enter" : ""}`}>
+      <div className={`hub-main v8-main ${viewFx ? "v101-view-enter" : ""} ${tab === "players" ? "v205-team-active" : ""}`}>
       {/* IN-APP LIVE ALERTS (TOASTS / IMPORTANT BANNERS) */}
       <DeltaLiveAlertBanner
         events={systemEvents}
@@ -2339,14 +2339,21 @@ export default function TeamHub(props:{
       />}
 
       {tab==="players"&&<section className="section v8-section-page v87-players-page v871-team-page">
-        <div className="v871-team-hero v108-team-hero devil-card">
-          <div className="v871-team-hero-overlay"/>
-          <img className="v108-team-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM"/>
-          <div className="v871-team-crest"><img src="/teamlogos/gm.png" alt="DELTA 2018 GM"/></div>
+        <div className="v871-team-hero v108-team-hero v205-team-hero devil-card">
+          <div className="v871-team-hero-overlay" aria-hidden="true"/>
+          <div className="v205-team-hero-kicker">
+            <span>CENTRUM SKŁADU</span>
+            <small>SEZON {seasonLabel()}</small>
+          </div>
+          <img className="v108-team-players" src="/assets/hero-team-v105.png" alt="Zawodnicy DELTA 2018 GM stojący razem przed meczem"/>
+          <div className="v871-team-crest">
+            <img src="/teamlogos/gm.png" alt="Herb DELTA 2018 GM"/>
+            <span>GÓRNY MOKOTÓW</span>
+          </div>
           <div className="v871-team-copy">
             <span className="eyebrow gold">POZNAJ DIABEŁKI • GÓRNY MOKOTÓW</span>
             <h2>DELTA <span>2018</span> GM</h2>
-            <p>Pasja, charakter i przyjaźń. Jedna drużyna, która rośnie z każdym treningiem.</p>
+            <p>Skład, role i forma zespołu w jednym miejscu. Poznaj zawodników, ich pozycje oraz wkład w bieżący sezon.</p>
             <div className="v871-team-pills">
               <span><Users size={14}/>{players.length} zawodników</span>
               <span><Goal size={14}/>{teamSummary.goals} bramek</span>

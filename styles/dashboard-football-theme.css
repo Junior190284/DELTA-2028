@@ -1,4 +1,4 @@
-/* ========================================================================== 
+/* ==========================================================================
    DELTA 048 — FOOTBALL COMMAND CENTRE
    Presentation-only skin for the authenticated team dashboard.
    ========================================================================== */
@@ -373,5 +373,384 @@
   .v104-hub .delta-cinematic-dashboard .delta-gaming-card,
   .v104-hub .delta-sidebar-nav-item {
     transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   DELTA 049 — TEAM ROSTER COMMAND CENTRE
+   Compact, readable team identity and a cleaner hand-off to player cards.
+   ========================================================================== */
+
+.v104-hub .v205-team-active .delta-sticky-live-bar {
+  position: relative;
+  top: auto;
+  z-index: 8;
+  max-width: 1460px;
+  margin-bottom: 14px;
+}
+
+.v104-hub .v871-team-page {
+  width: min(100%, 1460px);
+  margin-inline: auto !important;
+}
+
+.v104-hub .v205-team-hero {
+  position: relative !important;
+  isolation: isolate;
+  display: grid !important;
+  grid-template-columns: minmax(340px, 0.88fr) minmax(520px, 1.2fr) !important;
+  align-items: stretch !important;
+  min-height: 460px !important;
+  height: clamp(460px, 34vw, 520px);
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(244, 203, 98, 0.36) !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(90deg, rgba(4, 7, 10, 0.98) 0 37%, rgba(4, 7, 10, 0.73) 54%, rgba(31, 5, 11, 0.3) 100%),
+    linear-gradient(180deg, rgba(4, 6, 9, 0.06), rgba(4, 6, 9, 0.78)),
+    url('/assets/dashboard-football-command-v1.webp') center 42% / cover no-repeat !important;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.48),
+    inset 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 -110px 120px rgba(0, 0, 0, 0.42) !important;
+}
+
+.v104-hub .v205-team-hero::before {
+  content: "" !important;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+  animation: none;
+  background:
+    linear-gradient(90deg, transparent 49.85%, rgba(255, 255, 255, 0.055) 50%, transparent 50.15%) 67% 100% / 52% 35% no-repeat,
+    radial-gradient(ellipse at 76% 112%, transparent 0 13%, rgba(255, 255, 255, 0.07) 13.2% 13.6%, transparent 13.8%),
+    radial-gradient(circle at 74% 24%, rgba(227, 33, 56, 0.2), transparent 33%);
+}
+
+.v104-hub .v205-team-hero::after {
+  content: "" !important;
+  position: absolute;
+  left: 36px;
+  right: 36px;
+  bottom: 0;
+  height: 3px;
+  z-index: 7;
+  background: linear-gradient(90deg, var(--football-red), var(--football-gold) 31%, transparent 82%);
+  box-shadow: 0 0 20px rgba(227, 33, 56, 0.42);
+}
+
+.v104-hub .v205-team-hero .v871-team-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(3, 6, 9, 0.82) 0 34%, transparent 64%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025) !important;
+}
+
+.v104-hub .v205-team-hero-kicker {
+  position: absolute;
+  top: 28px;
+  left: 36px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 6px 11px 6px 9px;
+  border: 1px solid rgba(244, 203, 98, 0.26);
+  border-left: 3px solid var(--football-red);
+  border-radius: 4px;
+  background: rgba(5, 8, 11, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.v104-hub .v205-team-hero-kicker span,
+.v104-hub .v205-team-hero-kicker small {
+  font-size: 0.63rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  line-height: 1;
+}
+
+.v104-hub .v205-team-hero-kicker span {
+  color: #fff0c4;
+}
+
+.v104-hub .v205-team-hero-kicker small {
+  padding-left: 12px;
+  border-left: 1px solid rgba(244, 203, 98, 0.25);
+  color: rgba(214, 220, 226, 0.72);
+}
+
+.v104-hub .v205-team-hero .v108-team-players {
+  position: absolute !important;
+  right: -1% !important;
+  bottom: -1px !important;
+  z-index: 3 !important;
+  width: min(66%, 900px) !important;
+  height: 95% !important;
+  object-fit: contain !important;
+  object-position: right bottom !important;
+  filter:
+    drop-shadow(0 18px 24px rgba(0, 0, 0, 0.78))
+    drop-shadow(0 0 24px rgba(227, 33, 56, 0.12)) !important;
+}
+
+.v104-hub .v205-team-hero .v871-team-crest {
+  position: absolute !important;
+  top: 82px !important;
+  left: 38px !important;
+  right: auto !important;
+  z-index: 6 !important;
+  display: grid !important;
+  grid-template-columns: 76px minmax(0, auto);
+  align-items: center;
+  gap: 11px;
+  width: auto !important;
+  height: auto !important;
+  padding: 8px 13px 8px 8px;
+  border: 1px solid rgba(244, 203, 98, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(110deg, rgba(36, 9, 14, 0.84), rgba(6, 9, 12, 0.68));
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+}
+
+.v104-hub .v205-team-hero .v871-team-crest img {
+  width: 76px !important;
+  height: 76px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 7px 15px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 13px rgba(244, 203, 98, 0.12)) !important;
+}
+
+.v104-hub .v205-team-hero .v871-team-crest span {
+  max-width: 76px;
+  color: #f4d27c;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+}
+
+.v104-hub .v205-team-hero .v871-team-copy {
+  position: relative !important;
+  z-index: 6 !important;
+  grid-column: 1;
+  align-self: end;
+  max-width: 610px !important;
+  padding: 205px 0 38px 38px;
+}
+
+.v104-hub .v205-team-hero .v871-team-copy > .eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--football-gold) !important;
+  font-size: 0.67rem !important;
+  letter-spacing: 0.17em !important;
+}
+
+.v104-hub .v205-team-hero .v871-team-copy h2 {
+  margin: 0 0 12px !important;
+  color: #f7f6f1;
+  font-family: var(--football-display) !important;
+  font-size: clamp(3.3rem, 4.35vw, 4.8rem) !important;
+  font-weight: 900;
+  line-height: 0.84 !important;
+  letter-spacing: 0.015em !important;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.v104-hub .v205-team-hero .v871-team-copy h2 span {
+  color: var(--football-gold) !important;
+}
+
+.v104-hub .v205-team-hero .v871-team-copy p {
+  max-width: 485px !important;
+  margin: 0 !important;
+  color: #c9d0d6 !important;
+  font-size: 0.76rem !important;
+  line-height: 1.65 !important;
+  letter-spacing: 0.015em !important;
+}
+
+.v104-hub .v205-team-hero .v871-team-pills {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px !important;
+  width: min(100%, 490px);
+  margin-top: 20px !important;
+}
+
+.v104-hub .v205-team-hero .v871-team-pills span {
+  min-height: 38px !important;
+  justify-content: center;
+  padding: 8px 7px !important;
+  border: 1px solid rgba(244, 203, 98, 0.24) !important;
+  border-radius: 7px;
+  background: rgba(5, 8, 11, 0.78) !important;
+  color: #e1e5e8 !important;
+  font-size: 0.63rem !important;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.v104-hub .v205-team-hero .v871-team-pills svg {
+  flex: 0 0 auto;
+  color: var(--football-gold) !important;
+}
+
+.v104-hub .v871-team-page > .v119-showcase {
+  margin-top: 18px;
+  border-radius: 18px;
+  border-color: rgba(244, 203, 98, 0.3) !important;
+  background:
+    radial-gradient(ellipse at 50% 32%, rgba(227, 33, 56, 0.22), transparent 48%),
+    linear-gradient(180deg, rgba(6, 9, 12, 0.8), rgba(5, 7, 10, 0.98)),
+    url('/assets/dashboard-football-command-v1.webp') center 40% / cover no-repeat !important;
+  box-shadow: 0 24px 58px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.v104-hub .v871-team-page > .v119-showcase::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  z-index: 4;
+  background: linear-gradient(90deg, var(--football-red), var(--football-gold) 33%, transparent 76%) !important;
+}
+
+.v104-hub .v119-showcase-heading h3 {
+  font-family: var(--football-display) !important;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1180px) {
+  .v104-hub .v205-team-hero {
+    grid-template-columns: minmax(320px, 0.82fr) minmax(430px, 1.18fr) !important;
+    min-height: 440px !important;
+    height: 440px;
+  }
+
+  .v104-hub .v205-team-hero .v108-team-players {
+    right: -5% !important;
+    width: 69% !important;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-copy h2 {
+    font-size: clamp(3.05rem, 5.2vw, 4rem) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .v104-hub .v205-team-hero {
+    grid-template-columns: 1fr !important;
+    min-height: 630px !important;
+    height: 630px;
+  }
+
+  .v104-hub .v205-team-hero .v108-team-players {
+    right: 1% !important;
+    bottom: 0 !important;
+    width: 92% !important;
+    height: 67% !important;
+    object-position: center bottom !important;
+    opacity: 0.9;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-hero-overlay {
+    background: linear-gradient(180deg, rgba(3, 6, 9, 0.92) 0 46%, rgba(3, 6, 9, 0.14) 76%, rgba(3, 6, 9, 0.72)) !important;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-copy {
+    align-self: start;
+    max-width: 620px !important;
+    padding: 198px 34px 0 !important;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-copy p {
+    max-width: 520px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .v104-hub .v205-team-active .delta-sticky-live-bar {
+    margin: 0 auto 10px;
+    padding-inline: 0;
+  }
+
+  .v104-hub .v205-team-hero {
+    min-height: 610px !important;
+    height: 610px;
+    border-radius: 14px !important;
+    background-position: 58% center !important;
+  }
+
+  .v104-hub .v205-team-hero-kicker {
+    top: 18px;
+    left: 16px;
+    right: 16px;
+    justify-content: space-between;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-crest {
+    top: 66px !important;
+    left: 16px !important;
+    grid-template-columns: 58px auto;
+    padding: 6px 10px 6px 6px;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-crest img {
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-copy {
+    padding: 151px 16px 0 !important;
+    text-align: left !important;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-copy h2 {
+    font-size: clamp(3.1rem, 15vw, 4.3rem) !important;
+    white-space: normal;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-copy p {
+    font-size: 0.72rem !important;
+  }
+
+  .v104-hub .v205-team-hero .v871-team-pills {
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    margin-top: 14px !important;
+  }
+
+  .v104-hub .v205-team-hero .v108-team-players {
+    right: 0 !important;
+    width: 100% !important;
+    height: 53% !important;
+    object-fit: cover !important;
+    object-position: 72% bottom !important;
+    opacity: 1;
+    filter:
+      brightness(1.12)
+      drop-shadow(0 14px 20px rgba(0, 0, 0, 0.78))
+      drop-shadow(0 0 20px rgba(227, 33, 56, 0.16)) !important;
+  }
+
+  .v104-hub .v205-team-hero::after {
+    left: 16px;
+    right: 16px;
+  }
+
+  .v104-hub .v871-team-page > .v119-showcase {
+    margin-top: 12px;
+    border-radius: 14px;
   }
 }
