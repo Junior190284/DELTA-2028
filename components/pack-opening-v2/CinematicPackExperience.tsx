@@ -23,7 +23,10 @@ import {
 import {
   type PackDefinition,
   type PackOpeningResult,
-  getPackImageUrl
+  getPackImageUrl,
+  getPackCutoutUrl,
+  getPackStadiumUrl,
+  resolveCanonicalPackTheme
 } from "@/lib/cards/types";
 import { dispatchPackOpened, dispatchCollectionUpdated } from "@/lib/cards/cardSync";
 import {
@@ -107,7 +110,7 @@ export default function CinematicPackExperience({
   reducedMotion = false,
   autoStart = false,
   enableInferno3DCanvas = false,
-  enableStadiumFilm = false,
+  enableStadiumFilm = true,
 }: CinematicPackExperienceProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { preloadCinematicArtwork(); }, []);
@@ -388,13 +391,16 @@ export default function CinematicPackExperience({
 
       if (err instanceof LivePackOpenError && err.code === "ALREADY_OPENED") {
         attemptIdempotencyKeyRef.current = null;
-        // Reconcile state authoritatively from server without unilateral client deletion (consumed_pack_id: userUnopenedPackId)
-        dispatchCollectionUpdated("already_opened_reconciliation", userUnopenedPackId);
+        // Reconcile state authoritatively from server without unilateral client deletion
+        dispatchCollectionUpdated("already_opened_reconciliation");
         setOpenError(err.message);
       } else {
         if (err instanceof LivePackOpenError && err.status >= 400 && err.status < 500) {
           attemptIdempotencyKeyRef.current = null;
           setOpenError(err instanceof Error ? err.message : "Błąd otwierania paczki.");
+        } else if (err instanceof LivePackOpenError && err.status >= 500 && err.message && !err.message.includes("fetch failed")) {
+          // Explicit server error with a known backend diagnostic code/message
+          setOpenError(err.message);
         } else {
           // Ambiguous network error, timeout, or server disruption
           // Never assume the pack is preserved; preserve idempotency key and show honest message
@@ -911,11 +917,12 @@ export default function CinematicPackExperience({
   const isMuted = state ? state.isMuted : isMutedLive;
   const canSkip = state ? state.canSkip : false;
   const canClose = !isRequestingOpen && (state ? state.canClose : true);
-  const packImage = getPackImageUrl(pack.id, pack.theme);
+  const canonicalTheme = resolveCanonicalPackTheme(pack.id, pack.theme);
+  const packImage = getPackImageUrl(pack.id, canonicalTheme);
   const cutoutPackThemes = ["standard", "matchday", "gold", "inferno", "legend"];
-  const hasPackCutout = enableStadiumFilm && cutoutPackThemes.includes(pack.theme);
+  const hasPackCutout = cutoutPackThemes.includes(canonicalTheme);
   const packDisplayImage = hasPackCutout
-    ? `/media/walkouts/delta-${pack.theme}-pack-cutout.webp`
+    ? getPackCutoutUrl(pack.id, canonicalTheme)
     : packImage;
   const packArenaCopy: Record<string, { kicker: string; subtitle: string }> = {
     standard: { kicker: "DELTA ACADEMY", subtitle: "TU ZACZYNAJĄ SIĘ LEGENDY" },
@@ -924,7 +931,7 @@ export default function CinematicPackExperience({
     inferno: { kicker: "DELTA INFERNO", subtitle: "WEJDŹ DO OGNIA" },
     legend: { kicker: "DELTA LEGEND", subtitle: "NARODZINY LEGENDY" }
   };
-  const arenaCopy = packArenaCopy[pack.theme] || packArenaCopy.standard;
+  const arenaCopy = packArenaCopy[canonicalTheme] || packArenaCopy.standard;
   const totalEarnedPoints = activeResult?.total_delta_points_earned || 0;
   const isMobileViewport = viewportWidth <= 640;
   const activeStageRarityProfile = getRarityPresentation(
@@ -961,13 +968,11 @@ export default function CinematicPackExperience({
       data-testid="cinematic-pack-modal"
       data-phase={currentPhase}
       data-rarity={activeStageRarityProfile.tier}
-      data-pack-theme={pack.theme}
+      data-pack-theme={canonicalTheme}
       className={`fixed inset-0 h-[100dvh] z-[9999999] isolate bg-[#020408] text-white flex flex-col justify-between overflow-hidden outline-none select-none cinematic-v2-arena ${enableStadiumFilm ? "has-stadium-film" : ""} ${hasPackCutout ? "has-transparent-pack" : ""} ${isMobileViewport ? "is-mobile-viewport" : ""} ${effectiveReducedMotion ? "is-reduced-motion" : ""}`}
       style={{ isolation: "isolate", backgroundColor: "#020408" }}
     >
-      {enableStadiumFilm && (currentPhase === "READY" || currentPhase === "OPENING" || currentPhase === "TRANSITION" || currentPhase === "WALKOUT") && (
-        <div className="v2-cinematic-prelude-backdrop" aria-hidden="true" />
-      )}
+      <div className="v2-cinematic-prelude-backdrop" aria-hidden="true" data-testid="cinematic-stadium-backdrop" />
       {/* Dynamic Stadium Spotlights (strictly clipped so diagonal beams never create scroll overflow) */}
       <div
         aria-hidden="true"

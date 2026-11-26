@@ -1,7 +1,10 @@
-import type {
-  PackDefinition,
-  PackOpeningResult,
-  UserUnopenedPack
+import {
+  type PackDefinition,
+  type PackOpeningResult,
+  type UserUnopenedPack,
+  resolveCanonicalPackTheme,
+  CANONICAL_PACK_CONFIGS,
+  getPackImageUrl
 } from "./types.ts";
 
 export interface BoosterCatalogFallbackItem {
@@ -162,25 +165,18 @@ export function buildFallbackPackDefinition(
   packTypeId: string,
   catalogEntry?: BoosterCatalogFallbackItem | null
 ): PackDefinition {
-  const theme = catalogEntry?.theme || (packTypeId.includes("inferno")
-    ? "inferno"
-    : packTypeId.includes("legend")
-    ? "legend"
-    : packTypeId.includes("gold")
-    ? "gold"
-    : packTypeId.includes("matchday")
-    ? "matchday"
-    : "standard");
+  const canonicalTheme = resolveCanonicalPackTheme(packTypeId, catalogEntry?.theme);
+  const canonicalCfg = CANONICAL_PACK_CONFIGS[packTypeId];
 
   return {
     id: packTypeId || "standard_pack",
-    name: catalogEntry?.name || "Paczka DELTA",
-    description: catalogEntry?.description ?? "Oficjalna paczka kart",
-    cards_count: catalogEntry?.cardsCount ?? 4,
+    name: catalogEntry?.name || canonicalCfg?.name || "Paczka DELTA",
+    description: catalogEntry?.description ?? canonicalCfg?.description ?? "Oficjalna paczka kart",
+    cards_count: canonicalCfg?.cardsCount ?? catalogEntry?.cardsCount ?? (canonicalTheme === "standard" ? 3 : canonicalTheme === "matchday" ? 4 : canonicalTheme === "legend" ? 6 : 5),
     drop_rates: { common: 60, rare: 30, epic: 8, legendary: 1.8, inferno: 0.2 },
-    min_rarity: theme === "inferno" ? "epic" : theme === "legend" ? "legendary" : "common",
-    theme,
-    image_url: catalogEntry?.image,
+    min_rarity: canonicalCfg?.minRarity ?? (canonicalTheme === "inferno" ? "epic" : canonicalTheme === "legend" ? "legendary" : canonicalTheme === "matchday" || canonicalTheme === "gold" ? "rare" : "common"),
+    theme: canonicalTheme,
+    image_url: catalogEntry?.image || canonicalCfg?.imageUrl || getPackImageUrl(packTypeId, canonicalTheme),
     is_active: true
   };
 }
@@ -193,9 +189,24 @@ export function resolvePackDefinitionForUnopenedPack(
   if (!unopenedPack) return null;
 
   const packTypeId = unopenedPack.pack_type_id || "standard_pack";
+  const canonicalTheme = resolveCanonicalPackTheme(packTypeId);
+  const canonicalCfg = CANONICAL_PACK_CONFIGS[packTypeId];
+
   const fromDefs = packDefinitions.find((p) => p.id === packTypeId);
-  if (fromDefs) return fromDefs;
-  if (unopenedPack.pack_definition) return unopenedPack.pack_definition;
+  if (fromDefs) {
+    return {
+      ...fromDefs,
+      theme: canonicalTheme,
+      cards_count: canonicalCfg?.cardsCount ?? fromDefs.cards_count ?? 3
+    };
+  }
+  if (unopenedPack.pack_definition) {
+    return {
+      ...unopenedPack.pack_definition,
+      theme: canonicalTheme,
+      cards_count: canonicalCfg?.cardsCount ?? unopenedPack.pack_definition.cards_count ?? 3
+    };
+  }
 
   const fromCatalog = fallbackCatalog.find((item) => item.id === packTypeId) || null;
   return buildFallbackPackDefinition(packTypeId, fromCatalog);

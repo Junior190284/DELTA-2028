@@ -998,12 +998,12 @@
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(180deg, rgba(2, 3, 8, .2) 0%, rgba(2, 3, 8, .08) 40%, rgba(2, 3, 8, .42) 100%),
-    url('/media/walkouts/delta-inferno-tunnel-prelude.webp');
+    linear-gradient(180deg, rgba(2, 3, 8, .18) 0%, rgba(2, 3, 8, .12) 40%, rgba(2, 3, 8, .55) 100%),
+    var(--arena-stadium-image, url('/media/walkouts/delta-standard-stadium.webp'));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  animation: v2PreludeCameraPush 12s ease-out both;
+  animation: v2PreludeCameraPush 14s ease-out both;
 }
 
 /* Pack-specific stadium art: only the crimson INFERNO booster gets the flare arena. */
@@ -1578,20 +1578,20 @@
   --arena-accent: #d5a6ff; --arena-glow: rgba(165, 89, 249, .43);
   --arena-stadium-image: url('/media/walkouts/delta-legend-stadium.webp');
 }
-.cinematic-v2-arena.has-stadium-film .v2-cinematic-prelude-backdrop {
-  background-image: linear-gradient(180deg, rgba(2,3,8,.13), rgba(2,3,8,.14) 40%, rgba(2,3,8,.5)), var(--arena-stadium-image);
+.cinematic-v2-arena .v2-cinematic-prelude-backdrop {
+  background-image: linear-gradient(180deg, rgba(2,3,8,.15), rgba(2,3,8,.18) 40%, rgba(2,3,8,.65)), var(--arena-stadium-image);
 }
-/* Until matching films are ready, show each pack's own stadium instead of INFERNO. */
-.cinematic-v2-arena.has-stadium-film:not([data-pack-theme="inferno"]) .universal-stage-stands {
+/* Show each pack's own authentic stadium backdrop across ready and summary */
+.cinematic-v2-arena:not([data-pack-theme="inferno"]) .universal-stage-stands {
   background: linear-gradient(180deg, rgba(2,3,8,.12), rgba(2,3,8,.36)), var(--arena-stadium-image) center / cover no-repeat;
 }
-.cinematic-v2-arena.has-stadium-film:not([data-pack-theme="inferno"]) .universal-stage-stadium-photo {
+.cinematic-v2-arena:not([data-pack-theme="inferno"]) .universal-stage-stadium-photo {
   opacity: 0;
 }
-.cinematic-v2-arena.has-stadium-film .v2-summary-stage {
+.cinematic-v2-arena .v2-summary-stage {
   background: linear-gradient(180deg, rgba(2,3,8,.55), rgba(2,3,8,.88)), var(--arena-stadium-image) center / cover no-repeat;
 }
-.cinematic-v2-arena.has-stadium-film .v2-prelude-kicker {
+.cinematic-v2-arena .v2-prelude-kicker {
   display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
   gap: 10px; margin-bottom: 18px; font-family: var(--arena-display-font);
   font-size: clamp(13px, 2.1vw, 23px); font-weight: 900; line-height: 1.05;
@@ -1604,44 +1604,44 @@
 }
 .cinematic-v2-arena .v2-kicker-divider { color: #fff; opacity: .9; font-size: .7em; letter-spacing: -.1em; }
 .cinematic-v2-arena .v2-arena-subtitle { color: #fff; letter-spacing: .09em; }
-.cinematic-v2-arena.has-stadium-film .v2-ready-title,
-.cinematic-v2-arena.has-stadium-film .v2-summary-title,
-.cinematic-v2-arena.has-stadium-film .v2-hero-name,
-.cinematic-v2-arena.has-stadium-film .v2-transition-label {
+.cinematic-v2-arena .v2-ready-title,
+.cinematic-v2-arena .v2-summary-title,
+.cinematic-v2-arena .v2-hero-name,
+.cinematic-v2-arena .v2-transition-label {
   font-family: var(--arena-display-font); text-transform: uppercase; font-style: italic;
   font-stretch: condensed; letter-spacing: .055em; line-height: 1;
   text-shadow: 2px 3px 0 rgba(0,0,0,.8), 0 0 24px var(--arena-glow);
 }
-.cinematic-v2-arena.has-stadium-film .v2-ready-title,
-.cinematic-v2-arena.has-stadium-film .v2-summary-title {
+.cinematic-v2-arena .v2-ready-title,
+.cinematic-v2-arena .v2-summary-title {
   font-size: clamp(26px, 4.6vw, 48px); color: #fff;
   -webkit-text-stroke: .4px var(--arena-accent);
 }
-.cinematic-v2-arena.has-stadium-film .v2-transition-label {
+.cinematic-v2-arena .v2-transition-label {
   font-size: clamp(23px, 4vw, 48px); color: var(--arena-accent);
   background: rgba(0,0,0,.7); border-left: 5px solid currentColor;
   padding: 12px 24px 10px; transform: skewX(-6deg);
 }
-.cinematic-v2-arena.has-stadium-film .v2-primary-cta,
-.cinematic-v2-arena.has-stadium-film .v2-walkout-btn,
-.cinematic-v2-arena.has-stadium-film .v2-hero-cta {
+.cinematic-v2-arena .v2-primary-cta,
+.cinematic-v2-arena .v2-walkout-btn,
+.cinematic-v2-arena .v2-hero-cta {
   font-family: var(--arena-display-font); letter-spacing: .12em;
   font-size: clamp(14px, 1.65vw, 18px); font-style: italic;
   text-transform: uppercase; border-color: var(--arena-accent);
   box-shadow: 0 0 28px var(--arena-glow), inset 0 0 20px rgba(0,0,0,.2);
 }
-.cinematic-v2-arena.has-stadium-film .v2-summary-feature-name {
+.cinematic-v2-arena .v2-summary-feature-name {
   font-family: var(--arena-display-font); font-size: clamp(23px, 3vw, 34px);
   font-style: italic; letter-spacing: .08em;
 }
-.cinematic-v2-arena.has-stadium-film .v2-summary-kicker,
-.cinematic-v2-arena.has-stadium-film .v2-summary-feature-overline {
+.cinematic-v2-arena .v2-summary-kicker,
+.cinematic-v2-arena .v2-summary-feature-overline {
   color: var(--arena-accent); letter-spacing: .16em;
 }
 @media (max-width: 640px) {
-  .cinematic-v2-arena.has-stadium-film .v2-prelude-kicker { font-size: 13px; gap: 6px; padding: 0 12px; }
+  .cinematic-v2-arena .v2-prelude-kicker { font-size: 13px; gap: 6px; padding: 0 12px; }
   .cinematic-v2-arena .v2-arena-kicker { padding: 5px 8px; }
-  .cinematic-v2-arena.has-stadium-film .v2-ready-title { font-size: 29px; }
+  .cinematic-v2-arena .v2-ready-title { font-size: 29px; }
 }
 
 /* OPENING Energy Buildup & Tunnel Transition Streak */

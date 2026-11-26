@@ -1589,6 +1589,7 @@ export default function DeltaCollectionAlbum({
           pack={activePackSession.pack}
           userUnopenedPackId={activePackSession.userUnopenedPackId}
           sessionKey={activePackSession.sessionKey}
+          enableStadiumFilm={true}
           unopenedCount={
             activePackSession.hasConsumedCurrentPack
               ? typeof activePackSession.lastOpenResult?.remaining_unopened_packs_count === "number"

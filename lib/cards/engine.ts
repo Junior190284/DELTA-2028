@@ -183,19 +183,31 @@ function isRpcMissingError(err: { code?: string; message?: string; details?: str
  * Jeśli tabela jest pusta, zasila ją z aktywnych zawodników przez serwisowy klient admina.
  */
 async function resolveActiveCardPool(adminClient: SupabaseClient): Promise<CardDefinition[]> {
-  const selectQuery = `
+  const selectQueryFull = `
     *,
     player:players(id, display_name, shirt_number, position, photo_path),
     match:matches(id, match_date, home_team, away_team, home_score, away_score)
   `;
+  const selectQuerySafe = `
+    *,
+    player:players(id, display_name, shirt_number, position, photo_path)
+  `;
 
-  const { data: initialCards, error: cardsErr } = await adminClient
+  let { data: initialCards, error: cardsErr } = await adminClient
     .from("card_definitions")
-    .select(selectQuery)
+    .select(selectQueryFull)
     .eq("is_active", true);
 
   if (cardsErr) {
-    throw new PackOpeningError("DB_READ_ERROR", "Błąd odczytu aktywnych definicji kart.", 500);
+    const fallback = await adminClient
+      .from("card_definitions")
+      .select(selectQuerySafe)
+      .eq("is_active", true);
+
+    if (fallback.error) {
+      throw new PackOpeningError("DB_READ_ERROR", "Błąd odczytu aktywnych definicji kart.", 500);
+    }
+    initialCards = fallback.data;
   }
 
   if (initialCards && initialCards.length > 0) {
@@ -214,13 +226,20 @@ async function resolveActiveCardPool(adminClient: SupabaseClient): Promise<CardD
   const activePlayers = (players || []).filter(p => p.active !== false);
   if (activePlayers.length > 0) {
     await ensureStarterCardsForPlayers(adminClient, activePlayers, "2026/27");
-    const { data: seededCards, error: seededErr } = await adminClient
+    let { data: seededCards, error: seededErr } = await adminClient
       .from("card_definitions")
-      .select(selectQuery)
+      .select(selectQueryFull)
       .eq("is_active", true);
 
     if (seededErr) {
-      throw new PackOpeningError("DB_READ_ERROR", "Błąd odczytu zasianych definicji kart.", 500);
+      const fallbackSeeded = await adminClient
+        .from("card_definitions")
+        .select(selectQuerySafe)
+        .eq("is_active", true);
+      if (fallbackSeeded.error) {
+        throw new PackOpeningError("DB_READ_ERROR", "Błąd odczytu zasianych definicji kart.", 500);
+      }
+      seededCards = fallbackSeeded.data;
     }
     if (seededCards && seededCards.length > 0) {
       return seededCards as CardDefinition[];
@@ -246,7 +265,7 @@ async function buildResultFromAtomicPayload(
   );
 
   if (missingIds.length > 0) {
-    const { data: fetchedCards, error: fetchErr } = await adminClient
+    let { data: fetchedCards, error: fetchErr } = await adminClient
       .from("card_definitions")
       .select(`
         *,
@@ -256,7 +275,18 @@ async function buildResultFromAtomicPayload(
       .in("id", missingIds);
 
     if (fetchErr) {
-      throw new PackOpeningError("DB_READ_ERROR", "Błąd pobierania danych wylosowanych kart.", 500);
+      const fallback = await adminClient
+        .from("card_definitions")
+        .select(`
+          *,
+          player:players(id, display_name, shirt_number, position, photo_path)
+        `)
+        .in("id", missingIds);
+
+      if (fallback.error) {
+        throw new PackOpeningError("DB_READ_ERROR", "Błąd pobierania danych wylosowanych kart.", 500);
+      }
+      fetchedCards = fallback.data;
     }
 
     for (const c of fetchedCards || []) {
@@ -377,6 +407,22 @@ export async function openPackServerSide(
     }
 
     if (packRow.is_opened) {
+      // Odzyskiwanie wyniku (idempotent recovery): jeśli serwer już otworzył tę paczkę,
+      // zwracamy zapisany wynik z pack_opening_logs zamiast 409, chroniąc przed utratą kart.
+      const { data: existingPackLog } = await adminClient
+        .from("pack_opening_logs")
+        .select("response_payload")
+        .eq("user_id", userId)
+        .eq("unopened_pack_id", userUnopenedPackId)
+        .maybeSingle();
+
+      if (existingPackLog?.response_payload) {
+        return buildResultFromAtomicPayload(
+          adminClient,
+          existingPackLog.response_payload as AtomicPackResponsePayload
+        );
+      }
+
       throw new PackOpeningError("ALREADY_OPENED", "ALREADY_OPENED: Ta paczka została już otwarta.", 409);
     }
 

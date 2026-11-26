@@ -481,8 +481,8 @@ export function CollectionDashboard({ model, openPackFetch }: CollectionDashboar
       const fallbackPack = buildFallbackPackDefinition(packItem.packTypeId, {
         id: packItem.packTypeId,
         name: packItem.packDefinition?.name || "Paczka DELTA",
-        cardsCount: packItem.packDefinition?.cardsCount || 4,
-        theme: packItem.packDefinition?.theme || "standard"
+        cardsCount: packItem.packDefinition?.cardsCount || 3,
+        theme: (packItem.packDefinition?.theme as any) || "standard"
       });
       setActivePackSession({
         pack: fallbackPack,

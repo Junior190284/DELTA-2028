@@ -69,14 +69,134 @@ export interface PackDefinition {
   is_active: boolean;
 }
 
-export function getPackImageUrl(packId?: string, theme?: string): string {
+export type PackTheme = "standard" | "matchday" | "gold" | "inferno" | "legend";
+
+export interface CanonicalPackConfig {
+  id: string;
+  name: string;
+  cardsCount: number;
+  theme: PackTheme;
+  minRarity: CardRarity;
+  imageUrl: string;
+  cutoutUrl: string;
+  stadiumUrl: string;
+  guaranteeText: string;
+  description: string;
+}
+
+export const CANONICAL_PACK_CONFIGS: Record<string, CanonicalPackConfig> = {
+  standard_pack: {
+    id: "standard_pack",
+    name: "Paczka Standardowa",
+    cardsCount: 3,
+    theme: "standard",
+    minRarity: "common",
+    imageUrl: "/assets/packs/pack-standard.jpg",
+    cutoutUrl: "/media/walkouts/delta-standard-pack-cutout.webp",
+    stadiumUrl: "/media/walkouts/delta-standard-stadium.webp",
+    guaranteeText: "3 losowe karty zawodników DELTA",
+    description: "Podstawowy pakiet kolekcjonerski zawierający 3 karty zawodników rocznika 2018."
+  },
+  matchday_booster: {
+    id: "matchday_booster",
+    name: "Matchday Booster",
+    cardsCount: 4,
+    theme: "matchday",
+    minRarity: "rare",
+    imageUrl: "/assets/packs/pack-matchday.jpg",
+    cutoutUrl: "/media/walkouts/delta-matchday-pack-cutout.webp",
+    stadiumUrl: "/media/walkouts/delta-matchday-stadium.webp",
+    guaranteeText: "Min. 1 karta Matchday Hero",
+    description: "Specjalny booster meczowy nagradzający ligowe występy i determinację na boisku."
+  },
+  gold_booster: {
+    id: "gold_booster",
+    name: "Gold Booster",
+    cardsCount: 5,
+    theme: "gold",
+    minRarity: "rare",
+    imageUrl: "/assets/packs/pack-gold.jpg",
+    cutoutUrl: "/media/walkouts/delta-gold-pack-cutout.webp",
+    stadiumUrl: "/media/walkouts/delta-gold-stadium.webp",
+    guaranteeText: "Min. 1 karta Gold Master (wysoki OVR)",
+    description: "Ekskluzywny booster z gwarancją złotej karty elity o wysokich statystykach OVR."
+  },
+  inferno_booster: {
+    id: "inferno_booster",
+    name: "🔥 Inferno Booster",
+    cardsCount: 5,
+    theme: "inferno",
+    minRarity: "epic",
+    imageUrl: "/assets/packs/pack-inferno.jpg",
+    cutoutUrl: "/media/walkouts/delta-inferno-pack-cutout.webp",
+    stadiumUrl: "/media/walkouts/delta-inferno-red-stadium.webp",
+    guaranteeText: "Gwarantowana karta Inferno z płomieniami",
+    description: "Ognisty booster premium zawierający najgorętsze karty w unikalnej oprawie INFERNO."
+  },
+  legend_pack: {
+    id: "legend_pack",
+    name: "👑 Legend Pack",
+    cardsCount: 6,
+    theme: "legend",
+    minRarity: "legendary",
+    imageUrl: "/assets/packs/pack-legend.jpg",
+    cutoutUrl: "/media/walkouts/delta-legend-pack-cutout.webp",
+    stadiumUrl: "/media/walkouts/delta-legend-stadium.webp",
+    guaranteeText: "Gwarantowana karta Legendy",
+    description: "Królewski booster legendarny z gwarancją karty mistrzowskiej."
+  },
+  legend_booster: {
+    id: "legend_booster",
+    name: "👑 Legend Booster",
+    cardsCount: 6,
+    theme: "legend",
+    minRarity: "legendary",
+    imageUrl: "/assets/packs/pack-legend.jpg",
+    cutoutUrl: "/media/walkouts/delta-legend-pack-cutout.webp",
+    stadiumUrl: "/media/walkouts/delta-legend-stadium.webp",
+    guaranteeText: "Gwarantowana karta Legendy",
+    description: "Królewski booster legendarny z gwarancją karty mistrzowskiej."
+  }
+};
+
+export function resolveCanonicalPackTheme(packId?: string, fallbackTheme?: string): PackTheme {
   const id = (packId || "").toLowerCase();
-  const th = (theme || "").toLowerCase();
-  if (id.includes("inferno") || th === "inferno") return "/assets/packs/pack-inferno.jpg";
-  if (id.includes("legend") || th === "legend") return "/assets/packs/pack-legend.jpg";
-  if (id.includes("matchday") || th === "matchday") return "/assets/packs/pack-matchday.jpg";
-  if (id.includes("gold") || th === "gold") return "/assets/packs/pack-gold.jpg";
-  return "/assets/packs/pack-standard.jpg";
+  if (id.includes("standard")) return "standard";
+  if (id.includes("matchday")) return "matchday";
+  if (id.includes("gold")) return "gold";
+  if (id.includes("inferno")) return "inferno";
+  if (id.includes("legend")) return "legend";
+
+  const th = (fallbackTheme || "").toLowerCase();
+  if (th === "inferno") return "inferno";
+  if (th === "legend") return "legend";
+  if (th === "gold") return "gold";
+  if (th === "matchday") return "matchday";
+  return "standard";
+}
+
+export function getPackImageUrl(packId?: string, theme?: string): string {
+  const canonical = resolveCanonicalPackTheme(packId, theme);
+  switch (canonical) {
+    case "inferno": return "/assets/packs/pack-inferno.jpg";
+    case "legend": return "/assets/packs/pack-legend.jpg";
+    case "gold": return "/assets/packs/pack-gold.jpg";
+    case "matchday": return "/assets/packs/pack-matchday.jpg";
+    case "standard":
+    default:
+      return "/assets/packs/pack-standard.jpg";
+  }
+}
+
+export function getPackCutoutUrl(packId?: string, theme?: string): string {
+  const canonical = resolveCanonicalPackTheme(packId, theme);
+  return `/media/walkouts/delta-${canonical}-pack-cutout.webp`;
+}
+
+export function getPackStadiumUrl(packId?: string, theme?: string): string {
+  const canonical = resolveCanonicalPackTheme(packId, theme);
+  if (canonical === "inferno") return "/media/walkouts/delta-inferno-red-stadium.webp";
+  return `/media/walkouts/delta-${canonical}-stadium.webp`;
 }
 
 export interface UserUnopenedPack {
