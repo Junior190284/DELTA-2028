@@ -9,6 +9,7 @@ import {
   WEEKLY_QUEST_REWARDS,
   type SpinSegment,
   getQuizRewardForLesson,
+  getMinigameLevelReward,
   normalizePackTypeId,
   selectRandomSpinSegment
 } from "./security.ts";
@@ -816,6 +817,62 @@ export async function claimSeasonPassRewardServerSide(params: {
     grantedPack: Boolean(rpcResult.granted_pack_id),
     grantedPackId: rpcResult.granted_pack_id || null,
     message: `Odebrano nagrodę poziomu ${reward.level}: ${reward.title}!`
+  };
+}
+
+// ============================================================================
+// 7B. ODBIÓR NAGRODY ZA MINIGRĘ (MINIGAME LEVEL REWARD — ATOMOWE RPC)
+// ============================================================================
+
+export async function claimMinigameLevelRewardServerSide(params: {
+  adminClient: SupabaseClient;
+  userId: string;
+  gameId: string;
+  level: number;
+}) {
+  const { adminClient, userId, gameId, level } = params;
+  if (!userId) {
+    throw new EconomyRpcError("UNAUTHORIZED", "Wymagane logowanie", 401);
+  }
+
+  const cleanGameId = typeof gameId === "string" ? gameId.trim() : "";
+  const safeLevel = Math.max(1, Math.min(10, Math.floor(Number(level) || 0)));
+
+  if (!cleanGameId || safeLevel < 1 || safeLevel > 10) {
+    throw new EconomyRpcError("BAD_REQUEST", "Nieprawidłowy identyfikator minigry lub poziom.", 400);
+  }
+
+  const dpAmount = getMinigameLevelReward(safeLevel);
+  if (dpAmount <= 0) {
+    throw new EconomyRpcError("BAD_REQUEST", "Brak nagrody DP dla wybranego poziomu.", 400);
+  }
+
+  const rewardKey = `minigame:${cleanGameId}:lvl_${safeLevel}`;
+  const rewardType = "MINIGAME";
+  const sourceReason = `Nagroda Minigry: ${cleanGameId === "free_kicks" ? "Rzuty Wolne" : cleanGameId} Poziom ${safeLevel}`;
+
+  const rpcResult = await invokeEconomyRpc<{
+    success: true;
+    new_balance: number;
+    granted_pack_id: string | null;
+  }>(adminClient, "claim_reward_once_atomic", {
+    p_user_id: userId,
+    p_reward_key: rewardKey,
+    p_reward_type: rewardType,
+    p_dp_amount: dpAmount,
+    p_pack_type_id: null,
+    p_source_reason: sourceReason,
+    p_metadata: { gameId: cleanGameId, level: safeLevel }
+  });
+
+  return {
+    success: true,
+    gameId: cleanGameId,
+    level: safeLevel,
+    pointsAwarded: dpAmount,
+    newPointsBalance: Number(rpcResult.new_balance) || 0,
+    alreadyClaimed: false,
+    message: `Gratulacje! Odebrano nagrodę +${dpAmount} DP za poziom ${safeLevel}!`
   };
 }
 

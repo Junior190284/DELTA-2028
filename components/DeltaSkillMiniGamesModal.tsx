@@ -18,9 +18,12 @@ import {
   ChevronRight, 
   ArrowRight, 
   Crown, 
-  Lock 
+  Lock,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import { cardSound } from "@/lib/cards/audio";
+import { dispatchCollectionUpdated } from "@/lib/cards/cardSync";
 
 interface DeltaSkillMiniGamesModalProps {
   onClose: () => void;
@@ -241,6 +244,8 @@ export default function DeltaSkillMiniGamesModal({
   const [shotFeedback, setShotFeedback] = useState<{ text: string; color: string; id: number } | null>(null);
   const [shootingBallPos, setShootingBallPos] = useState<{ top: string; left: string } | null>(null);
   const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [claimingReward, setClaimingReward] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   // Mode 2: GK Reflex specific state
   const [activeThreatZone, setActiveThreatZone] = useState<number | null>(null);
@@ -381,6 +386,8 @@ export default function DeltaSkillMiniGamesModal({
     setShotFeedback(null);
     setShootingBallPos(null);
     setRewardClaimed(false);
+    setClaimingReward(false);
+    setClaimError(null);
 
     if (activeMode === "free_kicks") {
       const firstWave = generateWaveTargets(lvl, 1);
@@ -805,22 +812,74 @@ export default function DeltaSkillMiniGamesModal({
                 </div>
 
                 {!rewardClaimed ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRewardClaimed(true);
-                      if (onPointsEarned) onPointsEarned(currentLevel.dpReward);
-                      cardSound.playPurchase();
-                      cardSound.playHaptic("medium");
-                    }}
-                    className="v200-claim-skill-dp-btn"
-                  >
-                    <Sparkles size={16} /> ODBIERZ +{currentLevel.dpReward} DP
-                  </button>
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={claimingReward}
+                      onClick={async () => {
+                        if (claimingReward || rewardClaimed) return;
+                        setClaimingReward(true);
+                        setClaimError(null);
+
+                        try {
+                          const res = await fetch("/api/minigames/claim-reward", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              gameId: activeMode,
+                              level: currentLevel.level
+                            })
+                          });
+
+                          const data = await res.json().catch(() => ({}));
+                          if (res.ok && data.success) {
+                            setRewardClaimed(true);
+                            const awarded = typeof data.pointsAwarded === "number" ? data.pointsAwarded : currentLevel.dpReward;
+                            if (onPointsEarned) onPointsEarned(awarded);
+                            dispatchCollectionUpdated("minigame_reward");
+                            cardSound.playPurchase();
+                            cardSound.playHaptic("medium");
+                          } else if (res.status === 409 || data.code === "ALREADY_CLAIMED") {
+                            // Idempotent graceful recovery: nagroda była już wcześniej zaksięgowana na serwerze
+                            setRewardClaimed(true);
+                            setClaimError("Nagroda za ten poziom została już wcześniej odebrana.");
+                          } else {
+                            setClaimError(data.error || "Błąd zapisu nagrody na serwerze. Spróbuj ponownie.");
+                          }
+                        } catch (err: any) {
+                          setClaimError("Błąd połączenia podczas odbierania nagrody. Spróbuj ponownie.");
+                        } finally {
+                          setClaimingReward(false);
+                        }
+                      }}
+                      className="v200-claim-skill-dp-btn disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {claimingReward ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" /> ZAPISYWANIE NA SERWERZE...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} /> ODBIERZ +{currentLevel.dpReward} DP
+                        </>
+                      )}
+                    </button>
+                    {claimError && (
+                      <span className="text-xs text-amber-300 font-semibold flex items-center gap-1 text-center max-w-xs">
+                        <AlertCircle size={14} className="shrink-0 text-amber-400" />
+                        {claimError}
+                      </span>
+                    )}
+                  </div>
                 ) : (
-                  <span className="text-sm font-bold text-green-400 flex items-center gap-1">
-                    <CheckCircle2 size={16} /> Odebrano nagrodę!
-                  </span>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-sm font-bold text-green-400 flex items-center gap-1">
+                      <CheckCircle2 size={16} /> Odebrano i zapisano nagrodę w portfelu!
+                    </span>
+                    {claimError && (
+                      <span className="text-[11px] text-slate-400">{claimError}</span>
+                    )}
+                  </div>
                 )}
               </div>
 

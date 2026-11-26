@@ -43,6 +43,30 @@ export const QUIZ_PASS_THRESHOLD_PERCENT = 75;
 export const DEFAULT_QUIZ_REWARD_DELTA_POINTS = 50;
 
 /**
+ * Authoritative Minigame Level Progression Rewards
+ * Formal server-side definition matching DeltaSkillMiniGamesModal LEVELS_CONFIG:
+ * Level 1: 20 DP, Level 2: 25 DP, Level 3: 35 DP, Level 4: 45 DP, Level 5: 60 DP,
+ * Level 6: 75 DP, Level 7: 90 DP, Level 8: 110 DP, Level 9: 135 DP, Level 10: 200 DP.
+ * Idempotent, awarded once per (user, game_id, level).
+ */
+export const MINIGAME_LEVEL_DP_REWARDS: Record<number, number> = {
+  1: 20,
+  2: 25,
+  3: 35,
+  4: 45,
+  5: 60,
+  6: 75,
+  7: 90,
+  8: 110,
+  9: 135,
+  10: 200
+};
+
+export function getMinigameLevelReward(level: number): number {
+  return MINIGAME_LEVEL_DP_REWARDS[level] ?? 0;
+}
+
+/**
  * Pre-existing lesson reward configuration from Knowledge Corner data
  */
 export const QUIZ_LESSON_REWARDS: Record<string, number> = {
