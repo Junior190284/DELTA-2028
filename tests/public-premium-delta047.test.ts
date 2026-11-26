@@ -15,10 +15,13 @@ test("DELTA-047: teams sharing the DELTA crest keep distinct branch identities",
   assert.equal(formatTeamName("K.S. Delta Warszawa DM"), "Delta Dolny Mokotów");
   assert.equal(formatTeamName("K.S. Delta Warszawa WI"), "Delta Wilanów");
   assert.equal(formatTeamName("K.S. Delta Warszawa WA"), "Delta Wawer");
+  assert.equal(formatTeamName("Wilanów"), "Delta Wilanów");
+  assert.equal(formatTeamName("Dolny Mokotów"), "Delta Dolny Mokotów");
   assert.equal(getDeltaBranchLabel("K.S. Delta Warszawa GM"), "GÓRNY MOKOTÓW");
   assert.equal(getDeltaBranchLabel("K.S. Delta Warszawa DM"), "DOLNY MOKOTÓW");
   assert.equal(getDeltaBranchLabel("K.S. Delta Warszawa WI"), "WILANÓW");
   assert.equal(getDeltaBranchLabel("K.S. Delta Warszawa WA"), "WAWER");
+  assert.equal(getDeltaBranchLabel("Wilanów"), "WILANÓW");
   assert.equal(getDeltaBranchLabel("FC Vizja Warszawa"), null);
 });
 
