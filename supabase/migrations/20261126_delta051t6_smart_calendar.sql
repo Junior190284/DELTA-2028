@@ -18,13 +18,23 @@ alter table public.team_events add column if not exists approved_at timestamptz;
 alter table public.team_events add column if not exists parent_id uuid references public.profiles(id) on delete set null;
 
 -- 2. Aktualizacja polityk RLS dla team_events (własne pozycje rodziców i zawodników)
--- Odczyt: publiczne widzą wszyscy uwierzytelnieni; prywatne widzi tylko twórca i uprawniony sztab
+-- Usunięcie wcześniejszych polityk permissive, które pozwalały na odczyt wszystkich wierszy (true)
 drop policy if exists "team events authenticated select" on public.team_events;
+drop policy if exists "delegated team events all" on public.team_events;
+drop policy if exists "team events staff insert" on public.team_events;
+drop policy if exists "team events staff update" on public.team_events;
+drop policy if exists "team events staff delete" on public.team_events;
+
+-- Odczyt: publiczne widzą wszyscy uwierzytelnieni; prywatne widzi tylko twórca i uprawniony sztab
 create policy "team events authenticated select" on public.team_events for select to authenticated using (
   visibility = 'public' 
   or created_by = auth.uid() 
   or (visibility = 'coach' and public.is_staff())
   or (visibility = 'team_proposal' and (public.is_staff() or created_by = auth.uid()))
+  or (player_id is not null and exists (
+    select 1 from public.parent_player_links ppl
+    where ppl.parent_id = auth.uid() and ppl.player_id = team_events.player_id
+  ))
 );
 
 -- Zapis: sztab może dodawać dowolne; rodzice/zawodnicy mogą tworzyć własne wydarzenia (private / coach / team_proposal)
@@ -33,7 +43,7 @@ create policy "team events insert" on public.team_events for insert to authentic
   public.is_staff() or (created_by = auth.uid() and visibility in ('private', 'coach', 'team_proposal'))
 );
 
--- Aktualizacja: sztab zarządza wszystkimi; twórca może edytować tylko własne wydarzenia
+-- Aktualizacja: sztab zarządza wszystkimi; twórca może edytować tylko własne wydarzenia niebędące publicznymi
 drop policy if exists "team events update" on public.team_events;
 create policy "team events update" on public.team_events for update to authenticated using (
   public.is_staff() or (created_by = auth.uid() and visibility != 'public')
