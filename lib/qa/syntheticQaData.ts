@@ -1,9 +1,11 @@
 import type { Player, TrainingSession, TrainingAttendance, TrainingGame } from "@/components/training/DeltaTrainingCenter20";
 import type { TrainingLiveEvent } from "@/lib/training/trainingLiveStats";
+import type { SmartCalendarItem } from "@/lib/calendar/smartCalendarTypes";
 
 export type SyntheticGame = TrainingGame;
 export type TeamLetter = "A" | "B" | "C" | "D";
 export type SyntheticTrainingEvent = TrainingLiveEvent;
+export type SyntheticCalendarItem = SmartCalendarItem;
 
 export interface SyntheticGamePlayer {
   game_id: string;
@@ -241,5 +243,116 @@ export const INITIAL_SYNTHETIC_EVENTS: TrainingLiveEvent[] = [
     assist_player_id: null,
     team_side: "A",
     created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  },
+];
+
+export const INITIAL_SYNTHETIC_CALENDAR_EVENTS: SmartCalendarItem[] = [
+  {
+    id: "qa-cal-01",
+    title: "Mecz Ligowy MZPN U-9: DELTA Warszawa vs SEMP Ursynów",
+    category: "match",
+    event_date: "2026-11-28",
+    start_time: "10:00",
+    end_time: "11:30",
+    is_all_day: false,
+    location: "Stadion OSiR Mokotów, Boisko Główne",
+    description: "Zbiórka 45 minut przed meczem. Obowiązują stroje meczowe czerwone, ochraniacze i bidon.",
+    organizer: "Trener Tomasz Rybacki",
+    visibility: "public",
+    status: "scheduled",
+    is_official: true,
+    important: true,
+    created_by: "staff-qa-01",
+    created_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+    match_id: "match-mzpn-01",
+  },
+  {
+    id: "qa-cal-02",
+    title: "Oficjalny Trening Taktyczny U-9 • QA Playground",
+    category: "training",
+    event_date: "2026-11-26",
+    start_time: "17:30",
+    end_time: "19:00",
+    is_all_day: false,
+    location: "Warszawianka Boisko A",
+    description: "Ćwiczenia zgrania dwójkowego, gra na małe bramki oraz mini-turniej kontrolny.",
+    organizer: "Sztab DELTA",
+    visibility: "public",
+    status: "in_progress",
+    is_official: true,
+    important: false,
+    created_by: "staff-qa-01",
+    created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    training_id: "qa-session-simulated-001",
+  },
+  {
+    id: "qa-cal-03",
+    title: "Konsultacja Fizjoterapeutyczna & Ocena Motoryki",
+    category: "consultation",
+    event_date: "2026-11-27",
+    start_time: "16:00",
+    end_time: "16:45",
+    is_all_day: false,
+    location: "Klinika Ruchu / Centrum Medyczne DELTA",
+    description: "Kontrolna ocena zakresu ruchu i wzmocnienia stawu skokowego.",
+    organizer: "Dr Fizjoterapii Sportowej",
+    visibility: "coach", // Udostępnione trenerowi
+    status: "scheduled",
+    is_official: false,
+    player_id: "qa-p-01",
+    created_by: "parent-qa-user",
+    created_at: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "qa-cal-04",
+    title: "Trening Indywidualny: Technika Strzału & Prowadzenie Piłki",
+    category: "individual_training",
+    event_date: "2026-11-29",
+    start_time: "11:00",
+    end_time: "12:15",
+    is_all_day: false,
+    location: "Boisko Orlik Park Dreszera",
+    description: "Doskonalenie uderzenia słabszą nogą z tatą.",
+    organizer: "Rodzic Zawodnika 01",
+    visibility: "private", // Ściśle prywatne
+    status: "scheduled",
+    is_official: false,
+    player_id: "qa-p-01",
+    created_by: "parent-qa-user",
+    created_at: new Date(Date.now() - 6 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "qa-cal-05",
+    title: "Uroczystość Rodzinna / Wyjazd Weekendowy",
+    category: "family_event",
+    event_date: "2026-11-30",
+    start_time: null,
+    end_time: null,
+    is_all_day: true,
+    location: "Kraków",
+    description: "Wydarzenie rodzinne z okazji urodzin dziadka.",
+    organizer: "Rodzina",
+    visibility: "private",
+    status: "scheduled",
+    is_official: false,
+    created_by: "parent-qa-user",
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "qa-cal-06",
+    title: "Turniej Halowy Zima Cup 2026",
+    category: "tournament",
+    event_date: "2026-12-05",
+    start_time: "09:00",
+    end_time: "15:00",
+    is_all_day: false,
+    location: "Arena Ursynów, Warszawa",
+    description: "Propozycja wyjazdu dla chętnych rocznika 2018.",
+    organizer: "Rodzic (Inicjatywa Drużynowa)",
+    visibility: "team_proposal", // Propozycja dla drużyny
+    status: "scheduled",
+    is_official: false,
+    created_by: "parent-qa-user",
+    created_at: new Date().toISOString(),
   },
 ];

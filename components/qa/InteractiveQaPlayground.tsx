@@ -34,9 +34,12 @@ import {
   INITIAL_SYNTHETIC_GAMES,
   INITIAL_SYNTHETIC_GAME_PLAYERS,
   INITIAL_SYNTHETIC_EVENTS,
+  INITIAL_SYNTHETIC_CALENDAR_EVENTS,
   type SyntheticGamePlayer,
   type TeamLetter
 } from "@/lib/qa/syntheticQaData";
+import SmartCalendarPro from "@/components/calendar/SmartCalendarPro";
+import type { SmartCalendarItem } from "@/lib/calendar/smartCalendarTypes";
 import {
   calculateGameScoreFromEvents,
   aggregateTrainingLiveStats,
@@ -53,9 +56,10 @@ const TEAM_OPTIONS: { letter: TeamLetter; name: string; color: string; border: s
 ];
 
 export default function InteractiveQaPlayground() {
-  const [subTab, setSubTab] = useState<"center" | "teams" | "game" | "summary">("teams");
+  const [subTab, setSubTab] = useState<"center" | "teams" | "game" | "summary" | "calendar">("calendar");
 
   // Local isolated simulation states (100% in-memory, ZERO database requests)
+  const [calendarEvents, setCalendarEvents] = useState<SmartCalendarItem[]>(INITIAL_SYNTHETIC_CALENDAR_EVENTS);
   const [session, setSession] = useState<TrainingSession>(SYNTHETIC_QA_TRAINING_SESSION);
   const [attendance, setAttendance] = useState<TrainingAttendance[]>(INITIAL_SYNTHETIC_ATTENDANCE);
   const [games, setGames] = useState<TrainingGame[]>(INITIAL_SYNTHETIC_GAMES);
@@ -349,7 +353,18 @@ export default function InteractiveQaPlayground() {
       )}
 
       {/* SUB-TABS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <button
+          onClick={() => setSubTab("calendar")}
+          className={`px-3 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+            subTab === "calendar"
+              ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-lg shadow-amber-950/40"
+              : "bg-white/[0.04] text-slate-300 hover:text-white border border-white/10"
+          }`}
+        >
+          <Calendar size={14} />
+          <span>Smart Kalendarz Pro</span>
+        </button>
         <button
           onClick={() => setSubTab("center")}
           className={`px-3 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
@@ -395,6 +410,27 @@ export default function InteractiveQaPlayground() {
           <span>Podsumowanie & XP (Statystyki)</span>
         </button>
       </div>
+
+      {/* SUBTAB 0: SMART CALENDAR PRO (SIMULATION) */}
+      {subTab === "calendar" && (
+        <SmartCalendarPro
+          initialEvents={calendarEvents}
+          currentUser={{
+            id: "parent-qa-user",
+            role: "parent",
+            name: "Rodzic QA",
+          }}
+          userChildPlayerIds={["qa-p-01"]}
+          isSimulation={true}
+          onNavigateToMatchHub={() => {
+            triggerFeedback("Przejście do Match Hub (Symulacja)");
+          }}
+          onNavigateToTrainingCenter={() => {
+            setSubTab("center");
+            triggerFeedback("Przełączono do Centrum Treningowego");
+          }}
+        />
+      )}
 
       {/* SUBTAB 1: CENTRUM TRENINGOWE & CHECK-IN */}
       {subTab === "center" && (
